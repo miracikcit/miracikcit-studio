@@ -218,7 +218,7 @@ function calSave(id, b) {
 function out(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function withLock(fn) { const l = LockService.getScriptLock(); l.waitLock(25000); try { return fn(); } finally { l.releaseLock(); } }
 function safe(v) { try { return v === '' ? null : JSON.parse(v); } catch (e) { return v; } }
-function openSs(id) { return id ? SpreadsheetApp.openById(id) : SpreadsheetApp.getActive(); }
+function openSs(id) { const a = SpreadsheetApp.getActive(); return !id || id === a.getId() ? a : SpreadsheetApp.openById(id); }
 function sheet(name, header) {
   const ss = SpreadsheetApp.getActive();
   let sh = ss.getSheetByName(name);
