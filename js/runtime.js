@@ -155,7 +155,8 @@
       if (!id) { id = (await call('job_add', { type: 'ai', input: { prompt } })).id; lsSet('aijob:' + key, id);
         const u = lsGet('aiuse', {}), m = new Date().toISOString().slice(0, 7); u[m] = (u[m] || 0) + 1; lsSet('aiuse', u); }
       if (window.toast) window.toast('Mac mini sedang tanya Claude');
-      const outp = await waitJob(id, 6 * 60000);
+      let outp;
+      try { outp = await waitJob(id, 6 * 60000); } catch (e) { if (e.code !== 'timeout') lsSet('aijob:' + key, ''); throw e; }
       lsSet('ai:' + key, outp.json); lsSet('aijob:' + key, '');
       return outp.json;
     }
