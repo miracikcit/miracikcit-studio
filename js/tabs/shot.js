@@ -1,0 +1,12 @@
+/* ---------- SHOT ---------- */
+V.shot=()=>{const list=byStage('shot');
+  return head('Dah shoot, simpan link product listing')+`<div class="list">${list.map(it=>`<div class="card glass"><div class="rowh"><div><h3>${esc(it.title||'Nota')}</h3><div class="meta">${esc([it.brand,it.shotAt?'shoot '+fmtD(it.shotAt):''].filter(Boolean).join(' · '))} ${accPill(it.account)}</div></div>${it.listingLink?`<span class="pill" style="--pc:var(--ok)">Diarkib</span>`:`<span class="pill" style="--pc:var(--warn)">Belum arkib</span>`}</div>
+    <label class="f" style="margin-top:12px"><span>Link folder product listing (Google Drive)</span><input class="inp" id="ll-${it.id}" data-col="items" data-id="${it.id}" data-f="listingLink" data-url="1" value="${esc(it.listingLink||'')}" placeholder="https://drive.google.com/drive/folders/..." inputmode="url"></label>
+    <div class="btns">${it.listingLink?`<a class="btn sm" href="${esc(it.listingLink)}" target="_blank" rel="noopener">${IC.ext}Buka folder</a>`:`<button class="btn sm" data-act="askArchive" data-id="${it.id}">${IC.copy}Minta Claude arkib</button>`}
+     <button class="btn sm" data-act="nota" data-id="${it.id}">Nota</button><button class="btn sm solid tab" data-act="toEditAsk" data-id="${it.id}">Ke To Edit${IC.next}</button><button class="btn icon sm" data-act="unShot" data-id="${it.id}" aria-label="Pindah balik ke To Shoot">${IC.back}</button></div></div>`).join('')||`<div class="empty">Belum ada. Tekan Dah shoot dalam To Shoot.</div>`}</div>`};
+A.unShot=el=>moveItem(get('items',el.dataset.id),'toshoot');
+A.askArchive=el=>{const it=get('items',el.dataset.id);const p=it.productId&&get('products',it.productId);
+  copyText(`Arkib product listing untuk "${it.title}"${p&&p.folder?' (folder '+p.folder+')':''}: upload folder tu ke Google Drive "ARCHIVE PRODUCT LISTING/${it.brand?it.brand+' ':''}${it.title}", semak bilangan fail sama, simpan link folder Drive dalam Miracikcit Studio (koleksi items, id ${it.id}, medan listingLink), kemudian tanya aku sebelum buang folder asal.`,'Dicopy. Paste dalam chat dengan Claude')};
+A.toEditAsk=el=>{const it=get('items',el.dataset.id);modal(`<h2>Masuk folder edit mana?</h2><div class="list">${FOLDERS.map(f=>`<button class="btn" style="justify-content:flex-start;gap:12px;--bc:${FCOL[fno(f)]}" data-act="toEdit" data-id="${it.id}" data-x="${esc(f)}"><b>${fno(f)}</b>${esc(f.replace(/^\d+\.\s*/,''))}</button>`).join('')}</div>`,TAB['to-edit'].c)};
+A.toEdit=el=>{closeModal();moveItem(get('items',el.dataset.id),'toedit',{folder:el.dataset.x})};
+
