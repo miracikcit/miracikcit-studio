@@ -28,13 +28,32 @@ const itemReady=items=>items.length?`<p class="eyebrow" style="margin-top:22px">
 function rowFile(r,sv){const fs=sv.gf.get(r.group)||[];return fs.find(f=>r.vid&&new RegExp('_'+r.vid+'_').test(f.name))||(fs.length===1||r.group.rows.length===1?fs[0]:null)||null}
 function itemFile(it){const files=((S.sync.topost||{}).files)||[];return files.find(f=>(it.files||[]).includes(f.name))||null}
 const dlUrl=id=>'https://drive.usercontent.google.com/download?id='+encodeURIComponent(id)+'&export=download&confirm=t';
+/* iPhone: link Drive tak boleh download dalam app home screen. Jadi app muat video dulu (tunjuk %),
+   kemudian butang "Simpan video" buka menu Share iPhone (pilih Save Video untuk masuk Photos). */
+const DLQ={};
 function dlBtn(f,done,id,act){
   if(!f)return done?`<span class="pill" style="--pc:var(--ok)">${IC.check}Downloaded</span>`:`<span class="pill" title="Tiada fail dalam folder 00. TO POST FINAL">Tiada fail</span>`;
   if(!f.drive)return `<span class="pill" style="--pc:var(--warn)">Sedang upload</span>`;
-  return `<a class="btn sm ${done?'':'solid tab'}" href="${esc(dlUrl(f.drive))}" target="_blank" rel="noopener" data-act="dlGo" data-id="${esc(id)}" data-x="${act}" data-u="${esc(dlUrl(f.drive))}">${done?IC.check+'Downloaded':IC.dl+'Download'}</a>`}
-A.dlGo=el=>{window.open(el.dataset.u,'_blank');const id=el.dataset.id;
+  const q=DLQ[id];const a=`data-id="${esc(id)}" data-x="${act}" data-u="${esc(dlUrl(f.drive))}" data-n="${esc(f.name)}" data-f="${esc(f.drive)}" data-dlid="${esc(id)}"`;
+  if(q&&q.file)return `<button class="btn sm solid tab" data-act="dlSave" ${a}>${IC.dl}Simpan video</button>`;
+  if(q)return `<button class="btn sm" disabled ${a}>Memuat ${q.pct||0}%</button>`;
+  return `<button class="btn sm ${done?'':'solid tab'}" data-act="dlGo" ${a}>${done?IC.check+'Downloaded':IC.dl+'Download'}</button>`}
+function dlMark(el){const id=el.dataset.id;
   if(el.dataset.x==='dlItem'){const it=get('items',id);if(it&&!it.downloaded)save('items',Object.assign({},it,{downloaded:true,downloadedAt:Date.now()}))}
-  else{const rm=get('readymeta',id)||{id};if(!rm.downloaded)save('readymeta',Object.assign({},rm,{downloaded:true,downloadedAt:Date.now()}))}};
+  else{const rm=get('readymeta',id)||{id};if(!rm.downloaded)save('readymeta',Object.assign({},rm,{downloaded:true,downloadedAt:Date.now()}))}}
+A.dlGo=async el=>{const id=el.dataset.id,fid=el.dataset.f,name=el.dataset.n;if(DLQ[id])return;DLQ[id]={pct:0};render();
+  try{const parts=[];let got=0,total=1,CH=8000000;
+    while(got<total){let j,tries=0;for(;;){try{j=await window.studioChunk(fid,got,CH);break}catch(e){if(++tries>=3)throw e;await new Promise(r=>setTimeout(r,1500))}}
+      total=j.total;const bin=atob(j.b64);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
+      if(!u8.length)throw new Error('kosong');parts.push(u8);got+=u8.length;
+      const pct=Math.floor(got/total*100);DLQ[id].pct=pct;const b=document.querySelector(`[data-dlid="${CSS.escape(id)}"]`);if(b)b.textContent='Memuat '+pct+'%'}
+    DLQ[id]={file:new File(parts,name,{type:'video/mp4'})};render();toast('Siap dimuat. Tekan Simpan video')}
+  catch(e){delete DLQ[id];render();toast('Tak dapat muat video. Semak internet dan cuba lagi')}};
+A.dlSave=async el=>{const id=el.dataset.id;const q=DLQ[id];if(!q||!q.file)return;
+  try{if(navigator.canShare&&navigator.canShare({files:[q.file]})){await navigator.share({files:[q.file]})}
+    else{const u=URL.createObjectURL(q.file);const a=document.createElement('a');a.href=u;a.download=q.file.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)}
+    dlMark(el);delete DLQ[id];render();toast('Video disimpan')}
+  catch(e){if(e&&e.name==='AbortError')toast('Dibatalkan. Tekan Simpan video sekali lagi');else toast('Tak dapat buka menu simpan')}};
 A.tick=el=>{const [tab,row,kind,idx]=el.dataset.x.split('|');sheetTick(tab,+row,kind,+idx)};
 A.cap=el=>{const [tab,row,v]=el.dataset.x.split('|');for(const g of parseSheet()||[])for(const r of g.rows)if(r.tab===tab&&r.row===+row){const nolink=v==='fb'&&g.tab==='PRODUCTS'&&!g.shopee;return copyText(capVariants(r.caption,g.shopee)[v],nolink?'Dicopy tanpa link, belum ada link Shopee':'Caption '+({fb:'FB',ig:'IG',tt:'TikTok'}[v])+' dicopy')}};
 A.lkSave=el=>saveLinks(+el.dataset.id);

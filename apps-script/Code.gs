@@ -144,6 +144,18 @@ function app(b) {
       const kind = /^image\//.test(b.mime) ? 'i' : /^audio\//.test(b.mime) ? 'a' : /pdf/.test(b.mime) ? 'p' : 'f';
       return { ok: true, id: f.getId() + '~' + kind };
     }
+    case 'file_chunk': {   // video final ke phone, sekeping-sekeping (Google sekat fetch terus dari app)
+      const f = DriveApp.getFileById(String(b.id));
+      const ps = f.getParents(); let okp = false;
+      while (ps.hasNext()) if (ps.next().getName() === 'TO POST FINAL') { okp = true; break; }
+      if (!okp) return { ok: false, error: 'fail ni bukan video final' };
+      const total = f.getSize(), start = Math.max(0, Number(b.start) || 0);
+      const end = Math.min(total, start + Math.min(Number(b.len) || 8000000, 20000000)) - 1;
+      const r = UrlFetchApp.fetch('https://www.googleapis.com/drive/v3/files/' + f.getId() + '?alt=media', {
+        headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken(), Range: 'bytes=' + start + '-' + end }, muteHttpExceptions: true });
+      if (r.getResponseCode() >= 300) return { ok: false, error: 'Drive ' + r.getResponseCode() };
+      return { ok: true, total: total, start: start, b64: Utilities.base64Encode(r.getBlob().getBytes()) };
+    }
     case 'file_delete': { try { DriveApp.getFileById(String(b.id).split('~')[0]).setTrashed(true); } catch (e) {} return { ok: true }; }
     case 'job_add': return withLock(() => {
       const sh = sheet(JOB_TAB, ['id', 'type', 'status', 'input', 'output', 'created', 'done']);

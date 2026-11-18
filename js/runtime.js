@@ -161,6 +161,7 @@
       return outp.json;
     }
   };
+  window.studioChunk = (id, start, len) => call('file_chunk', { id, start, len });
   window.studioJob = async (type, input, maxMs) => { const id = (await call('job_add', { type, input })).id; return waitJob(id, maxMs || 10 * 60000); };
   window.studioCall = call;
 
