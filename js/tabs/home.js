@@ -36,6 +36,22 @@ A.evSave=async el=>{const t=$('#evT').value.trim(),d=$('#evD').value,tm=$('#evM'
   const id=el.dataset.id;closeModal();toast('Sedang simpan ke Google Calendar');
   try{if(id)await MCP.callTool(GC,'update_event',Object.assign({eventId:id},p));else await MCP.callTool(GC,'create_event',p);toast('Disimpan dalam Google Calendar');loadCal()}catch(e){toast('Tak dapat simpan ke Google Calendar')}};
 A.evDel=el=>{const id=el.dataset.id;confirmBox('Padam posting ni dari Google Calendar?',async()=>{try{await MCP.callTool(GC,'delete_event',{eventId:id});toast('Dipadam');loadCal()}catch(e){toast('Tak dapat padam')}})};
+/* Footage Sorter (Mac mini): nombor sahaja, dari tab SORTER yang Mac hantar. Gambar kekal dalam Mac. */
+let sorterRaw=null;
+function sorterCard(){if(!sorterRaw||!sorterRaw.length)return '';
+  const v=sorterRaw;const cell=(r,c)=>String(((v[r]||[])[c])??'').trim();
+  const folders=v.slice(8).map(r=>({label:String(r[0]||''),group:String(r[1]||''),total:+r[2]||0,review:+r[3]||0})).filter(f=>f.label);
+  const toReview=folders.filter(f=>!/check me|duplicates/i.test(f.label)).reduce((a,f)=>a+f.review,0);
+  const checkMe=+cell(2,1)||0,link=cell(5,1);
+  const meter=(name,used,total)=>{used=+used||0;total=+total||0;if(!total)return '';const pct=Math.min(100,Math.round(used/total*100));const col=pct>85?'var(--bad)':'var(--ok)';
+    return `<div style="--sc:${col};margin-top:10px"><div class="trk"><div class="t"><span>${esc(name)}</span><span>${used} / ${total>=1000?(total/1000).toFixed(1)+' TB':total+' GB'}</span></div></div><div class="bar"><i style="width:${pct}%"></i></div></div>`};
+  const rows=folders.filter(f=>f.review>0).sort((a,b)=>b.review-a.review).slice(0,6);
+  return `<div class="card big glass" style="--c:#8676BE;margin-top:14px"><div class="rowh" style="align-items:center"><div><p class="eyebrow" style="margin:0">Footage Sorter · Mac mini</p><h3 style="font-size:18px;margin-top:4px">Folder gambar &amp; video</h3></div><b class="bigno" style="font-size:40px">${toReview}</b></div>
+   <div class="meta" style="margin-top:2px">belum disemak${checkMe?' · '+checkMe+' dalam Check Me':''}</div>
+   ${rows.map(f=>`<div class="evrow" style="cursor:default"><span style="flex:1;min-width:0"><strong>${esc(f.label)}</strong><span class="meta" style="display:block">${esc(f.group)} · ${f.total} fail</span></span><span class="pill" style="--pc:var(--warn)">${f.review} semak</span></div>`).join('')}
+   ${meter(cell(3,1)||'Hard disk',cell(3,2),cell(3,3))}${meter('iCloud',cell(4,2),cell(4,3))}
+   <div class="btns" style="margin-top:14px">${/^https?:\/\//.test(link)?`<a class="btn solid tab" href="${esc(link)}" target="_blank" rel="noopener">${IC.ext}Buka folder &amp; semak</a>`:''}</div>
+   <p class="meta" style="margin:10px 0 0">Butang tu buka page Footage Sorter. Phone mesti guna Wi-Fi rumah dan app terbuka di Mac mini. Dikemas kini ${esc(cell(1,1))}.</p></div>`}
 const appReady=sv=>byStage('ready').filter(it=>!(it.auto&&sv&&(it.files||[]).some(f=>matchFile(f,sv.groups))));
 V.home=()=>{
   const sv=sheetView();const te=toEditFolders();const hr=new Date().getHours();const eds=S.editor.filter(e=>!/siap/i.test(e.status||''));
@@ -56,6 +72,7 @@ V.home=()=>{
   <div class="rbox glass" style="--c:${r.c}"><div class="rowh" style="align-items:center"><div><h2>${r.l}</h2><div class="meta">Publish dalam 1 minggu selepas siap</div></div><b class="rn">${n.ready}</b></div>
     ${urgent.length?urgent.map(u=>`<div style="--sc:${u.d?u.d.color:'var(--muted)'};margin-top:14px"><div class="rowh" style="align-items:center"><div class="rt"><strong>${esc(u.r.group.name)}</strong>${u.r.vid?' · VID '+esc(u.r.vid):''}</div><span class="pill" style="--pc:${u.d?u.d.color:'#999'}">${u.d?u.d.label:'tiada tarikh'}</span></div><div class="bar"><i style="width:${u.d?u.d.pct:0}%"></i></div></div>`).join(''):`<div class="meta" style="margin-top:12px">${sv?'Tiada video menunggu.':'Menunggu sheet.'}</div>`}
     <div style="margin-top:16px"><button class="btn solid tab" data-act="go" data-id="ready">Buka senarai${IC.next}</button></div></div>
+  ${sorterCard()}
   ${calHTML()}`};
 A.go=el=>go(el.dataset.id);
 /* Folder di Mac mini diimbas sendiri oleh worker setiap 5 minit. Butang ni minta imbasan sekarang. */

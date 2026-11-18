@@ -1,5 +1,5 @@
 /* Simpan app dalam phone supaya boleh dibuka tanpa internet. Data sendiri disimpan oleh runtime.js. */
-const V = '2026.11.18-3';
+const V = '2026.11.18-4';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-180.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open('studio-' + V).then(c => c.addAll(CORE))); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== 'studio-' + V).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
