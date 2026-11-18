@@ -19,7 +19,7 @@ V.transcribe=()=>{
    <div class="btns"><button class="btn" data-act="trPaste">${IC.copy}Tampal</button><button class="btn solid tab" data-act="trAdd"${ui.trBusy?' disabled':''}>${ui.trBusy?'Sedang hantar':'Transcribe'}</button></div>
    ${online?'':`<p class="meta" style="margin:10px 0 0">Mac mini tak check Sheet dalam 5 minit terakhir. Video tetap masuk giliran dan diproses bila Mac mini hidup semula.</p>`}</div>
   <p class="eyebrow" style="margin-top:22px">Terkini · ${rows.length}</p>
-  <div class="list">${rows.map(r=>{const st=r.status||'Dalam giliran';return `<button type="button" class="card glass trrow" data-act="trOpen" data-id="${esc(r.id)}"><div class="rowh"><div><h3>${esc(noEmoji(r.tajuk)||'Video '+(r.platform||platOf(r.link)))}</h3>${r.tajuk?'':`<div class="meta" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.link)}</div>`}<div class="meta">${esc([r.platform||platOf(r.link),durFmt(r.tempoh),r.bahasa,fmtD(Date.parse(r.tarikh_tambah))].filter(Boolean).join(' · '))}</div>${st==='Gagal'&&r.ralat?`<div class="meta" style="color:var(--bad);margin-top:4px">${esc(r.ralat.slice(0,140))}</div>`:''}</div><span class="pill" style="--pc:${TR_ST[st]||'#999'}">${esc(trStLabel(st))}</span></div></button>`}).join('')||`<div class="empty">${trRaw?'Belum ada video. Tampal link dan tekan Transcribe.':'Sedang baca Sheet.'}</div>`}</div>
+  <div class="list">${rows.map(r=>{const st=r.status||'Dalam giliran';return `<div role="button" tabindex="0" class="card glass trrow" data-act="trOpen" data-id="${esc(r.id)}"><div class="rowh"><div><h3>${esc(noEmoji(r.tajuk)||'Video '+(r.platform||platOf(r.link)))}</h3>${r.tajuk?'':`<div class="meta" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.link)}</div>`}<div class="meta">${esc([r.platform||platOf(r.link),durFmt(r.tempoh),r.bahasa,fmtD(Date.parse(r.tarikh_tambah))].filter(Boolean).join(' · '))}</div>${st==='Gagal'&&r.ralat?`<div class="meta" style="color:var(--bad);margin-top:4px">${esc(r.ralat.slice(0,140))}</div>`:''}</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex:none"><span class="pill" style="--pc:${TR_ST[st]||'#999'}">${esc(trStLabel(st))}</span><button type="button" class="btn icon sm bad" data-act="trDel" data-id="${esc(r.id)}" aria-label="Padam">${IC.trash}</button></div></div></div>`}).join('')||`<div class="empty">${trRaw?'Belum ada video. Tampal link dan tekan Transcribe.':'Sedang baca Sheet.'}</div>`}</div>
   <p class="meta" style="margin-top:14px">Senarai ni refresh sendiri setiap 20 saat. Transkrip ditulis dalam bahasa asal video, tak diterjemah.</p>`};
 const trLinkOf=t=>{const m=String(t||'').match(/https?:\/\/[^\s"'<>]+/);return m?m[0].replace(/[)\].,!?]+$/,''):''};
 A.trPaste=async()=>{const el=$('#trLink');
@@ -64,3 +64,12 @@ A.trIdea=el=>{const r=trRows().find(x=>x.id===el.dataset.id);if(!r)return;
   save('items',{title:(noEmoji(r.tajuk)||'Idea dari video').slice(0,80),stage:'ideas',stageAt:{ideas:Date.now()},sourceLink:r.link,src:{type:'text',text}},true);
   closeModal();toast('Masuk tab Ideas');go('ideas')};
 
+
+/* Padam: kosongkan baris dalam tab Transcribe (Mac mini abaikan baris kosong). */
+A.trDel=el=>{const r=trRows().find(x=>x.id===el.dataset.id);if(!r)return;
+  confirmBox('Padam "'+(noEmoji(r.tajuk)||'video ni').slice(0,60)+'" dari senarai?',async()=>{if(!MCP){toast('Sheet belum bersambung');return}
+    try{const g=await MCP.callTool(GS,'get_values',{spreadsheetId:SHEET_ID,range:TR_RANGE},{cache:false});const vals=(g.payload||{}).values||[];
+      const i=vals.findIndex((row,k)=>k>0&&String((row||[])[0])===r.id);if(i<0){toast('Dah tiada');return}
+      await MCP.callTool(GS,'update_values',{spreadsheetId:SHEET_ID,range:`Transcribe!A${i+1}:M${i+1}`,values:[Array(13).fill('')]});
+      if(trRaw&&trRaw[i])trRaw[i]=[];if(!$('#scrim').hidden)closeModal();render();toast('Dipadam');MCP.invalidate(GS,'get_values').catch(()=>{})}
+    catch(e){toast('Tak dapat padam. Cuba lagi')}},'Ya, padam')};

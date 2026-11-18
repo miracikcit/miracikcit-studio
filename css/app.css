@@ -137,3 +137,15 @@ audio{width:100%;margin-top:8px}
 .gate-in{width:min(380px,100%);border-radius:26px;padding:24px;--c:#D6C4B6}
 .netpill{font-size:9px!important;letter-spacing:.12em;color:var(--bad)!important;margin-right:6px}
 .updbar{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 64px);z-index:90;border:0;border-radius:999px;padding:10px 18px;background:var(--rose);color:#fff;font:500 11px var(--font);letter-spacing:.12em;text-transform:uppercase;box-shadow:0 6px 20px rgba(110,90,78,.25)}
+
+/* Products: timeline status */
+.tl{display:flex;margin:14px 0 2px}
+.tl .s{flex:1;position:relative;text-align:center;font-size:9px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);opacity:.7;line-height:1.25}
+.tl .s:before{content:'';position:absolute;top:8px;left:-50%;right:50%;height:2px;background:rgba(110,90,78,.18)}
+.tl .s:first-child:before{display:none}
+.tl .s i{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;margin:0 auto 6px;background:rgba(255,255,255,.85);box-shadow:inset 0 0 0 1.5px rgba(110,90,78,.28)}
+.tl .s i svg{width:11px;height:11px;stroke:#fff;stroke-width:3}
+.tl .s.d,.tl .s.cur{color:var(--ink);opacity:1}
+.tl .s.d i{background:var(--c);box-shadow:none}
+.tl .s.d:before,.tl .s.cur:before{background:var(--c)}
+.tl .s.cur i{background:#fff;box-shadow:inset 0 0 0 2.5px var(--c),0 0 0 4px rgba(90,143,181,.18)}

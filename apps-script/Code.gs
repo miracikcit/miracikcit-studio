@@ -81,6 +81,19 @@ function worker(b) {
   if (b.action === 'dget') return { ok: true, doc: dataGet(b.path) };
   if (b.action === 'dset') return withLock(() => ({ ok: true, u: dataPut(b.path, b.data) }));
   if (b.action === 'upload') return app(b);
+  // Drive untuk Mac mini: video final (00. TO POST FINAL) dan arkib product listing. Token kekal dalam Google;
+  // Mac mini hanya dapat link muat naik sekali guna untuk satu fail.
+  if (b.action === 'dpath') return { ok: true, id: drivePath(b.base, b.path || [], b.share) };
+  if (b.action === 'rstart') {
+    const r = UrlFetchApp.fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id', {
+      method: 'post', contentType: 'application/json; charset=UTF-8', muteHttpExceptions: true,
+      payload: JSON.stringify({ name: String(b.name), parents: [String(b.parent)] }),
+      headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken(), 'X-Upload-Content-Type': b.mime || 'application/octet-stream', 'X-Upload-Content-Length': String(b.size) } });
+    const loc = r.getHeaders().Location || r.getHeaders().location;
+    return loc ? { ok: true, url: loc } : { ok: false, error: 'Drive tolak: ' + r.getContentText().slice(0, 200) };
+  }
+  if (b.action === 'dtrash') { try { DriveApp.getFileById(String(b.id)).setTrashed(true); } catch (e) { try { DriveApp.getFolderById(String(b.id)).setTrashed(true); } catch (e2) {} } return { ok: true }; }
+  if (b.action === 'dcount') return { ok: true, n: countFiles(DriveApp.getFolderById(String(b.id))) };
   if (b.action === 'file_get') {
     const f = DriveApp.getFileById(String(b.id).split('~')[0]);
     if (f.getSize() > 35 * 1048576) return { ok: false, error: 'fail terlalu besar' };
@@ -236,4 +249,13 @@ function trimValues(v) {
 }
 
 /** Jalankan sekali dari editor (butang Run) untuk beri kebenaran Drive dan Calendar. */
-function izinkan() { folder(); CalendarApp.getDefaultCalendar().getName(); return 'OK'; }
+function izinkan() { folder(); CalendarApp.getDefaultCalendar().getName(); UrlFetchApp.fetch('https://www.google.com', { muteHttpExceptions: true }); return 'OK'; }
+function drivePath(base, path, share) {
+  let f;
+  if (base === 'archive') { const it = DriveApp.getFoldersByName('ARCHIVE PRODUCT LISTING'); f = it.hasNext() ? it.next() : DriveApp.createFolder('ARCHIVE PRODUCT LISTING'); }
+  else f = folder();
+  path.forEach(n => { n = String(n); const it = f.getFoldersByName(n); f = it.hasNext() ? it.next() : f.createFolder(n); });
+  if (share) f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return f.getId();
+}
+function countFiles(f) { let n = 0; const fi = f.getFiles(); while (fi.hasNext()) { fi.next(); n++; } const fo = f.getFolders(); while (fo.hasNext()) n += countFiles(fo.next()); return n; }

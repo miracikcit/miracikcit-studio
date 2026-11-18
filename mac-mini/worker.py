@@ -10,7 +10,7 @@ Ollama, dan tulis hasil balik ke Sheet. Semua percuma, semua dalam Mac.
 Ujian tanpa Sheet:  python3 worker.py --test <link>
 """
 import gc, glob, json, logging, logging.handlers, os, platform, re, shutil
-import subprocess, sys, tempfile, threading, time, urllib.request
+import mimetypes, subprocess, sys, tempfile, threading, time, urllib.request
 
 HOME = os.path.dirname(os.path.abspath(__file__))
 CFG_PATH = os.path.join(HOME, "config.json")
@@ -397,6 +397,150 @@ def _walk_stats(path):
     return clips, images, pdf, int(newest * 1000)
 
 
+# ---------------------------------------------------------------- Drive (melalui Apps Script)
+FINALS_STATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "finals.json")
+_finals = {"running": False}
+
+
+def drive_upload(sheet, path, parent, name=None):
+    """Apps Script buka sesi muat naik sekali guna; Mac mini hantar bait fail terus ke Drive."""
+    size = os.path.getsize(path)
+    mime = mimetypes.guess_type(path)[0] or "application/octet-stream"
+    url = sheet.call("rstart", name=name or os.path.basename(path), parent=parent, size=size, mime=mime)["url"]
+    with open(path, "rb") as fh:
+        req = urllib.request.Request(url, data=fh, method="PUT",
+                                     headers={"Content-Length": str(size), "Content-Type": mime})
+        with urllib.request.urlopen(req, timeout=1800) as r:
+            return json.loads(r.read().decode("utf-8"))["id"]
+
+
+def load_finals():
+    try:
+        with open(FINALS_STATE) as fh:
+            return json.load(fh)
+    except Exception:
+        return {}
+
+
+def save_finals(d):
+    tmp = FINALS_STATE + ".tmp"
+    with open(tmp, "w") as fh:
+        json.dump(d, fh)
+    os.replace(tmp, FINALS_STATE)
+
+
+def finals_sync(sheet):
+    """Salin video dalam 00. TO POST FINAL ke Drive supaya phone boleh download. Buang dari Drive bila fail hilang dari folder."""
+    if _finals["running"]:
+        return
+    _finals["running"] = True
+    threading.Thread(target=_finals_run, args=(sheet,), daemon=True).start()
+
+
+def _finals_run(sheet):
+    try:
+        tp = os.path.join(STUDIO_BASE, "00. TO POST FINAL")
+        if not os.path.isdir(tp):
+            return
+        state = load_finals()
+        names = {}
+        for fn in os.listdir(tp):
+            full = os.path.join(tp, fn)
+            if fn.lower().endswith(VIDEO_EXT) and os.path.isfile(full) and not fn.startswith("."):
+                names[fn] = os.stat(full)
+        parent = None
+        for fn in sorted(names, key=lambda n: -names[n].st_mtime):
+            st, rec = names[fn], state.get(fn)
+            if rec and rec.get("size") == st.st_size and rec.get("mtime") == int(st.st_mtime):
+                continue
+            if time.time() - st.st_mtime < 120:
+                continue   # masih ditulis (render belum habis)
+            parent = parent or sheet.call("dpath", base="studio", path=["TO POST FINAL"], share=True)["id"]
+            if rec:
+                sheet.call("dtrash", id=rec["id"])
+            fid = drive_upload(sheet, os.path.join(tp, fn), parent)
+            state[fn] = {"id": fid, "size": st.st_size, "mtime": int(st.st_mtime)}
+            save_finals(state)
+            _scan_last["t"] = 0
+            log.info("Final dimuat naik ke Drive: %s", fn)
+        for fn in [n for n in state if n not in names]:
+            try:
+                sheet.call("dtrash", id=state[fn]["id"])
+            except Exception:
+                pass
+            del state[fn]
+            save_finals(state)
+            _scan_last["t"] = 0
+            log.info("Final dibuang dari Drive: %s", fn)
+    except Exception:
+        log.exception("Sync final ke Drive gagal")
+    finally:
+        _finals["running"] = False
+
+
+def _listing_src(folder):
+    base = os.path.realpath(os.path.join(STUDIO_BASE, "R1. PRODUCT LISTING"))
+    src = os.path.realpath(os.path.join(base, str(folder or "")))
+    if not folder or os.path.dirname(src) != base or not os.path.isdir(src):
+        raise RuntimeError("Folder listing tak dijumpai: " + str(folder))
+    return src
+
+
+def trash_local(src):
+    dest = os.path.join(os.path.expanduser("~/.Trash"), os.path.basename(src))
+    if os.path.exists(dest):
+        dest += time.strftime(" %H.%M.%S")
+    shutil.move(src, dest)
+
+
+def _set_item(sheet, item_id, **fields):
+    if not item_id:
+        return
+    doc = sheet.call("dget", path="items/" + item_id).get("doc")
+    if doc:
+        doc.update(fields)
+        sheet.call("dset", path="items/" + item_id, data=doc)
+
+
+def run_archive(inp, sheet):
+    """Arkib satu folder product listing ke Drive ARCHIVE PRODUCT LISTING/<nama>, semak bilangan, baru buang ke Trash."""
+    src = _listing_src(inp.get("folder"))
+    name = str(inp.get("name") or os.path.basename(src)).strip()[:120]
+    files = []
+    for root, dirs, fns in os.walk(src):
+        dirs[:] = [d for d in dirs if not d.startswith(".")]
+        files += [os.path.join(root, f) for f in fns if not f.startswith(".")]
+    if not files:
+        raise RuntimeError("Folder kosong")
+    parents = {}
+    def parent_for(path):
+        rel = os.path.relpath(os.path.dirname(path), src)
+        parts = [] if rel == "." else rel.split(os.sep)
+        k = tuple(parts)
+        if k not in parents:
+            parents[k] = sheet.call("dpath", base="archive", path=[name] + parts)["id"]
+        return parents[k]
+    top = parent_for(os.path.join(src, "x"))
+    for f in files:
+        drive_upload(sheet, f, parent_for(f))
+    n = sheet.call("dcount", id=top)["n"]
+    if n < len(files):
+        raise RuntimeError("Drive ada %d fail, folder ada %d. Folder asal tak dibuang." % (n, len(files)))
+    link = "https://drive.google.com/drive/folders/" + top
+    _set_item(sheet, inp.get("item"), listingLink=link, listingAt=int(time.time() * 1000))
+    trash_local(src)
+    _scan_last["t"] = 0
+    return {"link": link, "files": len(files)}
+
+
+def run_listing_delete(inp, sheet):
+    src = _listing_src(inp.get("folder"))
+    trash_local(src)
+    _set_item(sheet, inp.get("item"), listingGone=int(time.time() * 1000))
+    _scan_last["t"] = 0
+    return {"trashed": os.path.basename(src)}
+
+
 def scan_folders():
     """Senarai folder untuk tab To Edit, Ready dan Links. Cuma baca nama fail, tak buka video."""
     base = STUDIO_BASE
@@ -405,12 +549,15 @@ def scan_folders():
     docs = {}
     tp = os.path.join(base, "00. TO POST FINAL")
     if os.path.isdir(tp):
+        fin = load_finals()
         files = []
         for fn in os.listdir(tp):
             full = os.path.join(tp, fn)
             if fn.lower().endswith(VIDEO_EXT) and os.path.isfile(full):
                 st = os.stat(full)
-                files.append({"name": fn, "size": st.st_size, "mtime": int(st.st_mtime * 1000)})
+                rec = fin.get(fn) or {}
+                drv = rec.get("id") if rec.get("size") == st.st_size else None
+                files.append({"name": fn, "size": st.st_size, "mtime": int(st.st_mtime * 1000), "drive": drv})
         files.sort(key=lambda x: -x["mtime"])
         docs["sync/topost"] = {"path": rel + "/00. TO POST FINAL", "syncedAt": now, "files": files}
     pl = os.path.join(base, "R1. PRODUCT LISTING")
@@ -451,6 +598,7 @@ def push_scan(sheet, force=False):
     except PermissionError:
         log.warning("Scan folder disekat macOS: beri Python akses folder Desktop (Full Disk Access).")
         return None
+    finals_sync(sheet)
     for path, doc in docs.items():
         sig = json.dumps({k: v for k, v in doc.items() if k != "syncedAt"}, sort_keys=True)
         if force or _scan_last["sig"].get(path) != sig or time.time() - _scan_last.get("full", 0) > 3600:
@@ -515,6 +663,10 @@ def studio_jobs(sheet, cfg):
                 outp = run_claude(inp.get("prompt", ""), cfg)
             elif j["type"] == "voice":
                 outp = run_voice(inp.get("file", ""), sheet, cfg)
+            elif j["type"] == "archive":
+                outp = run_archive(inp, sheet)
+            elif j["type"] == "listing_del":
+                outp = run_listing_delete(inp, sheet)
             elif j["type"] == "scan":
                 outp = push_scan(sheet, force=True) or {}
             else:

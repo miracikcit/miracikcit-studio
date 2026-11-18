@@ -19,11 +19,11 @@ const IC={
  check:P('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),chev:P('<path d="M6 9l6 6 6-6"/>'),mic:P('<rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><path d="M12 18v2.5"/>'),
  up:P('<path d="M12 16V5"/><path d="M7.5 9.5L12 5l4.5 4.5"/><path d="M5 19.5h14"/>'),search:P('<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>'),back:P('<path d="M15 6l-6 6 6 6"/>'),next:P('<path d="M9 6l6 6-6 6"/>'),
  broll:P('<rect x="6" y="3.5" width="12" height="17" rx="3"/><path d="M10.5 9.5v5l4-2.5-4-2.5z"/><path d="M3 9l-1.5 3L3 15M21 9l1.5 3L21 15"/>'),
- edit:P('<path d="M4 20l1-4L16.5 4.5l3 3L8 19l-4 1z"/>'),ext:P('<path d="M10 5H6a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4"/><path d="M14 4h6v6"/><path d="M20 4l-8.5 8.5"/>'),x:P('<path d="M6 6l12 12M18 6L6 18"/>')
+ edit:P('<path d="M4 20l1-4L16.5 4.5l3 3L8 19l-4 1z"/>'),dl:P('<path d="M12 4v11"/><path d="M7.5 10.5L12 15l4.5-4.5"/><path d="M5 19.5h14"/>'),ext:P('<path d="M10 5H6a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4"/><path d="M14 4h6v6"/><path d="M20 4l-8.5 8.5"/>'),x:P('<path d="M6 6l12 12M18 6L6 18"/>')
 };
 const TABS_=[
- ['home','Home','#9A4F5D'],['ideas','Ideas','#C29A3C'],['to-shoot','To Shoot','#CF8A55'],['shot','Shot','#C2666A'],['to-edit','To Edit','#8676BE'],
- ['ready','Ready to Publish','#8A6A52'],['published','Published','#6B5548'],['links','Links','#5A8FB5'],['jobs','Jobs','#A8763E'],
+ ['home','Home','#9A4F5D'],['ideas','Ideas','#C29A3C'],['links','Products','#5A8FB5'],['to-shoot','To Shoot','#CF8A55'],['shot','Shot','#C2666A'],['to-edit','To Edit','#8676BE'],
+ ['ready','Ready to Publish','#8A6A52'],['published','Published','#6B5548'],['jobs','Jobs','#A8763E'],
  ['editor','Editor','#9C6396'],['footage','Footage','#9A8C7A'],['broll','B-Roll Picker','#B0704F'],['inspiration','Inspiration','#CF7A9A'],['transcribe','Transcribe','#8C6A4F'],['media-kit','Media Kit','#B0937B']
 ].map(([k,l,c])=>({k,l,c,ic:IC[k.replace('-','')]}));
 const TAB=Object.fromEntries(TABS_.map(t=>[t.k,t]));
