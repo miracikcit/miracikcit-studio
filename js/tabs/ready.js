@@ -37,7 +37,11 @@ function dlBtn(f,done,id,act){
   const q=DLQ[id];const a=`data-id="${esc(id)}" data-x="${act}" data-u="${esc(dlUrl(f.drive))}" data-n="${esc(f.name)}" data-f="${esc(f.drive)}" data-dlid="${esc(id)}"`;
   if(q&&q.file)return `<button class="btn sm solid tab" data-act="dlSave" ${a}>${IC.dl}Simpan video</button>`;
   if(q)return `<button class="btn sm" disabled ${a}>Memuat ${q.pct||0}%</button>`;
-  return `<button class="btn sm ${done?'':'solid tab'}" data-act="dlGo" ${a}>${done?IC.check+'Downloaded':IC.dl+'Download'}</button>`}
+  const drv='https://drive.google.com/file/d/'+encodeURIComponent(f.drive)+'/view';
+  return `<a class="btn sm ${done?'':'solid tab'}" href="${esc(drv)}" target="_blank" rel="noopener" data-drv="1" ${a}>${done?IC.check+'Downloaded':IC.ext+'Buka di Drive'}</a>
+    <button class="btn sm" style="min-height:26px;padding:3px 10px;font-size:9px" data-act="dlGo" ${a.replace('data-dlid','data-dlx')}>${IC.dl}Muat dalam app</button>`}
+/* Buka di Drive: link biasa (app Google Drive terbuka sendiri). Tanda Downloaded tanpa halang link. */
+document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('a[data-drv]');if(el)setTimeout(()=>dlMark(el),300)});
 function dlMark(el){const id=el.dataset.id;
   if(el.dataset.x==='dlItem'){const it=get('items',id);if(it&&!it.downloaded)save('items',Object.assign({},it,{downloaded:true,downloadedAt:Date.now()}))}
   else{const rm=get('readymeta',id)||{id};if(!rm.downloaded)save('readymeta',Object.assign({},rm,{downloaded:true,downloadedAt:Date.now()}))}}
