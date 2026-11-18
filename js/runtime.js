@@ -6,7 +6,7 @@
   const LS = k => 'mstudio:' + k;
   const lsGet = (k, d) => { try { const v = localStorage.getItem(LS(k)); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
   const lsSet = (k, v) => { try { localStorage.setItem(LS(k), JSON.stringify(v)); } catch (e) {} };
-  let CODE = lsGet('code', '');
+  let CODE = location.hostname === 'localhost' ? 'mac-mini-dev' : lsGet('code', '');   // localhost: devserver.py tambah kunci worker
   const err = (code, message) => Object.assign(new Error(message || code), { code });
 
   async function call(action, body, opt) {

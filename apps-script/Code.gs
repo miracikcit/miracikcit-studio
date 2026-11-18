@@ -86,7 +86,7 @@ function worker(b) {
     if (f.getSize() > 35 * 1048576) return { ok: false, error: 'fail terlalu besar' };
     return { ok: true, name: f.getName(), mime: f.getMimeType(), b64: Utilities.base64Encode(f.getBlob().getBytes()) };
   }
-  return { ok: false, error: 'tindakan tak dikenali' };
+  return app(b);   // Mac mini (pemilik sama) boleh guna semua tindakan app, untuk ujian dan migrasi
 }
 
 function seen() {
