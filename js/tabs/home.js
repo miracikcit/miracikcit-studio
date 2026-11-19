@@ -74,6 +74,7 @@ V.home=()=>{
   const r=TAB.ready,ed=TAB.editor;
   return `<div class="head"><div><p class="eyebrow">${hr<12?'Selamat pagi':hr<18?'Selamat petang':'Selamat malam'}, Mira</p><h1>Home</h1></div><button class="btn sm" data-act="syncReq">${IC.copy}Sync folder</button></div>
   ${sheetNote()}
+  ${sampleCard()}
   <div class="hgrid">
    ${['ideas','to-shoot','shot','to-edit','published'].map(box).join('')}
    <button class="hbox tall glass" style="--c:${ed.c}" data-act="go" data-id="editor"><b>${n.editor}</b><span class="l">Editor</span><span class="edl">${eds.slice(0,4).map(e=>`<span>${esc(e.name)}</span>`).join('')||'<span>Tiada projek berjalan</span>'}</span></button>

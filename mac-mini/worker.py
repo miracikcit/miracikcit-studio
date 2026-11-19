@@ -649,6 +649,19 @@ def run_voice(file_id, sheet, cfg):
     return {"text": plain, "bahasa": LANG_NAME.get(lang, lang or "")}
 
 
+def run_ocr(file_id, sheet):
+    """Baca teks dalam screenshot dengan Apple Vision (bin/ocr). Percuma, gambar tak keluar dari Mac."""
+    import base64
+    f = sheet.call("file_get", id=file_id)
+    tool = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bin", "ocr")
+    with tempfile.TemporaryDirectory(prefix="miracikcit-ocr-") as tmp:
+        src = os.path.join(tmp, "shot" + (os.path.splitext(f.get("name") or "")[1] or ".png"))
+        with open(src, "wb") as fh:
+            fh.write(base64.b64decode(f["b64"]))
+        r = subprocess.run([tool, src], capture_output=True, text=True, timeout=60)
+    return {"lines": json.loads(r.stdout or "[]")}
+
+
 def studio_jobs(sheet, cfg):
     try:
         jobs = sheet.call("jpoll").get("jobs", [])
@@ -667,6 +680,8 @@ def studio_jobs(sheet, cfg):
                 outp = run_archive(inp, sheet)
             elif j["type"] == "listing_del":
                 outp = run_listing_delete(inp, sheet)
+            elif j["type"] == "ocr":
+                outp = run_ocr(inp.get("file", ""), sheet)
             elif j["type"] == "scan":
                 outp = push_scan(sheet, force=True) or {}
             else:
