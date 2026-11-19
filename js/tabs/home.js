@@ -51,7 +51,18 @@ function sorterCard(){if(!sorterRaw||!sorterRaw.length)return '';
    ${rows.map(f=>`<div class="evrow" style="cursor:default"><span style="flex:1;min-width:0"><strong>${esc(f.label)}</strong><span class="meta" style="display:block">${esc(f.group)} · ${f.total} fail</span></span><span class="pill" style="--pc:var(--warn)">${f.review} semak</span></div>`).join('')}
    ${meter(cell(3,1)||'Hard disk',cell(3,2),cell(3,3))}${meter('iCloud',cell(4,2),cell(4,3))}
    <div class="btns" style="margin-top:14px">${/^https?:\/\//.test(link)?`<a class="btn solid tab" href="${esc(link)}" target="_blank" rel="noopener">${IC.ext}Buka folder &amp; semak</a>`:''}</div>
-   <p class="meta" style="margin:10px 0 0">Butang tu buka page Footage Sorter. Phone mesti guna Wi-Fi rumah dan app terbuka di Mac mini. Dikemas kini ${esc(cell(1,1))}.</p></div>`}
+   <p class="meta" style="margin:10px 0 0">Butang tu buka page Footage Sorter. Phone mesti guna Wi-Fi rumah dan app terbuka di Mac mini. Dikemas kini ${esc(cell(1,1))}.</p>${ongoingSlot()}</div>`}
+/* Ongoing projects (WORK SORTER): status dari Mac (koleksi workprojects). Gambar kekal dalam Mac; butang buka page sorter untuk edit. */
+function ongoingSlot(){const L=(S.workprojects||[]).slice().sort((a,b)=>(b.updated||0)-(a.updated||0));if(!L.length)return '';
+  const tone=st=>/perlu semak|susun semula|belum kemas/i.test(st)?'var(--warn)':/siap/i.test(st)?'var(--ok)':'#8676BE';
+  const edit=w=>/^https?:\/\//.test(w.link||'')?`${w.link}#p=${encodeURIComponent(w.key)}`:'';
+  return `<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--line,rgba(0,0,0,.08))"><p class="eyebrow" style="margin:0 0 6px">Ongoing projects</p>
+   ${L.map(w=>`<div class="evrow" style="cursor:default;align-items:flex-start"><span style="flex:1;min-width:0"><strong>${esc(w.title)}</strong>
+     <span class="meta" style="display:block">${esc(w.folder)} · ${w.shots||0} shot · ${(w.places||[]).length} folder${w.kabur?' · '+w.kabur+' kabur':''}${w.stars?' · ⭐ '+w.stars:''}</span>
+     ${(w.places||[]).length?`<span class="meta" style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc((w.places||[]).join(' · '))}</span>`:''}
+     ${edit(w)?`<a class="btn sm" style="margin-top:6px" href="${esc(edit(w))}" target="_blank" rel="noopener">✏️ Edit susunan</a>`:''}</span>
+     <span class="pill" style="--pc:${tone(w.status||'')}">${/perlu semak/i.test(w.status||'')?'🔔 ':''}${esc(w.status||'')}</span></div>`).join('')}
+   <p class="meta" style="margin:8px 0 0">Edit susunan buka page sorter (Wi-Fi rumah) terus pada projek tu: tukar nama, tambah atau padam folder, pindah gambar.</p></div>`}
 const appReady=sv=>byStage('ready').filter(it=>!(it.auto&&sv&&(it.files||[]).some(f=>matchFile(f,sv.groups))));
 V.home=()=>{
   const sv=sheetView();const te=toEditFolders();const hr=new Date().getHours();const eds=S.editor.filter(e=>!/siap/i.test(e.status||''));
@@ -72,7 +83,7 @@ V.home=()=>{
   <div class="rbox glass" style="--c:${r.c}"><div class="rowh" style="align-items:center"><div><h2>${r.l}</h2><div class="meta">Publish dalam 1 minggu selepas siap</div></div><b class="rn">${n.ready}</b></div>
     ${urgent.length?urgent.map(u=>`<div style="--sc:${u.d?u.d.color:'var(--muted)'};margin-top:14px"><div class="rowh" style="align-items:center"><div class="rt"><strong>${esc(u.r.group.name)}</strong>${u.r.vid?' · VID '+esc(u.r.vid):''}</div><span class="pill" style="--pc:${u.d?u.d.color:'#999'}">${u.d?u.d.label:'tiada tarikh'}</span></div><div class="bar"><i style="width:${u.d?u.d.pct:0}%"></i></div></div>`).join(''):`<div class="meta" style="margin-top:12px">${sv?'Tiada video menunggu.':'Menunggu sheet.'}</div>`}
     <div style="margin-top:16px"><button class="btn solid tab" data-act="go" data-id="ready">Buka senarai${IC.next}</button></div></div>
-  ${sorterCard()}
+  ${sorterCard()||(S.workprojects&&S.workprojects.length?`<div class="card big glass" style="--c:#8676BE;margin-top:14px"><p class="eyebrow" style="margin:0">Footage Sorter · Mac mini</p>${ongoingSlot()}</div>`:'')}
   ${calHTML()}`};
 A.go=el=>go(el.dataset.id);
 /* Folder di Mac mini diimbas sendiri oleh worker setiap 5 minit. Butang ni minta imbasan sekarang. */
