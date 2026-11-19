@@ -300,8 +300,8 @@ function productAdd(b) {
   const row = last + 2, no = maxNo + 1;
   copyFmt(lastProd, row); copyFmt(lastProd, row + 1);
   sh.getRange(row, 1, 1, 17).setValues([[no, String(b.name || '').toUpperCase(), String(b.shopee || ''), 1, 1, caption].concat(F, ['', '', tmpl])]);
-  sh.getRange(row + 1, 1, 1, 17).setValues([['', b.shopee ? '✅ Beli di Shopee: ' + b.shopee + (b.tt ? '\n✅ Beli di Tiktok: ' + b.tt : '') : '', String(b.tt || ''), '', ''].concat(['', '', '', '', '', '', '', '', '', '', '', '', ''])]);
-  sh.getRange(row + 1, 7, 1, 8).clearDataValidations();
+  sh.getRange(row + 1, 1, 1, 17).setValues([['', b.shopee ? '✅ Beli di Shopee: ' + b.shopee + (b.tt ? '\n✅ Beli di Tiktok: ' + b.tt : '') : '', String(b.tt || ''), '', ''].concat(['', '', '', '', '', '', '', '', '', '', '', ''])]);
+  sh.getRange(row + 1, 7, 1, 10).clearDataValidations();
   return { ok: true, row: row, vid: 1, no: no };
 }
 function countFiles(f) { let n = 0; const fi = f.getFiles(); while (fi.hasNext()) { fi.next(); n++; } const fo = f.getFolders(); while (fo.hasNext()) n += countFiles(fo.next()); return n; }
