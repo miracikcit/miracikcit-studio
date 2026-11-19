@@ -39,7 +39,8 @@ V.caption=()=>{const c=ui.cap||(ui.cap={link:'',name:'',what:'',angle:'Auto',res
     <div class="btns" style="margin-top:14px"><button class="btn ${nm?'solid tab':''}" data-act="capGen"${c.busy?' disabled':''}>${c.busy?'Sedang generate...':nm?IC.ideas+'Generate 3 pilihan':'Taip nama produk dulu'}</button></div>
     ${c.busy?capLoader():`<p class="meta" style="margin:10px 0 0">Guna usage Claude kau di Mac mini, macam butang Ideas. Biasanya siap dalam 20 hingga 40 saat.</p>`}</div>
   ${capTagsBox()}
-  ${r?`<div class="rowh" style="align-items:center;margin-top:20px"><p class="eyebrow" style="margin:0">Pilihan ${c.pick+1} · ${esc(pick.angle||'')}</p><div class="btns" style="gap:6px">${r.captions.map((x,i)=>`<button class="btn sm ${i===c.pick?'solid tab':''}" data-act="capPick" data-x="${i}" aria-label="Pilihan ${i+1}">${i+1}</button>`).join('')}</div></div>${box('sh','Shopee Video')}${box('tt','TikTok')}`:''}`};
+  ${r?`<div class="rowh" style="align-items:center;margin-top:20px"><p class="eyebrow" style="margin:0">Pilihan ${c.pick+1} · ${esc(pick.angle||'')}</p><div class="btns" style="gap:6px">${r.captions.map((x,i)=>`<button class="btn sm ${i===c.pick?'solid tab':''}" data-act="capPick" data-x="${i}" aria-label="Pilihan ${i+1}">${i+1}</button>`).join('')}</div></div>${box('sh','Shopee Video')}${box('tt','TikTok')}`:''}
+  ${capHistory()}`};
 /* Isi nama tanpa taip: tampal teks share Shopee/TikTok (nama + link), pilih dari senarai, atau sebut guna mic. */
 function shareParse(t){t=String(t||'');const m=t.match(/https?:\/\/[^\s"'<>]+/);const link=m?m[0].replace(/[)\].,!?]+$/,''):'';
   let name=(m?t.replace(m[0],' '):t).replace(/\s+/g,' ').trim()
@@ -76,6 +77,16 @@ A.capSaveGo=async()=>{const c=ui.cap;const f=capFind(c.link,c.name);const txt=((
   try{const r=await window.studioProductAdd(f&&f.g?{start:f.g.start,caption:txt}:{name:(f?f.name:c.name).trim(),caption:txt,shopee:isTT?'':link,tt:isTT?link:''});
     c.saved=Object.assign({},c.saved,{[c.pick]:true});toast(`Disimpan: No. ${r.no}, VID ${r.vid} (baris ${r.row})`);if(MCP)MCP.invalidate(GS,'get_values').catch(()=>{})}
   catch(e){toast('Tak dapat simpan ke Sheet. Cuba lagi')}finally{c.saving=false;render(true)}};
+/* Sejarah: setiap Generate disimpan dalam data Studio (sync semua device). Produk terbaru di atas. */
+function capHistory(){const hs=S.captions.slice().sort((a,b)=>(b.created||0)-(a.created||0));if(!hs.length)return '';
+  return `<p class="eyebrow" style="margin-top:26px">Sejarah caption · ${hs.length}</p><div class="list">${hs.map(h=>`<div class="card glass"><div class="rowh" style="align-items:flex-start"><div style="min-width:0"><h3 style="font-size:14px">${esc(h.name)}</h3><div class="meta">${fmtD(h.created)}${h.what?' · '+esc(h.what):''}</div></div>
+    <div class="btns" style="gap:6px;flex:none"><button class="btn sm" data-act="capOpen" data-id="${h.id}">${IC.edit}Buka</button><button class="btn icon sm bad" data-act="capDel" data-id="${h.id}" aria-label="Padam">${IC.trash}</button></div></div>
+    ${(h.captions||[]).map((x,i)=>`<div style="border-top:1px solid var(--line);margin-top:10px;padding-top:10px"><div style="font-size:14px">${esc(x.hook)}</div><div class="meta" style="margin-top:2px">${esc(x.line2)}</div>
+      <div class="btns" style="gap:6px;margin-top:8px"><button class="btn sm" data-act="capHCopy" data-id="${h.id}" data-x="${i}|sh">${IC.copy}Shopee</button><button class="btn sm" data-act="capHCopy" data-id="${h.id}" data-x="${i}|tt">${IC.copy}TikTok</button></div></div>`).join('')}</div>`).join('')}</div>`}
+A.capHCopy=el=>{const h=get('captions',el.dataset.id);if(!h)return;const [i,plat]=el.dataset.x.split('|');const x=(h.captions||[])[+i];if(!x)return;
+  copyText(capBuild(x,h.tags,plat),plat==='sh'?'Caption Shopee dicopy':'Caption TikTok dicopy')};
+A.capOpen=el=>{const h=get('captions',el.dataset.id);if(!h)return;const c=ui.cap;Object.assign(c,{link:h.link||'',name:h.name||'',what:h.what||'',res:{captions:h.captions||[],tags:h.tags||[]},pick:0,edit:{},saved:{},histId:h.id});render(true);window.scrollTo({top:0,behavior:'smooth'});toast('Dibuka. Boleh edit dan simpan ke Sheet')};
+A.capDel=el=>{const h=get('captions',el.dataset.id);if(!h)return;confirmBox('Padam caption "'+(h.name||'')+'" dari sejarah?',()=>{del('captions',h.id);toast('Dipadam')},'Ya, padam')};
 /* Loader: tunjuk peringkat dan masa berlalu supaya Mira tahu Mac mini sedang buat kerja */
 function capStage(sec){return sec<4?'Hantar ke Mac mini':sec<10?'Mac mini terima kerja':sec<45?'Claude sedang tulis 3 caption':'Masih menulis, Mac mini mungkin sibuk'}
 function capLoader(){const sec=Math.round((Date.now()-(ui.cap.t0||Date.now()))/1000);const pct=Math.min(94,Math.round(sec/40*100));
@@ -109,6 +120,6 @@ Balas JSON sahaja: {"tags":["#..","#.."],"captions":[{"angle":"..","hook":"..","
   c.busy=true;c.t0=Date.now();render(true);
   try{const j=await SAMPLE.json(prompt,{cache:false});const caps=(j&&Array.isArray(j.captions)?j.captions:[]).filter(x=>x&&x.hook).slice(0,3).map(x=>({angle:String(x.angle||''),hook:String(x.hook).trim(),line2:String(x.line2||'').trim()}));
     if(!caps.length)throw new Error('kosong');const tags=(Array.isArray(j.tags)?j.tags:[]).map(t=>'#'+String(t).replace(/^#+/,'').replace(/\s+/g,'')).filter(t=>t.length>1).slice(0,2);
-    c.res={captions:caps,tags};c.pick=0;c.edit={};c.saved={};toast('3 pilihan siap')}
+    c.res={captions:caps,tags};c.pick=0;c.edit={};c.saved={};const h=save('captions',{name:name,link:c.link.trim(),what:c.what.trim(),tags,captions:caps},true);c.histId=h.id;toast('3 pilihan siap')}
   catch(e){if(!(e&&(e.code==='declined'||e.name==='AbortError')))toast(e&&e.code==='timeout'?'Mac mini lambat jawab. Cuba lagi sekejap':'Tak berjaya generate. Semak Mac mini hidup')}
   finally{c.busy=false;render(true)}};
