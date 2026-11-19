@@ -683,7 +683,7 @@ def run_listing_save(inp, sheet):
     for fid in inp.get("files") or []:
         f = sheet.call("file_get", id=fid)
         ext = (os.path.splitext(f.get("name") or "")[1] or ".jpg").lower()
-        n = len([x for x in os.listdir(dest) if not x.startswith(".")]) + 1
+        n = len([x for x in os.listdir(dest) if not x.startswith(".") and x != "link.txt"]) + 1
         path = os.path.join(dest, "%s_listing_%02d%s" % (tag, n, ext))
         while os.path.exists(path):
             n += 1
@@ -696,7 +696,11 @@ def run_listing_save(inp, sheet):
             texts.append(" ".join(l.get("t", "") for l in json.loads(r.stdout or "[]")))
         except Exception:
             log.warning("OCR listing gagal: %s", path)
-    total = len([x for x in os.listdir(dest) if not x.startswith(".")])
+    links = [("Shopee", inp.get("shopee")), ("TikTok", inp.get("tiktok"))]
+    if any(v for _, v in links):
+        with open(os.path.join(dest, "link.txt"), "w") as fh:
+            fh.write("".join("%s: %s\n" % (k, v) for k, v in links if v))
+    total = len([x for x in os.listdir(dest) if not x.startswith(".") and x != "link.txt"])
     return {"folder": folder, "saved": saved, "total": total, "text": "\n".join(t for t in texts if t.strip())[:12000]}
 
 

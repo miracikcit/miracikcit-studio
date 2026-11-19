@@ -20,7 +20,8 @@ const smpPlat=p=>p==='shopee'?'Shopee':'TikTok';
 function smpBadge(it){const p=samplePlan(it);return `<div class="smpb" style="--pc:${p.col}"><span class="pill smpp"><b>${Math.max(p.left,0)}</b>${esc(p.label.replace(/^\d+ /,''))}</span><button class="smpd" data-act="smpEdit" data-id="${it.id}">Akhir post ${dmy(it.sample.postBy)}</button></div>`}
 /* Baris gambar listing: thumbnail kecil + butang tambah (auto simpan ke R1. PRODUCT LISTING) */
 function smpListing(it){const l=it.listing||{};const busy=ui.lsUp&&ui.lsUp[it.id];
-  return `<button class="btn sm" data-act="lsAdd" data-id="${it.id}"${busy?' disabled':''}>${IC.up}${busy?esc(busy):l.n?l.n+' gambar listing':'Gambar listing'}</button>`}
+  const lk=it.shopee||it.tiktok;
+  return `<button class="btn sm" data-act="lsAdd" data-id="${it.id}"${busy?' disabled':''}>${IC.up}${busy?esc(busy):l.n?l.n+' gambar listing':'Gambar listing'}</button><button class="btn sm${lk?' solid':''}" data-act="smpLink" data-id="${it.id}">${lk?IC.check+'Link':'+ Link'}</button>`}
 function sampleBlock(it){if(!it.sample||sampleDone(it))return '';
   return `<div class="rowh" style="align-items:center;margin-top:10px;border-top:1px solid var(--line);padding-top:10px"><span class="meta">Sample ${smpPlat(it.sample.plat)}</span>${smpBadge(it)}</div>`}
 const activeSamples=()=>S.items.filter(it=>it.sample&&!sampleDone(it)).sort((a,b)=>a.sample.postBy.localeCompare(b.sample.postBy));
@@ -79,7 +80,7 @@ A.lsAdd=el=>{if(!ASSETS){toast('Upload tak tersedia di sini');return}const id=el
   inp.onchange=async()=>{const fs=[...inp.files].filter(f=>f.size<=20*1048576).slice(0,12);if(!fs.length)return;ui.lsUp=ui.lsUp||{};const ids=[];
     try{for(let i=0;i<fs.length;i++){ui.lsUp[id]='Upload '+(i+1)+'/'+fs.length;render(true);ids.push((await ASSETS.upload(fs[i])).id)}
       ui.lsUp[id]='Simpan ke R1...';render(true);const it=get('items',id);
-      const out=await studioJob('listing_save',{item:id,name:it.title,folder:(it.listing&&it.listing.folder)||'',files:ids},5*60000);
+      const out=await studioJob('listing_save',{item:id,name:it.title,folder:(it.listing&&it.listing.folder)||'',files:ids,shopee:it.shopee||'',tiktok:it.tiktok||''},5*60000);
       const cur=get('items',id)||it;const text=[((cur.listing||{}).text||''),out.text||''].join('\n').trim().slice(0,12000);
       save('items',Object.assign({},cur,{listing:{folder:out.folder,n:out.total,text}}));delete ui.lsUp[id];render(true);toast(out.saved+' gambar disimpan dalam R1 / '+out.folder);
       if(!cur.nota&&text)smpNota(get('items',id))}
@@ -98,3 +99,15 @@ ${String(it.listing.text).slice(0,8000)}`;
   catch(e){toast('Nota belum dapat dibuat. Tekan Nota untuk cuba lagi')}
   finally{delete ui.lsUp[it.id];render(true)}}
 A.smpNotaBtn=el=>{const it=get('items',el.dataset.id);if(it.nota||!(it.listing&&it.listing.text)){if(!it.nota&&!(it.listing&&it.listing.n))toast('Tambah gambar listing, nota dibuat sendiri');A.nota(el);return}smpNota(it)};
+/* Link produk (Shopee / TikTok): simpan dalam kad + link.txt dalam folder R1. Caption generator terus jumpa link ni. */
+A.smpLink=el=>{const it=get('items',el.dataset.id);
+  modal(`<h2>Link produk</h2><p class="meta">${esc(it.title)}</p>
+   <label class="f"><span>Link Shopee</span><input class="inp" id="lkS" inputmode="url" placeholder="https://s.shopee.com.my/..." value="${esc(it.shopee||'')}"></label>
+   <label class="f"><span>Link TikTok</span><input class="inp" id="lkT" inputmode="url" placeholder="https://vt.tiktok.com/..." value="${esc(it.tiktok||'')}"></label>
+   <p class="meta">Boleh paste teks share penuh dari app, link diambil sendiri.</p>
+   <div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="smpLinkSave" data-id="${it.id}">Simpan</button></div>`,TAB['to-shoot'].c)};
+const pickUrl=v=>{const m=String(v||'').match(/https?:\/\/\S+/);return m?m[0].replace(/[)\].,]+$/,''):''};
+A.smpLinkSave=el=>{const it=get('items',el.dataset.id);let sh=pickUrl($('#lkS').value),tt=pickUrl($('#lkT').value);
+  if(sh&&/tiktok/i.test(sh)&&!tt){tt=sh;sh=''}if(tt&&/shopee|shp\.ee/i.test(tt)&&!sh){sh=tt;tt=''}
+  save('items',Object.assign({},it,{shopee:sh,tiktok:tt}));closeModal();toast(sh||tt?'Link disimpan':'Link dibuang');
+  if((sh||tt)&&it.listing&&it.listing.folder&&window.studioJob)studioJob('listing_save',{item:it.id,name:it.title,folder:it.listing.folder,files:[],shopee:sh,tiktok:tt},2*60000).catch(()=>{})};

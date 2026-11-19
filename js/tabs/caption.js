@@ -9,9 +9,10 @@ function capFind(link,typed){const L=normLink(link);const sv=sheetView();const g
   if(/^https?:\/\//.test(L)){g=gs.find(x=>(x.shopee&&normLink(x.shopee)===L)||(x.tt&&normLink(x.tt)===L))||null;it=S.items.find(i=>i.shopee&&normLink(i.shopee)===L)||null}
   else if(String(typed||'').trim().length>=4){const tw=words(typed).filter(w=>w.length>=3);let best=0;
     gs.forEach(x=>{const gw=words(x.name);const sc=tw.filter(w=>gw.includes(w)).reduce((n,w)=>n+w.length,0)+(pMatch(x.name,typed)?50:0);if(sc>best){best=sc;g=x}});if(best<4)g=null}
+  if(!g&&!it&&String(typed||'').trim().length>=4){const tw=words(typed).filter(w=>w.length>=3);let best=0;S.items.filter(i=>i.shopee||i.tiktok).forEach(i=>{const iw=words(i.title);const sc=tw.filter(w=>iw.includes(w)).reduce((n,w)=>n+w.length,0);if(sc>best){best=sc;it=i}});if(best<4)it=null}
   const name=g?g.name:it?[it.brand,it.title].filter(Boolean).join(' '):'';if(!name)return null;
   const prod=(it&&it.productId&&get('products',it.productId))||S.products.find(p=>itMatch({title:p.name,brand:p.brand},name))||null;
-  return {name,g,prod,caps:g?g.rows.map(r=>String(r.caption||'').split(/\n\s*\n/)[0]).filter(Boolean):[]}}
+  return {name,g,it,prod,caps:g?g.rows.map(r=>String(r.caption||'').split(/\n\s*\n/)[0]).filter(Boolean):[]}}
 function capNotes(p){if(!p)return {usp:'',ban:[]};const ban=[];let usp=[];
   (p.sections||[]).forEach(s=>{const items=(s.items||[]).map(String);if(/jangan/i.test(s.title||''))items.forEach(x=>ban.push(x));else usp=usp.concat(items)});
   return {usp:usp.join('\n').slice(0,1400),ban}}
@@ -70,11 +71,11 @@ document.addEventListener('paste',e=>{const el=e.target;if(!el||el.id!=='capLink
 /* Simpan ke Sheet PRODUCTS: produk dah ada = VID baru di bawahnya; produk baru = baris baru ikut format Sheet. */
 A.capSave=()=>{const c=ui.cap;const f=capFind(c.link,c.name);const txt=($('#cap-sh')||{}).value||'';if(!txt.trim())return;
   const name=f?f.name:c.name.trim();
-  modal(`<h2>Simpan ke Sheet</h2><p class="meta">${f&&f.g?`Caption ni masuk sebagai VID baru di bawah <b>${esc(f.g.name)}</b> (No. ${esc(f.g.no)}), dan TOTAL VID naik satu.`:`<b>${esc(name.toUpperCase())}</b> masuk sebagai produk baru di hujung tab PRODUCTS${c.link.trim()?', dengan link Shopee':''}.`}</p>
+  modal(`<h2>Simpan ke Sheet</h2><p class="meta">${f&&f.g?`Caption ni masuk sebagai VID baru di bawah <b>${esc(f.g.name)}</b> (No. ${esc(f.g.no)}), dan TOTAL VID naik satu.`:`<b>${esc(name.toUpperCase())}</b> masuk sebagai produk baru di hujung tab PRODUCTS${c.link.trim()||(f&&f.it&&f.it.shopee)?', dengan link Shopee':''}.`}</p>
    <div class="btns" style="justify-content:flex-end;margin-top:12px"><button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="capSaveGo">${IC.up}Simpan</button></div>`,TAB.caption.c)};
 A.capSaveGo=async()=>{const c=ui.cap;const f=capFind(c.link,c.name);const txt=(($('#cap-sh')||{}).value||'').trim();closeModal();
   const link=c.link.trim();const isTT=/tiktok/i.test(link);c.saving=true;render(true);
-  try{const r=await window.studioProductAdd(f&&f.g?{start:f.g.start,caption:txt}:{name:(f?f.name:c.name).trim(),caption:txt,shopee:isTT?'':link,tt:isTT?link:''});
+  try{const r=await window.studioProductAdd(f&&f.g?{start:f.g.start,caption:txt}:{name:(f?f.name:c.name).trim(),caption:txt,shopee:isTT?'':(link||(f&&f.it&&f.it.shopee)||''),tt:isTT?link:((f&&f.it&&f.it.tiktok)||'')});
     c.saved=Object.assign({},c.saved,{[c.pick]:true});toast(`Disimpan: No. ${r.no}, VID ${r.vid} (baris ${r.row})`);if(MCP)MCP.invalidate(GS,'get_values').catch(()=>{})}
   catch(e){toast('Tak dapat simpan ke Sheet. Cuba lagi')}finally{c.saving=false;render(true)}};
 /* Sejarah: setiap Generate disimpan dalam data Studio (sync semua device). Produk terbaru di atas. */
