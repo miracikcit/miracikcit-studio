@@ -45,8 +45,8 @@ document.addEventListener('input',e=>{const el=e.target;if(!el.dataset||!el.data
 A.smpRow=()=>{ui.smp.rows.push({name:'',plat:'tiktok',date:ymdAdd(ymd(new Date()),7)});smpModal()};
 A.smpRm=el=>{ui.smp.rows.splice(+el.dataset.x,1);smpModal()};
 A.smpPlat=el=>{const [i,p]=el.dataset.x.split('|');const r=ui.smp.rows[+i];if(r&&r.plat!==p){r.plat=p}smpModal()};
-A.smpShot=()=>{if(!ASSETS){toast('Upload tak tersedia di sini');return}const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.multiple=true;
-  inp.onchange=async()=>{const fs=[...inp.files].slice(0,6);if(!fs.length)return;const found=[];let k=0;
+A.smpShot=()=>{if(!ASSETS){toast('Upload tak tersedia di sini');return}
+  pickFile('image/*',async files=>{const fs=files.slice(0,6);if(!fs.length)return;const found=[];let k=0;
     for(const f of fs){k++;ui.smp.busy='Mac mini baca gambar '+k+'/'+fs.length+'...';smpModal();
       try{const up=await ASSETS.upload(f);const out=await studioJob('ocr',{file:up.id},2*60000);found.push(...smpParse(out.lines||[]));ASSETS.delete(up.id).catch(()=>{})}
       catch(e){toast('Tak dapat baca '+f.name+'. Semak Mac mini hidup')}}
@@ -54,7 +54,7 @@ A.smpShot=()=>{if(!ASSETS){toast('Upload tak tersedia di sini');return}const inp
     const fresh=found.filter((r,i)=>!S.items.some(it=>it.sample&&nrm(it.title)===nrm(r.name))&&found.findIndex(x=>nrm(x.name)===nrm(r.name))===i);
     const dup=found.length-fresh.length;
     if(!fresh.length){smpModal();toast(found.length?'Semua sample dalam gambar dah ada dalam To Shoot':'Tiada sample dijumpa dalam gambar');return}
-    smpAddRows(fresh);closeModal();go('to-shoot');toast(fresh.length+' sample masuk To Shoot'+(dup?' · '+dup+' dah ada':''))};inp.click()};
+    smpAddRows(fresh);closeModal();go('to-shoot');toast(fresh.length+' sample masuk To Shoot'+(dup?' · '+dup+' dah ada':''))},true)};
 /* Baca baris OCR: TikTok "N days left" + tajuk di kanan gambar; Shopee tarikh dd-mm-yyyy (mula) + tajuk di atasnya */
 function smpParse(lines){const out=[];const today=ymd(new Date());const L=lines.map(l=>({t:String(l.t||'').trim(),x:+l.x||0,y:+l.y||0})).filter(l=>l.t);
   const isTitle=l=>l.x>=0.22&&l.t.length>=12&&!/^(earn|rm\s?\d|rm0|needs content|get inspired|create|received|to receive|please confirm|managed by|\d+\s*days? left|×|x\s?\d)/i.test(l.t)&&!/days? left|fulfil+ment|quota|sample|refundable|official store|%|^to (receive|ship|publish|approve)/i.test(l.t);
@@ -76,16 +76,16 @@ A.smpEdit=el=>{const it=get('items',el.dataset.id);const s=it.sample;
 A.smpEditSave=el=>{const it=get('items',el.dataset.id);const p=($('#smpP')||{}).value;if(!p){toast('Pilih tarikh');return}
   save('items',Object.assign({},it,{sample:Object.assign({},it.sample,{postBy:p})}));closeModal();toast('Tarikh dikemas kini')};
 /* Gambar listing: upload, Mac mini simpan ke R1. PRODUCT LISTING/<produk>, baca teks (percuma), kemudian nota auto */
-A.lsAdd=el=>{if(!ASSETS){toast('Upload tak tersedia di sini');return}const id=el.dataset.id;const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.multiple=true;
-  inp.onchange=async()=>{const fs=[...inp.files].filter(f=>f.size<=20*1048576).slice(0,12);if(!fs.length)return;ui.lsUp=ui.lsUp||{};const ids=[];
+A.lsAdd=el=>{if(!ASSETS){toast('Upload tak tersedia di sini');return}const id=el.dataset.id;const it0=get('items',id);
+  pickFile('image/*',async files=>{const fs=files.filter(f=>f.size<=20*1048576).slice(0,12);if(!fs.length){toast('Gambar terlalu besar');return}ui.lsUp=ui.lsUp||{};const ids=[];let step='upload';
     try{for(let i=0;i<fs.length;i++){ui.lsUp[id]='Upload '+(i+1)+'/'+fs.length;render(true);ids.push((await ASSETS.upload(fs[i])).id)}
-      ui.lsUp[id]='Simpan ke R1...';render(true);const it=get('items',id);
+      step='simpan';ui.lsUp[id]='Simpan ke R1...';render(true);const it=get('items',id)||it0;
       const out=await studioJob('listing_save',{item:id,name:it.title,folder:(it.listing&&it.listing.folder)||'',files:ids,shopee:it.shopee||'',tiktok:it.tiktok||''},5*60000);
-      const cur=get('items',id)||it;const text=[((cur.listing||{}).text||''),out.text||''].join('\n').trim().slice(0,12000);
+      step='kemas kini';const cur=get('items',id)||it;const text=[((cur.listing||{}).text||''),out.text||''].join('\n').trim().slice(0,12000);
       save('items',Object.assign({},cur,{listing:{folder:out.folder,n:out.total,text}}));delete ui.lsUp[id];render(true);toast(out.saved+' gambar disimpan dalam R1 / '+out.folder);
       if(!cur.nota&&text)smpNota(get('items',id))}
-    catch(e){delete ui.lsUp[id];render(true);toast('Simpan gambar gagal. Semak Mac mini hidup')}
-    finally{ids.forEach(x=>ASSETS.delete(x).catch(()=>{}))}};inp.click()};
+    catch(e){delete ui.lsUp[id];render(true);toast('Gagal masa '+step+': '+String((e&&(e.message||e.code))||'cuba lagi').slice(0,80))}
+    finally{ids.forEach(x=>ASSETS.delete(x).catch(()=>{}))}},true)};
 async function smpNota(it){if(!SAMPLE)return;ui.lsUp=ui.lsUp||{};ui.lsUp[it.id]='Buat nota...';render(true);
   const prompt=`Kau pembantu content creator Malaysia @miracikcit yang buat video pendek 9:16 (TikTok, Reels) dalam Bahasa Melayu santai macam bercakap dengan kawan. Ini sample produk untuk video review. Dari teks gambar listing di bawah, sediakan nota untuk shoot video.
 Balas JSON sahaja dengan bentuk: {"usp": [4 hingga 6 USP produk], "hook": [3 pilihan hook, setiap satu maksimum 8 perkataan], "skrip": string (skrip ringkas 5 hingga 8 ayat santai, satu ayat satu baris), "shotlist": [6 hingga 10 shot, format "jenis shot: apa yang nampak"], "persediaan": [prop, lokasi atau benda yang perlu disediakan]}
