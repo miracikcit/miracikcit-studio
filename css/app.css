@@ -156,3 +156,11 @@ audio{width:100%;margin-top:8px}
 .smpb{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
 .pill.smpp{gap:6px;padding:4px 10px;background:var(--pc);color:#fff;border-color:transparent}.pill.smpp[style*='E3B23C'],.smpb[style*='E3B23C'] .pill.smpp{color:#3B2C0C}.pill.smpp b{font-size:15px;letter-spacing:0}
 .smpd{background:none;border:0;padding:0;font:inherit;font-size:10.5px;color:var(--muted);text-decoration:underline dotted;cursor:pointer}
+
+/* status butang: sedang proses (kuning) / siap (hijau) */
+.btn.st-run{background:#F3D27A;color:#4A3608;border-color:#E9BD45;opacity:1}
+.btn.st-done{background:#CDE8D3;color:#1F5A30;border-color:#9FD0AB}
+.btn.st-done svg,.btn.st-run svg{stroke:currentColor}
+.spin{display:inline-block;width:11px;height:11px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;margin-right:6px;animation:spn .8s linear infinite;vertical-align:-1px}
+@keyframes spn{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}

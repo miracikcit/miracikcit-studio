@@ -19,9 +19,12 @@ const smpPlat=p=>p==='shopee'?'Shopee':'TikTok';
 /* Lencana: nombor besar + label, tarikh akhir post di bawah (tekan untuk ubah) */
 function smpBadge(it){const p=samplePlan(it);return `<div class="smpb" style="--pc:${p.col}"><span class="pill smpp"><b>${Math.max(p.left,0)}</b>${esc(p.label.replace(/^\d+ /,''))}</span><button class="smpd" data-act="smpEdit" data-id="${it.id}">Akhir post ${dmy(it.sample.postBy)}</button></div>`}
 /* Baris gambar listing: thumbnail kecil + butang tambah (auto simpan ke R1. PRODUCT LISTING) */
-function smpListing(it){const l=it.listing||{};const busy=ui.lsUp&&ui.lsUp[it.id];
-  const lk=it.shopee||it.tiktok;
-  return `<button class="btn sm" data-act="lsAdd" data-id="${it.id}"${busy?' disabled':''}>${IC.up}${busy?esc(busy):l.n?l.n+' gambar listing':'Gambar listing'}</button><button class="btn sm${lk?' solid':''}" data-act="smpLink" data-id="${it.id}">${lk?IC.check+'Link':'+ Link'}</button>`}
+function smpListing(it){const l=it.listing||{};const busy=ui.lsUp&&ui.lsUp[it.id];const lk=it.shopee||it.tiktok;
+  const st=busy?' st-run':l.n?' st-done':'';
+  return `<button class="btn sm${st}" data-act="lsAdd" data-id="${it.id}"${busy?' disabled':''}>${busy?'<i class="spin"></i>'+esc(busy):(l.n?IC.check+l.n+' gambar listing':IC.up+'Gambar listing')}</button><button class="btn sm${lk?' st-done':''}" data-act="smpLink" data-id="${it.id}">${lk?IC.check+'Link':'+ Link'}</button>`}
+/* Butang Nota berwarna: kelabu = belum, kuning = sedang buat, hijau = siap */
+function notaBtn(it,act){const run=ui.notaUp&&ui.notaUp[it.id];const done=it.nota||it.productId;
+  return `<button class="btn sm${run?' st-run':done?' st-done':''}" data-act="${act||'nota'}" data-id="${it.id}"${run?' disabled':''}>${run?'<i class="spin"></i>'+esc(run):done?IC.check+'Nota':'Nota'}</button>`}
 function sampleBlock(it){if(!it.sample||sampleDone(it))return '';
   return `<div class="rowh" style="align-items:center;margin-top:10px;border-top:1px solid var(--line);padding-top:10px"><span class="meta">Sample ${smpPlat(it.sample.plat)}</span>${smpBadge(it)}</div>`}
 const activeSamples=()=>S.items.filter(it=>it.sample&&!sampleDone(it)).sort((a,b)=>a.sample.postBy.localeCompare(b.sample.postBy));
@@ -83,22 +86,16 @@ A.lsAdd=el=>{if(!ASSETS){toast('Upload tak tersedia di sini');return}const id=el
       const out=await studioJob('listing_save',{item:id,name:it.title,folder:(it.listing&&it.listing.folder)||'',files:ids,shopee:it.shopee||'',tiktok:it.tiktok||''},5*60000);
       step='kemas kini';const cur=get('items',id)||it;const text=[((cur.listing||{}).text||''),out.text||''].join('\n').trim().slice(0,12000);
       save('items',Object.assign({},cur,{listing:{folder:out.folder,n:out.total,text}}));delete ui.lsUp[id];render(true);toast(out.saved+' gambar disimpan dalam R1 / '+out.folder);
-      if(!cur.nota&&text)smpNota(get('items',id))}
+      if(!cur.nota&&!cur.productId)smpNota(get('items',id))}
     catch(e){delete ui.lsUp[id];render(true);toast('Gagal masa '+step+': '+String((e&&(e.message||e.code))||'cuba lagi').slice(0,80))}
     finally{ids.forEach(x=>ASSETS.delete(x).catch(()=>{}))}},true)};
-async function smpNota(it){if(!SAMPLE)return;ui.lsUp=ui.lsUp||{};ui.lsUp[it.id]='Buat nota...';render(true);
-  const prompt=`Kau pembantu content creator Malaysia @miracikcit yang buat video pendek 9:16 (TikTok, Reels) dalam Bahasa Melayu santai macam bercakap dengan kawan. Ini sample produk untuk video review. Dari teks gambar listing di bawah, sediakan nota untuk shoot video.
-Balas JSON sahaja dengan bentuk: {"usp": [4 hingga 6 USP produk], "hook": [3 pilihan hook, setiap satu maksimum 8 perkataan], "skrip": string (skrip ringkas 5 hingga 8 ayat santai, satu ayat satu baris), "shotlist": [6 hingga 10 shot, format "jenis shot: apa yang nampak"], "persediaan": [prop, lokasi atau benda yang perlu disediakan]}
-Peraturan: semua dalam Bahasa Melayu. Tanpa emoji. Jangan reka harga, claim kesihatan atau fakta yang tiada dalam teks listing.
-
-PRODUK: ${it.title}
-TEKS GAMBAR LISTING:
-${String(it.listing.text).slice(0,8000)}`;
-  try{const r=await SAMPLE.json(prompt,{cache:false});const arr=x=>Array.isArray(x)?x.map(v=>noEmoji(String(v))).filter(Boolean):lines(noEmoji(String(x||'')));const cur=get('items',it.id)||it;
-    save('items',Object.assign({},cur,{noteAt:Date.now(),nota:{usp:arr(r.usp),hook:arr(r.hook),script:noEmoji(Array.isArray(r.skrip)?r.skrip.join('\n'):String(r.skrip||'')),shots:arr(r.shotlist),extra:arr(r.persediaan)}}));toast('Nota siap untuk '+it.title)}
-  catch(e){toast('Nota belum dapat dibuat. Tekan Nota untuk cuba lagi')}
-  finally{delete ui.lsUp[it.id];render(true)}}
-A.smpNotaBtn=el=>{const it=get('items',el.dataset.id);if(it.nota||!(it.listing&&it.listing.text)){if(!it.nota&&!(it.listing&&it.listing.n))toast('Tambah gambar listing, nota dibuat sendiri');A.nota(el);return}smpNota(it)};
+/* Nota: Claude Opus 5.5 (effort low) dalam Mac mini baca gambar listing terus, templat sama macam nota Bath Garden */
+async function smpNota(it){if(!window.studioJob||!(it.listing&&it.listing.folder))return;ui.notaUp=ui.notaUp||{};ui.notaUp[it.id]='Buat nota...';render(true);
+  try{const r=await studioJob('nota',{item:it.id,folder:it.listing.folder,name:it.title,plat:it.sample?smpPlat(it.sample.plat):'',link:it.shopee||it.tiktok||''},15*60000);
+    if(r.product)save('products',r.product);const cur=get('items',it.id)||it;const nx=Object.assign({},cur,{productId:r.productId,noteAt:Date.now()});delete nx.nota;save('items',nx);toast('Nota siap untuk '+it.title)}
+  catch(e){toast('Nota gagal: '+String((e&&(e.message||e.code))||'cuba lagi').slice(0,80))}
+  finally{delete ui.notaUp[it.id];render(true)}}
+A.smpNotaBtn=el=>{const it=get('items',el.dataset.id);if(it.nota||it.productId){A.nota(el);return}if(!(it.listing&&it.listing.n)){toast('Tambah gambar listing dulu, nota dibuat sendiri');return}smpNota(it)};
 /* Link produk (Shopee / TikTok): simpan dalam kad + link.txt dalam folder R1. Caption generator terus jumpa link ni. */
 A.smpLink=el=>{const it=get('items',el.dataset.id);
   modal(`<h2>Link produk</h2><p class="meta">${esc(it.title)}</p>

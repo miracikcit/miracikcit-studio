@@ -15,7 +15,7 @@ function notaHTML(it){const p=it.productId&&get('products',it.productId);const n
 function notaText(it){const d=document.createElement('div');d.innerHTML=notaHTML(it).replace(/<\/(h4|li|p|pre)>/g,'\n').replace(/<li>/g,'• ');return (it.title||'')+'\n\n'+d.textContent.replace(/\n{3,}/g,'\n\n').trim()}
 A.nota=el=>{const it=get('items',el.dataset.id);const p=it.productId&&get('products',it.productId);
   modal(`<div class="rowh"><h2>${esc(it.title||'Nota')}</h2><button class="btn icon sm" data-act="closeModal" aria-label="Tutup">${IC.x}</button></div>${notaHTML(it)}
-  <div class="btns" style="margin-top:18px"><button class="btn sm" data-act="copyNota" data-id="${it.id}">${IC.copy}Copy nota</button>${it.nota?`<button class="btn sm" data-act="editNota" data-id="${it.id}">${IC.edit}Edit nota</button>`:''}${p&&p.pdf?`<button class="btn sm" data-act="pdfNota" data-id="${p.id}">PDF</button>`:''}</div>`,TAB[STAGE_TAB[it.stage]].c)};
+  <div class="btns" style="margin-top:18px"><button class="btn sm" data-act="copyNota" data-id="${it.id}">${IC.copy}Copy nota</button>${it.listing&&it.listing.folder?`<button class="btn sm" data-act="notaRedo" data-id="${it.id}">${IC.edit}Buat semula dari listing</button>`:''}${it.nota?`<button class="btn sm" data-act="editNota" data-id="${it.id}">${IC.edit}Edit nota</button>`:''}${p&&p.pdf?`<button class="btn sm" data-act="pdfNota" data-id="${p.id}">PDF</button>`:''}</div>`,TAB[STAGE_TAB[it.stage]].c)};
 A.copyNota=el=>copyText(notaText(get('items',el.dataset.id)));
 A.pdfNota=el=>{const p=get('products',el.dataset.id);if(!p||!p.pdf){toast('PDF tiada');return}window.open(studioFileView(p.pdf),'_blank','noopener')};
 A.editNota=el=>{const it=get('items',el.dataset.id);const n=it.nota||{};const ta=(id,l,v,r)=>`<label class="f"><span>${l}</span><textarea class="inp" id="${id}" rows="${r||4}">${esc(Array.isArray(v)?v.join('\n'):v||'')}</textarea></label>`;
@@ -25,3 +25,4 @@ A.editNota=el=>{const it=get('items',el.dataset.id);const n=it.nota||{};const ta
 A.saveNota=el=>{const it=get('items',el.dataset.id);const k=$('#enK').value.trim();if(k&&!isUrl(k)){toast('Link mesti mula dengan https://');return}
   save('items',Object.assign({},it,{title:$('#enT').value.trim()||it.title,shopee:k,nota:{raw:(it.nota||{}).raw||'',usp:lines($('#enU').value),hook:lines($('#enH').value),script:$('#enS').value.trim(),shots:lines($('#enL').value),extra:lines($('#enE').value)}}));closeModal();toast('Nota disimpan')};
 
+A.notaRedo=el=>{const it=get('items',el.dataset.id);closeModal();smpNota(it)};

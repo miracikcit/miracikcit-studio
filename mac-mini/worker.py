@@ -743,6 +743,86 @@ def run_listing_save(inp, sheet):
     return {"folder": folder, "saved": saved, "total": total, "text": "\n".join(t for t in texts if t.strip())[:12000]}
 
 
+NOTA_PROMPT = """Kau sediakan NOTA VIDEO JUALAN untuk @miracikcit, content creator Malaysia yang jual produk melalui video pendek TikTok / Reels / Shopee (Bahasa Melayu santai). Ini nota rujukan dan idea, BUKAN skrip.
+
+Produk: {name}
+Platform sample: {plat}
+Link: {link}
+Gambar listing (baca SEMUA dengan tool Read, satu-satu): {files}
+
+Langkah:
+1. Baca setiap gambar dengan teliti. Ambil setiap claim, spesifikasi, saiz, bahan, sijil, amaran, harga/promo dan nombor pendaftaran yang tertulis.
+2. Kenal pasti JENIS produk (contoh: kosmetik / penjagaan diri, suplemen, gadget / elektronik, barang rumah, mainan / produk anak, pakaian, makanan). Sesuaikan sub-tajuk USP, isi Bahan dan Cara Guna dengan jenis produk tu.
+3. Semak claim promo dengan label / spesifikasi. Catat apa-apa yang bercanggah atau tak dapat disahkan.
+
+Balas SATU objek JSON sahaja (tanpa markdown), bentuk:
+{{"name": nama produk ringkas, "brand": jenama, "jenis": jenis produk, "subtitle": "saiz / model / warna / asal, dipisah ' · '",
+ "assumption": "Andaian: TikTok / Reels, 30-60 saat, audiens ..., gaya santai. Nota rujukan, bukan skrip.",
+ "sections": [
+  {{"title": "Idea Video", "items": [5-7 sudut video yang sesuai dengan produk dan audiens, setiap satu: 'Nama idea: apa yang ditunjuk']}},
+  {{"title": "Hook (3 saat pertama)", "items": [4 ayat pembuka santai]}},
+  {{"title": "Point Utama Untuk Cakap", "items": [5-6 point jualan paling kuat]}},
+  {{"title": "USP Lengkap", "groups": [{{"title": sub-tajuk ikut jenis produk, "items": [...]}}, ...]}},
+  {{"title": "Bahan" (atau "Spesifikasi" untuk gadget / barang bukan bahan), "items": [setiap bahan / spesifikasi utama dengan manfaat satu baris, dan satu baris 'Pilih 3-4 point je untuk sebut.']}},
+  {{"title": "Sesuai Untuk", "items": [siapa yang sesuai]}},
+  {{"title": "Cara Guna / Tips", "items": [cara guna, dos and don'ts, amaran produk sendiri]}},
+  {{"title": "Trust Points (B-roll / teks skrin)", "items": [close-up label, sijil, teks skrin yang boleh diguna]}},
+  {{"title": "CTA", "items": [3 ayat penutup]}},
+  {{"title": "JANGAN Sebut", "danger": true, "items": [frasa yang perlu dielak supaya video tak kena flag KKM / platform, dan percanggahan yang dijumpai, format 'JANGAN ... GUNA ...' bila sesuai]}}
+ ]}}
+
+Peraturan:
+- USP Lengkap: SEMUA USP dari gambar, jangan tinggal satu pun, dikumpul bawah sub-tajuk (contoh kosmetik: Bau, Kesan pada kulit, Formula, Pengalaman, Harga & promo, Kepercayaan; gadget: Fungsi utama, Spesifikasi, Bateri & cas, Reka bentuk, Dalam kotak, Kepercayaan; mainan / anak: Cara main, Kebaikan untuk anak, Keselamatan, Dalam kotak). Tanda "(claim brand)" untuk dakwaan jenama sendiri.
+- Bahasa Melayu santai, ayat pendek senang dibaca masa shoot. Tanpa emoji.
+- Jangan reka fakta yang tiada dalam gambar. Kalau tiada maklumat, tulis 'tiada dalam gambar'.
+- Pematuhan Malaysia: produk tradisional / suplemen tak boleh claim rawat / ubat / cegah penyakit; jangan 'FDA approved'; sertakan amaran produk; flag statistik yang tak dapat disahkan sebagai claim brand; flag nama jenama lain / 'dupe'; harga promo ada tarikh tamat.
+- Contoh gaya (nota Bath Garden): Idea Video 'Test buih: picit atas loofah, gosok, tunjuk buih tebal close-up'; Hook 'Mandi pun boleh bau macam dessert ke?'; JANGAN Sebut 'JANGAN putihkan kulit / whitening. Niacinamide cuma nampak lebih cerah'."""
+
+
+def run_nota(inp, sheet, cfg):
+    """Nota video jualan dari gambar listing dalam R1, dibuat oleh Claude Opus (effort low) dalam Mac mini."""
+    src = _listing_src(inp.get("folder"))
+    imgs = sorted(f for f in os.listdir(src) if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp", ".heic")))[:14]
+    if not imgs:
+        raise RuntimeError("Tiada gambar listing dalam folder")
+    cli = find_tool("claude", [cfg.get("claude_cli")])
+    if not cli:
+        raise RuntimeError("Claude Code tak dijumpai dalam Mac mini.")
+    prompt = NOTA_PROMPT.format(name=inp.get("name") or os.path.basename(src), plat=inp.get("plat") or "-",
+                                link=inp.get("link") or "-", files=", ".join(os.path.join(src, f) for f in imgs))
+    cmd = [cli, "-p", prompt, "--model", cfg.get("nota_model", "claude-opus-5-5"), "--effort", cfg.get("nota_effort", "low"),
+           "--tools", "Read", "--allowedTools", "Read", "--add-dir", src,
+           "--system-prompt", AI_SYSTEM, "--no-session-persistence", "--output-format", "json", "--setting-sources", ""]
+    r = subprocess.run(cmd, capture_output=True, text=True, timeout=900, cwd=src)
+    try:
+        d = json.loads(r.stdout)
+    except Exception:
+        raise RuntimeError("Claude tak jawab: " + (r.stderr or r.stdout or "")[-300:])
+    txt = str(d.get("result") or "")
+    if d.get("is_error") or "not logged in" in txt.lower():
+        raise RuntimeError("Claude dalam Mac mini belum login atau had usage penuh: " + txt[:200])
+    m = re.search(r"\{.*\}", txt, re.S)
+    if not m:
+        raise RuntimeError("Jawapan Claude bukan JSON")
+    j = json.loads(m.group(0))
+    pid = re.sub(r"[^a-z0-9]+", "-", ((j.get("brand") or "") + " " + (j.get("name") or inp.get("name") or "produk")).lower()).strip("-")[:48] or "produk"
+    now = int(time.time() * 1000)
+    doc = {"id": pid, "name": j.get("name") or inp.get("name"), "brand": j.get("brand") or "", "jenis": j.get("jenis") or "",
+           "subtitle": j.get("subtitle") or "", "assumption": j.get("assumption") or "",
+           "folder": "R1. PRODUCT LISTING/" + os.path.basename(src), "sections": j.get("sections") or [],
+           "created": now, "updated": now, "src": "listing"}
+    sheet.call("dset", path="products/" + pid, data=doc)
+    if inp.get("item"):
+        item = sheet.call("dget", path="items/" + inp["item"]).get("doc")
+        if item:
+            item["productId"] = pid
+            item.pop("nota", None)
+            item["noteAt"] = now
+            sheet.call("dset", path="items/" + inp["item"], data=item)
+    u = d.get("usage") or {}
+    return {"productId": pid, "product": doc, "usage": {"in": u.get("input_tokens", 0) + u.get("cache_read_input_tokens", 0) + u.get("cache_creation_input_tokens", 0), "out": u.get("output_tokens", 0)}}
+
+
 def studio_jobs(sheet, cfg):
     try:
         jobs = sheet.call("jpoll").get("jobs", [])
@@ -761,6 +841,8 @@ def studio_jobs(sheet, cfg):
                 outp = run_archive(inp, sheet)
             elif j["type"] == "listing_del":
                 outp = run_listing_delete(inp, sheet)
+            elif j["type"] == "nota":
+                outp = run_nota(inp, sheet, cfg)
             elif j["type"] == "listing_restore":
                 outp = run_listing_restore(inp, sheet)
             elif j["type"] == "listing_save":
