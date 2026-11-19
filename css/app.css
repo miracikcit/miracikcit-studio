@@ -149,3 +149,10 @@ audio{width:100%;margin-top:8px}
 .tl .s.d i{background:var(--c);box-shadow:none}
 .tl .s.d:before,.tl .s.cur:before{background:var(--c)}
 .tl .s.cur i{background:#fff;box-shadow:inset 0 0 0 2.5px var(--c),0 0 0 4px rgba(90,143,181,.18)}
+/* kad senarai berselang-seli + lencana countdown sample */
+.list.alt>.card:nth-child(even){background:color-mix(in srgb,var(--c) 22%,rgba(255,255,255,.55))}
+.tsc{padding:13px 14px}.tsc h3{margin:0 0 2px}
+.tsb{margin-top:10px;gap:6px;flex-wrap:wrap;align-items:center}.tsb .inp.acc{width:auto;max-width:130px;min-height:32px;padding:4px 10px;font-size:11px;margin:0}
+.smpb{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
+.pill.smpp{gap:6px;padding:4px 10px;background:var(--pc);color:#fff;border-color:transparent}.pill.smpp[style*='E3B23C'],.smpb[style*='E3B23C'] .pill.smpp{color:#3B2C0C}.pill.smpp b{font-size:15px;letter-spacing:0}
+.smpd{background:none;border:0;padding:0;font:inherit;font-size:10.5px;color:var(--muted);text-decoration:underline dotted;cursor:pointer}

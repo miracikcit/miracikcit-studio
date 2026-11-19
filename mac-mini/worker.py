@@ -662,6 +662,44 @@ def run_ocr(file_id, sheet):
     return {"lines": json.loads(r.stdout or "[]")}
 
 
+def run_listing_save(inp, sheet):
+    """Simpan gambar listing dari app ke R1. PRODUCT LISTING/<produk>, kemudian baca teks gambar (Apple Vision, percuma)."""
+    import base64
+    base = os.path.join(STUDIO_BASE, "R1. PRODUCT LISTING")
+    name = re.sub(r'[\\/:*?"<>|]+', " ", str(inp.get("name") or "Produk")).strip()[:60] or "Produk"
+    folder = str(inp.get("folder") or "").strip()
+    if not folder or os.path.sep in folder or not os.path.isdir(os.path.join(base, folder)):
+        folder = name
+        low = name.lower()
+        for d in (os.listdir(base) if os.path.isdir(base) else []):
+            if d.lower() == low:
+                folder = d
+                break
+    dest = os.path.join(base, folder)
+    os.makedirs(dest, exist_ok=True)
+    tag = re.sub(r"\W+", "", name.split()[0] if name.split() else "listing") or "listing"
+    tool = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bin", "ocr")
+    texts, saved = [], 0
+    for fid in inp.get("files") or []:
+        f = sheet.call("file_get", id=fid)
+        ext = (os.path.splitext(f.get("name") or "")[1] or ".jpg").lower()
+        n = len([x for x in os.listdir(dest) if not x.startswith(".")]) + 1
+        path = os.path.join(dest, "%s_listing_%02d%s" % (tag, n, ext))
+        while os.path.exists(path):
+            n += 1
+            path = os.path.join(dest, "%s_listing_%02d%s" % (tag, n, ext))
+        with open(path, "wb") as fh:
+            fh.write(base64.b64decode(f["b64"]))
+        saved += 1
+        try:
+            r = subprocess.run([tool, path], capture_output=True, text=True, timeout=60)
+            texts.append(" ".join(l.get("t", "") for l in json.loads(r.stdout or "[]")))
+        except Exception:
+            log.warning("OCR listing gagal: %s", path)
+    total = len([x for x in os.listdir(dest) if not x.startswith(".")])
+    return {"folder": folder, "saved": saved, "total": total, "text": "\n".join(t for t in texts if t.strip())[:12000]}
+
+
 def studio_jobs(sheet, cfg):
     try:
         jobs = sheet.call("jpoll").get("jobs", [])
@@ -680,6 +718,8 @@ def studio_jobs(sheet, cfg):
                 outp = run_archive(inp, sheet)
             elif j["type"] == "listing_del":
                 outp = run_listing_delete(inp, sheet)
+            elif j["type"] == "listing_save":
+                outp = run_listing_save(inp, sheet)
             elif j["type"] == "ocr":
                 outp = run_ocr(inp.get("file", ""), sheet)
             elif j["type"] == "scan":

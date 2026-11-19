@@ -74,7 +74,6 @@ V.home=()=>{
   const r=TAB.ready,ed=TAB.editor;
   return `<div class="head"><div><p class="eyebrow">${hr<12?'Selamat pagi':hr<18?'Selamat petang':'Selamat malam'}, Mira</p><h1>Home</h1></div><button class="btn sm" data-act="syncReq">${IC.copy}Sync folder</button></div>
   ${sheetNote()}
-  ${sampleCard()}
   <div class="hgrid">
    ${['ideas','to-shoot','shot','to-edit','published'].map(box).join('')}
    <button class="hbox tall glass" style="--c:${ed.c}" data-act="go" data-id="editor"><b>${n.editor}</b><span class="l">Editor</span><span class="edl">${eds.slice(0,4).map(e=>`<span>${esc(e.name)}</span>`).join('')||'<span>Tiada projek berjalan</span>'}</span></button>
@@ -86,6 +85,7 @@ V.home=()=>{
   <div class="rbox glass" style="--c:${r.c}"><div class="rowh" style="align-items:center"><div><h2>${r.l}</h2><div class="meta">Publish dalam 1 minggu selepas siap</div></div><b class="rn">${n.ready}</b></div>
     ${urgent.length?urgent.map(u=>`<div style="--sc:${u.d?u.d.color:'var(--muted)'};margin-top:14px"><div class="rowh" style="align-items:center"><div class="rt"><strong>${esc(u.r.group.name)}</strong>${u.r.vid?' · VID '+esc(u.r.vid):''}</div><span class="pill" style="--pc:${u.d?u.d.color:'#999'}">${u.d?u.d.label:'tiada tarikh'}</span></div><div class="bar"><i style="width:${u.d?u.d.pct:0}%"></i></div></div>`).join(''):`<div class="meta" style="margin-top:12px">${sv?'Tiada video menunggu.':'Menunggu sheet.'}</div>`}
     <div style="margin-top:16px"><button class="btn solid tab" data-act="go" data-id="ready">Buka senarai${IC.next}</button></div></div>
+  ${sampleCard()}
   ${sorterCard()||(S.workprojects&&S.workprojects.length?`<div class="card big glass" style="--c:#8676BE;margin-top:14px"><p class="eyebrow" style="margin:0">Footage Sorter · Mac mini</p>${ongoingSlot()}</div>`:'')}
   ${calHTML()}`};
 A.go=el=>go(el.dataset.id);

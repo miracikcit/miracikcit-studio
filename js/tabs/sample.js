@@ -1,77 +1,100 @@
-/* ---------- SAMPLE: barang review dengan deadline ----------
+/* ---------- SAMPLE (CONFIRMED PROJECTS): barang review dengan deadline ----------
    TikTok: tarikh akhir post = hari ni + "N days left".
-   Shopee: tekan Received sebelum tarikh dalam app Shopee; tarikh akhir post = tarikh Received + 14 hari.
-   Setiap sample = kad dalam To Shoot (it.sample), ikut ke Shot, To Edit, Ready. Jadual mundur: shoot 4 hari dan
-   siap edit 2 hari sebelum tarikh post. Selesai sendiri bila Published atau bila Posted ditanda dalam Sheet. */
+   Shopee: tarikh dalam screenshot = mula; tarikh akhir post = tarikh tu + 14 hari.
+   Scan screenshot terus masuk To Shoot. Selesai sendiri bila Published atau bila Posted ditanda dalam Sheet. */
 const ymdAdd=(s,d)=>{const t=new Date(s+'T00:00:00');t.setDate(t.getDate()+d);return ymd(t)};
 const daysTo=s=>Math.round((new Date(s+'T00:00:00')-new Date(ymd(new Date())+'T00:00:00'))/DAY);
 const dmy=s=>{const t=new Date(s+'T00:00:00');return t.getDate()+' '+BULAN[t.getMonth()]};
 function sampleDone(it){const s=it.sample;if(!s)return true;if(s.done||it.stage==='published')return true;
   const sv=sheetView();if(!sv)return false;const g=sv.groups.find(x=>x.tab==='PRODUCTS'&&itMatch(it,x.name));
   return !!(g&&g.start>(s.sheetRowAtAdd||0)&&g.rows.length&&g.rows.every(r=>r.posted.some(Boolean)||isSettled(r)))}
-function samplePlan(it){const s=it.sample;const post=daysTo(s.postBy);const shootBy=ymdAdd(s.postBy,-4),editBy=ymdAdd(s.postBy,-2);
-  const late=it.stage==='toshoot'&&daysTo(shootBy)<0?'Lewat shoot':(it.stage==='shot'||it.stage==='toedit')&&daysTo(editBy)<0?'Lewat edit':'';
-  const next=it.stage==='toshoot'?'Shoot sebelum '+dmy(shootBy):(it.stage==='shot'||it.stage==='toedit')?'Siap edit sebelum '+dmy(editBy):'Post hari ni atau sebelum '+dmy(s.postBy);
-  const recv=s.plat==='shopee'&&!s.received&&s.recvBy?daysTo(s.recvBy):null;
-  return {post,shootBy,editBy,late,next,recv}}
-const smpCol=d=>d<2?'var(--bad)':d<=5?'var(--warn)':'var(--ok)';
-const smpLeft=d=>d>1?d+' hari lagi':d===1?'Esok':d===0?'Hari ni':'Lewat '+(-d)+' hari';
+/* Countdown ke tarikh akhir post. Mula = tarikh dalam Shopee (deadline +14 hari) atau hari sample ditambah (TikTok).
+   5 hari pertama hijau, 5 hari terakhir merah (SHOOT NOW), tengah kuning. */
+const smpStart=it=>it.sample.start||it.sample.recvBy||ymd(new Date((it.stageAt&&it.stageAt.toshoot)||it.created||Date.now()));
+function samplePlan(it){const s=it.sample;const left=daysTo(s.postBy);const gone=-daysTo(smpStart(it));const verb=it.stage==='toshoot'?'SHOOT':it.stage==='ready'?'POST':'EDIT';
+  const col=left<=5?'#C2534F':gone<5?'#4E9B63':'#E3B23C';
+  const label=left<0?'Lewat '+(-left)+' hari':left<=5?verb+' NOW':left+' days to '+verb;
+  return {left,col,label,verb}}
 const smpPlat=p=>p==='shopee'?'Shopee':'TikTok';
-function sampleBlock(it){if(!it.sample||sampleDone(it))return '';const s=it.sample,p=samplePlan(it);
-  return `<div style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px">
-    <div class="rowh" style="align-items:center"><span class="meta">Sample ${smpPlat(s.plat)} · post sebelum <b>${dmy(s.postBy)}</b></span><span class="pill" style="--pc:${smpCol(p.post)}">${smpLeft(p.post)}</span></div>
-    <div class="meta" style="margin-top:4px;${p.late?'color:var(--bad);font-weight:500':''}">${p.late?p.late+' · ':''}${p.next}</div>
-    ${p.recv!==null?`<div class="rowh" style="align-items:center;margin-top:8px"><span class="meta" style="color:${smpCol(p.recv)};font-weight:500">Tekan Received dalam Shopee sebelum ${dmy(s.recvBy)} (${smpLeft(p.recv).toLowerCase()})</span><button class="btn sm" data-act="smpRecv" data-id="${it.id}">${IC.check}Dah tekan</button></div>`:''}
-    <div class="btns" style="margin-top:8px;gap:6px"><button class="btn sm" data-act="smpEdit" data-id="${it.id}">${IC.edit}Tarikh</button><button class="btn sm" data-act="smpDone" data-id="${it.id}">${IC.check}Dah post</button></div></div>`}
+/* Lencana: nombor besar + label, tarikh akhir post di bawah (tekan untuk ubah) */
+function smpBadge(it){const p=samplePlan(it);return `<div class="smpb" style="--pc:${p.col}"><span class="pill smpp"><b>${Math.max(p.left,0)}</b>${esc(p.label.replace(/^\d+ /,''))}</span><button class="smpd" data-act="smpEdit" data-id="${it.id}">Akhir post ${dmy(it.sample.postBy)}</button></div>`}
+/* Baris gambar listing: thumbnail kecil + butang tambah (auto simpan ke R1. PRODUCT LISTING) */
+function smpListing(it){const l=it.listing||{};const busy=ui.lsUp&&ui.lsUp[it.id];
+  return `<button class="btn sm" data-act="lsAdd" data-id="${it.id}"${busy?' disabled':''}>${IC.up}${busy?esc(busy):l.n?l.n+' gambar listing':'Gambar listing'}</button>`}
+function sampleBlock(it){if(!it.sample||sampleDone(it))return '';
+  return `<div class="rowh" style="align-items:center;margin-top:10px;border-top:1px solid var(--line);padding-top:10px"><span class="meta">Sample ${smpPlat(it.sample.plat)}</span>${smpBadge(it)}</div>`}
 const activeSamples=()=>S.items.filter(it=>it.sample&&!sampleDone(it)).sort((a,b)=>a.sample.postBy.localeCompare(b.sample.postBy));
-/* Kad Home: 3 paling dekat + peringatan Received Shopee */
-function sampleCard(){const list=activeSamples();const recv=list.filter(it=>samplePlan(it).recv!==null);
-  return `<div class="card big glass" style="--c:${TAB['to-shoot'].c};margin-bottom:14px"><div class="rowh" style="align-items:center"><div><p class="eyebrow" style="margin:0">Sample review</p><h2 style="margin:4px 0 0">Deadline sample</h2></div><b class="bigno" style="font-size:40px">${list.length}</b></div>
-   ${recv.map(it=>{const p=samplePlan(it);return `<div class="evrow" style="cursor:default;margin-top:8px"><span style="flex:1;min-width:0"><strong>Tekan Received: ${esc(it.title)}</strong><span class="meta" style="display:block">Shopee · sebelum ${dmy(it.sample.recvBy)}</span></span><span class="pill" style="--pc:${smpCol(p.recv)}">${smpLeft(p.recv)}</span></div>`}).join('')}
-   ${list.slice(0,3).map(it=>{const p=samplePlan(it);return `<div style="--sc:${smpCol(p.post)};margin-top:12px"><div class="rowh" style="align-items:center"><div class="rt" style="min-width:0"><strong>${esc(it.title)}</strong><span class="meta" style="display:block">${smpPlat(it.sample.plat)} · ${p.late?'<span style="color:var(--bad)">'+p.late+'</span> · ':''}${p.next}</span></div><span class="pill" style="--pc:${smpCol(p.post)}">${smpLeft(p.post)}</span></div></div>`}).join('')||'<p class="meta" style="margin:10px 0 0">Tiada sample menunggu. Tambah bila dapat barang baru.</p>'}
+/* Kad Home: CONFIRMED PROJECTS, 4 paling dekat */
+function sampleCard(){const list=activeSamples();
+  return `<div class="card big glass" style="--c:${TAB['to-shoot'].c};margin-top:14px"><div class="rowh" style="align-items:center"><h2 style="margin:0">CONFIRMED PROJECTS</h2><b class="bigno" style="font-size:40px">${list.length}</b></div>
+   ${list.slice(0,4).map(it=>{const p=samplePlan(it);return `<div class="rowh" style="align-items:center;margin-top:12px;gap:10px"><div class="rt" style="min-width:0"><strong>${esc(it.title)}</strong><span class="meta" style="display:block">${smpPlat(it.sample.plat)} · akhir post ${dmy(it.sample.postBy)}</span></div><span class="pill smpp" style="--pc:${p.col}"><b>${Math.max(p.left,0)}</b>${esc(p.label.replace(/^\d+ /,''))}</span></div>`}).join('')||'<p class="meta" style="margin:10px 0 0">Tiada project menunggu. Tambah bila dapat sample baru.</p>'}
    <div class="btns" style="margin-top:14px"><button class="btn solid tab" data-act="smpAdd">${IC.plus}Tambah sample</button>${list.length?`<button class="btn" data-act="go" data-id="to-shoot">Buka To Shoot${IC.next}</button>`:''}</div></div>`}
-/* Tambah: screenshot (Mac mini baca teks, percuma) atau manual */
+/* Tambah: screenshot terus masuk To Shoot (Mac mini baca teks, percuma) atau isi sendiri */
 A.smpAdd=()=>{ui.smp={rows:[],busy:false};smpModal()};
 function smpModal(){const m=ui.smp;const today=ymd(new Date());
   modal(`<h2>Tambah sample</h2>
-   <div class="btns" style="gap:8px"><button class="btn solid tab" data-act="smpShot"${m.busy?' disabled':''}>${IC.up}${m.busy?'Mac mini sedang baca...':'Dari screenshot'}</button><button class="btn" data-act="smpRow">${IC.plus}Isi sendiri</button></div>
-   <p class="meta" style="margin:8px 0 0">Screenshot senarai sample TikTok (Needs content) atau Shopee (To Receive). Boleh pilih beberapa gambar sekali. Teks dibaca dalam Mac mini, tanpa token Claude.</p>
+   <div class="btns" style="gap:8px"><button class="btn solid tab" data-act="smpShot"${m.busy?' disabled':''}>${IC.up}${m.busy?esc(m.busy):'Dari screenshot'}</button><button class="btn" data-act="smpRow">${IC.plus}Isi sendiri</button></div>
+   <p class="meta" style="margin:8px 0 0">Screenshot senarai sample TikTok atau Shopee. Boleh pilih beberapa gambar sekali. Mac mini baca teks (tanpa token Claude) dan terus masukkan ke To Shoot.</p>
    ${m.rows.length?`<div class="list" style="margin-top:14px">${m.rows.map((r,i)=>`<div class="card glass" style="padding:12px">
      <label class="f" style="margin:0 0 8px"><span>Nama produk</span><input class="inp" data-smp="${i}|name" value="${esc(r.name)}"></label>
      <div class="btns" style="gap:6px;margin-bottom:8px">${['tiktok','shopee'].map(p=>`<button class="btn sm ${r.plat===p?'solid tab':''}" data-act="smpPlat" data-x="${i}|${p}">${smpPlat(p)}</button>`).join('')}<button class="btn icon sm bad" data-act="smpRm" data-x="${i}" aria-label="Buang">${IC.trash}</button></div>
-     <label class="f" style="margin:0"><span>${r.plat==='shopee'?'Tekan Received sebelum (post = +14 hari)':'Hari akhir post'}</span><input type="date" class="inp" data-smp="${i}|date" value="${esc(r.date||today)}"></label>
-     ${r.dup?'<p class="meta" style="color:var(--warn);margin:6px 0 0">Nama ni dah ada dalam tracker.</p>':''}</div>`).join('')}</div>
+     <label class="f" style="margin:0"><span>${r.plat==='shopee'?'Tarikh dalam Shopee (akhir post = +14 hari)':'Hari akhir post'}</span><input type="date" class="inp" data-smp="${i}|date" value="${esc(r.date||today)}"></label></div>`).join('')}</div>
      <div class="btns" style="justify-content:flex-end;margin-top:12px"><button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="smpSave">${IC.check}Tambah ${m.rows.length} sample</button></div>`:''}`,TAB['to-shoot'].c)}
 document.addEventListener('input',e=>{const el=e.target;if(!el.dataset||!el.dataset.smp||!ui.smp)return;const [i,k]=el.dataset.smp.split('|');const r=ui.smp.rows[+i];if(r)r[k]=el.value});
 A.smpRow=()=>{ui.smp.rows.push({name:'',plat:'tiktok',date:ymdAdd(ymd(new Date()),7)});smpModal()};
 A.smpRm=el=>{ui.smp.rows.splice(+el.dataset.x,1);smpModal()};
 A.smpPlat=el=>{const [i,p]=el.dataset.x.split('|');const r=ui.smp.rows[+i];if(r&&r.plat!==p){r.plat=p}smpModal()};
 A.smpShot=()=>{if(!ASSETS){toast('Upload tak tersedia di sini');return}const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.multiple=true;
-  inp.onchange=async()=>{const fs=[...inp.files].slice(0,6);if(!fs.length)return;ui.smp.busy=true;smpModal();let n=0;
-    for(const f of fs){try{const up=await ASSETS.upload(f);const out=await studioJob('ocr',{file:up.id},2*60000);const rows=smpParse(out.lines||[]);rows.forEach(r=>{r.dup=S.items.some(it=>it.sample&&nrm(it.title)===nrm(r.name));ui.smp.rows.push(r)});n+=rows.length;ASSETS.delete(up.id).catch(()=>{})}
+  inp.onchange=async()=>{const fs=[...inp.files].slice(0,6);if(!fs.length)return;const found=[];let k=0;
+    for(const f of fs){k++;ui.smp.busy='Mac mini baca gambar '+k+'/'+fs.length+'...';smpModal();
+      try{const up=await ASSETS.upload(f);const out=await studioJob('ocr',{file:up.id},2*60000);found.push(...smpParse(out.lines||[]));ASSETS.delete(up.id).catch(()=>{})}
       catch(e){toast('Tak dapat baca '+f.name+'. Semak Mac mini hidup')}}
-    ui.smp.busy=false;smpModal();toast(n?n+' sample dijumpa. Semak dan tekan Tambah':'Tiada sample dijumpa dalam gambar')};inp.click()};
-/* Baca baris OCR: TikTok "N days left" + tajuk di kanan gambar; Shopee "received by dd-mm-yyyy" + tajuk di atasnya */
+    ui.smp.busy=false;
+    const fresh=found.filter((r,i)=>!S.items.some(it=>it.sample&&nrm(it.title)===nrm(r.name))&&found.findIndex(x=>nrm(x.name)===nrm(r.name))===i);
+    const dup=found.length-fresh.length;
+    if(!fresh.length){smpModal();toast(found.length?'Semua sample dalam gambar dah ada dalam To Shoot':'Tiada sample dijumpa dalam gambar');return}
+    smpAddRows(fresh);closeModal();go('to-shoot');toast(fresh.length+' sample masuk To Shoot'+(dup?' · '+dup+' dah ada':''))};inp.click()};
+/* Baca baris OCR: TikTok "N days left" + tajuk di kanan gambar; Shopee tarikh dd-mm-yyyy (mula) + tajuk di atasnya */
 function smpParse(lines){const out=[];const today=ymd(new Date());const L=lines.map(l=>({t:String(l.t||'').trim(),x:+l.x||0,y:+l.y||0})).filter(l=>l.t);
   const isTitle=l=>l.x>=0.22&&l.t.length>=12&&!/^(earn|rm\s?\d|rm0|needs content|get inspired|create|received|to receive|please confirm|managed by|\d+\s*days? left|×|x\s?\d)/i.test(l.t)&&!/days? left|fulfil+ment|quota|sample|refundable|official store|%|^to (receive|ship|publish|approve)/i.test(l.t);
   const clean=t=>t.replace(/\s*(\.{3}|…)\s*$/,'').replace(/^[\[【]([^\]】]+)[\]】]\s*/,'$1 ').replace(/\s*\|\s*$/,'').trim();
   L.forEach((l,i)=>{const m=l.t.match(/(\d+)\s*days?\s*left/i);if(!m)return;const t=L.slice(i+1).find(isTitle);if(t)out.push({name:clean(t.t),plat:'tiktok',date:ymdAdd(today,+m[1])})});
   let prevY=0;L.forEach((l,i)=>{const m=l.t.match(/(\d{2})[-\/.](\d{2})[-\/.](\d{4})/);if(!m)return;const date=`${m[3]}-${m[2]}-${m[1]}`;
-    const ctx=L.slice(Math.max(0,i-2),i+1).map(x=>x.t).join(' ');const t=L.filter(x=>x.y>prevY&&x.y<l.y).find(isTitle);prevY=l.y;if(!t)return;
-    if(/publish|post/i.test(ctx))out.push({name:clean(t.t),plat:'shopee',date:ymdAdd(date,-14)});else out.push({name:clean(t.t),plat:'shopee',date})});
+    const t=L.filter(x=>x.y>prevY&&x.y<l.y).find(isTitle);prevY=l.y;if(t)out.push({name:clean(t.t),plat:'shopee',date})});
   return out}
-A.smpSave=()=>{const rows=ui.smp.rows.filter(r=>String(r.name).trim()&&r.date);if(!rows.length){toast('Isi nama dan tarikh dulu');return}
-  const sv=sheetView();const lastRow=sv?Math.max(0,...sv.groups.map(g=>g.start)):0;
+function smpAddRows(rows){const sv=sheetView();const lastRow=sv?Math.max(0,...sv.groups.map(g=>g.start)):0;const today=ymd(new Date());
   rows.forEach(r=>{const postBy=r.plat==='shopee'?ymdAdd(r.date,14):r.date;
-    save('items',{title:String(r.name).trim(),stage:'toshoot',stageAt:{toshoot:Date.now()},noteAt:Date.now(),shootDate:ymdAdd(postBy,-4),src:'sample',
-      sample:{plat:r.plat,postBy,recvBy:r.plat==='shopee'?r.date:'',received:false,done:false,sheetRowAtAdd:lastRow}},true)});
-  closeModal();render();toast(rows.length+' sample ditambah ke To Shoot')};
-A.smpRecv=el=>{const it=get('items',el.dataset.id);save('items',Object.assign({},it,{sample:Object.assign({},it.sample,{received:true,receivedAt:Date.now()})}));toast('Ditanda dah tekan Received')};
-A.smpDone=el=>{const it=get('items',el.dataset.id);confirmBox('Tanda "'+it.title+'" dah post? Ia keluar dari senarai deadline.',()=>{save('items',Object.assign({},it,{sample:Object.assign({},it.sample,{done:true,doneAt:Date.now()})}));toast('Sample selesai')},'Ya, dah post')};
+    save('items',{title:String(r.name).trim(),stage:'toshoot',stageAt:{toshoot:Date.now()},noteAt:Date.now(),src:'sample',
+      sample:{plat:r.plat,postBy,start:r.plat==='shopee'?r.date:today,done:false,sheetRowAtAdd:lastRow}},true)})}
+A.smpSave=()=>{const rows=ui.smp.rows.filter(r=>String(r.name).trim()&&r.date);if(!rows.length){toast('Isi nama dan tarikh dulu');return}
+  smpAddRows(rows);closeModal();render();toast(rows.length+' sample ditambah ke To Shoot')};
 A.smpEdit=el=>{const it=get('items',el.dataset.id);const s=it.sample;
-  modal(`<h2>Tarikh sample</h2><p class="meta">${esc(it.title)} · ${smpPlat(s.plat)}</p>
-   ${s.plat==='shopee'?`<label class="f"><span>Tekan Received sebelum</span><input type="date" class="inp" id="smpR" value="${esc(s.recvBy||'')}"></label>`:''}
+  modal(`<h2>Tarikh akhir post</h2><p class="meta">${esc(it.title)} · ${smpPlat(s.plat)}</p>
    <label class="f"><span>Hari akhir post</span><input type="date" class="inp" id="smpP" value="${esc(s.postBy)}"></label>
    <div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="smpEditSave" data-id="${it.id}">Simpan</button></div>`,TAB['to-shoot'].c)};
-A.smpEditSave=el=>{const it=get('items',el.dataset.id);const p=($('#smpP')||{}).value,r=($('#smpR')||{}).value;if(!p){toast('Pilih tarikh post');return}
-  save('items',Object.assign({},it,{shootDate:ymdAdd(p,-4),sample:Object.assign({},it.sample,{postBy:p},r!==undefined&&it.sample.plat==='shopee'?{recvBy:r}:{})}));closeModal();toast('Tarikh dikemas kini')};
+A.smpEditSave=el=>{const it=get('items',el.dataset.id);const p=($('#smpP')||{}).value;if(!p){toast('Pilih tarikh');return}
+  save('items',Object.assign({},it,{sample:Object.assign({},it.sample,{postBy:p})}));closeModal();toast('Tarikh dikemas kini')};
+/* Gambar listing: upload, Mac mini simpan ke R1. PRODUCT LISTING/<produk>, baca teks (percuma), kemudian nota auto */
+A.lsAdd=el=>{if(!ASSETS){toast('Upload tak tersedia di sini');return}const id=el.dataset.id;const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.multiple=true;
+  inp.onchange=async()=>{const fs=[...inp.files].filter(f=>f.size<=20*1048576).slice(0,12);if(!fs.length)return;ui.lsUp=ui.lsUp||{};const ids=[];
+    try{for(let i=0;i<fs.length;i++){ui.lsUp[id]='Upload '+(i+1)+'/'+fs.length;render(true);ids.push((await ASSETS.upload(fs[i])).id)}
+      ui.lsUp[id]='Simpan ke R1...';render(true);const it=get('items',id);
+      const out=await studioJob('listing_save',{item:id,name:it.title,folder:(it.listing&&it.listing.folder)||'',files:ids},5*60000);
+      const cur=get('items',id)||it;const text=[((cur.listing||{}).text||''),out.text||''].join('\n').trim().slice(0,12000);
+      save('items',Object.assign({},cur,{listing:{folder:out.folder,n:out.total,text}}));delete ui.lsUp[id];render(true);toast(out.saved+' gambar disimpan dalam R1 / '+out.folder);
+      if(!cur.nota&&text)smpNota(get('items',id))}
+    catch(e){delete ui.lsUp[id];render(true);toast('Simpan gambar gagal. Semak Mac mini hidup')}
+    finally{ids.forEach(x=>ASSETS.delete(x).catch(()=>{}))}};inp.click()};
+async function smpNota(it){if(!SAMPLE)return;ui.lsUp=ui.lsUp||{};ui.lsUp[it.id]='Buat nota...';render(true);
+  const prompt=`Kau pembantu content creator Malaysia @miracikcit yang buat video pendek 9:16 (TikTok, Reels) dalam Bahasa Melayu santai macam bercakap dengan kawan. Ini sample produk untuk video review. Dari teks gambar listing di bawah, sediakan nota untuk shoot video.
+Balas JSON sahaja dengan bentuk: {"usp": [4 hingga 6 USP produk], "hook": [3 pilihan hook, setiap satu maksimum 8 perkataan], "skrip": string (skrip ringkas 5 hingga 8 ayat santai, satu ayat satu baris), "shotlist": [6 hingga 10 shot, format "jenis shot: apa yang nampak"], "persediaan": [prop, lokasi atau benda yang perlu disediakan]}
+Peraturan: semua dalam Bahasa Melayu. Tanpa emoji. Jangan reka harga, claim kesihatan atau fakta yang tiada dalam teks listing.
+
+PRODUK: ${it.title}
+TEKS GAMBAR LISTING:
+${String(it.listing.text).slice(0,8000)}`;
+  try{const r=await SAMPLE.json(prompt,{cache:false});const arr=x=>Array.isArray(x)?x.map(v=>noEmoji(String(v))).filter(Boolean):lines(noEmoji(String(x||'')));const cur=get('items',it.id)||it;
+    save('items',Object.assign({},cur,{noteAt:Date.now(),nota:{usp:arr(r.usp),hook:arr(r.hook),script:noEmoji(Array.isArray(r.skrip)?r.skrip.join('\n'):String(r.skrip||'')),shots:arr(r.shotlist),extra:arr(r.persediaan)}}));toast('Nota siap untuk '+it.title)}
+  catch(e){toast('Nota belum dapat dibuat. Tekan Nota untuk cuba lagi')}
+  finally{delete ui.lsUp[it.id];render(true)}}
+A.smpNotaBtn=el=>{const it=get('items',el.dataset.id);if(it.nota||!(it.listing&&it.listing.text)){if(!it.nota&&!(it.listing&&it.listing.n))toast('Tambah gambar listing, nota dibuat sendiri');A.nota(el);return}smpNota(it)};
