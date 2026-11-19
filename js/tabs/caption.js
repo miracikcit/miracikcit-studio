@@ -36,9 +36,19 @@ V.caption=()=>{const c=ui.cap||(ui.cap={link:'',name:'',what:'',angle:'Auto',res
     <label class="f"><span>Apa yang ada dalam video (pilihan)</span><input class="inp" id="capWhat" data-capf="what" value="${esc(c.what)}" placeholder="cth. unboxing, test bau, pasang kat aircond"></label>
     <span class="num" style="display:block;margin:4px 0 6px">Sudut hook</span>
     <div class="btns" style="gap:6px">${CAP_ANG.map(a=>`<button class="btn sm ${c.angle===a?'solid tab':''}" data-act="capAng" data-x="${a}" aria-pressed="${c.angle===a}">${a}</button>`).join('')}</div>
-    <div class="btns" style="margin-top:14px"><button class="btn solid tab" data-act="capGen"${c.busy||!nm?' disabled':''}>${c.busy?'Mac mini sedang tulis...':IC.ideas+'Generate 3 pilihan'}</button></div>
-    <p class="meta" style="margin:10px 0 0">Guna usage Claude kau di Mac mini, macam butang Ideas.</p></div>
+    <div class="btns" style="margin-top:14px"><button class="btn ${nm?'solid tab':''}" data-act="capGen"${c.busy?' disabled':''}>${c.busy?'Sedang generate...':nm?IC.ideas+'Generate 3 pilihan':'Taip nama produk dulu'}</button></div>
+    ${c.busy?capLoader():`<p class="meta" style="margin:10px 0 0">Guna usage Claude kau di Mac mini, macam butang Ideas. Biasanya siap dalam 20 hingga 40 saat.</p>`}</div>
+  ${capTagsBox()}
   ${r?`<div class="rowh" style="align-items:center;margin-top:20px"><p class="eyebrow" style="margin:0">Pilihan ${c.pick+1} · ${esc(pick.angle||'')}</p><div class="btns" style="gap:6px">${r.captions.map((x,i)=>`<button class="btn sm ${i===c.pick?'solid tab':''}" data-act="capPick" data-x="${i}" aria-label="Pilihan ${i+1}">${i+1}</button>`).join('')}</div></div>${box('sh','Shopee Video')}${box('tt','TikTok')}`:''}`};
+/* Loader: tunjuk peringkat dan masa berlalu supaya Mira tahu Mac mini sedang buat kerja */
+function capStage(sec){return sec<4?'Hantar ke Mac mini':sec<10?'Mac mini terima kerja':sec<45?'Claude sedang tulis 3 caption':'Masih menulis, Mac mini mungkin sibuk'}
+function capLoader(){const sec=Math.round((Date.now()-(ui.cap.t0||Date.now()))/1000);const pct=Math.min(94,Math.round(sec/40*100));
+  return `<div id="capProg" style="--sc:var(--c);margin-top:12px" aria-live="polite"><div class="trk"><div class="t"><span data-st>${capStage(sec)}</span><span data-sec>${sec} saat</span></div></div><div class="bar"><i data-bar style="width:${Math.max(4,pct)}%;transition:width .9s linear"></i></div></div>`}
+setInterval(()=>{const el=document.getElementById('capProg');if(!el||!ui.cap||!ui.cap.busy)return;const sec=Math.round((Date.now()-ui.cap.t0)/1000);
+  el.querySelector('[data-st]').textContent=capStage(sec);el.querySelector('[data-sec]').textContent=sec+' saat';el.querySelector('[data-bar]').style.width=Math.max(4,Math.min(94,Math.round(sec/40*100)))+'%'},1000);
+/* Kotak hashtag Shopee untuk copy terus (juga di Home) */
+const capTagsBox=()=>`<div class="card glass" style="margin-top:12px"><div class="rowh" style="align-items:center"><div style="min-width:0"><span class="num">Hashtag Shopee</span><div class="meta" style="margin-top:4px;overflow-wrap:anywhere">${esc(CAP_SHOPEE)}</div></div><button class="btn sm solid tab" data-act="capTags" style="flex:none">${IC.copy}Copy</button></div></div>`;
+A.capTags=()=>copyText(CAP_SHOPEE,'Hashtag Shopee dicopy');
 document.addEventListener('input',e=>{const el=e.target;if(!el.dataset)return;
   if(el.dataset.capf){ui.cap[el.dataset.capf]=el.value;if(el.dataset.capf==='link'||el.dataset.capf==='name'){const id=el.id;clearTimeout(el._t);el._t=setTimeout(()=>{render(true);const n=$('#'+id);if(n){n.focus();n.setSelectionRange(n.value.length,n.value.length)}},600)}}
   else if(el.dataset.capedit){ui.cap.edit=Object.assign({},ui.cap.edit,{[el.dataset.capedit]:el.value})}});
@@ -46,7 +56,7 @@ A.capPaste=async()=>{try{const t=await navigator.clipboard.readText();const m=St
 A.capAng=el=>{ui.cap.angle=el.dataset.x;render(true)};
 A.capPick=el=>{ui.cap.pick=+el.dataset.x;render(true)};
 A.capCopy=el=>{const t=($('#cap-'+el.dataset.x)||{}).value||'';copyText(t,el.dataset.x==='sh'?'Caption Shopee dicopy':'Caption TikTok dicopy')};
-A.capGen=async()=>{const c=ui.cap;const f=capFind(c.link,c.name);const name=(f?f.name:c.name).trim();if(!name){toast('Taip nama produk dulu');return}
+A.capGen=async()=>{const c=ui.cap;const f=capFind(c.link,c.name);const name=(f?f.name:c.name).trim();if(!name){toast('Taip nama produk dulu');const n=$('#capName');if(n)n.focus();return}
   if(!SAMPLE){toast('Generate tak tersedia sekarang');return}
   const n=capNotes(f&&f.prod);
   const prompt=`Tulis 3 caption media sosial untuk video produk Mira (@miracikcit), content creator Malaysia. Video ni video lama yang masih dalam draf, belum di-post.
@@ -59,7 +69,7 @@ Format setiap caption:
 Peraturan: tiada harga atau diskaun, tiada dakwaan perubatan, tiada janji yang tak pasti, tiada sebut Shopee atau platform lain, guna "aku" atau "Mira".
 tags: 2 hashtag CamelCase tanpa ruang: #NamaProduk #Kategori (cth #Kathwi #PewangiKereta).
 Balas JSON sahaja: {"tags":["#..","#.."],"captions":[{"angle":"..","hook":"..","line2":".."},{"angle":"..","hook":"..","line2":".."},{"angle":"..","hook":"..","line2":".."}]}`;
-  c.busy=true;render(true);
+  c.busy=true;c.t0=Date.now();render(true);
   try{const j=await SAMPLE.json(prompt,{cache:false});const caps=(j&&Array.isArray(j.captions)?j.captions:[]).filter(x=>x&&x.hook).slice(0,3).map(x=>({angle:String(x.angle||''),hook:String(x.hook).trim(),line2:String(x.line2||'').trim()}));
     if(!caps.length)throw new Error('kosong');const tags=(Array.isArray(j.tags)?j.tags:[]).map(t=>'#'+String(t).replace(/^#+/,'').replace(/\s+/g,'')).filter(t=>t.length>1).slice(0,2);
     c.res={captions:caps,tags};c.pick=0;c.edit={};toast('3 pilihan siap')}
