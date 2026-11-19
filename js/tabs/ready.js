@@ -5,10 +5,10 @@ function capVariants(cap,link){const c=noEmoji(cap);const ps=c.split(/\n\s*\n/).
   return {fb:[body.join('\n\n'),link||'',tags.join('\n\n')].filter(Boolean).join('\n\n'),ig:[body.join('\n\n'),tags.join('\n\n')].filter(Boolean).join('\n\n'),tt:[body.join('\n\n'),tags.map(strip).filter(Boolean).join('\n\n')].filter(Boolean).join('\n\n')}}
 const ticks=(r,kind)=>`<div class="btns" style="gap:5px;flex-wrap:nowrap">${PLAT4.map((p,i)=>`<button class="btn sm ${r[kind][i]?'solid tab':''}" style="padding:4px 9px;min-height:28px" data-act="tick" data-x="${r.tab}|${r.row}|${kind}|${i}" aria-pressed="${r[kind][i]}">${p}</button>`).join('')}</div>`;
 V.ready=()=>{const sv=sheetView();const items=appReady(sv);
-  if(!sv)return head('Sheet CONTENT 2026')+sheetNote()+itemReady(items);
+  if(!sv)return head('Sheet CONTENT 2026')+sheetNote()+lsChoice()+itemReady(items);
   const byG=new Map();sv.ready.forEach(r=>{if(!byG.has(r.group))byG.set(r.group,[]);byG.get(r.group).push(r)});
   const groups=[...byG.entries()].map(([g,rows])=>({g,rows:rows.map(r=>({r,d:deadline(rowStart(r,sv),7)}))})).sort((a,b)=>Math.min(...a.rows.map(x=>x.d?x.d.left:99))-Math.min(...b.rows.map(x=>x.d?x.d.left:99)));
-  return head(sv.ready.length+' video belum settled')+sheetNote()+`<div class="list">${groups.map(({g,rows})=>{
+  return head(sv.ready.length+' video belum settled')+sheetNote()+lsChoice()+`<div class="list">${groups.map(({g,rows})=>{
     const sug=!g.shopee&&S.items.find(it=>it.shopee&&nrm(g.name).startsWith(nrm(it.title).slice(0,8)));
     return `<div class="card big glass"><div class="rowh"><div><h3 style="font-size:16px">${esc(g.name)}</h3><div class="meta">${g.tab==='PRODUCTS'?'No. '+esc(g.no)+' · ':''}${rows.length} video menunggu</div></div>
      ${g.shopee?`<button class="btn solid shopee" data-act="copy" data-x="${esc(g.shopee)}">${IC.links}Link Shopee</button>`:''}</div>

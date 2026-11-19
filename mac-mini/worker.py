@@ -521,16 +521,46 @@ def run_archive(inp, sheet):
             parents[k] = sheet.call("dpath", base="archive", path=[name] + parts)["id"]
         return parents[k]
     top = parent_for(os.path.join(src, "x"))
+    manifest = []
     for f in files:
-        drive_upload(sheet, f, parent_for(f))
+        fid = drive_upload(sheet, f, parent_for(f))
+        rel = os.path.relpath(os.path.dirname(f), src)
+        manifest.append({"id": fid, "name": os.path.basename(f), "rel": "" if rel == "." else rel})
     n = sheet.call("dcount", id=top)["n"]
     if n < len(files):
         raise RuntimeError("Drive ada %d fail, folder ada %d. Folder asal tak dibuang." % (n, len(files)))
     link = "https://drive.google.com/drive/folders/" + top
-    _set_item(sheet, inp.get("item"), listingLink=link, listingAt=int(time.time() * 1000))
+    extra = {"listingBest": True} if inp.get("best") else {}
+    _set_item(sheet, inp.get("item"), listingLink=link, listingAt=int(time.time() * 1000), listingFiles=manifest, **extra)
     trash_local(src)
     _scan_last["t"] = 0
-    return {"link": link, "files": len(files)}
+    return {"link": link, "files": len(files), "manifest": manifest}
+
+
+def run_listing_restore(inp, sheet):
+    """Ambil balik listing barang best dari Drive ke R1. PRODUCT LISTING/<nama> untuk video seterusnya."""
+    import base64
+    base = os.path.join(STUDIO_BASE, "R1. PRODUCT LISTING")
+    name = re.sub(r'[\\/:*?"<>|]+', " ", str(inp.get("name") or "Produk")).strip()[:60] or "Produk"
+    dest = os.path.join(base, name)
+    n = 0
+    for m in inp.get("files") or []:
+        rel = str(m.get("rel") or "")
+        if rel.startswith("/") or ".." in rel.split(os.sep):
+            continue
+        d = os.path.join(dest, rel) if rel else dest
+        os.makedirs(d, exist_ok=True)
+        out = os.path.join(d, os.path.basename(str(m.get("name") or "fail")))
+        if os.path.exists(out):
+            continue
+        f = sheet.call("file_get", id=m["id"])
+        with open(out, "wb") as fh:
+            fh.write(base64.b64decode(f["b64"]))
+        n += 1
+    if not os.path.isdir(dest):
+        raise RuntimeError("Tiada fail untuk diambil balik")
+    _scan_last["t"] = 0
+    return {"folder": name, "restored": n}
 
 
 def run_listing_delete(inp, sheet):
@@ -682,14 +712,23 @@ def run_listing_save(inp, sheet):
     texts, saved = [], 0
     for fid in inp.get("files") or []:
         f = sheet.call("file_get", id=fid)
-        ext = (os.path.splitext(f.get("name") or "")[1] or ".jpg").lower()
+        raw = base64.b64decode(f["b64"])
         n = len([x for x in os.listdir(dest) if not x.startswith(".") and x != "link.txt"]) + 1
-        path = os.path.join(dest, "%s_listing_%02d%s" % (tag, n, ext))
+        path = os.path.join(dest, "%s_listing_%02d.jpg" % (tag, n))
         while os.path.exists(path):
             n += 1
-            path = os.path.join(dest, "%s_listing_%02d%s" % (tag, n, ext))
-        with open(path, "wb") as fh:
-            fh.write(base64.b64decode(f["b64"]))
+            path = os.path.join(dest, "%s_listing_%02d.jpg" % (tag, n))
+        # Jimat ruang: kecilkan ke 1600 px, JPEG 80 %. Kalau sips gagal, simpan fail asal.
+        with tempfile.TemporaryDirectory(prefix="miracikcit-ls-") as tmp:
+            src = os.path.join(tmp, "in" + ((os.path.splitext(f.get("name") or "")[1]) or ".img"))
+            with open(src, "wb") as fh:
+                fh.write(raw)
+            r = subprocess.run(["sips", "-Z", "1600", "-s", "format", "jpeg", "-s", "formatOptions", "80", src, "--out", path],
+                               capture_output=True, text=True, timeout=60)
+            if r.returncode != 0 or not os.path.exists(path):
+                path = os.path.splitext(path)[0] + ((os.path.splitext(f.get("name") or "")[1]) or ".jpg").lower()
+                with open(path, "wb") as fh:
+                    fh.write(raw)
         saved += 1
         try:
             r = subprocess.run([tool, path], capture_output=True, text=True, timeout=60)
@@ -722,6 +761,8 @@ def studio_jobs(sheet, cfg):
                 outp = run_archive(inp, sheet)
             elif j["type"] == "listing_del":
                 outp = run_listing_delete(inp, sheet)
+            elif j["type"] == "listing_restore":
+                outp = run_listing_restore(inp, sheet)
             elif j["type"] == "listing_save":
                 outp = run_listing_save(inp, sheet)
             elif j["type"] == "ocr":
