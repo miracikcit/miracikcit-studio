@@ -156,6 +156,7 @@ function app(b) {
       if (r.getResponseCode() >= 300) return { ok: false, error: 'Drive ' + r.getResponseCode() };
       return { ok: true, total: total, start: start, b64: Utilities.base64Encode(r.getBlob().getBytes()) };
     }
+    case 'product_add': return withLock(() => productAdd(b));   // Caption: simpan produk / VID baru ke tab PRODUCTS
     case 'file_delete': { try { DriveApp.getFileById(String(b.id).split('~')[0]).setTrashed(true); } catch (e) {} return { ok: true }; }
     case 'job_add': return withLock(() => {
       const sh = sheet(JOB_TAB, ['id', 'type', 'status', 'input', 'output', 'created', 'done']);
@@ -269,5 +270,38 @@ function drivePath(base, path, share) {
   path.forEach(n => { n = String(n); const it = f.getFoldersByName(n); f = it.hasNext() ? it.next() : f.createFolder(n); });
   if (share) f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   return f.getId();
+}
+/* Tambah caption ke PRODUCTS ikut format sedia ada.
+   Produk dah ada (b.start = baris produk): sisip satu baris VID di bawah produk tu dan naikkan TOTAL VID.
+   Produk baru: dua baris di hujung (baris produk + baris link beli), selepas satu baris kosong. Format, checkbox
+   dan senarai akaun disalin dari baris produk terakhir. */
+function productAdd(b) {
+  const sh = SpreadsheetApp.getActive().getSheetByName('PRODUCTS');
+  const last = sh.getLastRow(), W = 20;
+  const vals = sh.getRange(1, 1, last, W).getValues();
+  const caption = String(b.caption || '').trim(); if (!caption) return { ok: false, error: 'caption kosong' };
+  const tmpl = 'TT: \n\nIG: \n\nFB: \n\nSV: ';
+  const F = [false, false, false, false, false, false, false, false];
+  const copyFmt = (from, to) => {
+    [SpreadsheetApp.CopyPasteType.PASTE_FORMAT, SpreadsheetApp.CopyPasteType.PASTE_DATA_VALIDATION, SpreadsheetApp.CopyPasteType.PASTE_CONDITIONAL_FORMATTING]
+      .forEach(t => sh.getRange(from, 1, 1, W).copyTo(sh.getRange(to, 1, 1, W), t, false));
+  };
+  if (b.start) {
+    const st = Number(b.start); if (String(vals[st - 1][3]).trim() === '') return { ok: false, error: 'baris produk tak sah' };
+    let end = st, maxVid = Number(vals[st - 1][4]) || 0;
+    for (let r = st + 1; r <= last; r++) { const row = vals[r - 1]; if (String(row[3]).trim() !== '' || String(row[4]).trim() === '') break; end = r; maxVid = Math.max(maxVid, Number(row[4]) || 0); }
+    sh.insertRowAfter(end); copyFmt(end, end + 1);
+    sh.getRange(end + 1, 5, 1, 13).setValues([[maxVid + 1, caption].concat(F, ['', '', tmpl])]);
+    sh.getRange(st, 4).setValue((Number(vals[st - 1][3]) || 0) + 1);
+    return { ok: true, row: end + 1, vid: maxVid + 1, no: vals[st - 1][0] };
+  }
+  let maxNo = 0, lastProd = 0;
+  vals.forEach((r, i) => { const n = Number(r[0]); if (n && String(r[3]).trim() !== '') { maxNo = Math.max(maxNo, n); lastProd = i + 1; } });
+  const row = last + 2, no = maxNo + 1;
+  copyFmt(lastProd, row); copyFmt(lastProd, row + 1);
+  sh.getRange(row, 1, 1, 17).setValues([[no, String(b.name || '').toUpperCase(), String(b.shopee || ''), 1, 1, caption].concat(F, ['', '', tmpl])]);
+  sh.getRange(row + 1, 1, 1, 17).setValues([['', b.shopee ? '✅ Beli di Shopee: ' + b.shopee + (b.tt ? '\n✅ Beli di Tiktok: ' + b.tt : '') : '', String(b.tt || ''), '', ''].concat(['', '', '', '', '', '', '', '', '', '', '', '', ''])]);
+  sh.getRange(row + 1, 7, 1, 8).clearDataValidations();
+  return { ok: true, row: row, vid: 1, no: no };
 }
 function countFiles(f) { let n = 0; const fi = f.getFiles(); while (fi.hasNext()) { fi.next(); n++; } const fo = f.getFolders(); while (fo.hasNext()) n += countFiles(fo.next()); return n; }

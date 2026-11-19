@@ -79,12 +79,11 @@ V.home=()=>{
    <button class="hbox tall glass" style="--c:${ed.c}" data-act="go" data-id="editor"><b>${n.editor}</b><span class="l">Editor</span><span class="edl">${eds.slice(0,4).map(e=>`<span>${esc(e.name)}</span>`).join('')||'<span>Tiada projek berjalan</span>'}</span></button>
    ${['links','jobs','footage','inspiration','media-kit'].map(box).join('')}
    <button class="hbox glass" style="--c:#B0704F" data-act="go" data-id="broll"><b style="display:flex;color:#B0704F">${IC.broll.replace('<svg ','<svg style="width:44px;height:44px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round" ')}</b><span class="l">B-Roll Picker</span></button>
+   <button class="hbox glass" style="--c:${TAB.caption.c}" data-act="go" data-id="caption"><b style="display:flex;color:${TAB.caption.c}">${IC.caption.replace('<svg ','<svg style="width:44px;height:44px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round" ')}</b><span class="l">Caption</span></button>
   </div>
   <div class="rbox glass" style="--c:${r.c}"><div class="rowh" style="align-items:center"><div><h2>${r.l}</h2><div class="meta">Publish dalam 1 minggu selepas siap</div></div><b class="rn">${n.ready}</b></div>
     ${urgent.length?urgent.map(u=>`<div style="--sc:${u.d?u.d.color:'var(--muted)'};margin-top:14px"><div class="rowh" style="align-items:center"><div class="rt"><strong>${esc(u.r.group.name)}</strong>${u.r.vid?' · VID '+esc(u.r.vid):''}</div><span class="pill" style="--pc:${u.d?u.d.color:'#999'}">${u.d?u.d.label:'tiada tarikh'}</span></div><div class="bar"><i style="width:${u.d?u.d.pct:0}%"></i></div></div>`).join(''):`<div class="meta" style="margin-top:12px">${sv?'Tiada video menunggu.':'Menunggu sheet.'}</div>`}
     <div style="margin-top:16px"><button class="btn solid tab" data-act="go" data-id="ready">Buka senarai${IC.next}</button></div></div>
-  <div class="card big glass" style="--c:${TAB.caption.c};margin-top:14px"><div class="rowh" style="align-items:center"><div><h2 style="margin:0">Caption</h2><div class="meta">Caption Shopee dan TikTok untuk video lama dalam draf</div></div></div>
-    <div class="btns" style="margin-top:14px"><button class="btn solid tab" data-act="go" data-id="caption">${IC.ideas}Tulis caption</button><button class="btn" data-act="capTags">${IC.copy}Copy hashtag Shopee</button></div></div>
   ${sorterCard()||(S.workprojects&&S.workprojects.length?`<div class="card big glass" style="--c:#8676BE;margin-top:14px"><p class="eyebrow" style="margin:0">Footage Sorter · Mac mini</p>${ongoingSlot()}</div>`:'')}
   ${calHTML()}`};
 A.go=el=>go(el.dataset.id);
