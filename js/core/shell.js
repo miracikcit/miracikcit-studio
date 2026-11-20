@@ -1,6 +1,6 @@
 /* ---------- shell ---------- */
 function go(v){location.hash=v}
-function route(){let h=location.hash.slice(1);if(h==='gaya')h='editor';if(h==='lab')h='media-kit';if(h==='inspire')h='inspiration';if(h==='products')h='links';if(h==='b-roll')h='broll';ui.view=TAB[h]?h:'home';render(true);window.scrollTo(0,0)}
+function route(){let h=location.hash.slice(1);if(h==='gaya')h='editor';if(h==='lab')h='media-kit';if(h==='inspire')h='inspiration';if(h==='products')h='links';if(h==='b-roll')h='broll';if(h==='jobs')h='links';ui.view=TAB[h]?h:'home';render(true);window.scrollTo(0,0)}
 window.addEventListener('hashchange',route);
 function render(force){
   const ae=document.activeElement;
