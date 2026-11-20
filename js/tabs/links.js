@@ -24,12 +24,12 @@ function products(sv){const gs=sv?sv.groups.filter(g=>g.tab==='PRODUCTS'):[];
 function prodInfo(p,sv){if(!p.g){const it=p.its[0];return esc([it.brand,it.stage==='toshoot'&&it.shootDate?'shoot '+fmtD(Date.parse(it.shootDate)):'',p.eds[0]?'Editor: '+p.eds[0].status:''].filter(Boolean).join(' · '))}
   const n=p.g.rows.length,pub=p.g.rows.filter(r=>isSettled(r)||isPub(r)).length;return n?`${n} video · ${pub} dah published`:''}
 V.links=()=>{const sv=sheetView();
-  if(!sv)return head('Sheet CONTENT 2026 · tab PRODUCTS')+sheetNote()+prodPipeline(products(null));
+  if(!sv)return head('Sheet CONTENT 2026 · tab PRODUCTS')+sheetNote()+confirmedSection(null)+prodPipeline(products(null).filter(p=>!p.its.every(i=>i.sample)));
   const all=products(sv);const gs=sv.groups.filter(g=>g.tab==='PRODUCTS');const pm=new Map(all.filter(p=>p.g).map(p=>[p.g,p]));
   const list=gs.slice().sort((a,b)=>(+b.no||0)-(+a.no||0)).filter(g=>hit('lk',g.no,g.name));const miss=gs.filter(g=>!g.shopee).length;
   const extra=S.items.filter(it=>it.shopee&&!gs.some(g=>g.shopee===it.shopee));
   const bar=(id,lk,val,ph)=>`<span class="inwrap"><input class="inp" id="${id}" data-lk="${lk}" value="${esc(val)}" placeholder="${ph}" inputmode="url"><button type="button" class="btn icon sm" data-act="cpIn" data-id="${id}" aria-label="Copy">${IC.copy}</button></span>`;
-  return head(gs.length+' produk dalam sheet · '+all.filter(p=>!p.g).length+' dalam proses')+searchBox('lk','Cari nombor atau nama produk')+prodPipeline(all.filter(p=>!p.g&&hit('lk',p.name)))+(miss?`<p class="meta" style="margin:14px 0 12px;color:var(--bad)">${miss} produk belum ada link Shopee.</p>`:'')+
+  return head(gs.length+' produk dalam sheet · '+all.filter(p=>!p.g).length+' dalam proses')+searchBox('lk','Cari nombor atau nama produk')+confirmedSection(sv)+prodPipeline(all.filter(p=>!p.g&&!p.its.every(i=>i.sample)&&hit('lk',p.name)))+(miss?`<p class="meta" style="margin:14px 0 12px;color:var(--bad)">${miss} produk belum ada link Shopee.</p>`:'')+
   `<div class="list">${list.map(g=>`<div class="card glass"><div class="rowh"><span class="bigno">${esc(g.no)}</span><div style="flex:1;min-width:0"><h3>${esc(g.name)}</h3></div></div>${timeline(pm.get(g).d,prodInfo(pm.get(g),sv))}${lsBestRow(S.items.filter(x=>x.listingBest&&itMatch(x,g.name)))}
     <label class="f" style="margin-top:12px"><span>Shopee</span>${bar('ls-'+g.start,g.start+'|s',g.shopee,'https://s.shopee.com.my/...')}</label>
     <label class="f"><span>TikTok</span>${bar('lt-'+g.start,g.start+'|t',g.tt,'https://vt.tiktok.com/...')}</label>

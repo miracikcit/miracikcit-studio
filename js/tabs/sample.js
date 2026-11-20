@@ -108,3 +108,11 @@ A.smpLinkSave=el=>{const it=get('items',el.dataset.id);let sh=pickUrl($('#lkS').
   if(sh&&/tiktok/i.test(sh)&&!tt){tt=sh;sh=''}if(tt&&/shopee|shp\.ee/i.test(tt)&&!sh){sh=tt;tt=''}
   save('items',Object.assign({},it,{shopee:sh,tiktok:tt}));closeModal();toast(sh||tt?'Link disimpan':'Link dibuang');
   if((sh||tt)&&it.listing&&it.listing.folder&&window.studioJob)studioJob('listing_save',{item:it.id,name:it.title,folder:it.listing.folder,files:[],shopee:sh,tiktok:tt},2*60000).catch(()=>{})};
+/* CONFIRMED PROJECTS: sample + slider aliran (Nota > Shoot > Storyboard > Editor > To Post > Published), dipadan dengan Sheet */
+function confirmedList(sv){const gs=sv?sv.groups.filter(g=>g.tab==='PRODUCTS'):[];
+  return activeSamples().map(it=>{const g=gs.find(x=>itMatch(it,x.name))||null;const eds=S.editor.filter(e=>pMatch(e.name,it.title));return {it,g,step:prodDone([it],eds,g,sv)}})}
+const tlMini=d=>`<div class="tl tl-mini">${PSTEPS.map((s,i)=>`<div class="s${i<=d?' d':i===d+1?' cur':''}"><i>${i<=d?IC.check:''}</i></div>`).join('')}</div>`;
+function cpRow(x){const p=samplePlan(x.it);const nm=String(x.it.title).split(/\s+/).slice(0,3).join(' ');const cur=PSTEPS[Math.min(x.step+1,5)];
+  return `<div class="ccr" style="--c:${TAB.links.c}"><div class="rowh"><span class="ccn">${esc(nm)}</span><span class="pill smpp" style="--pc:${p.col}"><b>${Math.max(p.left,0)}</b>${esc(p.label.replace(/^\d+ /,''))}</span></div>${tlMini(x.step)}<div class="meta" style="font-size:11px;margin-top:-2px">${smpPlat(x.it.sample.plat)} · sekarang ${esc(cur)} · akhir post ${dmy(x.it.sample.postBy)}</div></div>`}
+function confirmedSection(sv){const L=confirmedList(sv).filter(x=>hit('lk',x.it.title));if(!L.length)return '';
+  return `<p class="eyebrow" style="margin-top:6px">Sample · ${L.length}</p><div class="list" style="margin-bottom:14px">${L.map(x=>`<div class="card glass"><div class="rowh" style="align-items:flex-start;gap:10px"><div style="min-width:0">${x.g?`<span class="bigno" style="font-size:20px;margin-right:6px">${esc(x.g.no)}</span>`:''}<h3 style="display:inline">${esc(x.it.title)}</h3><div class="meta">Sample ${smpPlat(x.it.sample.plat)}${x.g?' · dalam Sheet':' · belum masuk Sheet'}</div></div>${smpBadge(x.it)}</div>${timeline(x.step,'')}</div>`).join('')}</div>`}

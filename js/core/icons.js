@@ -22,10 +22,12 @@ const IC={
  edit:P('<path d="M4 20l1-4L16.5 4.5l3 3L8 19l-4 1z"/>'),caption:P('<path d="M5 6h14M5 10h14M5 14h8"/><path d="M14.5 17.5l2 2 4-4"/>'),dl:P('<path d="M12 4v11"/><path d="M7.5 10.5L12 15l4.5-4.5"/><path d="M5 19.5h14"/>'),ext:P('<path d="M10 5H6a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4"/><path d="M14 4h6v6"/><path d="M20 4l-8.5 8.5"/>'),x:P('<path d="M6 6l12 12M18 6L6 18"/>')
 };
 const TABS_=[
- ['home','Home','#9A4F5D'],['ideas','Ideas','#C29A3C'],['links','Products','#5A8FB5'],['to-shoot','To Shoot','#CF8A55'],['shot','Shot','#C2666A'],['to-edit','To Edit','#8676BE'],
+ ['home','Home','#9A4F5D'],['ideas','Ideas','#C29A3C'],['links','Confirmed Projects','#5A8FB5'],['to-shoot','Shoot','#CF8A55'],['shot','Shot','#C2666A'],['to-edit','Edit','#8676BE'],
  ['ready','Ready to Publish','#8A6A52'],['published','Published','#6B5548'],['caption','Caption','#B0704F'],['jobs','Jobs','#A8763E'],
- ['editor','Editor','#9C6396'],['footage','Footage','#9A8C7A'],['broll','B-Roll Picker','#B0704F'],['inspiration','Inspiration','#CF7A9A'],['transcribe','Transcribe','#8C6A4F'],['media-kit','Media Kit','#B0937B']
-].map(([k,l,c])=>({k,l,c,ic:IC[k.replace('-','')]}));
+ ['editor','Editor','#9C6396'],['footage','Footage','#9A8C7A'],['broll','B-Roll Picker','#B0704F'],['inspiration','Inspiration','#CF7A9A'],['transcribe','Transcribe','#8C6A4F'],['media-kit','Media Kit','#B0937B'],['lagi','Lagi','#9A8C7A']
+].map(([k,l,c])=>({k,l,c,ic:IC[k.replace('-','')]||IC.plus}));
+const NAV=['home','ideas','to-shoot','to-edit','editor','ready','published','links','lagi'];
+const navLabel=l=>l.replace('Ready to Publish','Ready').replace('Confirmed Projects','Projects');
 const TAB=Object.fromEntries(TABS_.map(t=>[t.k,t]));
 const STAGE_TAB={ideas:'ideas',toshoot:'to-shoot',shot:'shot',toedit:'to-edit',ready:'ready',published:'published'};
 const FCOL={21:'#9A4F5D',22:'#5A8FB5',23:'#A8763E',24:'#CF8A55',25:'#8676BE',26:'#6B5548',27:'#CF7A9A',28:'#9C6396',31:'#9A8C7A',32:'#3F6FB5',41:'#8C8179',42:'#7A6558'};

@@ -171,3 +171,15 @@ audio{width:100%;margin-top:8px}
 .tsb.tsb2>.inp.acc{grid-column:span 2}.tsb.tsb2>[data-act=lsAdd]{grid-column:span 2}
 .tsb>.btn,.tsb>.inp.acc{width:100%;max-width:none;min-width:0;justify-content:center;padding-left:6px;padding-right:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tsb>.btn.icon{width:36px;padding:0}
+/* Home baru: Editor 2x2, kotak kecil "Lagi", kad depan padat */
+.hgrid .hbox.big2{grid-column:1 / span 2;grid-row:2 / span 2}.hbox.big2 b{font-size:72px}
+.mgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
+.hbox.mini{min-height:72px;padding:10px;border-radius:18px;gap:4px}.hbox.mini b{font-size:26px}.hbox.mini span.l{font-size:clamp(8px,2.3vw,10.5px);letter-spacing:.06em}
+.rbox.cc{padding:18px 20px 14px;border-radius:32px;cursor:pointer;display:block}
+.rbox.cc .rn{font-size:56px}
+.ccr{margin-top:10px}.ccr .rowh{align-items:center;gap:8px}
+.ccn{font-size:15px;font-weight:500;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ccr .bar{margin-top:5px;height:4px}
+.ccmore{display:flex;justify-content:flex-end;align-items:center;gap:4px;margin-top:10px;font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--c)}
+.ccmore svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8}
+.tl.tl-mini{margin:6px 0 4px}.tl.tl-mini .s:before{top:6px}.tl.tl-mini .s i{width:14px;height:14px;margin-bottom:0}.tl.tl-mini .s i svg{width:8px;height:8px}

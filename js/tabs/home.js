@@ -46,12 +46,10 @@ function sorterCard(){if(!sorterRaw||!sorterRaw.length)return '';
   const meter=(name,used,total)=>{used=+used||0;total=+total||0;if(!total)return '';const pct=Math.min(100,Math.round(used/total*100));const col=pct>85?'var(--bad)':'var(--ok)';
     return `<div style="--sc:${col};margin-top:10px"><div class="trk"><div class="t"><span>${esc(name)}</span><span>${used} / ${total>=1000?(total/1000).toFixed(1)+' TB':total+' GB'}</span></div></div><div class="bar"><i style="width:${pct}%"></i></div></div>`};
   const rows=folders.filter(f=>f.review>0).sort((a,b)=>b.review-a.review).slice(0,6);
-  return `<div class="card big glass" style="--c:#8676BE;margin-top:14px"><div class="rowh" style="align-items:center"><div><p class="eyebrow" style="margin:0">Footage Sorter · Mac mini</p><h3 style="font-size:18px;margin-top:4px">Folder gambar &amp; video</h3></div><b class="bigno" style="font-size:40px">${toReview}</b></div>
-   <div class="meta" style="margin-top:2px">belum disemak${checkMe?' · '+checkMe+' dalam Check Me':''}</div>
-   ${rows.map(f=>`<div class="evrow" style="cursor:default"><span style="flex:1;min-width:0"><strong>${esc(f.label)}</strong><span class="meta" style="display:block">${esc(f.group)} · ${f.total} fail</span></span><span class="pill" style="--pc:var(--warn)">${f.review} semak</span></div>`).join('')}
+  return `<div class="rbox glass cc" style="--c:#8676BE;cursor:default"><div class="rowh" style="align-items:center"><div style="min-width:0"><h2>Footage Sorter</h2><div class="meta">Belum disemak${checkMe?' · '+checkMe+' dalam Check Me':''} · ${esc(cell(1,1))}</div></div><b class="rn">${toReview}</b></div>
+   ${rows.slice(0,3).map(f=>`<div class="ccr"><div class="rowh"><span class="ccn">${esc(f.label.replace(/^[^\w]+\s*/,''))}</span><span class="pill" style="--pc:var(--warn)">${f.review} semak</span></div></div>`).join('')}
    ${meter(cell(3,1)||'Hard disk',cell(3,2),cell(3,3))}${meter('iCloud',cell(4,2),cell(4,3))}
-   <div class="btns" style="margin-top:14px">${/^https?:\/\//.test(link)?`<a class="btn solid tab" href="${esc(link)}" target="_blank" rel="noopener">${IC.ext}Buka folder &amp; semak</a>`:''}</div>
-   <p class="meta" style="margin:10px 0 0">Butang tu buka page Footage Sorter. Phone mesti guna Wi-Fi rumah dan app terbuka di Mac mini. Dikemas kini ${esc(cell(1,1))}.</p>${ongoingSlot()}</div>`}
+   ${/^https?:\/\//.test(link)?`<a class="ccmore" href="${esc(link)}" target="_blank" rel="noopener" style="text-decoration:none">Buka folder &amp; semak (Wi-Fi rumah) ${IC.next}</a>`:''}${ongoingSlot()}</div>`}
 /* Ongoing projects (WORK SORTER): status dari Mac (koleksi workprojects). Gambar kekal dalam Mac; butang buka page sorter untuk edit. */
 function ongoingSlot(){const L=(S.workprojects||[]).slice().sort((a,b)=>(b.updated||0)-(a.updated||0));if(!L.length)return '';
   const tone=st=>/perlu semak|susun semula|belum kemas/i.test(st)?'var(--warn)':/siap/i.test(st)?'var(--ok)':'#8676BE';
@@ -70,24 +68,27 @@ V.home=()=>{
     ready:(sv?sv.ready.length:0)+appReady(sv).length,published:publishedEntries(sv).length,links:sv?sv.groups.filter(g=>g.tab==='PRODUCTS').length:'–',
     jobs:S.jobs.filter(j=>!/siap|bayaran/i.test(j.status||'')).length,editor:eds.length,footage:S.footage.length,inspiration:S.inspo.length,'media-kit':3};
   const urgent=sv?sv.ready.map(r=>({r,d:deadline(rowStart(r,sv),7)})).sort((a,b)=>(a.d?a.d.left:99)-(b.d?b.d.left:99)).slice(0,3):[];
-  const box=k=>{const t=TAB[k];return `<button class="hbox glass" style="--c:${t.c}" data-act="go" data-id="${k}"><b>${n[k]}</b><span class="l">${t.l}</span></button>`};
-  const r=TAB.ready,ed=TAB.editor;
+  const box=(k,num,lab)=>{const t=TAB[k];return `<button class="hbox glass" style="--c:${t.c}" data-act="go" data-id="${k}"><b>${num!==undefined?num:n[k]}</b><span class="l">${lab||navLabel(t.l)}</span></button>`};
+  const icn=k=>IC[k].replace('<svg ','<svg style="width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round" ');
+  const mini=(k,num,lab,icon)=>{const t=TAB[k];return `<button class="hbox glass mini" style="--c:${t.c}" data-act="go" data-id="${k}">${icon?`<b style="display:flex;color:${t.c}">${icn(icon)}</b>`:`<b>${num}</b>`}<span class="l">${lab}</span></button>`};
+  const ed=TAB.editor;const cp=confirmedList(sv);
   return `<div class="head"><div><p class="eyebrow">${hr<12?'Selamat pagi':hr<18?'Selamat petang':'Selamat malam'}, Mira</p><h1>Home</h1></div><button class="btn sm" data-act="syncReq">${IC.copy}Sync folder</button></div>
   ${sheetNote()}
   <div class="hgrid">
-   ${['ideas','to-shoot','shot','to-edit','published'].map(box).join('')}
-   <button class="hbox tall glass" style="--c:${ed.c}" data-act="go" data-id="editor"><b>${n.editor}</b><span class="l">Editor</span><span class="edl">${eds.slice(0,4).map(e=>`<span>${esc(e.name)}</span>`).join('')||'<span>Tiada projek berjalan</span>'}</span></button>
-   ${['links','jobs','footage','inspiration','media-kit'].map(box).join('')}
-   <button class="hbox glass" style="--c:#B0704F" data-act="go" data-id="broll"><b style="display:flex;color:#B0704F">${IC.broll.replace('<svg ','<svg style="width:44px;height:44px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round" ')}</b><span class="l">B-Roll Picker</span></button>
-   <button class="hbox glass" style="--c:${TAB.caption.c}" data-act="go" data-id="caption"><b style="display:flex;color:${TAB.caption.c}">${IC.caption.replace('<svg ','<svg style="width:44px;height:44px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round" ')}</b><span class="l">Caption</span></button>
-   <button class="hbox glass" style="--c:${TAB.transcribe.c}" data-act="go" data-id="transcribe"><b style="display:flex;color:${TAB.transcribe.c}">${IC.transcribe.replace('<svg ','<svg style="width:44px;height:44px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round" ')}</b><span class="l">Transcribe</span></button>
+   ${box('ideas')}${box('to-shoot')}${box('to-edit',n.shot+n['to-edit'])}
+   <button class="hbox big2 glass" style="--c:${ed.c}" data-act="go" data-id="editor"><b>${n.editor}</b><span class="l">Editor</span><span class="edl">${eds.slice(0,5).map(e=>`<span>${esc(e.name)}</span>`).join('')||'<span>Tiada projek berjalan</span>'}</span></button>
+   ${box('ready')}${box('published')}
   </div>
-  <div class="rbox glass" style="--c:${r.c}"><div class="rowh" style="align-items:center"><div><h2>${r.l}</h2><div class="meta">Publish dalam 1 minggu selepas siap</div></div><b class="rn">${n.ready}</b></div>
-    ${urgent.length?urgent.map(u=>`<div style="--sc:${u.d?u.d.color:'var(--muted)'};margin-top:14px"><div class="rowh" style="align-items:center"><div class="rt"><strong>${esc(u.r.group.name)}</strong>${u.r.vid?' · VID '+esc(u.r.vid):''}</div><span class="pill" style="--pc:${u.d?u.d.color:'#999'}">${u.d?u.d.label:'tiada tarikh'}</span></div><div class="bar"><i style="width:${u.d?u.d.pct:0}%"></i></div></div>`).join(''):`<div class="meta" style="margin-top:12px">${sv?'Tiada video menunggu.':'Menunggu sheet.'}</div>`}
-    <div style="margin-top:16px"><button class="btn solid tab" data-act="go" data-id="ready">Buka senarai${IC.next}</button></div></div>
-  ${sampleCard()}
+  <div class="mgrid">${mini('links',cp.length,'Projects')}${mini('jobs',n.jobs,'Jobs')}${mini('inspiration',n.inspiration,'Inspo')}${mini('media-kit',n['media-kit'],'Media Kit')}${mini('footage',n.footage,'Footage')}${mini('broll',0,'B-Roll','broll')}${mini('caption',0,'Caption','caption')}${mini('transcribe',0,'Transcribe','transcribe')}</div>
+  ${ccard('ready',TAB.ready.l,'Publish dalam 1 minggu selepas siap',n.ready,urgent.map(u=>ccRow(shortName(u.r.group.name,u.r.vid),u.d?u.d.label:'tiada tarikh',u.d?u.d.color:'#999',u.d?u.d.pct:0)).join('')||`<p class="meta" style="margin:8px 0 0">${sv?'Tiada video menunggu.':'Menunggu sheet.'}</p>`)}
+  ${ccard('links','Confirmed Projects','Sample ikut deadline',cp.length,cp.slice(0,4).map(cpRow).join('')||'<p class="meta" style="margin:8px 0 0">Tiada project menunggu.</p>')}
   ${sorterCard()||(S.workprojects&&S.workprojects.length?`<div class="card big glass" style="--c:#8676BE;margin-top:14px"><p class="eyebrow" style="margin:0">Footage Sorter · Mac mini</p>${ongoingSlot()}</div>`:'')}
   ${calHTML()}`};
+/* Kad depan padat: tajuk + nombor besar, baris satu garis dengan nama pendek */
+const shortName=(name,vid)=>{const w=String(name||'').trim().split(/\s+/);return vid?'Vid '+vid+' '+w[0]:w.slice(0,3).join(' ')};
+const ccard=(k,title,sub,num,rows)=>`<div class="rbox glass cc" style="--c:${TAB[k].c}" role="button" tabindex="0" data-act="go" data-id="${k}"><div class="rowh" style="align-items:center"><div style="min-width:0"><h2>${esc(title)}</h2><div class="meta">${esc(sub)}</div></div><b class="rn">${num}</b></div>${rows}<div class="ccmore">Buka senarai ${IC.next}</div></div>`;
+const ccRow=(name,pill,col,pct)=>`<div class="ccr" style="--sc:${col}"><div class="rowh"><span class="ccn">${esc(name)}</span><span class="pill" style="--pc:${col}">${esc(pill)}</span></div><div class="bar"><i style="width:${pct}%"></i></div></div>`;
+
 A.go=el=>go(el.dataset.id);
 /* Folder di Mac mini diimbas sendiri oleh worker setiap 5 minit. Butang ni minta imbasan sekarang. */
 A.syncReq=async()=>{toast('Mac mini sedang imbas folder');try{const r=await studioJob('scan',{},3*60000);toast('Siap: '+(r.topost||0)+' video, '+(r.toedit||0)+' folder edit')}catch(e){toast(e&&e.code==='unavailable'?'Tiada internet':'Mac mini tak jawab. Semak Mac mini hidup')}};
@@ -100,3 +101,6 @@ function autoAdvance(){if(mode!=='live')return;const files=((S.sync.topost||{}).
     save('items',Object.assign({},it,{stage:'ready',auto:true,files:fs.map(f=>f.name),stageAt:Object.assign({},it.stageAt,{ready:Math.max(...fs.map(f=>f.mtime||0))})}),true)});
   if(n){render();toast(n+' item dipindah sendiri ke Ready (video dah render)')}}
 
+/* Lagi: semua alat dan rekod yang jarang guna */
+V.lagi=()=>{const sv=sheetView();const t=(k,num,lab,icon)=>{const c=TAB[k].c;return `<button class="hbox glass mini" style="--c:${c}" data-act="go" data-id="${k}">${icon?`<b style="display:flex;color:${c}">${IC[icon].replace('<svg ','<svg style="width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round" ')}</b>`:`<b>${num}</b>`}<span class="l">${lab}</span></button>`};
+  return head('Alat dan rekod')+`<div class="mgrid">${t('links',confirmedList(sv).length,'Projects')}${t('jobs',S.jobs.filter(j=>!/siap|bayaran/i.test(j.status||'')).length,'Jobs')}${t('inspiration',S.inspo.length,'Inspo')}${t('media-kit',3,'Media Kit')}${t('footage',S.footage.length,'Footage')}${t('broll',0,'B-Roll','broll')}${t('caption',0,'Caption','caption')}${t('transcribe',0,'Transcribe','transcribe')}${t('shot',byStage('shot').length,'Shot')}</div>`};

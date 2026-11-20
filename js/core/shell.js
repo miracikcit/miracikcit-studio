@@ -6,7 +6,8 @@ function render(force){
   const ae=document.activeElement;
   if(!force&&ae&&ae.closest&&ae.closest('#main')&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&ae.type!=='checkbox'){renderPending=true;return}
   renderPending=false;const t=TAB[ui.view];
-  $('#nav').innerHTML=TABS_.map(v=>`<a href="#${v.k}" class="${ui.view===v.k?'on':''}" style="--c:${v.c}"${ui.view===v.k?' aria-current="page"':''}>${v.ic}<span>${v.l.replace('Ready to Publish','Ready')}</span></a>`).join('');
+  const nv=NAV.includes(ui.view)?ui.view:ui.view==='shot'?'to-edit':'lagi';
+  $('#nav').innerHTML=NAV.map(k=>TAB[k]).map(v=>`<a href="#${v.k}" class="${nv===v.k?'on':''}" style="--c:${v.c}"${nv===v.k?' aria-current="page"':''}>${v.ic}<span>${navLabel(v.l)}</span></a>`).join('');
   const on=$('#nav a.on');if(on&&force)on.scrollIntoView({inline:'center',block:'nearest'});
   const d=new Date();$('#today').textContent=HARI[d.getDay()]+', '+d.getDate()+' '+BULAN[d.getMonth()];
   const m=$('#main');m.style.setProperty('--c',t.c);
