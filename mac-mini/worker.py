@@ -859,6 +859,127 @@ def run_nota(inp, sheet, cfg):
     return {"productId": pid, "product": doc, "usage": {"in": u.get("input_tokens", 0) + u.get("cache_read_input_tokens", 0) + u.get("cache_creation_input_tokens", 0), "out": u.get("output_tokens", 0)}}
 
 
+# ---------------------------------------------------------------- EDIT NOW, folder edit, paid job
+EDIT_MODEL, EDIT_EFFORT = "claude-opus-5-5", "medium"
+
+
+def _edit_main(stage):
+    base = os.path.realpath(STUDIO_BASE)
+    main = os.path.realpath(os.path.join(base, str(stage or "")))
+    m = re.match(r"^(\d+)\.", os.path.basename(main))
+    if not m or os.path.dirname(main) != base or not os.path.isdir(main) or not (21 <= int(m.group(1)) <= 42):
+        raise RuntimeError("Folder edit tak dijumpai: " + str(stage))
+    return main, m.group(1)
+
+
+def _safe_name(name):
+    n = re.sub(r'[\\/:*?"<>|]+', " ", str(name or "")).strip().strip(".")[:60]
+    if not n:
+        raise RuntimeError("Nama projek kosong")
+    return n
+
+
+def ensure_edit_settings(main):
+    """Setiap folder edit guna Opus 5.5 effort medium (.claude/settings.json), sama macam Work Sorter."""
+    d = os.path.join(main, ".claude")
+    os.makedirs(d, exist_ok=True)
+    f = os.path.join(d, "settings.json")
+    try:
+        cur = json.load(open(f, encoding="utf-8"))
+    except Exception:
+        cur = {}
+    if cur.get("model") != EDIT_MODEL or cur.get("effortLevel") != EDIT_EFFORT:
+        cur["model"], cur["effortLevel"] = EDIT_MODEL, EDIT_EFFORT
+        with open(f, "w", encoding="utf-8") as fh:
+            json.dump(cur, fh, ensure_ascii=False, indent=2)
+
+
+def run_mkfolder(inp, sheet):
+    main, _ = _edit_main(inp.get("stage"))
+    name = _safe_name(inp.get("name"))
+    os.makedirs(os.path.join(main, name), exist_ok=True)
+    _scan_last["t"] = 0
+    push_scan(sheet, force=True)
+    return {"name": name}
+
+
+def run_edit_now(inp, sheet, cfg):
+    """Buka sesi Claude Code baru dalam Terminal Mac mini: folder utama, Opus 5.5 medium, Remote Control hidup,
+    terus jalan /edit-reel <no>/<projek>. Mira kawal dari app Claude di phone."""
+    main, no = _edit_main(inp.get("stage"))
+    name = _safe_name(inp.get("name"))
+    os.makedirs(os.path.join(main, name), exist_ok=True)
+    ensure_edit_settings(main)
+    cli = find_tool("claude", [cfg.get("claude_cli")])
+    if not cli:
+        raise RuntimeError("Claude Code tak dijumpai dalam Mac mini.")
+    key = os.path.basename(main) + "/" + name
+    ed_id = "ed-f-" + re.sub(r"[^a-z0-9]+", "", key.lower())[:40]
+    prompt = f"/edit-reel {no}/{name} (tracker Studio: editor/{ed_id})"
+    q = lambda x: "'" + str(x).replace("'", "'\\''") + "'"
+    d = os.path.join(HOME, "edit-now")
+    os.makedirs(d, exist_ok=True)
+    for old in glob.glob(os.path.join(d, "*.command")):
+        if time.time() - os.path.getmtime(old) > 86400:
+            os.remove(old)
+    cmdf = os.path.join(d, re.sub(r"[^A-Za-z0-9]+", "-", name)[:40] + ".command")
+    with open(cmdf, "w", encoding="utf-8") as fh:
+        fh.write("#!/bin/zsh -l\n# Dibuat oleh butang EDIT NOW dalam Miracikcit Studio\n"
+                 f"cd {q(main)} || exit 1\n"
+                 f"exec {q(cli)} --model {EDIT_MODEL} --effort {EDIT_EFFORT} -n {q(name)} --remote-control {q(name)} {q(prompt)}\n")
+    os.chmod(cmdf, 0o755)
+    r = subprocess.run(["/usr/bin/open", "-a", "Terminal", cmdf], capture_output=True, text=True, timeout=30)
+    if r.returncode != 0:
+        raise RuntimeError("Tak dapat buka Terminal: " + (r.stderr or "")[-200:])
+    now = int(time.time() * 1000)
+    cur = sheet.call("dget", path="editor/" + ed_id).get("doc") or {"created": now}
+    cur.update({"name": name, "folder": key, "style": os.path.basename(main), "status": "Sesi dibuka", "updated": now, "sessionAt": now})
+    sheet.call("dset", path="editor/" + ed_id, data=cur)
+    return {"editor": ed_id, "folder": key}
+
+
+JOB_PROMPT = """Ini maklumat satu paid job (collab / review berbayar) untuk content creator Malaysia @miracikcit, dari screenshot (teks OCR) dan nota.
+Hari ini: {today}. Tarikh tanpa tahun: anggap tarikh akan datang yang paling dekat.
+
+{text}
+
+Keluarkan JSON dengan kunci: brand (nama brand / job), fee (nombor RM sahaja, cth "800"), draftDate, postDate, submitDate (YYYY-MM-DD atau ""),
+description (ringkasan 1-3 ayat Bahasa Melayu), deliverables (satu baris satu, cth "1 TikTok video"), requirements (syarat penting, satu baris satu),
+contact (nama / nombor / email kalau ada), clientName (nama syarikat kalau ada). Kalau maklumat tiada, isi "". Jangan reka maklumat."""
+
+
+def run_jobparse(inp, sheet, cfg):
+    """Baca screenshot job (Apple Vision, percuma) + nota, kemudian Claude Opus (effort low) isi butiran job."""
+    parts = []
+    for fid in (inp.get("files") or [])[:6]:
+        lines = run_ocr(fid, sheet).get("lines") or []
+        parts.append("\n".join(str(l.get("t") or "") for l in sorted(lines, key=lambda l: (round(float(l.get("y") or 0), 2), float(l.get("x") or 0)))))
+    if inp.get("text"):
+        parts.append("NOTA:\n" + str(inp["text"]))
+    text = "\n\n---\n\n".join(p for p in parts if p.strip())[:14000]
+    if not text.strip():
+        raise RuntimeError("Tiada teks dijumpai dalam screenshot")
+    cli = find_tool("claude", [cfg.get("claude_cli")])
+    if not cli:
+        raise RuntimeError("Claude Code tak dijumpai dalam Mac mini.")
+    cmd = [cli, "-p", JOB_PROMPT.format(today=inp.get("today") or time.strftime("%Y-%m-%d"), text=text),
+           "--model", cfg.get("job_model", "claude-opus-5-5"), "--effort", cfg.get("job_effort", "low"), "--tools", "",
+           "--system-prompt", AI_SYSTEM, "--no-session-persistence", "--output-format", "json", "--setting-sources", ""]
+    with tempfile.TemporaryDirectory(prefix="miracikcit-job-") as tmp:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=300, cwd=tmp)
+    try:
+        d = json.loads(r.stdout)
+    except Exception:
+        raise RuntimeError("Claude tak jawab: " + (r.stderr or r.stdout or "")[-300:])
+    txt = str(d.get("result") or "")
+    if d.get("is_error"):
+        raise RuntimeError("Claude dalam Mac mini belum login atau had usage penuh: " + txt[:200])
+    m = re.search(r"\{.*\}", txt, re.S)
+    if not m:
+        raise RuntimeError("Jawapan Claude bukan JSON")
+    return {"job": json.loads(m.group(0))}
+
+
 def studio_jobs(sheet, cfg):
     try:
         jobs = sheet.call("jpoll").get("jobs", [])
@@ -885,6 +1006,12 @@ def studio_jobs(sheet, cfg):
                 outp = run_listing_save(inp, sheet)
             elif j["type"] == "ocr":
                 outp = run_ocr(inp.get("file", ""), sheet)
+            elif j["type"] == "edit_now":
+                outp = run_edit_now(inp, sheet, cfg)
+            elif j["type"] == "mkfolder":
+                outp = run_mkfolder(inp, sheet)
+            elif j["type"] == "jobparse":
+                outp = run_jobparse(inp, sheet, cfg)
             elif j["type"] == "scan":
                 outp = push_scan(sheet, force=True) or {}
             else:

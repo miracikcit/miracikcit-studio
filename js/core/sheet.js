@@ -9,7 +9,7 @@ function parseSheet(){
   (sheetRaw.PRODUCTS||[]).forEach((r,i)=>{const rn=i+1;if(rn<5)return;r=r||[];
     if(String(r[3]||'').trim()!==''){seq++;const c=String(r[2]||'').trim();g={tab:'PRODUCTS',name:String(r[1]||'').trim(),no:String(r[0]||'').trim()||String(seq),shopee:isUrl(c)?c:'',tt:'',start:rn,rows:[],kind:String(r[17]||'').trim(),price:String(r[18]||'').trim()};groups.push(g)}
     else if(g){const c=String(r[2]||'').trim();if(isUrl(c)&&!g.tt)g.tt=c}
-    if(g&&String(r[4]||'').trim()!=='')g.rows.push({tab:'PRODUCTS',row:rn,vid:String(r[4]),caption:r[5]||'',sched:[6,7,8,9].map(c=>isT(r[c])),posted:[10,11,12,13].map(c=>isT(r[c])),acc:[String(r[14]||'').trim(),String(r[15]||'').trim()],group:g})});
+    if(g&&String(r[4]||'').trim()!=='')g.rows.push({tab:'PRODUCTS',row:rn,vid:String(r[4]),caption:r[5]||'',sched:[6,7,8,9].map(c=>isT(r[c])),posted:[10,11,12,13].map(c=>isT(r[c])),acc:[String(r[14]||'').trim(),String(r[15]||'').trim()],sub:String(r[16]||''),group:g})});
   (sheetRaw.NON||[]).forEach((r,i)=>{const rn=i+1;if(rn<5)return;r=r||[];const nm=String(r[1]||'').trim();if(!nm)return;
     const ng={tab:'NON',name:nm,rows:[],start:rn};ng.rows.push({tab:'NON',row:rn,vid:'',caption:r[2]||'',sched:[3,4,5,6].map(c=>isT(r[c])),posted:[7,8,9,10].map(c=>isT(r[c])),acc:[String(r[11]||'').trim(),String(r[12]||'').trim()],group:ng});groups.push(ng)});
   return groups}
@@ -34,7 +34,7 @@ async function initSheet(){
   if(!MCP){sheetState='off';render();return}
   sheetState='loading';
   Object.entries(SH).forEach(([k,t])=>MCP.watchTool(GS,'get_values',{spreadsheetId:SHEET_ID,range:t.range},ev=>{
-    if(ev.type==='data'){sheetRaw[k]=(ev.result.payload||{}).values||[];sheetState='ok';sheetAt=(ev.result.cache&&ev.result.cache.storedAt)||Date.now();sheetErr=null}
+    if(ev.type==='data'){sheetRaw[k]=(ev.result.payload||{}).values||[];sheetState='ok';sheetAt=(ev.result.cache&&ev.result.cache.storedAt)||Date.now();sheetErr=null;setTimeout(autoSheet,1500)}
     else{sheetErr=ev.error&&ev.error.code;if(['needs_reauth','server_not_connected','blocked_by_policy','approval_required','not_in_manifest','not_granted','capability_disabled','selection_required','consent_required'].includes(sheetErr)){sheetRaw[k]=null;sheetState='err'}}
     render()},{refetchInterval:60000}));
   MCP.watchTool(GS,'get_values',{spreadsheetId:SHEET_ID,range:JOBS_RANGE},ev=>{if(ev.type==='data'){jobsRaw=(ev.result.payload||{}).values||[];jobsFromSheet()}},{refetchInterval:60000});
@@ -46,6 +46,11 @@ async function sheetTick(tab,row,kind,idx){
   const t=SH[tab],raw=sheetRaw[tab];if(!raw)return;const col=String.fromCharCode(65+t[kind]+idx);
   const r=raw[row-1]=(raw[row-1]||[]).slice();const cur=isT(r[t[kind]+idx]);r[t[kind]+idx]=cur?'FALSE':'TRUE';render();
   try{await sheetWrite(`${t.q}!${col}${row}`,[[!cur]]);toast('Sheet dikemas kini')}catch(e){r[t[kind]+idx]=cur?'TRUE':'FALSE';render();toast(e.code==='tool_error'?'Sheet tolak perubahan':sheetErrText(e.code))}}
+/* Link Shopee / TikTok dari kad To Shoot ke baris produk dalam Sheet (lajur C, baris kedua untuk link beli) */
+async function itemLinksToSheet(it,g){if(!MCP||!g)return;const sv=g.shopee||it.shopee||'',tv=g.tt||it.tiktok||'';if(sv===g.shopee&&tv===g.tt)return;
+  const raw=sheetRaw.PRODUCTS;const next=(raw&&raw[g.start])||[];const nextIsProduct=String(next[3]||'').trim()!=='';
+  await sheetWrite(`PRODUCTS!C${g.start}`,[[sv]]);if(!nextIsProduct)await sheetWrite(`PRODUCTS!B${g.start+1}:C${g.start+1}`,[[bothText(sv,tv),tv]]);
+  if(raw){const a=raw[g.start-1]=(raw[g.start-1]||[]).slice();a[2]=sv;if(!nextIsProduct){const b=raw[g.start]=(raw[g.start]||[]).slice();b[1]=bothText(sv,tv);b[2]=tv}}}
 async function saveLinks(start){
   const groups=parseSheet()||[];const g=groups.find(x=>x.tab==='PRODUCTS'&&x.start===start);if(!g)return;
   const sEl=document.querySelector(`[data-lk="${start}|s"]`),tEl=document.querySelector(`[data-lk="${start}|t"]`);

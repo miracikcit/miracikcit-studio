@@ -23,10 +23,10 @@ const IC={
 };
 const TABS_=[
  ['home','Home','#9A4F5D'],['ideas','Ideas','#C29A3C'],['links','Confirmed Projects','#5A8FB5'],['to-shoot','Shoot','#CF8A55'],['shot','Shot','#C2666A'],['to-edit','Edit','#8676BE'],
- ['ready','Ready to Publish','#8A6A52'],['published','Published','#6B5548'],['caption','Caption','#B0704F'],['jobs','Jobs','#A8763E'],
+ ['ready','To Publish','#8A6A52'],['published','Published','#6B5548'],['caption','Caption','#B0704F'],['jobs','Jobs','#A8763E'],
  ['editor','Editor','#9C6396'],['footage','Footage','#9A8C7A'],['broll','B-Roll Picker','#B0704F'],['inspiration','Inspiration','#CF7A9A'],['transcribe','Transcribe','#8C6A4F'],['media-kit','Media Kit','#B0937B'],['lagi','Lagi','#9A8C7A']
 ].map(([k,l,c])=>({k,l,c,ic:IC[k.replace('-','')]||IC.plus}));
-const NAV=['home','ideas','to-shoot','to-edit','editor','ready','published','links','lagi'];
+const NAV=['home','links','ideas','to-shoot','to-edit','editor','ready','published','lagi'];
 const navLabel=l=>l.replace('Ready to Publish','Ready').replace('Confirmed Projects','Projects');
 const TAB=Object.fromEntries(TABS_.map(t=>[t.k,t]));
 const STAGE_TAB={ideas:'ideas',toshoot:'to-shoot',shot:'shot',toedit:'to-edit',ready:'ready',published:'published'};
@@ -36,7 +36,7 @@ const ACCOUNTS=['miracikcit','miracikcitjuga','bondamiracikcit'];
 const ACC_COL={miracikcit:'#9A4F5D',miracikcitjuga:'#5A7FA8',bondamiracikcit:'#B98A2E'};
 const accSel=(attrs,val,ph)=>`<select class="inp acc" style="--ac:${ACC_COL[val]||'transparent'}" ${attrs}><option value="">${ph||'Pilih akaun'}</option>${ACCOUNTS.concat(val&&!ACCOUNTS.includes(val)?[val]:[]).map(a=>`<option ${val===a?'selected':''}>${esc(a)}</option>`).join('')}</select>`;
 const accPill=a=>a?`<span class="pill" style="--pc:${ACC_COL[a]||'#999'}">${esc(a)}</span>`:'';
-const JOB_STATUS=['Baru','Dalam proses','Draf dihantar','Siap post','Bayaran diterima'];
+const JOB_STATUS=['Baru','Dalam proses','Draf dihantar','Siap post','Invois dihantar','Bayaran diterima'];
 const FTAGS=['b-roll','unboxing','before/after','produk','tangan','transformation','talking head'];
 const DAY=864e5;
 

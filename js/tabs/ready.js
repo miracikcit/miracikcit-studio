@@ -62,7 +62,11 @@ A.tick=el=>{const [tab,row,kind,idx]=el.dataset.x.split('|');sheetTick(tab,+row,
 A.cap=el=>{const [tab,row,v]=el.dataset.x.split('|');for(const g of parseSheet()||[])for(const r of g.rows)if(r.tab===tab&&r.row===+row){const nolink=v==='fb'&&g.tab==='PRODUCTS'&&!g.shopee;return copyText(capVariants(r.caption,g.shopee)[v],nolink?'Dicopy tanpa link, belum ada link Shopee':'Caption '+({fb:'FB',ig:'IG',tt:'TikTok'}[v])+' dicopy')}};
 A.lkSave=el=>saveLinks(+el.dataset.id);
 A.dl=el=>{const id=el.dataset.id;const rm=get('readymeta',id)||{id};save('readymeta',Object.assign({},rm,{downloaded:!rm.downloaded}))};
-A.settle=el=>{const id=el.dataset.id;const rm=get('readymeta',id)||{id};save('readymeta',Object.assign({},rm,{settled:!rm.settled,settledAt:Date.now()}));toast('Settled. Dipindah ke Published')};
+A.settle=el=>{const id=el.dataset.id;const rm=get('readymeta',id)||{id};const on=!rm.settled;save('readymeta',Object.assign({},rm,{settled:on,settledAt:Date.now()}));
+  if(!on){toast('Dibatalkan');return}toast('Settled. Dipindah ke Published');
+  /* Platform yang dijadual tapi belum ditanda Posted: tanda Posted dalam Sheet */
+  const r=(parseSheet()||[]).flatMap(g=>g.rows).find(x=>rmKey(x)===id);if(!r||!MCP)return;const t=SH[r.tab];
+  r.sched.forEach((sc,i)=>{if(sc&&!r.posted[i])sheetTick(r.tab,r.row,'posted',i)})};
 A.dlItem=el=>{const it=get('items',el.dataset.id);save('items',Object.assign({},it,{downloaded:!it.downloaded}))};
 A.itemPub=el=>moveItem(get('items',el.dataset.id),'published');
 A.filePub=el=>{const n=el.dataset.x;save('published',{name:n,title:n.replace(/\.(mp4|mov|m4v)$/i,'').replace(/_FINAL$/i,'').replace(/[_-]+/g,' '),date:ymd(new Date()),source:'file'});toast('Published')};

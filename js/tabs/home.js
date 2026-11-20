@@ -6,8 +6,21 @@ async function loadCal(){if(!MCP){calState='off';return}if(!calEvents.length)cal
   try{const r=await MCP.callTool(GC,'list_events',{fullText:'miracikcitstudio',startTime:s,endTime:e,pageSize:250,orderBy:'startTime'},{cache:false});
     calEvents=(((r.payload||{}).events)||[]).filter(ev=>ev.status!=='cancelled').map(ev=>{const st=ev.start||{};const dt=st.dateTime||'';const desc=String(ev.description||'').replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]+>/g,'');const m=desc.match(/Akaun:\s*([^\n]+)/i);
       return {id:ev.id,title:ev.summary||'',date:String(dt||st.date||'').slice(0,10),time:dt?dt.slice(11,16):'',account:m?m[1].trim():'',note:desc.split('\n').filter(l=>!/^Akaun:/i.test(l)&&!l.includes(MARK)).join('\n').trim()}});
-    calState='ok';calErr=null}catch(err){calErr=err&&err.code;calState='err'}
+    calState='ok';calErr=null;setTimeout(autoCal,3000)}catch(err){calErr=err&&err.code;calState='err'}
   render()}
+/* Deadline masuk Google Calendar sendiri: akhir post sample + tarikh draf / posting / submission paid job.
+   Setiap event ada baris "Ref: <kunci>" supaya tak dibuat dua kali. Tarikh berubah: event dikemas kini. */
+let calAutoBusy=false;
+async function autoCal(){if(calAutoBusy||mode!=='live'||calState!=='ok'||!MCP)return;calAutoBusy=true;const td=ymd(new Date());
+  const want=[];activeSamples().forEach(it=>want.push({ref:'smp-'+it.id,date:it.sample.postBy,title:'Akhir post: '+it.title,acc:it.account||''}));
+  S.jobs.filter(j=>j.paid!==false&&!/bayaran/i.test(j.status||'')).forEach(j=>[['draftDate','Draf'],['postDate','Posting'],['submitDate','Submission']].forEach(([k,l])=>{if(j[k])want.push({ref:'job-'+j.id+'-'+k,date:j[k],title:l+': '+(j.brand||j.no||'Job'),acc:''})}));
+  let n=0;
+  try{for(const w of want.filter(x=>x.date>=td)){if(n>=8)break;const ex=calEvents.find(e=>e.note.includes('Ref: '+w.ref));if(ex&&ex.date===w.date)continue;
+      const nx=new Date(w.date+'T00:00:00');nx.setDate(nx.getDate()+1);
+      const p={summary:w.title,description:[w.acc?'Akaun: '+w.acc:'','Ref: '+w.ref,MARK].filter(Boolean).join('\n'),allDay:true,startTime:w.date+'T00:00:00',endTime:ymd(nx)+'T00:00:00'};
+      if(ex)await MCP.callTool(GC,'update_event',Object.assign({eventId:ex.id},p));else await MCP.callTool(GC,'create_event',p);n++}}
+  catch(e){}finally{calAutoBusy=false}
+  if(n){toast(n+' deadline dimasukkan ke Google Calendar');loadCal()}}
 function calHTML(){const c=ui.cal||(ui.cal={y:new Date().getFullYear(),m:new Date().getMonth()});const days=new Date(c.y,c.m+1,0).getDate();const off=new Date(c.y,c.m,1).getDay();const pre=c.y+'-'+pad(c.m+1)+'-';
   const evs=calEvents.filter(e=>e.date.startsWith(pre)).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));const by={};evs.forEach(e=>(by[e.date]=by[e.date]||[]).push(e));const td=ymd(new Date());
   let cells='';for(let i=0;i<off;i++)cells+='<span></span>';
@@ -74,16 +87,27 @@ V.home=()=>{
   const ed=TAB.editor;const cp=confirmedList(sv);
   return `<div class="head"><div><p class="eyebrow">${hr<12?'Selamat pagi':hr<18?'Selamat petang':'Selamat malam'}, Mira</p><h1>Home</h1></div><button class="btn sm" data-act="syncReq">${IC.copy}Sync folder</button></div>
   ${sheetNote()}
+  ${weekCard(sv)}
   <div class="hgrid">
-   ${box('ideas')}${box('to-shoot')}${box('to-edit',n.shot+n['to-edit'])}
-   <button class="hbox big2 glass" style="--c:${ed.c}" data-act="go" data-id="editor"><b>${n.editor}</b><span class="l">Editor</span><span class="edl">${eds.slice(0,5).map(e=>`<span>${esc(e.name)}</span>`).join('')||'<span>Tiada projek berjalan</span>'}</span></button>
+   ${box('links',cp.length,'Projects')}${box('to-shoot')}${box('to-edit',n.shot+n['to-edit'])}
+   <button class="hbox big2 edbox glass" style="--c:${ed.c}" data-act="go" data-id="editor"><span class="edn"><b>${n.editor}</b><span class="l">Editor</span></span><span class="edl">${eds.slice(0,6).map(e=>`<span class="edr"><span>${esc(shortName(e.name))}</span><i style="--pc:${/draf|sedia|semak/i.test(e.status||'')?'var(--warn)':'var(--c)'}">${esc(edShort(e.status))}</i></span>`).join('')||'<span>Tiada projek berjalan</span>'}${eds.length>6?`<span>+${eds.length-6} lagi</span>`:''}</span></button>
    ${box('ready')}${box('published')}
   </div>
-  <div class="mgrid">${mini('links',cp.length,'Projects')}${mini('jobs',n.jobs,'Jobs')}${mini('inspiration',n.inspiration,'Inspo')}${mini('media-kit',n['media-kit'],'Media Kit')}${mini('footage',n.footage,'Footage')}${mini('broll',0,'B-Roll','broll')}${mini('caption',0,'Caption','caption')}${mini('transcribe',0,'Transcribe','transcribe')}</div>
+  <div class="mgrid">${mini('ideas',n.ideas,'Ideas')}${mini('jobs',n.jobs,'Jobs')}${mini('inspiration',n.inspiration,'Inspo')}${mini('media-kit',n['media-kit'],'Media Kit')}${mini('footage',n.footage,'Footage')}${mini('broll',0,'B-Roll','broll')}${mini('caption',0,'Caption','caption')}${mini('transcribe',0,'Transcribe','transcribe')}</div>
   ${ccard('ready',TAB.ready.l,'Publish dalam 1 minggu selepas siap',n.ready,urgent.map(u=>ccRow(shortName(u.r.group.name,u.r.vid),u.d?u.d.label:'tiada tarikh',u.d?u.d.color:'#999',u.d?u.d.pct:0)).join('')||`<p class="meta" style="margin:8px 0 0">${sv?'Tiada video menunggu.':'Menunggu sheet.'}</p>`)}
   ${ccard('links','Confirmed Projects','Sample ikut deadline',cp.length,cp.slice(0,4).map(cpRow).join('')||'<p class="meta" style="margin:8px 0 0">Tiada project menunggu.</p>')}
   ${sorterCard()||(S.workprojects&&S.workprojects.length?`<div class="card big glass" style="--c:#8676BE;margin-top:14px"><p class="eyebrow" style="margin:0">Footage Sorter · Mac mini</p>${ongoingSlot()}</div>`:'')}
   ${calHTML()}`};
+const edShort=st=>({'Storyboard':'SB','Sesi dibuka':'Sesi','Tunggu semakan':'Semak','Sedia render':'Render'})[st||'']||(st||'Draf');
+/* Ringkasan minggu (Isnin): sample perlu shoot, video tunggu edit, link belum submit, job hampir deadline */
+function weekCard(sv){if(new Date().getDay()!==1)return '';const wk=ymdAdd(ymd(new Date()),7);
+  const shoot=activeSamples().filter(it=>it.stage==='toshoot'&&it.sample.postBy<=wk).length;
+  const edit=toEditFolders().length+byStage('toedit').length;
+  const links=sv?publishedEntries(sv).filter(e=>linkGaps(e)>0).length:0;
+  const jobs=S.jobs.filter(j=>j.paid!==false&&!/bayaran/i.test(j.status||'')&&jobNext(j)&&jobNext(j).date<=wk).length;
+  const row=(k,num,lab)=>`<button class="ccr" style="text-align:left;width:100%;background:none;border:0;padding:6px 0;font:inherit;color:inherit;cursor:pointer" data-act="go" data-id="${k}"><div class="rowh"><span class="ccn">${lab}</span><span class="pill" style="--pc:${num?'var(--warn)':'var(--ok)'}">${num}</span></div></button>`;
+  return `<div class="rbox glass cc" style="--c:${TAB.home.c};cursor:default;margin-bottom:14px"><div class="rowh" style="align-items:center"><div style="min-width:0"><h2>Minggu ni</h2><div class="meta">Ringkasan Isnin · ${dmy(ymd(new Date()))} hingga ${dmy(wk)}</div></div></div>
+   ${row('to-shoot',shoot,'Sample perlu shoot')}${row('to-edit',edit,'Video tunggu edit')}${row('published',links,'Link belum submit')}${row('jobs',jobs,'Paid job hampir deadline')}</div>`}
 /* Kad depan padat: tajuk + nombor besar, baris satu garis dengan nama pendek */
 const shortName=(name,vid)=>{const w=String(name||'').trim().split(/\s+/);return vid?'Vid '+vid+' '+w[0]:w.slice(0,3).join(' ')};
 const ccard=(k,title,sub,num,rows)=>`<div class="rbox glass cc" style="--c:${TAB[k].c}" role="button" tabindex="0" data-act="go" data-id="${k}"><div class="rowh" style="align-items:center"><div style="min-width:0"><h2>${esc(title)}</h2><div class="meta">${esc(sub)}</div></div><b class="rn">${num}</b></div>${rows}<div class="ccmore">Buka senarai ${IC.next}</div></div>`;
@@ -100,7 +124,20 @@ function autoAdvance(){if(mode!=='live')return;const files=((S.sync.topost||{}).
     const fs=files.filter(f=>(f.mtime||0)>=since-DAY&&itemMatches(it,f));if(!fs.length)return;n++;
     save('items',Object.assign({},it,{stage:'ready',auto:true,files:fs.map(f=>f.name),stageAt:Object.assign({},it.stageAt,{ready:Math.max(...fs.map(f=>f.mtime||0))})}),true)});
   if(n){render();toast(n+' item dipindah sendiri ke Ready (video dah render)')}}
+/* Lepas sheet dibaca: item lama yang dah ada video dalam Sheet keluar dari Shot / Edit, folder edit yang dah render ditanda siap,
+   link dari To Shoot dan harga sample ditulis ke Sheet. Sekali setiap 2 minit. */
+let autoSheetAt=0;const autoDone={};
+function autoSheet(){if(mode!=='live'||!sheetRaw.PRODUCTS||Date.now()-autoSheetAt<120000)return;autoSheetAt=Date.now();
+  const sv=sheetView();if(!sv)return;const gs=sv.groups.filter(g=>g.tab==='PRODUCTS');let moved=0;
+  S.items.filter(it=>it.stage==='shot'||it.stage==='toedit').forEach(it=>{const g=gs.find(x=>itMatch(it,x.name));if(!g||!g.rows.length||(it.sample&&g.start<=(it.sample.sheetRowAtAdd||0)))return;
+    if((it.stageAt&&(it.stageAt.shot||it.stageAt.toedit)||0)>Date.now()-3*DAY)return;
+    moved++;save('items',Object.assign({},it,{stage:'published',sheetMatched:true,stageAt:Object.assign({},it.stageAt,{published:Date.now()})}),true)});
+  (((S.sync.toedit||{}).stages)||[]).forEach(st=>(st.items||[]).forEach(f=>{const key=st.name+'/'+f.name;const mk=(S.sync.toeditmarks||{}).done||{};if(!mk[key]&&folderRendered(f))markToEdit(key,'done')}));
+  S.items.filter(it=>it.sample||it.shopee||it.tiktok).forEach(it=>{const g=gs.find(x=>itMatch(it,x.name));if(!g)return;
+    if((it.shopee&&!g.shopee)||(it.tiktok&&!g.tt)){const k='lk'+g.start;if(!autoDone[k]){autoDone[k]=1;itemLinksToSheet(it,g).catch(()=>{})}}
+    if(it.sample&&it.sample.price&&(!g.price||!g.kind)){const k='pr'+g.start;if(!autoDone[k]){autoDone[k]=1;sheetWrite(`PRODUCTS!R${g.start}:S${g.start}`,[[g.kind||'SAMPLE',g.price||it.sample.price]]).catch(()=>{})}}});
+  if(moved){render();toast(moved+' item lama dipindah ke Published (video dah ada dalam Sheet)')}}
 
 /* Lagi: semua alat dan rekod yang jarang guna */
 V.lagi=()=>{const sv=sheetView();const t=(k,num,lab,icon)=>{const c=TAB[k].c;return `<button class="hbox glass mini" style="--c:${c}" data-act="go" data-id="${k}">${icon?`<b style="display:flex;color:${c}">${IC[icon].replace('<svg ','<svg style="width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round" ')}</b>`:`<b>${num}</b>`}<span class="l">${lab}</span></button>`};
-  return head('Alat dan rekod')+`<div class="mgrid">${t('links',confirmedList(sv).length,'Projects')}${t('jobs',S.jobs.filter(j=>!/siap|bayaran/i.test(j.status||'')).length,'Jobs')}${t('inspiration',S.inspo.length,'Inspo')}${t('media-kit',3,'Media Kit')}${t('footage',S.footage.length,'Footage')}${t('broll',0,'B-Roll','broll')}${t('caption',0,'Caption','caption')}${t('transcribe',0,'Transcribe','transcribe')}${t('shot',byStage('shot').length,'Shot')}</div>`};
+  return head('Alat dan rekod')+`<div class="mgrid">${t('jobs',S.jobs.filter(j=>!/siap|bayaran/i.test(j.status||'')).length,'Jobs')}${t('inspiration',S.inspo.length,'Inspo')}${t('media-kit',3,'Media Kit')}${t('footage',S.footage.length,'Footage')}${t('broll',0,'B-Roll','broll')}${t('caption',0,'Caption','caption')}${t('transcribe',0,'Transcribe','transcribe')}${t('shot',byStage('shot').length,'Shot')}</div>`};

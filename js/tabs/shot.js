@@ -27,15 +27,29 @@ A.lsGo=async el=>{const id=el.dataset.id,kind=el.dataset.x,folder=el.dataset.f;c
   catch(e){toast(e&&e.code==='unavailable'?'Tiada internet':'Tak berjaya: '+String((e&&e.message)||'Mac mini tak jawab').slice(0,90))}
   finally{const b=Object.assign({},ui.lsBusy);delete b[id];ui.lsBusy=b;render()}};
 A.toEditAsk=el=>{const it=get('items',el.dataset.id);modal(`<h2>Masuk folder edit mana?</h2><div class="list">${FOLDERS.map(f=>`<button class="btn" style="justify-content:flex-start;gap:12px;--bc:${FCOL[fno(f)]}" data-act="toEdit" data-id="${it.id}" data-x="${esc(f)}"><b>${fno(f)}</b>${esc(f.replace(/^\d+\.\s*/,''))}</button>`).join('')}</div>`,TAB['to-edit'].c)};
-A.toEdit=el=>{closeModal();moveItem(get('items',el.dataset.id),'toedit',{folder:el.dataset.x})};
+A.toEdit=el=>{closeModal();const it=get('items',el.dataset.id);moveItem(it,'toedit',{folder:el.dataset.x});mkEditFolder(el.dataset.x,it.title)};
 
 /* Lepas final: Best (simpan listing ke Drive, buang dari Mac) atau Tak best (buang ke Trash). */
 function lsFolderOf(it){const fs=((S.sync.folders||{}).folders)||[];const f=it.listing&&it.listing.folder;if(f&&fs.some(x=>x.name===f))return f;return lsGuess(it)}
 const lsPending=()=>S.items.filter(it=>(it.stage==='ready'||it.stage==='published')&&!it.listingLink&&!it.listingGone&&lsFolderOf(it));
-function lsChoice(){const list=lsPending();if(!list.length)return '';
+/* Listing lama dalam R1 yang tiada kad aktif (sebelum aliran Best / Tak best wujud). Mira pilih sekali. */
+function lsLegacy(){const fs=((S.sync.folders||{}).folders)||[];const keep=((S.settings||{}).lsKeep)||[];
+  const used=new Set(S.items.filter(it=>!it.listingLink&&!it.listingGone).map(it=>lsFolderOf(it)).filter(Boolean));
+  const edits=toEditFolders().map(f=>nrm(f.name));const words1=n=>nrm(String(n).split(/\s+/)[0]);
+  return fs.filter(f=>!used.has(f.name)&&!keep.includes(f.name)&&(f.mtime||0)<Date.now()-14*DAY&&!edits.some(e=>{const w=words1(f.name);return w.length>=4&&e.startsWith(w)})&&!activeSamples().some(it=>itMatch(it,f.name)))}
+function lsChoiceOld(){const list=lsLegacy();if(!list.length)return '';
+  return `<div class="card glass" style="margin-bottom:14px;box-shadow:0 0 0 1.5px #E9BD45 inset"><p class="eyebrow" style="margin:0">Kemas listing lama · ${list.length}</p><h3 style="margin:4px 0 2px">Folder dalam R1 tanpa projek aktif</h3><p class="meta" style="margin:0 0 6px">⭐ Best: simpan ke Drive, buang dari Mac. Tak best: ke Trash. Masih guna: biar dalam R1.</p>
+   ${list.map(f=>{const busy=ui.lsBusy&&ui.lsBusy['old:'+f.name];return `<div class="rowh" style="align-items:center;gap:8px;margin-top:10px;border-top:1px solid var(--line);padding-top:10px"><div style="min-width:0"><strong>${esc(f.name)}</strong><span class="meta" style="display:block">${f.images} gambar · ${fmtD(f.mtime)}</span></div>
+    ${busy?`<span class="pill" style="--pc:var(--warn)">${esc(busy)}</span>`:`<div class="btns" style="gap:6px;flex-wrap:nowrap"><button class="btn sm solid tab" data-act="lsOld" data-x="archive" data-f="${esc(f.name)}">⭐ Best</button><button class="btn sm bad" data-act="lsOld" data-x="del" data-f="${esc(f.name)}">Tak best</button><button class="btn sm" data-act="lsKeep" data-f="${esc(f.name)}">Masih guna</button></div>`}</div>`}).join('')}</div>`}
+A.lsKeep=el=>{const st=Object.assign({},S.settings||{});st.lsKeep=(st.lsKeep||[]).concat([el.dataset.f]);S.settings=st;saveDoc('settings/main',st);render();toast('Dibiar dalam R1')};
+A.lsOld=el=>{const folder=el.dataset.f,kind=el.dataset.x;const go2=()=>{const it=save('items',{title:folder,stage:'published',sheetMatched:true,legacyListing:true,listing:{folder},stageAt:{published:Date.now()}},true);
+    ui.lsBusy=Object.assign({},ui.lsBusy,{['old:'+folder]:kind==='archive'?'Simpan ke Drive...':'Sedang buang...'});render();
+    lsGo2(it,kind).finally(()=>{const b=Object.assign({},ui.lsBusy);delete b['old:'+folder];ui.lsBusy=b;render()})};
+  if(kind==='del')confirmBox('Buang listing "'+folder+'" ke Trash Mac? Masih boleh pulih dari Trash.',go2,'Ya, buang');else go2()};
+function lsChoice(){const list=lsPending();const old=lsChoiceOld();if(!list.length)return old;
   return `<div class="card glass" style="margin-bottom:14px"><p class="eyebrow" style="margin:0">Video dah siap · listing dalam Mac</p><h3 style="margin:4px 0 2px">Barang best?</h3><p class="meta" style="margin:0 0 6px">Best: listing disimpan dalam Drive untuk next video, dibuang dari Mac. Tak best: listing dibuang ke Trash.</p>
    ${list.map(it=>{const busy=ui.lsBusy&&ui.lsBusy[it.id];return `<div class="rowh" style="align-items:center;gap:8px;margin-top:10px;border-top:1px solid var(--line);padding-top:10px"><div style="min-width:0"><strong>${esc(it.title)}</strong><span class="meta" style="display:block">R1 / ${esc(lsFolderOf(it))}</span></div>
-    ${busy?`<span class="pill" style="--pc:var(--warn)">${esc(busy)}</span>`:`<div class="btns" style="gap:6px;flex-wrap:nowrap"><button class="btn sm solid tab" data-act="lsBest" data-id="${it.id}">⭐ Best</button><button class="btn sm bad" data-act="lsBad" data-id="${it.id}">Tak best</button></div>`}</div>`}).join('')}</div>`}
+    ${busy?`<span class="pill" style="--pc:var(--warn)">${esc(busy)}</span>`:`<div class="btns" style="gap:6px;flex-wrap:nowrap"><button class="btn sm solid tab" data-act="lsBest" data-id="${it.id}">⭐ Best</button><button class="btn sm bad" data-act="lsBad" data-id="${it.id}">Tak best</button></div>`}</div>`}).join('')}</div>`+old}
 A.lsBest=el=>{const it=get('items',el.dataset.id);lsGo2(it,'archive')};
 A.lsBad=el=>{const it=get('items',el.dataset.id);confirmBox('Buang listing "'+it.title+'" ke Trash Mac? Masih boleh pulih dari Trash.',()=>lsGo2(it,'del'),'Ya, buang')};
 async function lsGo2(it,kind){const id=it.id,folder=lsFolderOf(it);if(!folder){toast('Folder listing tak dijumpai');return}

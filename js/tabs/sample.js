@@ -42,7 +42,7 @@ function smpModal(){const m=ui.smp;const today=ymd(new Date());
    ${m.rows.length?`<div class="list" style="margin-top:14px">${m.rows.map((r,i)=>`<div class="card glass" style="padding:12px">
      <label class="f" style="margin:0 0 8px"><span>Nama produk</span><input class="inp" data-smp="${i}|name" value="${esc(r.name)}"></label>
      <div class="btns" style="gap:6px;margin-bottom:8px">${['tiktok','shopee'].map(p=>`<button class="btn sm ${r.plat===p?'solid tab':''}" data-act="smpPlat" data-x="${i}|${p}">${smpPlat(p)}</button>`).join('')}<button class="btn icon sm bad" data-act="smpRm" data-x="${i}" aria-label="Buang">${IC.trash}</button></div>
-     <label class="f" style="margin:0"><span>${r.plat==='shopee'?'Tarikh dalam Shopee (akhir post = +14 hari)':'Hari akhir post'}</span><input type="date" class="inp" data-smp="${i}|date" value="${esc(r.date||today)}"></label></div>`).join('')}</div>
+     <div class="row2" style="grid-template-columns:1fr 110px"><label class="f" style="margin:0"><span>${r.plat==='shopee'?'Tarikh dalam Shopee (+14 hari)':'Hari akhir post'}</span><input type="date" class="inp" data-smp="${i}|date" value="${esc(r.date||today)}"></label><label class="f" style="margin:0"><span>Harga RM</span><input class="inp" data-smp="${i}|price" value="${esc(r.price||'')}" placeholder="89" inputmode="decimal"></label></div></div>`).join('')}</div>
      <div class="btns" style="justify-content:flex-end;margin-top:12px"><button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="smpSave">${IC.check}Tambah ${m.rows.length} sample</button></div>`:''}`,TAB['to-shoot'].c)}
 document.addEventListener('input',e=>{const el=e.target;if(!el.dataset||!el.dataset.smp||!ui.smp)return;const [i,k]=el.dataset.smp.split('|');const r=ui.smp.rows[+i];if(r)r[k]=el.value});
 A.smpRow=()=>{ui.smp.rows.push({name:'',plat:'tiktok',date:ymdAdd(ymd(new Date()),7)});smpModal()};
@@ -69,15 +69,21 @@ function smpParse(lines){const out=[];const today=ymd(new Date());const L=lines.
 function smpAddRows(rows){const sv=sheetView();const lastRow=sv?Math.max(0,...sv.groups.map(g=>g.start)):0;const today=ymd(new Date());
   rows.forEach(r=>{const postBy=r.plat==='shopee'?ymdAdd(r.date,14):r.date;
     save('items',{title:String(r.name).trim(),stage:'toshoot',stageAt:{toshoot:Date.now()},noteAt:Date.now(),src:'sample',
-      sample:{plat:r.plat,postBy,start:r.plat==='shopee'?r.date:today,done:false,sheetRowAtAdd:lastRow}},true)})}
+      sample:{plat:r.plat,postBy,start:r.plat==='shopee'?r.date:today,done:false,sheetRowAtAdd:lastRow,price:rmNum(r.price)}},true)})}
+const rmNum=v=>{const n=parseFloat(String(v||'').replace(/[^0-9.]/g,''));return isNaN(n)?'':String(Math.round(n*100)/100)};
 A.smpSave=()=>{const rows=ui.smp.rows.filter(r=>String(r.name).trim()&&r.date);if(!rows.length){toast('Isi nama dan tarikh dulu');return}
   smpAddRows(rows);closeModal();render();toast(rows.length+' sample ditambah ke To Shoot')};
 A.smpEdit=el=>{const it=get('items',el.dataset.id);const s=it.sample;
   modal(`<h2>Tarikh akhir post</h2><p class="meta">${esc(it.title)} · ${smpPlat(s.plat)}</p>
-   <label class="f"><span>Hari akhir post</span><input type="date" class="inp" id="smpP" value="${esc(s.postBy)}"></label>
+   <div class="row2" style="grid-template-columns:1fr 110px"><label class="f"><span>Hari akhir post</span><input type="date" class="inp" id="smpP" value="${esc(s.postBy)}"></label><label class="f"><span>Harga RM</span><input class="inp" id="smpR" value="${esc(s.price||'')}" inputmode="decimal" placeholder="89"></label></div>
    <div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="smpEditSave" data-id="${it.id}">Simpan</button></div>`,TAB['to-shoot'].c)};
 A.smpEditSave=el=>{const it=get('items',el.dataset.id);const p=($('#smpP')||{}).value;if(!p){toast('Pilih tarikh');return}
-  save('items',Object.assign({},it,{sample:Object.assign({},it.sample,{postBy:p})}));closeModal();toast('Tarikh dikemas kini')};
+  save('items',Object.assign({},it,{sample:Object.assign({},it.sample,{postBy:p,price:rmNum(($('#smpR')||{}).value)})}));closeModal();toast('Dikemas kini');smpPriceSheet(get('items',it.id))};
+/* Harga sample: simpan dalam kad, dan ke Sheet (JENIS = SAMPLE, HARGA) bila produk dah ada dalam Sheet */
+function smpPriceSheet(it){const sv=sheetView();const g=sv&&it&&it.sample&&it.sample.price&&sv.groups.find(x=>x.tab==='PRODUCTS'&&itMatch(it,x.name)&&x.start>(it.sample.sheetRowAtAdd||0));
+  if(g&&MCP)sheetWrite(`PRODUCTS!R${g.start}:S${g.start}`,[[g.kind||'SAMPLE',it.sample.price]]).then(()=>toast('Harga disimpan dalam Sheet')).catch(()=>{})}
+function smpPriceSave(id,v){const it=get('items',id);if(!it||!it.sample)return;const price=rmNum(v);if(price===(it.sample.price||''))return;
+  save('items',Object.assign({},it,{sample:Object.assign({},it.sample,{price})}));toast('Harga disimpan');smpPriceSheet(get('items',id))}
 /* Gambar listing: upload, Mac mini simpan ke R1. PRODUCT LISTING/<produk>, baca teks (percuma), kemudian nota auto */
 A.lsAdd=el=>{if(!ASSETS){toast('Upload tak tersedia di sini');return}const id=el.dataset.id;const it0=get('items',id);
   pickFile('image/*',async files=>{const fs=files.filter(f=>f.size<=20*1048576).slice(0,12);if(!fs.length){toast('Gambar terlalu besar');return}ui.lsUp=ui.lsUp||{};const ids=[];let step='upload';
@@ -107,6 +113,7 @@ const pickUrl=v=>{const m=String(v||'').match(/https?:\/\/\S+/);return m?m[0].re
 A.smpLinkSave=el=>{const it=get('items',el.dataset.id);let sh=pickUrl($('#lkS').value),tt=pickUrl($('#lkT').value);
   if(sh&&/tiktok/i.test(sh)&&!tt){tt=sh;sh=''}if(tt&&/shopee|shp\.ee/i.test(tt)&&!sh){sh=tt;tt=''}
   save('items',Object.assign({},it,{shopee:sh,tiktok:tt}));closeModal();toast(sh||tt?'Link disimpan':'Link dibuang');
+  const sv=sheetView();const g=sv&&sv.groups.find(x=>x.tab==='PRODUCTS'&&itMatch(it,x.name));if(g&&(sh||tt))itemLinksToSheet(Object.assign({},it,{shopee:sh,tiktok:tt}),g).then(()=>toast('Link disimpan, Sheet dikemas kini')).catch(()=>{});
   if((sh||tt)&&it.listing&&it.listing.folder&&window.studioJob)studioJob('listing_save',{item:it.id,name:it.title,folder:it.listing.folder,files:[],shopee:sh,tiktok:tt},2*60000).catch(()=>{})};
 /* CONFIRMED PROJECTS: sample + slider aliran (Nota > Shoot > Storyboard > Editor > To Post > Published), dipadan dengan Sheet */
 function confirmedList(sv){const gs=sv?sv.groups.filter(g=>g.tab==='PRODUCTS'):[];
@@ -115,4 +122,4 @@ const tlMini=d=>`<div class="tl tl-mini">${PSTEPS.map((s,i)=>`<div class="s${i<=
 function cpRow(x){const p=samplePlan(x.it);const nm=String(x.it.title).split(/\s+/).slice(0,3).join(' ');const cur=PSTEPS[Math.min(x.step+1,5)];
   return `<div class="ccr" style="--c:${TAB.links.c}"><div class="rowh"><span class="ccn">${esc(nm)}</span><span class="pill smpp" style="--pc:${p.col}"><b>${Math.max(p.left,0)}</b>${esc(p.label.replace(/^\d+ /,''))}</span></div>${tlMini(x.step)}<div class="meta" style="font-size:11px;margin-top:-2px">${smpPlat(x.it.sample.plat)} · sekarang ${esc(cur)} · akhir post ${dmy(x.it.sample.postBy)}</div></div>`}
 function confirmedSection(sv){const L=confirmedList(sv).filter(x=>hit('lk',x.it.title));if(!L.length)return '';
-  return `<p class="eyebrow" style="margin-top:6px">Sample · ${L.length}</p><div class="list" style="margin-bottom:14px">${L.map(x=>`<div class="card glass"><div class="rowh" style="align-items:flex-start;gap:10px"><div style="min-width:0">${x.g?`<span class="bigno" style="font-size:20px;margin-right:6px">${esc(x.g.no)}</span>`:''}<h3 style="display:inline">${esc(x.it.title)}</h3><div class="meta">Sample ${smpPlat(x.it.sample.plat)}${x.g?' · dalam Sheet':' · belum masuk Sheet'}</div></div>${smpBadge(x.it)}</div>${timeline(x.step,'')}</div>`).join('')}</div>`}
+  return `<p class="eyebrow" style="margin-top:6px">Sample · ${L.length}</p><div class="list" style="margin-bottom:14px">${L.map(x=>`<div class="card glass"><div class="rowh" style="align-items:flex-start;gap:10px"><div style="min-width:0">${x.g?`<span class="bigno" style="font-size:20px;margin-right:6px">${esc(x.g.no)}</span>`:''}<h3 style="display:inline">${esc(x.it.title)}</h3><div class="meta">Sample ${smpPlat(x.it.sample.plat)}${x.g?' · dalam Sheet':' · belum masuk Sheet'}</div></div>${smpBadge(x.it)}</div>${timeline(x.step,'')}${linkRow(x.it)}</div>`).join('')}</div>`}

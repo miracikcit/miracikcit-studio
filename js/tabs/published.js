@@ -1,14 +1,29 @@
-/* ---------- PUBLISHED ---------- */
+/* ---------- PUBLISHED ----------
+   Masuk sendiri bila video ditanda Settled dalam To Publish. Kad: No, nama produk, jumlah video.
+   Tekan kad untuk isi link TT / IG / FB / SV setiap video (lajur LINK SUBMISSION, Q, dalam Sheet). */
+const subParse=t=>{const o={TT:'',IG:'',FB:'',SV:''};String(t||'').split('\n').forEach(l=>{const m=l.match(/^\s*(TT|IG|FB|SV)\s*:\s*(.*)$/i);if(m)o[m[1].toUpperCase()]=m[2].trim()});return o};
+const subText=o=>PLAT4.map(p=>p+': '+(o[p]||'')).join('\n\n');
+/* Platform yang perlu link: yang ditanda Posted; kalau tiada tanda langsung, semua 4 */
+const subPlats=r=>{const on=PLAT4.filter((p,i)=>r.posted[i]);return on.length?on:PLAT4};
+const pubRows=e=>e.groups.filter(g=>g.tab==='PRODUCTS').flatMap(g=>g.rows.filter(isSettled));
+function linkGaps(e){return pubRows(e).reduce((n,r)=>{const o=subParse(r.sub);return n+subPlats(r).filter(p=>r.posted[PLAT4.indexOf(p)]&&!o[p]).length},0)}
 V.published=()=>{const sv=sheetView();const num=e=>{const g=e.groups.find(x=>x.tab==='PRODUCTS');return g?(+g.no||0):-1};
   const all=publishedEntries(sv).sort((a,b)=>num(b)-num(a)||a.name.localeCompare(b.name));const list=all.filter(e=>hit('pub',e.name));
-  return head(all.length+' barang · nombor ikut sheet')+sheetNote()+searchBox('pub','Cari barang')+
-  `<div class="list">${list.map(e=>{const g=e.groups.find(x=>x.tab==='PRODUCTS');const pm=get('pubmeta',e.key)||{};const kind=pm.kind||(g&&g.kind)||'';const price=pm.price!==undefined?pm.price:(g&&g.price)||'';
-    return `<div class="card glass"><div class="rowh"><span class="bigno">${g?esc(g.no):'·'}</span><div><h3>${esc(e.name)}</h3><div class="meta">${e.vids}${e.total>e.vids?' / '+e.total:''} video settled${e.tab==='NON'?' · bukan produk':e.tab==='APP'||e.tab==='FAIL'?' · tiada dalam sheet':''}</div></div>${e.legacy?`<button class="btn icon sm" data-act="unPub" data-id="${e.legacy.id}" aria-label="Batal published">${IC.back}</button>`:''}</div>
-    <div class="btns" style="margin-top:12px"><div class="seg">${['SAMPLE','BELI','NIL'].map(k=>`<button type="button" class="${kind===k?'on':''}" data-act="pubKind" data-id="${esc(e.key)}" data-x="${k}">${k}</button>`).join('')}</div>
-     <input class="inp" style="width:130px" id="pp-${esc(e.key)}" data-pubprice="${esc(e.key)}" value="${esc(price)}" placeholder="Harga RM" inputmode="decimal"></div></div>`}).join('')||`<div class="empty">${all.length?'Tiada padanan.':'Belum ada video settled.'}</div>`}</div>
-  <p class="meta" style="margin-top:16px">Barang baru di atas. Jenis dan harga disimpan ke sheet CONTENT 2026, lajur JENIS (R) dan HARGA (S).</p>`};
-function savePub(key,patch){const pm=Object.assign({id:key},get('pubmeta',key)||{},patch);save('pubmeta',pm);
-  if(MCP){const e=publishedEntries(sheetView()).find(x=>x.key===key);const g=e&&e.groups.find(x=>x.tab==='PRODUCTS');if(g)sheetWrite(`PRODUCTS!R${g.start}:S${g.start}`,[[pm.kind||'',pm.price||'']]).then(()=>toast('Sheet dikemas kini')).catch(()=>toast('Disimpan dalam app. Sheet tak dapat dikemas kini'))}}
-A.pubKind=el=>{const pm=get('pubmeta',el.dataset.id)||{};savePub(el.dataset.id,{kind:pm.kind===el.dataset.x?'':el.dataset.x})};
-A.unPub=el=>del('published',el.dataset.id);
-
+  const gaps=all.filter(e=>linkGaps(e)>0).length;
+  return head(all.length+' barang'+(gaps?' · '+gaps+' belum lengkap link':''))+sheetNote()+searchBox('pub','Cari barang')+
+  `<div class="list">${list.map(e=>{const g=e.groups.find(x=>x.tab==='PRODUCTS');const rows=pubRows(e);const gap=linkGaps(e);const open=ui.openPub===e.key;
+    return `<details class="col card glass"${open?' open':''} data-pub="${esc(e.key)}"><summary><div class="rowh" style="align-items:center"><span class="bigno">${g?esc(g.no):'·'}</span><div style="flex:1;min-width:0"><h3>${esc(e.name)}</h3><div class="meta">${e.vids} video${e.tab==='NON'?' · bukan produk':e.tab==='APP'||e.tab==='FAIL'?' · tiada dalam sheet':''}</div></div>
+      ${rows.length?`<span class="pill" style="--pc:${gap?'var(--bad)':'var(--ok)'}">${gap?gap+' link':IC.check+'Link'}</span>`:''}${rows.length?`<span class="ic chev">${IC.chev}</span>`:''}</div></summary>
+     ${rows.length?`<div style="margin-top:12px">${rows.map(r=>{const o=subParse(r.sub);return `<div class="vid"><div style="font-weight:500;margin-bottom:8px">${r.vid?'VID '+esc(r.vid)+' · ':''}${esc(noEmoji(String(r.caption).split('\n')[0]).slice(0,60))}</div>
+       ${subPlats(r).map(p=>`<label class="f" style="margin:0 0 6px"><span>${p}${r.posted[PLAT4.indexOf(p)]?' · posted':''}</span><input class="inp" id="sub-${r.row}-${p}" data-sub="${r.row}|${p}" value="${esc(o[p])}" placeholder="Paste link ${p}" inputmode="url"></label>`).join('')}</div>`}).join('')}
+      <div class="btns" style="justify-content:flex-end;margin-top:10px"><button class="btn solid tab" data-act="subSave" data-id="${esc(e.key)}">Simpan link ke Sheet</button></div></div>`:''}</details>`}).join('')||`<div class="empty">${all.length?'Tiada padanan.':'Belum ada video settled.'}</div>`}</div>
+  <p class="meta" style="margin-top:16px">Video masuk sini bila kau tick Settled dalam To Publish. Link disimpan dalam lajur LINK SUBMISSION (Q) setiap video. Merah: ada platform dah posted tapi link belum diisi.</p>`};
+AFTER.published=()=>document.querySelectorAll('details[data-pub]').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)ui.openPub=d.dataset.pub;else if(ui.openPub===d.dataset.pub)ui.openPub=null}));
+A.subSave=async el=>{const e=publishedEntries(sheetView()).find(x=>x.key===el.dataset.id);if(!e)return;if(!MCP){toast('Sheet belum bersambung');return}
+  const raw=sheetRaw.PRODUCTS;let n=0,bad=false;
+  for(const r of pubRows(e)){const o=subParse(r.sub);let ch=false;
+    subPlats(r).forEach(p=>{const inp=document.getElementById('sub-'+r.row+'-'+p);if(!inp)return;const v=pickUrl(inp.value)||inp.value.trim();if(v&&!isUrl(v)){bad=true;return}if(v!==o[p]){o[p]=v;ch=true}});
+    if(!ch)continue;const txt=subText(o);
+    try{await sheetWrite(`PRODUCTS!Q${r.row}`,[[txt]]);if(raw){const a=raw[r.row-1]=(raw[r.row-1]||[]).slice();a[16]=txt}n++}catch(err){toast(sheetErrText(err.code));return}}
+  document.activeElement&&document.activeElement.blur&&document.activeElement.blur();render(true);
+  toast(bad?'Ada link tak sah (mesti mula https://). Yang lain disimpan':n?'Link disimpan dalam Sheet ('+n+' video)':'Tiada perubahan')};
