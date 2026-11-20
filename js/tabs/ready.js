@@ -8,9 +8,11 @@ V.ready=()=>{const sv=sheetView();const items=appReady(sv);
   if(!sv)return head('Sheet CONTENT 2026')+sheetNote()+lsChoice()+itemReady(items);
   const byG=new Map();sv.ready.forEach(r=>{if(!byG.has(r.group))byG.set(r.group,[]);byG.get(r.group).push(r)});
   const groups=[...byG.entries()].map(([g,rows])=>({g,rows:rows.map(r=>({r,d:deadline(rowStart(r,sv),7)}))})).sort((a,b)=>Math.min(...a.rows.map(x=>x.d?x.d.left:99))-Math.min(...b.rows.map(x=>x.d?x.d.left:99)));
-  return head(sv.ready.length+' video belum settled')+sheetNote()+lsChoice()+`<div class="list">${groups.map(({g,rows})=>{
+  const fresh=freshFinals().map(f=>({f,g:matchFile(f.name,sv.groups)}));
+  return head(sv.ready.length+' video belum settled')+sheetNote()+freshStrip(fresh)+lsChoice()+`<div class="list">${groups.map(({g,rows})=>{
     const sug=!g.shopee&&S.items.find(it=>it.shopee&&nrm(g.name).startsWith(nrm(it.title).slice(0,8)));
-    return `<div class="card big glass"><div class="rowh"><div><h3 style="font-size:16px">${esc(g.name)}</h3><div class="meta">${g.tab==='PRODUCTS'?'No. '+esc(g.no)+' · ':''}${rows.length} video menunggu</div></div>
+    const isNew=fresh.some(x=>x.g===g);
+    return `<div class="card big glass" id="rg-${g.tab}-${g.start}"${isNew?' style="box-shadow:0 0 0 1.5px var(--ok) inset"':''}><div class="rowh"><div><h3 style="font-size:16px">${isNew?'<span class="pill" style="--pc:var(--ok);margin-right:6px">Baru</span>':''}${esc(g.name)}</h3><div class="meta">${g.tab==='PRODUCTS'?'No. '+esc(g.no)+' · ':''}${rows.length} video menunggu</div></div>
      ${g.shopee?`<button class="btn solid shopee" data-act="copy" data-x="${esc(g.shopee)}">${IC.links}Link Shopee</button>`:''}</div>
     ${g.tab==='PRODUCTS'&&!g.shopee?`<div class="btns" style="margin-top:12px;flex-wrap:nowrap"><input class="inp" id="rs-${g.start}" data-lk="${g.start}|s" value="${esc(sug?sug.shopee:'')}" placeholder="Paste link Shopee di sini" inputmode="url"><button class="btn solid shopee" data-act="lkSave" data-id="${g.start}">Simpan</button></div>`:''}
     ${rows.map(({r,d})=>{const rm=get('readymeta',rmKey(r))||{};const done=isPub(r);return `<div class="vid"><div class="rowh"><div><div style="font-weight:500">${r.vid?'VID '+esc(r.vid)+' · ':''}${esc(noEmoji(String(r.caption).split('\n')[0]))}</div>${done?`<span class="pill" style="margin-top:6px">Semua dah posted, tick Settled</span>`:''}</div>
@@ -74,3 +76,9 @@ A.shConn=async()=>{try{const r=await MCP.callTool(GS,'get_values',{spreadsheetId
 async function sheetAcc(tab,row,i,val){const t=SH[tab],raw=sheetRaw[tab];if(!raw)return;const ci=t.acc+i;const col=String.fromCharCode(65+ci);const r=raw[row-1]=(raw[row-1]||[]).slice();const old=r[ci];r[ci]=val;
   try{await sheetWrite(`${t.q}!${col}${row}`,[[val]]);toast('Akaun disimpan dalam sheet')}catch(e){r[ci]=old;render();toast(e.code==='tool_error'?'Sheet tolak perubahan':sheetErrText(e.code))}}
 
+
+/* Jalur atas To Publish: video yang baru siap render (3 hari), tekan untuk terus ke kad */
+function freshStrip(fr){if(!fr.length)return '';
+  return `<div class="card glass" style="margin-bottom:14px;box-shadow:0 0 0 1.5px var(--ok) inset"><p class="eyebrow" style="margin:0">Baru siap render · ${fr.length}</p>
+   ${fr.map(({f,g})=>`<div class="rowh" style="align-items:center;gap:8px;margin-top:8px"><div style="min-width:0;flex:1"><strong>${esc(g?g.name:f.name.replace(/\.(mp4|mov|m4v)$/i,'').replace(/[_-]+/g,' '))}</strong><span class="meta" style="display:block">${esc(f.name)} · ${fmtD(f.mtime)}${g?'':' · belum ada dalam Sheet'}</span></div>${g?`<button class="btn sm solid tab" data-act="toCard" data-x="rg-${g.tab}-${g.start}">Lihat${IC.next}</button>`:''}</div>`).join('')}</div>`}
+A.toCard=el=>{const c=document.getElementById(el.dataset.x);if(c)c.scrollIntoView({behavior:'smooth',block:'start'})};

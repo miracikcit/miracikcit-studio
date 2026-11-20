@@ -15,7 +15,7 @@ V['to-edit']=()=>{const te=S.sync.toedit;const folders=toEditFolders();const fse
    .map(r=>Object.assign(r,edDeadline(r.name,r.start),{ed:edFor(r.key,r.name)})).sort((a,b)=>(a.d?a.d.left:99)-(b.d?b.d.left:99));
   const off=macOff();
   return head(te?'Folder sync '+fmtD(te.syncedAt):'Belum sync',`<button class="btn sm" data-act="addEdit">${IC.plus}Tambah</button>`)+shotList()+
-  `<p class="eyebrow" style="margin:4px 0 10px">Dalam folder edit · ${rows.length}</p>${off?`<div class="banner glass">Mac mini tak jawab sejak ${esc(off)}. EDIT NOW perlukan Mac mini hidup dan app Claude dibuka.</div>`:''}<div class="list">${rows.map(r=>{const e=r.ed;const busy=ui.edNow&&ui.edNow[r.key];
+  doneStrip()+`<p class="eyebrow" style="margin:4px 0 10px">Dalam folder edit · ${rows.length}</p>${off?`<div class="banner glass">Mac mini tak jawab sejak ${esc(off)}. EDIT NOW perlukan Mac mini hidup dan app Claude dibuka.</div>`:''}<div class="list">${rows.map(r=>{const e=r.ed;const busy=ui.edNow&&ui.edNow[r.key];
     return `<div class="card glass"><div class="rowh">${fnoBadge(r.no)}<div style="flex:1;min-width:0"><h3>${esc(r.name)}</h3><div class="meta">${esc(r.sub)}${r.start?' · masuk '+fmtD(r.start):''}</div></div>${e?`<span class="pill" style="--pc:${edTone(e.status)}">${esc(e.status||'Draf')}</span>`:''}</div>
     ${trk(r.d,r.t)}
     <div class="btns" style="margin-top:12px">${edBtns(r,e,busy,off)}<button class="btn icon sm bad" data-act="${r.kind==='f'?'fHide':'delItem'}" data-id="${esc(r.key)}" aria-label="Buang">${IC.trash}</button></div>
@@ -45,3 +45,8 @@ A.addEdit=()=>modal(`<h2>Tambah video untuk edit</h2><label class="f"><span>Nama
 A.addEditSave=()=>{const t=$('#aeT').value.trim();if(!t){toast('Isi nama video');return}const f=$('#aeF').value;save('items',{title:t,stage:'toedit',folder:f,stageAt:{toedit:Date.now()}});closeModal();mkEditFolder(f,t)};
 /* Shoot terus ke folder edit: Mac mini buat folder <folder edit>/<produk>, kemudian imbas semula */
 function mkEditFolder(stage,name){if(!window.studioJob)return;studioJob('mkfolder',{stage,name},2*60000).then(r=>toast('Folder dibuat: '+stage.replace(/^\d+\.\s*/,'')+' / '+r.name+'. Masukkan footage')).catch(()=>{})}
+
+/* Projek yang baru siap render (7 hari): dah keluar dari senarai edit, sekarang di To Publish */
+function doneStrip(){const L=S.editor.filter(e=>e.folder&&(e.final||/siap/i.test(e.status||''))&&(e.updated||0)>Date.now()-7*DAY).sort((a,b)=>(b.updated||0)-(a.updated||0));if(!L.length)return '';
+  return `<div class="card glass" style="margin-bottom:14px"><p class="eyebrow" style="margin:0">Dah render, pindah ke To Publish · ${L.length}</p>
+   ${L.map(e=>`<div class="rowh" style="align-items:center;gap:8px;margin-top:8px">${fnoBadge(fno(e.folder))}<div style="min-width:0;flex:1"><strong>${esc(e.folder.split('/').pop())}</strong><span class="meta" style="display:block">${esc(e.final?String(e.final).split('/').pop():'Siap')} · ${fmtD(e.updated)}</span></div><button class="btn sm solid tab" data-act="go" data-id="ready">To Publish${IC.next}</button></div>`).join('')}</div>`}
