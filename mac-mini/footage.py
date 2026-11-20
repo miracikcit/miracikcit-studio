@@ -38,7 +38,7 @@ def ftype(rel):
 
 
 def _targets(key):
-    """Folder yang perlu di-pre-cut untuk satu projek: projek itu sendiri (kalau ada video terus) dan setiap
+    """(Folder hasil edit Claude seperti draft / editor / render / build dilangkau.) Folder yang perlu di-pre-cut untuk satu projek: projek itu sendiri (kalau ada video terus) dan setiap
     subfolder yang ada video (cth GENTING/04 Sky Avenue). Folder kabur / duplicate dilangkau."""
     root = os.path.join(BASE, key)
     out = []
@@ -50,7 +50,7 @@ def _targets(key):
         out.append(key)
     for n in names:
         sub = os.path.join(root, n)
-        if n.startswith(".") or not os.path.isdir(sub) or re.search(r"kabur|duplicate", n, re.I):
+        if n.startswith(".") or not os.path.isdir(sub) or re.search(r"kabur|duplicate|draft|draf\b|editor|render|final|export|output|storyboard|^sb$|transcript|sheet|proxy|cache|^page$|build", n, re.I):
             continue
         try:
             if any(f.lower().endswith(VID) and not f.startswith(".") for f in os.listdir(sub)):
@@ -131,6 +131,7 @@ def tick(sheet, up):
         try:
             _auto_precut(sheet, st)
             _adopt_manual(sheet, st)
+            _write_targets(sheet, st)
             _refresh_broll(sheet, up, st)
             _scan_best(sheet, up, st)
         except Exception:
@@ -407,9 +408,13 @@ def job_broll_start(inp, sheet, up):
     if not br_up():
         raise RuntimeError("B-Roll Picker tak jalan dalam Mac mini")
     proj = "/".join(key.split("/")[:2])
+    with _lock:
+        st = _st()
     tg = _targets(key) if key == proj else [key]
+    if key == proj and len(tg) > 1:           # projek: hanya subfolder yang belum (yang dah siap tak diusik)
+        tg = [t for t in tg if t not in st["broll"] or st["broll"][t].get("skip")]
     if not tg:
-        raise RuntimeError("Tiada video dalam folder ni")
+        raise RuntimeError("Semua folder dalam projek ni dah di-pre-cut")
     with _lock:
         st = _st()
         ok = False
@@ -422,6 +427,46 @@ def job_broll_start(inp, sheet, up):
     if not ok:
         raise RuntimeError(st["broll"].get(tg[0], {}).get("skip") or "Tak dapat pre-cut")
     return {"ok": True, "folders": len(tg)}
+
+
+def job_broll_start_main(inp, sheet, up):
+    """Butang Pre-cut satu folder utama (cth 21. EDIT SHOP): semua projek dan subfolder yang belum."""
+    stage = str(inp.get("stage") or "")
+    if not br_up():
+        raise RuntimeError("B-Roll Picker tak jalan dalam Mac mini")
+    te = sheet.call("dget", path="sync/toedit").get("doc") or {}
+    items = next((s.get("items") or [] for s in te.get("stages") or [] if s["name"] == stage), [])
+    n = 0
+    with _lock:
+        st = _st()
+        for it in items:
+            key = stage + "/" + it["name"]
+            for rel in _targets(key):
+                if rel in st["broll"] and not st["broll"][rel].get("skip"):
+                    continue
+                st["broll"].pop(rel, None)
+                if _start(sheet, st, rel, stage, it["name"] + ("" if rel == key else " · " + rel.split("/")[-1]), key):
+                    n += 1
+        _save_st(st)
+    if not n:
+        raise RuntimeError("Semua folder dalam " + stage + " dah di-pre-cut")
+    return {"ok": True, "folders": n}
+
+
+def _write_targets(sheet, st):
+    """Senarai subfolder setiap projek (untuk kad projek dalam Studio) ke sync/brfolders bila berubah."""
+    te = sheet.call("dget", path="sync/toedit").get("doc") or {}
+    out = {}
+    for stg in te.get("stages") or []:
+        for it in stg.get("items") or []:
+            key = stg["name"] + "/" + it["name"]
+            tg = _targets(key)
+            if tg:
+                out[key] = [[t, "" if t == key else t.split("/")[-1]] for t in tg]
+    sig = json.dumps(out, sort_keys=True)
+    if sig != st.get("tgsig"):
+        sheet.call("dset", path="sync/brfolders", data={"p": out, "updated": int(time.time() * 1000)})
+        st["tgsig"] = sig
 
 
 def job_broll_done(inp, sheet, up):

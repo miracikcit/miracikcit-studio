@@ -75,3 +75,44 @@ A.brTag=el=>{const t=el.dataset.x;const i=brSw.tags.indexOf(t);if(i>=0)brSw.tags
 A.brPlay=()=>{brSw.play=true;brSwDraw()};
 A.brUndo=()=>{const b=get('broll',brSw.id);const mid=brSw.hist.pop();if(!mid)return;const doc=(S.brd||[]).find(x=>x.id===b.id);if(!doc)return;const d=Object.assign({},doc.d);delete d[mid];save('brd',Object.assign({},doc,{d}),true);brSw.mid=null;brSwDraw();toast('Undo')};
 A.brSwClose=()=>{brSw=null;closeModal();render(true)};
+
+/* ---------- Edit › B-roll: satu kad setiap projek (2026-11-20) ----------
+   Semua folder edit, subfolder jadi baris dalam kad. Susunan: perlu swipe, sedang pre-cut, belum pre-cut, siap (dilipat).
+   Butang Pre-cut untuk satu subfolder, semua yang belum dalam projek, atau satu folder utama. */
+const BR_SKIP=/^(25|27|42)/;
+function brProjects(){const P={};const add=(key,stage,name)=>P[key]||(P[key]={key,stage,name,subs:[]});
+  const tg=((S.sync.brfolders||{}).p)||{};
+  toEditFolders().filter(f=>!BR_SKIP.test(f.stage)).forEach(f=>{const p=add(f.key,f.stage,f.name);(tg[f.key]||(!S.sync.brfolders&&f.clips?[[f.key,'']]:[])).forEach(([rel,sub])=>p.subs.push({rel,sub}))});
+  S.broll.forEach(b=>{const k=b.project||String(b.key||'').split('/').slice(0,2).join('/');const p=add(k,b.stage||k.split('/')[0],k.split('/')[1]||k);
+    if(!p.subs.some(s=>s.rel===b.key))p.subs.push({rel:b.key,sub:b.key===k?'':String(b.key).split('/').pop()})});
+  return Object.values(P).filter(p=>p.subs.length).map(p=>{p.subs.forEach(s=>{s.b=S.broll.find(b=>b.key===s.rel)||null;const b=s.b;
+      s.st=!b||b.skip?'belum':b.status==='precut'?'precut':b.status==='backup'?'backup':b.status==='error'?'error':b.status==='stok'?'siap':brSeen(b)<(b.moments||0)?'swipe':'semak'});
+    const has=k=>p.subs.some(s=>s.st===k);p.rank=has('swipe')||has('semak')||has('error')?0:has('precut')||has('backup')?1:has('belum')?2:3;return p})
+   .sort((a,b)=>a.rank-b.rank||String(a.key).localeCompare(String(b.key)))}
+function brSubRow(s,c){const b=s.b;const busy=ui.ftBusy&&(ui.ftBusy[s.rel]||(b&&ui.ftBusy[b.id]));const nm=s.sub||'Semua video';
+  const pick=b?`${c.home.replace(/\/$/,'')}/?job=${encodeURIComponent(b.job||'')}#swipe`:'';const keeps=b?brLocalKeeps(b):0;
+  const [txt,col,act]=s.st==='belum'?['Belum pre-cut','#999',`<button class="btn sm" data-act="brStart" data-id="${esc(s.rel)}"${busy?' disabled':''}>${busy?'<i class="spin"></i>':''}Pre-cut</button>`]
+   :s.st==='precut'?['Pre-cut '+Math.min(100,Math.round(b.progress||0))+'%','var(--c)','<i class="spin"></i>']
+   :s.st==='backup'?['Sedang simpan','var(--c)','<i class="spin"></i>']
+   :s.st==='error'?[String(b.msg||'Ralat').slice(0,50),'var(--bad)',`<button class="btn sm" data-act="brStart" data-id="${esc(s.rel)}">Cuba lagi</button>`]
+   :s.st==='siap'?['✓ '+(b.kept||(b.clips||[]).length||0)+' klip dalam library','var(--ok)','']
+   :s.st==='swipe'?[`${(b.moments||0)-brSeen(b)} tunggu swipe · keep ${keeps}${b.closeups?' · '+b.closeups+' close-up':''}`,'var(--warn)',
+      b.pubParts?`<button class="btn sm solid tab" data-act="brSwipe" data-id="${esc(b.id)}">▶ Swipe</button>`:`<a class="btn sm solid tab" href="${esc(pick)}" target="_blank" rel="noopener">▶ Swipe</a>`]
+   :[`Siap swipe · keep ${keeps}`,'#4E9B63',`<button class="btn sm solid tab" data-act="brDone" data-id="${esc(b.id)}"${busy||!keeps?' disabled':''}>${busy?'<i class="spin"></i>':IC.check}Dah semak</button>`];
+  return `<div class="brrow"><div style="flex:1;min-width:0"><strong>${esc(nm)}</strong><span class="meta" style="display:block;color:${col}">${esc(txt)}</span></div>${act}${b&&s.st!=='belum'&&s.st!=='precut'?`<a class="btn icon sm" href="${esc(pick)}" target="_blank" rel="noopener" aria-label="Buka dalam Picker (trim)" title="Trim dalam Picker">${IC.ext}</a>`:''}</div>`}
+function brProjectsView(){const c=brCfg();const L=brProjects();
+  const card=p=>{const belum=p.subs.filter(s=>s.st==='belum').length;const busy=ui.ftBusy&&ui.ftBusy[p.key];const prod=p.subs.some(s=>s.b&&s.b.type==='product');
+    return `<div class="card glass"><div class="rowh" style="align-items:center">${fnoBadge(fno(p.stage))}<div style="flex:1;min-width:0"><h3>${esc(p.name)}</h3><div class="meta">${esc(String(p.stage).replace(/^\d+\.\s*/,''))}${p.subs.length>1?' · '+p.subs.length+' folder':''}</div></div></div>
+     ${p.subs.map(s=>brSubRow(s,c)).join('')}
+     ${belum>1?`<div class="btns" style="margin-top:10px"><button class="btn sm" data-act="brStart" data-id="${esc(p.key)}"${busy?' disabled':''}>${busy?'<i class="spin"></i>':IC.scis||''}Pre-cut semua yang belum · ${belum}</button></div>`:''}
+     ${p.subs.map(s=>s.b&&s.st!=='siap'?brShots(s.b):'').join('')}</div>`};
+  const mains=[...new Set(L.filter(p=>p.subs.some(s=>s.st==='belum')).map(p=>p.stage))].sort();
+  const sec=(t,arr)=>arr.length?`<p class="eyebrow" style="margin:18px 0 8px">${t} · ${arr.length}</p><div class="list">${arr.map(card).join('')}</div>`:'';
+  const done=L.filter(p=>p.rank===3);
+  return (mains.length?`<div class="card glass"><p class="eyebrow" style="margin:0 0 8px">Pre-cut satu folder utama</p><div class="btns" style="gap:6px">${mains.map(m=>{const busy=ui.ftBusy&&ui.ftBusy['M:'+m];return `<button class="btn sm" data-act="brStartMain" data-id="${esc(m)}"${busy?' disabled':''}>${busy?'<i class="spin"></i>':''}${esc(fno(m))} ${esc(String(m).replace(/^\d+\.\s*/,''))}</button>`}).join('')}</div><p class="meta" style="margin:8px 0 0">Potong semua projek dan subfolder yang belum dalam folder tu. Kod Mac mini, tiada token.</p></div>`:'')+
+   sec('Perlu swipe',L.filter(p=>p.rank===0))+sec('Sedang pre-cut',L.filter(p=>p.rank===1))+sec('Belum pre-cut',L.filter(p=>p.rank===2))+
+   (done.length?`<details class="col card glass pubgrp" style="margin-top:18px"><summary><div class="rowh" style="align-items:center"><div><p class="eyebrow" style="margin:0">Siap</p><h3>${done.length} projek</h3></div><span class="ic chev">${IC.chev}</span></div></summary><div class="list" style="margin-top:10px">${done.map(card).join('')}</div></details>`:'')+
+   (!L.length?'<div class="empty">Tiada folder edit dengan video.</div>':'')}
+A.brStartMain=el=>{const stage=el.dataset.id;ui.ftBusy=Object.assign({},ui.ftBusy,{['M:'+stage]:1});render();
+  studioJob('broll_start_main',{stage},3*60000).then(r=>toast((r.folders||0)+' folder dihantar untuk pre-cut')).catch(e=>toast('Tak dapat pre-cut: '+String((e&&e.message)||'').slice(0,80)))
+   .finally(()=>{const x=Object.assign({},ui.ftBusy);delete x['M:'+stage];ui.ftBusy=x;render()})};
