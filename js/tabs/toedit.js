@@ -3,7 +3,7 @@
    dalam folder utama dengan /edit-reel <no>/<projek> dan Remote Control hidup, jadi boleh dikawal dari phone.
    Status (Sesi dibuka > Storyboard > Draf) dibaca dari tracker Editor. Kad hilang bila video final masuk 00. TO POST FINAL. */
 const edFor=(key,name)=>S.editor.filter(e=>e.folder===key||(!e.folder&&pMatch(e.name,name))).sort((a,b)=>(b.updated||0)-(a.updated||0))[0]||null;
-const edTone=st=>/siap/i.test(st||'')?'var(--ok)':/sesi/i.test(st||'')?'var(--c)':'var(--warn)';
+const edTone=st=>/siap|jalan/i.test(st||'')?'var(--ok)':/perlu/i.test(st||'')?'var(--bad)':/sesi/i.test(st||'')?'var(--c)':'var(--warn)';
 /* Deadline: ikut tarikh akhir post sample kalau ada, kalau tiada 2 minggu dari folder masuk */
 const smpFor=name=>S.items.find(it=>it.sample&&!sampleDone(it)&&itMatch(it,name))||null;
 function edDeadline(name,start){const it=smpFor(name);if(!it)return {d:deadline(start,14),t:'Edit dalam 2 minggu'};
@@ -18,10 +18,21 @@ V['to-edit']=()=>{const te=S.sync.toedit;const folders=toEditFolders();const fse
   `<p class="eyebrow" style="margin:4px 0 10px">Dalam folder edit · ${rows.length}</p>${off?`<div class="banner glass">Mac mini tak jawab sejak ${esc(off)}. EDIT NOW perlukan Mac mini hidup dan app Claude dibuka.</div>`:''}<div class="list">${rows.map(r=>{const e=r.ed;const busy=ui.edNow&&ui.edNow[r.key];
     return `<div class="card glass"><div class="rowh">${fnoBadge(r.no)}<div style="flex:1;min-width:0"><h3>${esc(r.name)}</h3><div class="meta">${esc(r.sub)}${r.start?' · masuk '+fmtD(r.start):''}</div></div>${e?`<span class="pill" style="--pc:${edTone(e.status)}">${esc(e.status||'Draf')}</span>`:''}</div>
     ${trk(r.d,r.t)}
-    <div class="btns" style="margin-top:12px">${!e||/sesi/i.test(e.status||'')?`<button class="btn sm solid tab edgo" data-act="edNow" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}"${busy||off||!r.stage?' disabled':''}>${busy?'<i class="spin"></i>'+esc(busy):e?'▶ EDIT NOW sekali lagi':'▶ EDIT NOW'}</button>`:''}
-     ${e&&isUrl(e.url)?`<a class="btn sm${/sesi/i.test(e.status||'')?'':' solid tab'}" href="${esc(e.url)}" target="_blank" rel="noopener">${IC.ext}Buka ${/storyboard/i.test(e.status||'')?'storyboard':'Editor'}</a>`:''}
-     <button class="btn icon sm bad" data-act="${r.kind==='f'?'fHide':'delItem'}" data-id="${esc(r.key)}" aria-label="Buang">${IC.trash}</button></div>
-    ${e&&/sesi/i.test(e.status||'')?`<p class="meta" style="margin:8px 0 0">Sesi Claude dah dibuka ${fmtD(e.updated)}. Buka app Claude di phone, sesi "${esc(r.name)}" ada dalam senarai Remote Control.</p>`:''}</div>`}).join('')||`<div class="empty">${te?'Tiada video tunggu edit.':'Belum sync. Tekan Sync folder di Home.'}</div>`}</div>`};
+    <div class="btns" style="margin-top:12px">${edBtns(r,e,busy,off)}<button class="btn icon sm bad" data-act="${r.kind==='f'?'fHide':'delItem'}" data-id="${esc(r.key)}" aria-label="Buang">${IC.trash}</button></div>
+    ${edNote(r,e)}</div>`}).join('')||`<div class="empty">${te?'Tiada video tunggu edit.':'Belum sync. Tekan Sync folder di Home.'}</div>`}</div>`};
+/* Butang kad: belum mula = EDIT NOW; dah tekan = link terus ke chat Claude (Remote Control) atau status */
+function edBtns(r,e,busy,off){const now=`<button class="btn sm${e?'':' solid tab'} edgo" data-act="edNow" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}"${busy||off||!r.stage?' disabled':''}>${busy?'<i class="spin"></i>'+esc(busy):e?'Buka sesi baru':'▶ EDIT NOW'}</button>`;
+  if(!e)return now;const st=e.status||'';const stuck=/perlu|tiada link/i.test(st);
+  const chat=isUrl(e.chat)?`<a class="btn sm solid tab" href="${esc(e.chat)}" target="_blank" rel="noopener">${IC.ext}Buka chat Claude</a>`:'';
+  const page=isUrl(e.url)?`<a class="btn sm${chat?'':' solid tab'}" href="${esc(e.url)}" target="_blank" rel="noopener">${IC.ext}${/storyboard/i.test(st)?'Storyboard':'Editor'}</a>`:'';
+  const wait=!chat&&!page&&!stuck?`<span class="pill" style="--pc:var(--c)"><i class="spin"></i>Sedang buka sesi</span>`:'';
+  return chat+page+wait+(stuck||(!chat&&Date.now()-(e.sessionAt||e.updated||0)>15*60000)?now:'')}
+function edNote(r,e){if(!e)return '';const st=e.status||'';
+  if(/persediaan/i.test(st))return `<p class="meta" style="margin:8px 0 0;color:var(--bad)">Sesi tunggu di Terminal Mac mini (persediaan kali pertama). Tekan Enter di Terminal, kemudian jawab Yes untuk Trust folder.</p>`;
+  if(/trust/i.test(st))return `<p class="meta" style="margin:8px 0 0;color:var(--bad)">Sesi tunggu di Terminal Mac mini: pilih Yes untuk Trust folder ${esc(r.stage)}. Sekali sahaja untuk folder ni.</p>`;
+  if(/log masuk/i.test(st))return `<p class="meta" style="margin:8px 0 0;color:var(--bad)">Claude dalam Terminal Mac mini perlu log masuk.</p>`;
+  if(isUrl(e.chat))return `<p class="meta" style="margin:8px 0 0">Sesi "${esc(fno(r.stage))} · ${esc(r.name)}" dalam folder ${esc(r.stage)}. Buka chat untuk kawal dari phone.</p>`;
+  return ''}
 /* Mac mini dianggap offline kalau tiada ping lebih 5 minit (sel P1 tab Transcribe, diisi oleh worker setiap minit) */
 function macOff(){const t=Date.parse(((typeof trRaw!=='undefined'&&trRaw&&trRaw[0])||[])[15]||'');if(!t)return '';return Date.now()-t>5*60000?fmtD(t)+' '+new Date(t).toTimeString().slice(0,5):''}
 A.edNow=async el=>{const key=el.dataset.id,stage=el.dataset.x,name=el.dataset.n;ui.edNow=Object.assign({},ui.edNow,{[key]:'Buka sesi...'});render();

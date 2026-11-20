@@ -919,14 +919,20 @@ def run_edit_now(inp, sheet, cfg):
     q = lambda x: "'" + str(x).replace("'", "'\\''") + "'"
     d = os.path.join(HOME, "edit-now")
     os.makedirs(d, exist_ok=True)
-    for old in glob.glob(os.path.join(d, "*.command")):
+    for old in glob.glob(os.path.join(d, "*.command")) + glob.glob(os.path.join(d, "*.log")):
         if time.time() - os.path.getmtime(old) > 86400:
             os.remove(old)
-    cmdf = os.path.join(d, re.sub(r"[^A-Za-z0-9]+", "-", name)[:40] + ".command")
+    slug = re.sub(r"[^A-Za-z0-9]+", "-", key)[:60]
+    cmdf = os.path.join(d, slug + ".command")
+    logf = os.path.join(d, slug + ".log")
+    title = f"{no} · {name}"
+    if os.path.exists(logf):
+        os.remove(logf)
     with open(cmdf, "w", encoding="utf-8") as fh:
         fh.write("#!/bin/zsh -l\n# Dibuat oleh butang EDIT NOW dalam Miracikcit Studio\n"
                  f"cd {q(main)} || exit 1\n"
-                 f"exec {q(cli)} --model {EDIT_MODEL} --effort {EDIT_EFFORT} -n {q(name)} --remote-control {q(name)} {q(prompt)}\n")
+                 # script: rakam skrin supaya worker boleh ambil link Remote Control dan status
+                 f"exec /usr/bin/script -q {q(logf)} {q(cli)} --model {EDIT_MODEL} --effort {EDIT_EFFORT} -n {q(title)} --remote-control {q(title)} {q(prompt)}\n")
     os.chmod(cmdf, 0o755)
     r = subprocess.run(["/usr/bin/open", "-a", "Terminal", cmdf], capture_output=True, text=True, timeout=30)
     if r.returncode != 0:
@@ -934,8 +940,52 @@ def run_edit_now(inp, sheet, cfg):
     now = int(time.time() * 1000)
     cur = sheet.call("dget", path="editor/" + ed_id).get("doc") or {"created": now}
     cur.update({"name": name, "folder": key, "style": os.path.basename(main), "status": "Sesi dibuka", "updated": now, "sessionAt": now})
+    cur.pop("chat", None)
     sheet.call("dset", path="editor/" + ed_id, data=cur)
+    threading.Thread(target=_watch_session, args=(sheet, ed_id, logf), daemon=True).start()
     return {"editor": ed_id, "folder": key}
+
+
+_ANSI = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(\x07|\x1b\\)|\x1b[()][A-Z0-9]|[\x00-\x08\x0b-\x1f]")
+
+
+def _watch_session(sheet, ed_id, logf, limit=900):
+    """Baca skrin sesi EDIT NOW: simpan link chat Remote Control ke tracker (butang Buka chat dalam Studio),
+    atau tanda status kalau sesi tunggu jawapan di Mac mini (persediaan pertama kali / Trust folder / log masuk)."""
+    end, last = time.time() + limit, ""
+    while time.time() < end:
+        time.sleep(4)
+        try:
+            raw = open(logf, encoding="utf-8", errors="ignore").read()[-200000:]
+        except Exception:
+            continue
+        m = re.search(r"https://claude\.ai/code/[A-Za-z0-9_\-]+(?:\?[A-Za-z0-9_=&\-]+)?", raw)
+        txt = _ANSI.sub("", raw)
+        m = m or re.search(r"https://claude\.ai/code/[A-Za-z0-9_\-]+", txt)
+        if m:
+            _ed_merge(sheet, ed_id, {"chat": m.group(0), "status": "Sesi jalan"})
+            return
+        tail = txt[-3000:].lower()
+        st = ("Perlu persediaan di Mac mini" if "text style" in tail or "choose the text" in tail else
+              "Perlu jawab Trust di Mac mini" if "trust" in tail and "folder" in tail else
+              "Perlu log masuk di Mac mini" if "log in" in tail or "login" in tail else "")
+        if st and st != last:
+            _ed_merge(sheet, ed_id, {"status": st})
+            last = st
+    if not last:
+        _ed_merge(sheet, ed_id, {"status": "Sesi dibuka (tiada link)"})
+
+
+def _ed_merge(sheet, ed_id, fields):
+    try:
+        cur = sheet.call("dget", path="editor/" + ed_id).get("doc") or {}
+        if cur.get("status") not in ("Sesi dibuka", "Sesi jalan", None) and not str(cur.get("status", "")).startswith(("Perlu", "Sesi")):
+            fields.pop("status", None)  # sesi dah sampai Storyboard / Draf: jangan undur status
+        cur.update(fields)
+        cur["updated"] = int(time.time() * 1000)
+        sheet.call("dset", path="editor/" + ed_id, data=cur)
+    except Exception as e:
+        log.warning("Tak dapat kemas kini tracker %s: %s", ed_id, e)
 
 
 JOB_PROMPT = """Ini screenshot (teks OCR) dan nota dari chat Shopee / TikTok / WhatsApp / email untuk content creator Malaysia @miracikcit.
