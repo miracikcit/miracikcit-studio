@@ -779,6 +779,36 @@ Peraturan:
 - Contoh gaya (nota Bath Garden): Idea Video 'Test buih: picit atas loofah, gosok, tunjuk buih tebal close-up'; Hook 'Mandi pun boleh bau macam dessert ke?'; JANGAN Sebut 'JANGAN putihkan kulit / whitening. Niacinamide cuma nampak lebih cerah'."""
 
 
+NOTA_SKILL_WRAP = """Ikut skill di bawah (skill nota-video-jualan Mira dari Claude chat) untuk sediakan nota video jualan.
+
+=== SKILL ===
+{skill}
+=== TAMAT SKILL ===
+
+MOD STUDIO (ganti bahagian PDF dalam skill):
+- Gambar produk ada dalam fail ni; baca SEMUA dengan tool Read, satu-satu: {files}
+- Produk: {name} · Platform sample: {plat} · Link: {link}
+- JANGAN buat PDF, jangan render, jangan SendUserFile, jangan balas ayat. Balas SATU objek JSON sahaja (tanpa markdown) yang sama dengan `data` dalam PAYLOAD skill:
+  {{"name", "brand", "jenis" (jenis produk), "subtitle", "assumption", "sections": [10 bahagian ikut susunan skill, setiap satu {{"title", "items"}}; USP Lengkap guna "groups"; JANGAN Sebut ada "danger": true]}}
+- Sesuaikan sub-tajuk USP Lengkap dan bahagian Bahan (atau Spesifikasi untuk barang bukan bahan) dengan jenis produk.
+- Tanpa emoji."""
+
+
+def _nota_skill():
+    """Baca SKILL.md nota-video-jualan yang Claude app sync ke Mac (skill sama yang Mira guna dalam Claude chat)."""
+    import glob
+    pats = [os.path.expanduser("~/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/*/*/skills/nota-video-jualan/SKILL.md"),
+            os.path.expanduser("~/.claude/skills/nota-video-jualan/SKILL.md")]
+    found = [f for p in pats for f in glob.glob(p)]
+    if not found:
+        return ""
+    try:
+        txt = open(max(found, key=os.path.getmtime), encoding="utf-8").read()
+        return re.sub(r"^---.*?---\s*", "", txt, flags=re.S)[:12000]
+    except Exception:
+        return ""
+
+
 def run_nota(inp, sheet, cfg):
     """Nota video jualan dari gambar listing dalam R1, dibuat oleh Claude Opus (effort low) dalam Mac mini."""
     src = _listing_src(inp.get("folder"))
@@ -788,8 +818,14 @@ def run_nota(inp, sheet, cfg):
     cli = find_tool("claude", [cfg.get("claude_cli")])
     if not cli:
         raise RuntimeError("Claude Code tak dijumpai dalam Mac mini.")
-    prompt = NOTA_PROMPT.format(name=inp.get("name") or os.path.basename(src), plat=inp.get("plat") or "-",
-                                link=inp.get("link") or "-", files=", ".join(os.path.join(src, f) for f in imgs))
+    files = ", ".join(os.path.join(src, f) for f in imgs)
+    skill = _nota_skill()
+    if skill:
+        prompt = NOTA_SKILL_WRAP.format(skill=skill, name=inp.get("name") or os.path.basename(src),
+                                        plat=inp.get("plat") or "-", link=inp.get("link") or "-", files=files)
+    else:
+        prompt = NOTA_PROMPT.format(name=inp.get("name") or os.path.basename(src), plat=inp.get("plat") or "-",
+                                    link=inp.get("link") or "-", files=files)
     cmd = [cli, "-p", prompt, "--model", cfg.get("nota_model", "claude-opus-5-5"), "--effort", cfg.get("nota_effort", "low"),
            "--tools", "Read", "--allowedTools", "Read", "--add-dir", src,
            "--system-prompt", AI_SYSTEM, "--no-session-persistence", "--output-format", "json", "--setting-sources", ""]

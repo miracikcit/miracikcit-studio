@@ -21,7 +21,7 @@ function smpBadge(it){const p=samplePlan(it);return `<div class="smpb" style="--
 /* Baris gambar listing: thumbnail kecil + butang tambah (auto simpan ke R1. PRODUCT LISTING) */
 function smpListing(it){const l=it.listing||{};const busy=ui.lsUp&&ui.lsUp[it.id];const lk=it.shopee||it.tiktok;
   const st=busy?' st-run':l.n?' st-done':'';
-  return `<button class="btn sm${st}" data-act="lsAdd" data-id="${it.id}"${busy?' disabled':''}>${busy?'<i class="spin"></i>'+esc(busy):(l.n?IC.check+l.n+' gambar listing':IC.up+'Gambar listing')}</button><button class="btn sm${lk?' st-done':''}" data-act="smpLink" data-id="${it.id}">${lk?IC.check+'Link':'+ Link'}</button>`}
+  return `<button class="btn sm${st}" data-act="lsAdd" data-id="${it.id}"${busy?' disabled':''}>${busy?'<i class="spin"></i>'+esc(busy):(l.n?IC.check+l.n+' gambar':IC.up+'Gambar listing')}</button><button class="btn sm${lk?' st-done':''}" data-act="smpLink" data-id="${it.id}">${lk?IC.check+'Link':'+ Link'}</button>`}
 /* Butang Nota berwarna: kelabu = belum, kuning = sedang buat, hijau = siap */
 function notaBtn(it,act){const run=ui.notaUp&&ui.notaUp[it.id];const done=it.nota||it.productId;
   return `<button class="btn sm${run?' st-run':done?' st-done':''}" data-act="${act||'nota'}" data-id="${it.id}"${run?' disabled':''}>${run?'<i class="spin"></i>'+esc(run):done?IC.check+'Nota':'Nota'}</button>`}
