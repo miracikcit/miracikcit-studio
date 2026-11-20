@@ -938,21 +938,36 @@ def run_edit_now(inp, sheet, cfg):
     return {"editor": ed_id, "folder": key}
 
 
-JOB_PROMPT = """Ini maklumat satu paid job (collab / review berbayar) untuk content creator Malaysia @miracikcit, dari screenshot (teks OCR) dan nota.
+JOB_PROMPT = """Ini screenshot (teks OCR) dan nota dari chat Shopee / TikTok / WhatsApp / email untuk content creator Malaysia @miracikcit.
 Hari ini: {today}. Tarikh tanpa tahun: anggap tarikh akan datang yang paling dekat.
 
 {text}
 
-Keluarkan JSON dengan kunci: brand (nama brand / job), fee (nombor RM sahaja, cth "800"), draftDate, postDate, submitDate (YYYY-MM-DD atau ""),
-description (ringkasan 1-3 ayat Bahasa Melayu), deliverables (satu baris satu, cth "1 TikTok video"), requirements (syarat penting, satu baris satu),
-contact (nama / nombor / email kalau ada), clientName (nama syarikat kalau ada). Kalau maklumat tiada, isi "". Jangan reka maklumat."""
+Tentukan jenis:
+- "paid": brand bayar fee (duit) untuk content.
+- "sample": barang percuma / kupon diskaun penuh / barter sebagai ganti review atau video (tiada fee duit).
+
+Balas JSON dengan kunci:
+kind ("paid" atau "sample"), brand (nama brand), product (nama produk penuh, ringkas, tanpa kod kedai), store (nama kedai / akaun kalau ada),
+fee (paid sahaja: nombor RM sahaja, cth "800"; sample: ""), price (harga barang dalam RM, nombor sahaja, cth "708.10"; "" kalau tiada),
+plat ("shopee", "tiktok" atau "whatsapp": dari mana job datang),
+draftDate, postDate, submitDate (YYYY-MM-DD atau ""),
+daysAfterReceive (nombor hari kalau deadline dikira dari tarikh terima barang, cth 7; 0 kalau tiada),
+tasks (senarai tugasan, satu baris satu, Bahasa Melayu ringkas, cth "Ulasan Shopee 5 bintang (5 gambar + 1 video)"),
+description (1-2 ayat Bahasa Melayu), deliverables (satu baris satu), requirements (syarat penting, satu baris satu),
+contact (nama / nombor / email / nama kedai), clientName (nama syarikat kalau ada).
+Kalau maklumat tiada, isi "". Jangan reka maklumat."""
 
 
 def run_jobparse(inp, sheet, cfg):
     """Baca screenshot job (Apple Vision, percuma) + nota, kemudian Claude Opus (effort low) isi butiran job."""
     parts = []
+    tool = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bin", "ocr")
     for fid in (inp.get("files") or [])[:6]:
-        lines = run_ocr(fid, sheet).get("lines") or []
+        if inp.get("local"):
+            lines = json.loads(subprocess.run([tool, fid], capture_output=True, text=True, timeout=60).stdout or "[]")
+        else:
+            lines = run_ocr(fid, sheet).get("lines") or []
         parts.append("\n".join(str(l.get("t") or "") for l in sorted(lines, key=lambda l: (round(float(l.get("y") or 0), 2), float(l.get("x") or 0)))))
     if inp.get("text"):
         parts.append("NOTA:\n" + str(inp["text"]))
@@ -977,7 +992,8 @@ def run_jobparse(inp, sheet, cfg):
     m = re.search(r"\{.*\}", txt, re.S)
     if not m:
         raise RuntimeError("Jawapan Claude bukan JSON")
-    return {"job": json.loads(m.group(0))}
+    u = d.get("usage") or {}
+    return {"job": json.loads(m.group(0)), "usage": {"in": u.get("input_tokens", 0) + u.get("cache_read_input_tokens", 0) + u.get("cache_creation_input_tokens", 0), "out": u.get("output_tokens", 0)}}
 
 
 def studio_jobs(sheet, cfg):

@@ -23,13 +23,14 @@ const JDATES=[['draftDate','Draf'],['postDate','Posting'],['submitDate','Submiss
 function jobNext(j){const td=ymd(new Date());const L=JDATES.filter(([k])=>j[k]).map(([k,l])=>({date:j[k],label:l})).sort((a,b)=>a.date.localeCompare(b.date));return L.find(x=>x.date>=td)||L[L.length-1]||null}
 const jobYear=j=>String(j.draftDate||j.postDate||j.submitDate||j.deadline||ymd(new Date(j.created||Date.now()))).slice(0,4);
 const rmTotal=arr=>arr.reduce((a,v)=>a+(parseFloat(String(v||'').replace(/[^0-9.]/g,''))||0),0);
-const rmBig=n=>'RM '+n.toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:2});
+const rmBig=n=>'RM '+n.toLocaleString('en-MY',{minimumFractionDigits:n%1?2:0,maximumFractionDigits:2});
 V.jobs=()=>{const paid=ui.jobTab!=='non';const yr=String(new Date().getFullYear());
   const pj=S.jobs.filter(j=>j.paid!==false);const yj=pj.filter(j=>jobYear(j)===yr);const total=rmTotal(yj.map(j=>j.fee)),unpaid=rmTotal(yj.filter(j=>!/bayaran/i.test(j.status||'')).map(j=>j.fee));
   const smp=S.items.filter(it=>it.sample);const smpVal=rmTotal(smp.map(it=>it.sample.price));
   const right=paid?`<div class="rmtot"><b>${rmBig(total)}</b><span>Paid jobs ${yr}${unpaid?' · '+rmBig(unpaid)+' belum dibayar':''}</span></div>`:`<div class="rmtot"><b>${rmBig(smpVal)}</b><span>Nilai ${smp.length} sample</span></div>`;
   const tabs=`<div class="btns" style="justify-content:space-between;align-items:center;margin-bottom:14px"><div class="seg"><button type="button" class="${paid?'on':''}" data-act="jobTab" data-x="paid">Paid · ${pj.length}</button><button type="button" class="${!paid?'on':''}" data-act="jobTab" data-x="non">Non paid · ${smp.length+S.jobs.filter(j=>j.paid===false).length}</button></div>${paid?`<button class="btn solid tab" data-act="jobAdd">${IC.plus}Tambah job</button>`:`<button class="btn solid tab" data-act="smpAdd">${IC.plus}Tambah sample</button>`}</div>`;
-  return `<div class="head"><div><p class="eyebrow">${paid?'Paid review dan collab':'Sample dan job tanpa bayaran'}</p><h1>${TAB.jobs.l}</h1></div>${right}</div>`+tabs+(paid?paidList(pj):nonList(smp))};
+  return `<div class="head"><div><p class="eyebrow">${paid?'Paid review dan collab':'Sample dan job tanpa bayaran'}</p><h1>${TAB.jobs.l}</h1></div>${right}</div>`+tabs+chatDrop()+(paid?paidList(pj):nonList(smp))};
+const chatDrop=()=>`<button type="button" class="jdrop" data-act="jobAdd">${IC.up}<span><b>Tambah dari screenshot chat / WhatsApp</b><span class="meta" style="display:block">Mac mini baca sendiri. Job berbayar masuk Paid; sample, kupon atau barter masuk Non paid, Shoot dan Projects</span></span></button>`;
 function jobCard(j,paid){const nx=jobNext(j);const left=nx?daysTo(nx.date):null;const done=/siap|bayaran|invois/i.test(j.status||'');const col=done?'var(--ok)':left===null?'var(--muted)':left>7?'var(--ok)':left>=3?'var(--warn)':'var(--bad)';
     const f=(k,l,ph,type)=>`<label class="f"><span>${l}</span><input class="inp" ${type?`type="${type}"`:''} id="j${k}-${j.id}" data-col="jobs" data-id="${j.id}" data-f="${k}" value="${esc(j[k]||'')}" placeholder="${esc(ph||'')}"></label>`;
     const ta=(k,l,r)=>`<label class="f"><span>${l}</span><textarea class="inp" id="j${k}-${j.id}" data-col="jobs" data-id="${j.id}" data-f="${k}" rows="${r||3}">${esc(j[k]||'')}</textarea></label>`;
@@ -44,36 +45,48 @@ function jobCard(j,paid){const nx=jobNext(j);const left=nx?daysTo(nx.date):null;
        <div class="btns" style="margin-bottom:12px"><button class="btn sm" data-act="jobPdf" data-id="${j.id}" data-x="invoice">Invoice PDF</button><button class="btn sm" data-act="jobPdf" data-id="${j.id}" data-x="receipt">Resit PDF</button></div>`:''}
       <div class="btns" style="justify-content:space-between"><button class="btn sm bad" data-act="jobDel" data-id="${j.id}">${IC.trash}Delete</button><button class="btn solid tab" data-act="jobSave" data-id="${j.id}">Save</button></div></div></details>`}
 function paidList(all){const list=all.filter(j=>hit('job',j.no,j.brand,j.status,j.contact,j.clientName)).sort((a,b)=>(b.review?1:0)-(a.review?1:0)||String(b.no||'').localeCompare(String(a.no||''),undefined,{numeric:true}));
-  return `<button type="button" class="jdrop" data-act="jobAdd">${IC.up}<span><b>Letak screenshot atau tampal nota job</b><span class="meta" style="display:block">Mac mini isi sendiri nama job, harga, tarikh draf, posting, submission dan description</span></span></button>`+searchBox('job','Cari nombor, brand atau status')+
+  return searchBox('job','Cari nombor, brand atau status')+
   `<div class="list">${list.map(j=>jobCard(j,true)).join('')||`<div class="empty">${all.length?'Tiada padanan.':'Belum ada paid job.'}</div>`}</div>
   <p class="meta" style="margin-top:16px">Save kemas kini tab JOBS dalam Sheet CONTENT 2026 (DRAF, POSTING, SUBMISSION dalam lajur P, Q, R). Jumlah di atas kira semua paid job tahun ni.</p>`}
 function nonList(smp){const td=ymd(new Date());const L=smp.slice().sort((a,b)=>(sampleDone(a)?1:0)-(sampleDone(b)?1:0)||String(a.sample.postBy).localeCompare(String(b.sample.postBy))).filter(it=>hit('job',it.title));
   const jobs=S.jobs.filter(j=>j.paid===false);const stg={toshoot:'Shoot',shot:'Dah shoot',toedit:'Edit',ready:'To Publish',published:'Published'};
-  return searchBox('job','Cari sample')+`<div class="list">${L.map(it=>{const dn=sampleDone(it);return `<div class="card glass${dn?' smpdone':''}"><div class="rowh" style="align-items:center;gap:10px"><div style="flex:1;min-width:0"><h3>${dn?IC.check:''}${esc(it.title)}</h3><div class="meta">${smpPlat(it.sample.plat)} · ${stg[it.stage]||it.stage||''} · akhir post ${dmy(it.sample.postBy)}</div></div>
-    <label class="smprm"><span>RM</span><input class="inp" id="sp-${it.id}" data-smpprice="${it.id}" value="${esc(it.sample.price||'')}" placeholder="Harga" inputmode="decimal"></label></div></div>`}).join('')||`<div class="empty">Belum ada sample. Tambah dari tab Shoot.</div>`}</div>
+  const due=it=>it.sample.afterRecv&&!it.sample.received?'kira '+it.sample.afterRecv+' hari dari terima':'akhir post '+dmy(it.sample.postBy);
+  return searchBox('job','Cari sample')+`<div class="list">${L.map(it=>{const dn=sampleDone(it);return `<div class="card glass${dn?' smpdone':''}"><div class="rowh" style="align-items:center;gap:10px"><div style="flex:1;min-width:0"><h3>${dn?IC.check:''}${esc(it.title)}</h3><div class="meta">${esc([smpPlat(it.sample.plat),it.brand,stg[it.stage]||it.stage||'',due(it)].filter(Boolean).join(' · '))}</div></div>
+    <label class="smprm"><span>RM</span><input class="inp" id="sp-${it.id}" data-smpprice="${it.id}" value="${esc(it.sample.price||'')}" placeholder="Harga" inputmode="decimal"></label></div>
+    ${smpTasks(it)}${!dn&&it.sample.afterRecv&&!it.sample.received?`<div class="btns" style="margin-top:10px"><button class="btn sm solid tab" data-act="smpRecv" data-id="${it.id}">${IC.check}Dah terima barang hari ni</button></div>`:''}</div>`}).join('')||`<div class="empty">Belum ada sample. Tambah dari tab Shoot.</div>`}</div>
   ${jobs.length?`<p class="eyebrow" style="margin-top:22px">Job non paid lain · ${jobs.length}</p><div class="list">${jobs.map(j=>jobCard(j,false)).join('')}</div>`:''}
   <p class="meta" style="margin-top:16px">Semua sample dari tab Shoot masuk sini sendiri. Harga disimpan dalam kad dan ke Sheet (JENIS SAMPLE, HARGA) bila produk masuk Sheet.</p>`}
 AFTER.jobs=()=>document.querySelectorAll('details[data-job]').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)ui.openJob=d.dataset.job;else if(ui.openJob===d.dataset.job)ui.openJob=null}));
 A.jobTab=el=>{ui.jobTab=el.dataset.x;render(true)};
 A.jobAdd=()=>{ui.jadd={files:[],text:'',busy:false};jobAddModal()};
 function jobAddModal(){const m=ui.jadd;
-  modal(`<h2>Tambah paid job</h2><p class="meta" style="margin-top:-4px">Letak screenshot brief (WhatsApp, email) atau tampal nota. Mac mini baca dan isi sendiri: nama job, harga, deadline draf, posting, submission dan description.</p>
-   <button class="jdrop" type="button" data-act="jaPick"${m.busy?' disabled':''}>${IC.up}<span><b>${m.files.length?m.files.length+' gambar dipilih':'Pilih screenshot'}</b><span class="meta" style="display:block">Boleh pilih beberapa gambar sekali</span></span></button>
-   <label class="f"><span>Atau tampal nota job</span><textarea class="inp" id="jaT" rows="5" placeholder="Brief, harga, tarikh...">${esc(m.text)}</textarea></label>
+  modal(`<h2>Tambah dari screenshot</h2><p class="meta" style="margin-top:-4px">Screenshot chat Shopee / TikTok, WhatsApp, email atau brief. Mac mini baca dan tentukan sendiri: job berbayar masuk Paid, sample / kupon / barter masuk Non paid dan Shoot (dengan harga, tugasan dan deadline).</p>
+   <button class="jdrop" type="button" data-act="jaPick"${m.busy?' disabled':''}>${IC.up}<span><b>${m.files.length?m.files.length+' gambar dipilih':'Pilih screenshot'}</b><span class="meta" style="display:block">Boleh pilih beberapa gambar sekali (sampai 6)</span></span></button>
+   <label class="f"><span>Atau tampal teks chat / nota</span><textarea class="inp" id="jaT" rows="4" placeholder="Brief, harga, tarikh...">${esc(m.text)}</textarea></label>
    <div class="btns" style="justify-content:space-between"><button class="btn" data-act="jaManual">Isi sendiri</button><button class="btn solid tab" data-act="jaRead"${m.busy?' disabled':''}>${m.busy?'<i class="spin"></i>'+esc(m.busy):'Baca & isi'}</button></div>`,TAB.jobs.c)}
 A.jaPick=()=>{ui.jadd.text=($('#jaT')||{}).value||'';pickFile('image/*',fs=>{ui.jadd.files=fs.slice(0,6);jobAddModal()},true)};
-A.jaManual=()=>{closeModal();const j=save('jobs',{brand:'',paid:true,status:'Baru',no:nextJobNo(true)},true);ui.openJob=j.id;ui.jobTab='paid';render(true)};
-A.jaRead=async()=>{const m=ui.jadd;m.text=($('#jaT')||{}).value||'';if(!m.files.length&&!m.text.trim()){toast('Pilih screenshot atau tampal nota dulu');return}
+A.jaManual=()=>{closeModal();if(ui.jobTab==='non'){A.smpAdd();A.smpRow();return}const j=save('jobs',{brand:'',paid:true,status:'Baru',no:nextJobNo(true)},true);ui.openJob=j.id;ui.jobTab='paid';render(true)};
+A.jaRead=async()=>{const m=ui.jadd;m.text=($('#jaT')||{}).value||'';if(!m.files.length&&!m.text.trim()){toast('Pilih screenshot atau tampal teks dulu');return}
   if(m.files.length&&!ASSETS){toast('Upload tak tersedia di sini');return}const ids=[];
   try{for(let i=0;i<m.files.length;i++){m.busy='Upload '+(i+1)+'/'+m.files.length;jobAddModal();ids.push((await ASSETS.upload(m.files[i])).id)}
-    m.busy='Mac mini baca...';jobAddModal();
-    const r=await studioJob('jobparse',{files:ids,text:m.text.slice(0,8000),today:ymd(new Date())},6*60000);const x=r.job||{};
-    const j=save('jobs',{paid:true,status:'Baru',no:nextJobNo(true),review:true,brand:x.brand||x.name||'',fee:x.fee||'',draftDate:toYmd(x.draftDate),postDate:toYmd(x.postDate),submitDate:toYmd(x.submitDate),
-      notes:x.description||'',deliverables:x.deliverables||'',requirements:x.requirements||'',contact:x.contact||'',clientName:x.clientName||''},true);
-    ui.openJob=j.id;ui.jobTab='paid';closeModal();render(true);toast('Job diisi. Semak dan tekan Save')}
+    m.busy='Mac mini baca...';jobAddModal();const x=await chatRead(ids,m.text);closeModal();chatApply(x)}
   catch(e){m.busy=false;jobAddModal();toast('Tak dapat baca: '+String((e&&(e.message||e.code))||'semak Mac mini hidup').slice(0,80))}
   finally{ids.forEach(x=>ASSETS.delete(x).catch(()=>{}))}};
-function jobCollect(id){const j=Object.assign({},get('jobs',id));document.querySelectorAll(`[data-col="jobs"][data-id="${id}"]`).forEach(el=>{j[el.dataset.f]=el.value.trim()});if(!j.no)j.no=nextJobNo(j.paid!==false);return j}
+async function chatRead(ids,text){const r=await studioJob('jobparse',{files:ids,text:String(text||'').slice(0,8000),today:ymd(new Date())},6*60000);return r.job||{}}
+/* Hasil bacaan: paid -> kad job kuning (semak); sample -> kad To Shoot (masuk Projects, Non paid, Calendar sendiri) */
+function chatApply(x){const lines2=v=>Array.isArray(v)?v.join('\n'):String(v||'');
+  if(x.kind==='sample'){const it=chatSample(x);ui.jobTab='non';go('jobs');render(true);toast('Sample "'+it.title+'" masuk Shoot, Projects dan Non paid');return it}
+  const j=save('jobs',{paid:true,status:'Baru',no:nextJobNo(true),review:true,brand:x.brand||x.product||'',fee:x.fee||'',draftDate:toYmd(x.draftDate),postDate:toYmd(x.postDate),submitDate:toYmd(x.submitDate),
+    notes:x.description||'',deliverables:lines2(x.deliverables),requirements:lines2(x.requirements||x.tasks),contact:x.contact||'',clientName:x.clientName||''},true);
+  ui.openJob=j.id;ui.jobTab='paid';go('jobs');render(true);toast('Paid job diisi. Semak dan tekan Save');return j}
+function chatSample(x){const today=ymd(new Date());const title=String(x.product||x.brand||'Sample').trim();const days=+x.daysAfterReceive||0;
+  const postBy=toYmd(x.postDate)||toYmd(x.submitDate)||ymdAdd(today,days||7);const plat=['shopee','tiktok','whatsapp'].includes(x.plat)?x.plat:'shopee';
+  const tasks=(Array.isArray(x.tasks)?x.tasks.join('\n'):String(x.tasks||x.deliverables||'')).trim();
+  const ex=S.items.find(it=>it.sample&&!sampleDone(it)&&(nrm(it.title)===nrm(title)||itMatch(it,title)));const sv=sheetView();
+  const sample=Object.assign({plat,postBy,start:today,done:false,received:false,sheetRowAtAdd:sv?Math.max(0,...sv.groups.map(g=>g.start)):0},ex?ex.sample:{},
+    {price:rmNum(x.price)||(ex&&ex.sample.price)||'',tasks,afterRecv:days,store:x.store||x.contact||'',note:x.description||''});
+  if(!ex||!ex.sample.received)sample.postBy=postBy;
+  return save('items',Object.assign({},ex||{title,stage:'toshoot',stageAt:{toshoot:Date.now()},noteAt:Date.now(),src:'sample'},{brand:(ex&&ex.brand)||x.brand||'',sample}),true)}
 A.jobSave=async el=>{const j=jobCollect(el.dataset.id);delete j.review;save('jobs',j,true);render(true);
   try{await jobToSheet(j);toast('Disimpan. Sheet JOBS dikemas kini')}catch(e){toast('Disimpan dalam app. Sheet tak dapat dikemas kini')}};
 A.jobDel=el=>{const j=get('jobs',el.dataset.id);confirmBox('Delete job "'+(j.brand||j.no||'baru')+'"?',()=>{const rn=jobsRaw&&jobsRaw.some(r=>String((r||[])[13]||'').trim()===j.id)?jobRowNo(j):0;del('jobs',j.id);
