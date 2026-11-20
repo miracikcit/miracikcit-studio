@@ -14,14 +14,16 @@ V['to-edit']=()=>{const te=S.sync.toedit;const folders=toEditFolders();const fse
    .concat(byStage('toedit').filter(it=>!fset.has(nrm(it.title))).map(it=>({kind:'i',key:it.id,stage:it.folder||'',no:fno(it.folder),name:it.title,sub:[(it.folder||'Belum pilih folder').replace(/^\d+\.\s*/,''),it.account,'folder belum ada footage'].filter(Boolean).join(' · '),start:(it.stageAt&&it.stageAt.toedit)||it.created})))
    .map(r=>Object.assign(r,edDeadline(r.name,r.start),{ed:edFor(r.key,r.name)})).sort((a,b)=>(a.d?a.d.left:99)-(b.d?b.d.left:99));
   const off=macOff();
-  return head(te?'Folder sync '+fmtD(te.syncedAt):'Belum sync',`<button class="btn sm" data-act="addEdit">${IC.plus}Tambah</button>`)+shotList()+
+  if(ui.teSeg==='broll')return head('B-roll untuk semak')+teSegs()+ftSemakView();
+  return head(te?'Folder sync '+fmtD(te.syncedAt):'Belum sync',`<button class="btn sm" data-act="addEdit">${IC.plus}Tambah</button>`)+teSegs()+shotList()+
   doneStrip()+`<p class="eyebrow" style="margin:4px 0 10px">Dalam folder edit · ${rows.length}</p>${off?`<div class="banner glass">Mac mini tak jawab sejak ${esc(off)}. EDIT NOW perlukan Mac mini hidup dan app Claude dibuka.</div>`:''}<div class="list">${rows.map(r=>{const e=r.ed;const busy=ui.edNow&&ui.edNow[r.key];
     return `<div class="card glass"><div class="rowh">${fnoBadge(r.no)}<div style="flex:1;min-width:0"><h3>${esc(r.name)}</h3><div class="meta">${esc(r.sub)}${r.start?' · masuk '+fmtD(r.start):''}</div></div>${e?`<span class="pill" style="--pc:${edTone(e.status)}">${esc(e.status||'Draf')}</span>`:''}</div>
     ${trk(r.d,r.t)}
+    ${brSteps(r,e)}
     <div class="btns" style="margin-top:12px">${edBtns(r,e,busy,off)}<button class="btn icon sm bad" data-act="${r.kind==='f'?'fHide':'delItem'}" data-id="${esc(r.key)}" aria-label="Buang">${IC.trash}</button></div>
     ${edNote(r,e)}</div>`}).join('')||`<div class="empty">${te?'Tiada video tunggu edit.':'Belum sync. Tekan Sync folder di Home.'}</div>`}</div>`};
 /* Butang kad: belum mula = EDIT NOW; dah tekan = link terus ke chat Claude (Remote Control) atau status */
-function edBtns(r,e,busy,off){const bb=brFor(r.key);if(!e&&brPending(bb))return `<button class="btn sm solid tab" data-act="go" data-id="footage">${bb.status==='precut'?'<i class="spin"></i>B-roll sedang pre-cut':'Semak B-roll dulu'}</button>`;const now=`<button class="btn sm${e?'':' solid tab'} edgo" data-act="edNow" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}"${busy||off||!r.stage?' disabled':''}>${busy?'<i class="spin"></i>'+esc(busy):e?'Buka sesi baru':'▶ EDIT NOW'}</button>`;
+function edBtns(r,e,busy,off){const bbs=brsFor(r.key);const bb=bbs.find(b=>b.status==='precut')||bbs.find(brPending);if(!e&&bb)return `<button class="btn sm solid tab" data-act="teSeg" data-x="broll">${bb.status==='precut'?'<i class="spin"></i>B-roll sedang pre-cut':'Semak B-roll dulu'}</button>`;const now=`<button class="btn sm${e?'':' solid tab'} edgo" data-act="edNow" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}"${busy||off||!r.stage?' disabled':''}>${busy?'<i class="spin"></i>'+esc(busy):e?'Buka sesi baru':'▶ EDIT NOW'}</button>`;
   if(!e)return now;const st=e.status||'';const stuck=/perlu|tiada link/i.test(st);
   const chat=isUrl(e.chat)?`<a class="btn sm solid tab" href="${esc(e.chat)}" target="_blank" rel="noopener">${IC.ext}Buka chat Claude</a>`:'';
   const page=isUrl(e.url)?`<a class="btn sm${chat?'':' solid tab'}" href="${esc(e.url)}" target="_blank" rel="noopener">${IC.ext}${/storyboard/i.test(st)?'Storyboard':'Editor'}</a>`:'';

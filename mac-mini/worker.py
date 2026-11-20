@@ -227,7 +227,15 @@ def run_whispercpp(wav, cfg, lang):
     return detected, segs
 
 
+TLOCK = threading.Lock()   # satu transkrip pada satu masa (tab Transcribe dan A-roll B-roll)
+
+
 def transcribe(wav, cfg):
+    with TLOCK:
+        return _transcribe(wav, cfg)
+
+
+def _transcribe(wav, cfg):
     fn = run_mlx if backend(cfg) == "mlx" else run_whispercpp
     lang, segs = fn(wav, cfg, None)          # None = kesan bahasa sendiri, transkrip dalam bahasa asal
     if cfg.get("prefer_malay") and lang == "id":

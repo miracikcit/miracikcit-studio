@@ -19,14 +19,15 @@ A.ftSeg=el=>{ui.ftSeg=el.dataset.x;render(true)};
 function ftSemakView(){const c=brCfg();
   const brs=S.broll.filter(b=>brPending(b)||b.status==='error').sort((a,b)=>(b.updated||0)-(a.updated||0));
   const best=S.footage.filter(f=>f.status==='semak'||f.status==='backup').sort((a,b)=>(b.updated||0)-(a.updated||0));
-  const todo=toEditFolders().filter(f=>!brFor(f.key)&&f.clips&&!/^(29|41)/.test(f.stage));
+  const todo=toEditFolders().filter(f=>!brsFor(f.key).length&&f.clips&&!/^(25|27)/.test(f.stage));
   const brCard=b=>{const swipe=`${c.home.replace(/\/$/,'')}/?job=${encodeURIComponent(b.job||'')}#swipe`;const busy=ui.ftBusy&&ui.ftBusy[b.id];
     return `<div class="card glass"><div class="rowh" style="align-items:flex-start">${fnoBadge(fno(b.stage))}<div style="flex:1;min-width:0"><h3>${esc(b.name)}</h3><div class="meta"><span class="kchip smp">B-ROLL</span> ${esc(String(b.stage||'').replace(/^\d+\.\s*/,''))}</div></div>
       <span class="pill" style="--pc:${b.status==='ready'?'var(--warn)':b.status==='error'?'var(--bad)':'var(--c)'}">${b.status==='precut'?'Pre-cut '+(b.progress?Math.min(100,Math.round(b.progress))+'%':''):b.status==='backup'?'Simpan…':b.status==='error'?'Ralat':(b.moments||0)+' moment'}</span></div>
      ${(b.thumbs||[]).length?`<div class="fthumbs">${b.thumbs.map(t=>`<span class="fth">${thumbImg(t)}</span>`).join('')}</div>`:''}
      ${b.msg?`<p class="meta" style="margin:8px 0 0">${esc(b.msg)}</p>`:''}
-     ${b.status==='ready'?`<p class="meta" style="margin:8px 0 0">${b.seen?`Dah swipe ${b.seen} / ${b.moments||0} · keep ${b.kept||0}`:'Belum swipe'}</p>
-     <div class="btns" style="margin-top:10px"><a class="btn sm solid tab" href="${esc(swipe)}" target="_blank" rel="noopener">▶ Swipe (Wi-Fi rumah)</a>${isUrl(c.away)?`<a class="btn sm" href="${esc(c.away.replace(/\/$/,'')+'/?job='+encodeURIComponent(b.job||'')+'#swipe')}" target="_blank" rel="noopener">${IC.ext}Travel</a>`:''}<span style="flex:1"></span><button class="btn sm" data-act="brDone" data-id="${esc(b.id)}"${busy||!b.kept?' disabled':''}>${busy?'<i class="spin"></i>':IC.check}Dah semak</button></div>`:''}
+     ${b.type==='product'?`<p class="meta" style="margin:8px 0 0">Produk: ${b.arollVideos?b.arollVideos+' video bercakap jadi suara (transkrip di Mac mini)':'tiada video bercakap'}${b.closeups?' · '+b.closeups+' close-up dari video bercakap, tanpa bunyi':''}</p>`:''}
+     ${b.status==='ready'?`<p class="meta" style="margin:8px 0 0">${brSeen(b)?`Dah swipe ${brSeen(b)} / ${b.moments||0} · keep ${brLocalKeeps(b)}`:'Belum swipe'}${b.pub&&b.pub<(b.moments||0)&&!b.pubParts?` · sediakan swipe ${b.pub}/${b.moments}`:''}</p>${brShots(b)}
+     <div class="btns" style="margin-top:10px">${b.pubParts?`<button class="btn sm solid tab" data-act="brSwipe" data-id="${esc(b.id)}">▶ Swipe di sini</button>`:''}<a class="btn sm${b.pubParts?'':' solid tab'}" href="${esc(swipe)}" target="_blank" rel="noopener">${b.pubParts?'Trim · Picker (Wi-Fi rumah)':'▶ Swipe (Wi-Fi rumah)'}</a>${isUrl(c.away)?`<a class="btn sm" href="${esc(c.away.replace(/\/$/,'')+'/?job='+encodeURIComponent(b.job||'')+'#swipe')}" target="_blank" rel="noopener">${IC.ext}Travel</a>`:''}<span style="flex:1"></span><button class="btn sm" data-act="brDone" data-id="${esc(b.id)}"${busy||!(b.kept||brLocalKeeps(b))?' disabled':''}>${busy?'<i class="spin"></i>':IC.check}Dah semak</button></div>`:''}
      ${b.status==='error'?`<div class="btns" style="margin-top:10px"><button class="btn sm" data-act="brStart" data-id="${esc(b.key)}">Cuba pre-cut semula</button></div>`:''}</div>`};
   const bestCard=f=>{const drop=(ui.ftDrop&&ui.ftDrop[f.id])||new Set(f.drop||[]);const busy=f.status==='backup'||(ui.ftBusy&&ui.ftBusy[f.id]);
     return `<div class="card glass"><div class="rowh" style="align-items:flex-start"><div style="flex:1;min-width:0"><h3>${esc(f.name)}</h3><div class="meta"><span class="kchip paid">KLIP TERBAIK</span> ${esc(f.folder||'')}</div></div><span class="pill" style="--pc:var(--warn)">${(f.files||[]).length} klip</span></div>
@@ -68,7 +69,7 @@ A.bestDone=el=>{const f=get('footage',el.dataset.id);const drop=[...((ui.ftDrop&
     finally{const b=Object.assign({},ui.ftBusy);delete b[f.id];ui.ftBusy=b;render()}};
   if(drop.length)confirmBox('Buang '+drop.length+' klip ke Trash Mac dan simpan '+((f.files||[]).length-drop.length)+'?',go2,'Ya, teruskan');else go2()};
 A.brDone=el=>{const b=get('broll',el.dataset.id);ui.ftBusy=Object.assign({},ui.ftBusy,{[b.id]:1});render();
-  studioJob('broll_done',{key:b.key},3*60000).then(()=>toast(b.kept+' klip disimpan ke B-ROLL LIBRARY, sedang backup ke Drive')).catch(e=>toast('Tak berjaya: '+String((e&&e.message)||'semak Mac mini hidup').slice(0,80)))
+  studioJob('broll_done',{key:b.key},3*60000).then(()=>toast((b.kept||brLocalKeeps(b))+' klip disimpan ke B-ROLL LIBRARY, sedang backup ke Drive')).catch(e=>toast('Tak berjaya: '+String((e&&e.message)||'semak Mac mini hidup').slice(0,80)))
    .finally(()=>{const x=Object.assign({},ui.ftBusy);delete x[b.id];ui.ftBusy=x;render()})};
 A.brStart=el=>{const key=el.dataset.id;ui.ftBusy=Object.assign({},ui.ftBusy,{[key]:1});render();
   studioJob('broll_start',{key},3*60000).then(()=>toast('Pre-cut dimulakan. Siap dalam beberapa minit')).catch(e=>toast('Tak dapat pre-cut: '+String((e&&e.message)||'').slice(0,80)))

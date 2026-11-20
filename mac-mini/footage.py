@@ -19,10 +19,45 @@ STATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "footage_state.
 FFMPEG = shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg"
 VID = (".mov", ".mp4", ".m4v")
 IMG = (".jpg", ".jpeg", ".png", ".heic")
-SKIP_STAGES = {"29", "41"}          # 29: Footage Sorter urus; 41: tunggu VO
+AUTO_TYPES = {"vlog", "product"}    # vlog: semua footage B-roll untuk VO; product: suara dari video bercakap + B-roll / close-up
 START_MS = 1795165200000             # 2026-11-20: auto pre-cut hanya folder baru selepas ni; folder lama guna butang Pre-cut dalam Studio
 _lock = threading.Lock()
 _busy = set()
+
+
+def ftype(rel):
+    """Sama dengan engine.folder_type: jenis ikut nama folder utama."""
+    main = (rel or "").split("/")[0].upper()
+    if re.search(r"VLOG|\+ ?VO|TUNGGU VO", main):
+        return "vlog"
+    if re.search(r"SHOP|UNBOXING|COOK", main):
+        return "product"
+    if "TALK" in main:
+        return "talk"
+    return "other"
+
+
+def _targets(key):
+    """Folder yang perlu di-pre-cut untuk satu projek: projek itu sendiri (kalau ada video terus) dan setiap
+    subfolder yang ada video (cth GENTING/04 Sky Avenue). Folder kabur / duplicate dilangkau."""
+    root = os.path.join(BASE, key)
+    out = []
+    try:
+        names = sorted(os.listdir(root))
+    except Exception:
+        return out
+    if any(n.lower().endswith(VID) and not n.startswith(".") for n in names):
+        out.append(key)
+    for n in names:
+        sub = os.path.join(root, n)
+        if n.startswith(".") or not os.path.isdir(sub) or re.search(r"kabur|duplicate", n, re.I):
+            continue
+        try:
+            if any(f.lower().endswith(VID) and not f.startswith(".") for f in os.listdir(sub)):
+                out.append(key + "/" + n)
+        except Exception:
+            pass
+    return out
 
 
 def slug(s):
@@ -110,14 +145,19 @@ def _auto_precut(sheet, st):
     mk = sheet.call("dget", path="sync/toeditmarks").get("doc") or {}
     gone = set((mk.get("done") or {}).keys()) | set((mk.get("hidden") or {}).keys())
     for stg in te.get("stages") or []:
-        no = stg["name"].split(".")[0]
-        if no in SKIP_STAGES:
+        if ftype(stg["name"]) not in AUTO_TYPES:
             continue
         for it in stg.get("items") or []:
             key = stg["name"] + "/" + it["name"]
-            if key in gone or not it.get("clips") or key in st["broll"] or (it.get("mtime") or 0) < START_MS:
+            if key in gone or (it.get("mtime") or 0) < START_MS or st.setdefault("proj", {}).get(key):
                 continue
-            _start(sheet, st, key, stg["name"], it["name"])
+            tg = _targets(key)
+            if not tg:
+                continue
+            for rel in tg:
+                if rel not in st["broll"]:
+                    _start(sheet, st, rel, stg["name"], it["name"] + ("" if rel == key else " · " + rel.split("/")[-1]), key)
+            st["proj"][key] = len(tg)
 
 
 def _adopt_manual(sheet, st):
@@ -138,11 +178,12 @@ def _adopt_manual(sheet, st):
         s = slug(rel)
         st["broll"][rel] = {"slug": s, "job": jid, "status": "precut"}
         _merge(sheet, "broll/" + s, {"key": rel, "name": " · ".join(parts[1:]) or rel, "stage": parts[0], "job": jid,
+                                     "project": "/".join(parts[:2]), "type": ftype(rel),
                                      "status": "precut", "msg": "Pre-cut dari B-Roll Picker"})
         log.info("B-roll dari Picker masuk Studio: %s", rel)
 
 
-def _start(sheet, st, key, stage, name):
+def _start(sheet, st, key, stage, name, project=None):
     try:
         jid = br("/api/scan", {"path": key})["id"]
     except Exception as e:
@@ -151,7 +192,8 @@ def _start(sheet, st, key, stage, name):
         return False
     s = slug(key)
     st["broll"][key] = {"slug": s, "job": jid, "status": "precut"}
-    _merge(sheet, "broll/" + s, {"key": key, "name": name, "stage": stage, "job": jid, "status": "precut", "msg": "Sedang pre-cut"})
+    _merge(sheet, "broll/" + s, {"key": key, "name": name, "stage": stage, "job": jid, "status": "precut", "msg": "Sedang pre-cut",
+                                 "project": project or key, "type": ftype(key)})
     log.info("B-roll pre-cut dimulakan: %s", key)
     return True
 
@@ -177,19 +219,155 @@ def _refresh_broll(sheet, up, st):
                         if fid:
                             thumbs.append(fid)
                 r["status"] = "ready"
-                _merge(sheet, "broll/" + r["slug"], {"status": "ready", "moments": len(moms), "thumbs": thumbs, "msg": ""})
+                _merge(sheet, "broll/" + r["slug"], {"status": "ready", "moments": len(moms), "thumbs": thumbs, "msg": "",
+                                                     "type": d["meta"].get("type") or ftype(key), "aroll": js.get("aroll", 0),
+                                                     "arollVideos": len(js.get("aroll_videos") or []),
+                                                     "closeups": js.get("closeups", 0), "pub": 0})
+                _publish_bg(sheet, up, key, r)
             elif js.get("status") == "error":
                 r["status"] = "error"
                 _merge(sheet, "broll/" + r["slug"], {"status": "error", "msg": str(js.get("msg"))[:160]})
             else:
                 _merge(sheet, "broll/" + r["slug"], {"progress": js.get("progress", 0), "msg": js.get("msg", "")[:80]})
         else:
-            stt = json.load(open(os.path.join(BR_DATA, "cache", r["job"], "state.json"))) if os.path.exists(os.path.join(BR_DATA, "cache", r["job"], "state.json")) else {"dec": {}}
-            kept = sum(1 for v in stt.get("dec", {}).values() if v.get("action") == "keep")
-            seen = len(stt.get("dec", {}))
-            if kept != r.get("kept") or seen != r.get("seen"):
-                r["kept"], r["seen"] = kept, seen
-                _merge(sheet, "broll/" + r["slug"], {"kept": kept, "seen": seen})
+            if not r.get("pubDone"):
+                _publish_bg(sheet, up, key, r)
+            _sync_dec(sheet, r)
+            sp = os.path.join(BR_DATA, "cache", r["job"], "state.json")
+            stt = json.load(open(sp)) if os.path.exists(sp) else {"dec": {}}
+            dec = stt.get("dec", {})
+            kept = sum(1 for v in dec.values() if v.get("action") == "keep")
+            pdec = {k: ("k" if v.get("action") == "keep" else "s") for k, v in dec.items()}
+            sig = str(sorted(pdec.items()))
+            if kept != r.get("kept") or len(dec) != r.get("seen") or sig != r.get("psig"):
+                r["kept"], r["seen"], r["psig"] = kept, len(dec), sig
+                _merge(sheet, "broll/" + r["slug"], {"kept": kept, "seen": len(dec), "pdec": pdec})
+            _aroll_step(r)
+
+
+# ---------------------------------------------------------------- swipe dalam Studio
+def _publish_bg(sheet, up, key, r):
+    if ("pub", key) in _busy:
+        return
+    _busy.add(("pub", key))
+    threading.Thread(target=_publish, args=(sheet, up, key, r), daemon=True).start()
+
+
+def _publish(sheet, up, key, r):
+    """Preview kecil setiap moment ke Drive (gambar 4 frame + video 360p) dan senarai moment ke doc brm/<slug>-<n>,
+    supaya Mira boleh swipe dalam Studio di mana-mana (tanpa Wi-Fi rumah). Kod biasa, tiada token."""
+    try:
+        d = br("/api/moments?id=" + r["job"], timeout=60)
+        moms = [m for m in d["meta"].get("moments", []) if not m.get("junk") and not m.get("aroll")][:240]
+        cache = os.path.join(BR_DATA, "cache", r["job"], "m")
+        pid = sheet.call("dpath", base="studio", path=["FOOTAGE", "PREVIEW", "B-ROLL", r["slug"], "swipe"], share=True)["id"]
+        done = dict(r.get("pubIds") or {})
+        rows = []
+        with tempfile.TemporaryDirectory(prefix="brp-") as tmp:
+            for i, m in enumerate(moms):
+                mid = m["id"]
+                if mid not in done:
+                    src = os.path.join(cache, mid + ".mp4")
+                    if not os.path.exists(src):
+                        continue
+                    sp, pv = os.path.join(tmp, mid + "_s.jpg"), os.path.join(tmp, mid + "_v.mp4")
+                    ln = max(0.5, float(m["end"]) - float(m["start"]))
+                    subprocess.run([FFMPEG, "-y", "-loglevel", "error", "-i", src, "-vf",
+                                    f"fps={4 / ln:.4f},scale=-2:200,tile=4x1", "-frames:v", "1", "-q:v", "6", sp], timeout=60)
+                    subprocess.run([FFMPEG, "-y", "-loglevel", "error", "-i", src, "-vf", "scale='if(gt(iw,ih),-2,360)':'if(gt(iw,ih),360,-2)'",
+                                    "-c:v", "libx264", "-preset", "veryfast", "-crf", "30", "-pix_fmt", "yuv420p", "-an",
+                                    "-movflags", "+faststart", pv], timeout=120)
+                    done[mid] = [_upload(sheet, up, sp, pid) if os.path.exists(sp) else None,
+                                 _upload(sheet, up, pv, pid) if os.path.exists(pv) else None]
+                    if i % 10 == 9:
+                        r["pubIds"] = done
+                        _merge(sheet, "broll/" + r["slug"], {"pub": len(done), "msg": f"Sediakan swipe dalam Studio {len(done)}/{len(moms)}"})
+                sid, vid = done.get(mid) or [None, None]
+                rows.append([mid, m.get("video", ""), round(float(m["start"]), 2), round(float(m["end"]) - float(m["start"]), 1),
+                             m.get("kind", "broll"), m.get("badge", ""), sid, vid,
+                             None if m.get("p") is None else round(m["p"], 2)])
+        r["pubIds"] = done
+        n = 0
+        for n, i in enumerate(range(0, max(1, len(rows)), 120)):
+            sheet.call("dset", path=f"brm/{r['slug']}-{n}", data={"key": key, "slug": r["slug"], "job": r["job"], "part": n,
+                                                               "type": d["meta"].get("type"), "m": rows[i:i + 120],
+                                                               "updated": int(time.time() * 1000)})
+        r["pubDone"] = True
+        _merge(sheet, "broll/" + r["slug"], {"pub": len(rows), "pubParts": n + 1, "msg": ""})
+        with _lock:
+            st = _st(); x = st["broll"].get(key)
+            if x:
+                x.update(pubIds=done, pubDone=True); _save_st(st)
+        log.info("Swipe Studio sedia: %s (%d moment)", key, len(rows))
+    except Exception as e:
+        log.exception("Preview swipe gagal %s", key)
+        try:
+            _merge(sheet, "broll/" + r["slug"], {"msg": "Preview swipe gagal: " + str(e)[:100]})
+        except Exception:
+            pass
+    finally:
+        _busy.discard(("pub", key))
+
+
+def _sync_dec(sheet, r):
+    """Keputusan swipe dari Studio (doc brd/<slug>) -> B-Roll Picker. Undo dalam Studio = buang keputusan."""
+    try:
+        doc = sheet.call("dget", path="brd/" + r["slug"]).get("doc") or {}
+    except Exception:
+        return
+    want = doc.get("d") or {}
+    got = r.setdefault("applied", {})
+    for mid, v in want.items():
+        a = "keep" if (v or {}).get("a") == "k" else "skip"
+        lab = [str(x)[:30] for x in ((v or {}).get("l") or [])][:6]
+        sig = a + "|" + ",".join(lab)
+        if got.get(mid) == sig:
+            continue
+        try:
+            br("/api/decide", {"id": r["job"], "mid": mid, "action": a, "labels": lab})
+            got[mid] = sig
+        except Exception as e:
+            log.info("Keputusan Studio tak dapat dipakai %s: %s", mid, e)
+    for mid in [m for m in got if m not in want]:
+        try:
+            br("/api/clear", {"id": r["job"], "mid": mid})
+        except Exception:
+            pass
+        got.pop(mid, None)
+
+
+def _aroll_step(r):
+    """Folder produk: transkrip video bercakap (A-roll), satu video setiap pusingan, ke cache/<job>/aroll.json.
+    Edit-reel guna fail ni untuk suara dan padan B-roll ikut ayat (tak perlu transkrip semula)."""
+    jd = os.path.join(BR_DATA, "cache", r["job"])
+    try:
+        meta = json.load(open(os.path.join(jd, "moments.json")))
+    except Exception:
+        return
+    vids = meta.get("aroll_videos") or []
+    if meta.get("type") != "product" or not vids:
+        return
+    out_p = os.path.join(jd, "aroll.json")
+    out = json.load(open(out_p)) if os.path.exists(out_p) else {}
+    todo = [v for v in vids if v not in out]
+    if not todo:
+        return
+    try:
+        import __main__ as W
+        src = os.path.join(BASE, meta["rel"], todo[0])
+        with tempfile.TemporaryDirectory(prefix="ar-") as tmp:
+            wav = W.to_wav(src, tmp)
+            lang, segs = W.transcribe(wav, W.load_cfg())
+        out[todo[0]] = {"lang": lang, "segs": [[round(a, 2), round(b, 2), t] for a, b, t in segs]}
+        with open(out_p + ".tmp", "w") as fh:
+            json.dump(out, fh, ensure_ascii=False)
+        os.replace(out_p + ".tmp", out_p)
+        log.info("Transkrip A-roll %s/%s siap", meta["rel"], todo[0])
+    except Exception as e:
+        log.info("Transkrip A-roll gagal %s: %s", todo[0], e)
+        out[todo[0]] = {"error": str(e)[:200]}
+        with open(out_p, "w") as fh:
+            json.dump(out, fh, ensure_ascii=False)
 
 
 def _scan_best(sheet, up, st):
@@ -228,14 +406,22 @@ def job_broll_start(inp, sheet, up):
     stage, _, name = key.partition("/")
     if not br_up():
         raise RuntimeError("B-Roll Picker tak jalan dalam Mac mini")
+    proj = "/".join(key.split("/")[:2])
+    tg = _targets(key) if key == proj else [key]
+    if not tg:
+        raise RuntimeError("Tiada video dalam folder ni")
     with _lock:
         st = _st()
-        st["broll"].pop(key, None)
-        ok = _start(sheet, st, key, stage, name)
+        ok = False
+        for rel in tg:
+            st["broll"].pop(rel, None)
+            nm = name if rel == key else name + " · " + rel.split("/")[-1]
+            ok = _start(sheet, st, rel, stage, nm, proj) or ok
+        st.setdefault("proj", {})[proj] = len(tg)
         _save_st(st)
     if not ok:
-        raise RuntimeError(st["broll"].get(key, {}).get("skip") or "Tak dapat pre-cut")
-    return {"ok": True}
+        raise RuntimeError(st["broll"].get(tg[0], {}).get("skip") or "Tak dapat pre-cut")
+    return {"ok": True, "folders": len(tg)}
 
 
 def job_broll_done(inp, sheet, up):
@@ -245,6 +431,9 @@ def job_broll_done(inp, sheet, up):
         r = st["broll"].get(key)
     if not r or not r.get("job"):
         raise RuntimeError("Projek B-roll tak dijumpai: " + str(key))
+    _sync_dec(sheet, r)                      # swipe terakhir dalam Studio masuk dulu sebelum simpan
+    with _lock:
+        st = _st(); st["broll"].setdefault(key, r)["applied"] = r.get("applied", {}); _save_st(st)
     br("/api/export", {"id": r["job"]})
     _merge(sheet, "broll/" + r["slug"], {"status": "backup", "msg": "Simpan klip dan backup ke Drive"})
     threading.Thread(target=_broll_backup, args=(sheet, up, key, r), daemon=True).start()

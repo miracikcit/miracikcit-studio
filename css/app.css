@@ -252,3 +252,24 @@ audio{width:100%;margin-top:8px}
 .gymatch{display:flex;flex-direction:column;gap:6px;margin-top:12px;padding:12px;border-radius:12px;background:var(--tile)}
 .gyup{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.6);font-size:13px;margin-bottom:10px}
 .gybar{height:6px;border-radius:99px;background:var(--tile);overflow:hidden;margin:-4px 0 12px}.gybar i{display:block;height:100%;background:var(--c);transition:width .3s}
+/* B-roll: langkah projek + swipe dalam Studio */
+.brsteps{display:flex;align-items:flex-start;gap:0;margin-top:12px}
+.brsteps em{flex:1;height:2px;background:rgba(46,39,35,.14);margin-top:11px;min-width:6px}
+.brs{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;padding:0;font:inherit;color:var(--muted);min-width:0;max-width:86px;text-align:center;cursor:default}
+.brs[data-act]{cursor:pointer}
+.brs i{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.7);border:1.5px solid rgba(46,39,35,.2)}
+.brs i svg{width:13px;height:13px;stroke:#fff;fill:none;stroke-width:2.4}
+.brs b{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+.brs span{font-size:10px;line-height:1.2}
+.brs.ok i{background:var(--ok);border-color:var(--ok)}
+.brs.cur i{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 30%,#fff)}.brs.cur{color:var(--ink)}
+.brcard{position:relative;aspect-ratio:9/16;max-height:52vh;margin:0 auto;border-radius:22px;overflow:hidden;background:#211b18;touch-action:pan-y;transition:transform .25s}
+.brcard iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.brspr{position:absolute;inset:0;background-size:400% 100%;background-repeat:no-repeat;animation:brspr 2.4s infinite steps(1,end)}
+@keyframes brspr{0%{background-position:0% 0}25%{background-position:33.333% 0}50%{background-position:66.667% 0}75%{background-position:100% 0}}
+.brst{position:absolute;top:16px;padding:5px 12px;border-radius:10px;font-weight:600;letter-spacing:.2em;font-size:13px;color:#fff;border:2px solid #fff;opacity:0;pointer-events:none}
+.brst.k{left:14px;background:rgba(154,79,93,.85)}.brst.s{right:14px;background:rgba(46,39,35,.75)}
+.brplay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:58px;height:58px;border-radius:50%;border:2px solid #fff;background:rgba(0,0,0,.35);color:#fff;font-size:22px;cursor:pointer}
+.brsrc{position:absolute;left:10px;right:10px;bottom:10px;display:flex;justify-content:space-between;color:#fff;font-size:11px;text-shadow:0 1px 3px #000;pointer-events:none}
+.brbar{display:flex;gap:10px;margin-top:12px}.brbar .big2b{flex:1;min-height:52px;font-size:13px;letter-spacing:.16em}
+.brshot{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin-top:6px}.brshot input{margin-top:3px}.brshot em{color:var(--muted);font-style:normal;font-size:11px}
