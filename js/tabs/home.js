@@ -97,7 +97,19 @@ V.home=()=>{
   ${ccard('ready',TAB.ready.l,'Publish dalam 1 minggu selepas siap',n.ready,urgent.map(u=>ccRow(shortName(u.r.group.name,u.r.vid),u.d?u.d.label:'tiada tarikh',u.d?u.d.color:'#999',u.d?u.d.pct:0)).join('')||`<p class="meta" style="margin:8px 0 0">${sv?'Tiada video menunggu.':'Menunggu sheet.'}</p>`)}
   ${ccard('links','Projects','Sample dan paid job ikut deadline',projCount(),projItems().filter(o=>!o.done).sort((a,b)=>String(a.date).localeCompare(String(b.date))).slice(0,4).map(projRow).join('')||'<p class="meta" style="margin:8px 0 0">Tiada projek menunggu.</p>')}
   ${sorterCard()||(S.workprojects&&S.workprojects.length?`<div class="card big glass" style="--c:#8676BE;margin-top:14px"><p class="eyebrow" style="margin:0">Footage Sorter · Mac mini</p>${ongoingSlot()}</div>`:'')}
+  ${footageAlert()}
   ${calHTML()}`};
+/* Alert semak footage (bawah Footage Sorter): B-roll tunggu swipe / Dah semak, dan klip terbaik lepas final. Hilang bila tiada apa nak disemak. */
+function footageAlert(){
+  const brs=S.broll.filter(b=>brPending(b)||b.status==='error').sort((a,b)=>(b.updated||0)-(a.updated||0));
+  const best=S.footage.filter(f=>f.status==='semak'||f.status==='backup');
+  const n=brs.length+best.length;if(!n)return '';
+  const row=b=>{const tot=b.moments||0,seen=b.seen||0;
+    const [pill,col,pct]=b.status==='precut'?['Pre-cut '+Math.round(b.progress||0)+'%','var(--c)',Math.min(100,Math.round(b.progress||0))]:b.status==='backup'?['Simpan…','var(--c)',100]:b.status==='error'?['Ralat','var(--bad)',0]
+      :!seen?[tot+' tunggu swipe','var(--warn)',0]:seen<tot?[(tot-seen)+' lagi · keep '+(b.kept||0),'var(--warn)',Math.round(seen/tot*100)]:['Tekan Dah semak','#4E9B63',100];
+    return ccRow(String(b.name||''),pill,col,pct)};
+  return ccard('footage','🔔 Footage perlu semak','B-roll untuk swipe dan klip terbaik lepas final',n,
+    brs.slice(0,4).map(row).join('')+(best.length?ccRow(best.length+' set klip terbaik','pilih simpan / buang','var(--warn)',0):'')+(brs.length>4?`<p class="meta" style="margin:6px 0 0">+${brs.length-4} lagi</p>`:''))}
 /* Baris kad Projects di Home: sample guna slider aliran, paid guna slider job */
 function projRow(o){if(o.kind==='sample')return cpRow({it:o.it,step:o.step});const j=o.j;const nx=jobNext(j);const left=nx?daysTo(nx.date):null;const col=left===null?'#999':left>7?'#4E9B63':left>=3?'#E3B23C':'#C2534F';
   return `<div class="ccr" style="--c:${TAB.links.c}"><div class="rowh"><span class="ccn">${esc(String(o.name).split(/\s+/).slice(0,3).join(' '))}</span><span class="pill smpp" style="--pc:${col}"><b>${left===null?'·':Math.max(left,0)}</b>${nx?esc(nx.label):'tiada tarikh'}</span></div><div class="tl tl-mini">${JSTEPS.map((s,i)=>`<div class="s${i<=o.step?' d':i===o.step+1?' cur':''}"><i>${i<=o.step?IC.check:''}</i></div>`).join('')}</div><div class="meta" style="font-size:11px;margin-top:-2px">Paid RM${esc(rm2(j.fee)||'0')} · sekarang ${esc(JSTEPS[Math.min(o.step+1,5)])}</div></div>`}

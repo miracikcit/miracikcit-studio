@@ -22,7 +22,7 @@ function ftSemakView(){const c=brCfg();
   const todo=toEditFolders().filter(f=>!brFor(f.key)&&f.clips&&!/^(29|41)/.test(f.stage));
   const brCard=b=>{const swipe=`${c.home.replace(/\/$/,'')}/?job=${encodeURIComponent(b.job||'')}#swipe`;const busy=ui.ftBusy&&ui.ftBusy[b.id];
     return `<div class="card glass"><div class="rowh" style="align-items:flex-start">${fnoBadge(fno(b.stage))}<div style="flex:1;min-width:0"><h3>${esc(b.name)}</h3><div class="meta"><span class="kchip smp">B-ROLL</span> ${esc(String(b.stage||'').replace(/^\d+\.\s*/,''))}</div></div>
-      <span class="pill" style="--pc:${b.status==='ready'?'var(--warn)':b.status==='error'?'var(--bad)':'var(--c)'}">${b.status==='precut'?'Pre-cut '+(b.progress?Math.round(b.progress*100)+'%':''):b.status==='backup'?'Simpan…':b.status==='error'?'Ralat':(b.moments||0)+' moment'}</span></div>
+      <span class="pill" style="--pc:${b.status==='ready'?'var(--warn)':b.status==='error'?'var(--bad)':'var(--c)'}">${b.status==='precut'?'Pre-cut '+(b.progress?Math.min(100,Math.round(b.progress))+'%':''):b.status==='backup'?'Simpan…':b.status==='error'?'Ralat':(b.moments||0)+' moment'}</span></div>
      ${(b.thumbs||[]).length?`<div class="fthumbs">${b.thumbs.map(t=>`<span class="fth">${thumbImg(t)}</span>`).join('')}</div>`:''}
      ${b.msg?`<p class="meta" style="margin:8px 0 0">${esc(b.msg)}</p>`:''}
      ${b.status==='ready'?`<p class="meta" style="margin:8px 0 0">${b.seen?`Dah swipe ${b.seen} / ${b.moments||0} · keep ${b.kept||0}`:'Belum swipe'}</p>

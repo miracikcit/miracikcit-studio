@@ -95,6 +95,7 @@ def tick(sheet, up):
         st = _st()
         try:
             _auto_precut(sheet, st)
+            _adopt_manual(sheet, st)
             _refresh_broll(sheet, up, st)
             _scan_best(sheet, up, st)
         except Exception:
@@ -117,6 +118,28 @@ def _auto_precut(sheet, st):
             if key in gone or not it.get("clips") or key in st["broll"] or (it.get("mtime") or 0) < START_MS:
                 continue
             _start(sheet, st, key, stg["name"], it["name"])
+
+
+def _adopt_manual(sheet, st):
+    """Folder yang Mira (atau Claude) pre-cut terus dalam B-Roll Picker juga masuk Studio untuk disemak."""
+    cache = os.path.join(BR_DATA, "cache")
+    if not os.path.isdir(cache):
+        return
+    for jid in sorted(os.listdir(cache)):
+        try:
+            j = json.load(open(os.path.join(cache, jid, "job.json")))
+        except Exception:
+            continue
+        rel = j.get("rel") or ""
+        if (not rel or rel in st["broll"] or j.get("status") != "ready" or not j.get("good")
+                or (j.get("t") or 0) * 1000 < START_MS or rel.startswith("00.")):
+            continue
+        parts = rel.split("/")
+        s = slug(rel)
+        st["broll"][rel] = {"slug": s, "job": jid, "status": "precut"}
+        _merge(sheet, "broll/" + s, {"key": rel, "name": " · ".join(parts[1:]) or rel, "stage": parts[0], "job": jid,
+                                     "status": "precut", "msg": "Pre-cut dari B-Roll Picker"})
+        log.info("B-roll dari Picker masuk Studio: %s", rel)
 
 
 def _start(sheet, st, key, stage, name):
@@ -249,9 +272,10 @@ def _broll_backup(sheet, up, key, r):
                 for p in ex.get("paths", []):
                     if not os.path.exists(p):
                         continue
-                    th, pv = _thumb_prev(p, tmp, dur=float(dec.get("end", 3)) - float(dec.get("start", 0)))
+                    ln = float(dec.get("len") or (float(dec.get("end", 3)) - float(dec.get("start", 0))))   # len = jumlah bila beberapa bahagian digabung
+                    th, pv = _thumb_prev(p, tmp, dur=ln)
                     clips.append({"name": os.path.basename(p), "path": p, "labels": dec.get("labels") or [],
-                                  "len": round(float(dec.get("end", 0)) - float(dec.get("start", 0)), 1),
+                                  "len": round(ln, 1), "parts": len(dec.get("parts") or []) or 1,
                                   "video": (mom.get(mid) or {}).get("video", ""), "size": os.path.getsize(p),
                                   "thumb": _upload(sheet, up, th, pid) if os.path.exists(th) else None,
                                   "prev": _upload(sheet, up, pv, pid) if pv else None,
