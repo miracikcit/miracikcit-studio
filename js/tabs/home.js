@@ -86,6 +86,7 @@ V.home=()=>{
   const mini=(k,num,lab,icon)=>{const t=TAB[k];return `<button class="hbox glass mini" style="--c:${t.c}" data-act="go" data-id="${k}">${icon?`<b style="display:flex;color:${t.c}">${icn(icon)}</b>`:`<b>${num}</b>`}<span class="l">${lab}</span></button>`};
   const ed=TAB.editor;const cp=confirmedList(sv);
   return `<div class="head"><div><p class="eyebrow">${hr<12?'Selamat pagi':hr<18?'Selamat petang':'Selamat malam'}, Mira</p><h1>Home</h1></div><button class="btn sm" data-act="syncReq">${IC.copy}Sync folder</button></div>
+  ${brHome()}
   ${sheetNote()}
   ${weekCard(sv)}
   <div class="hgrid">
@@ -98,8 +99,26 @@ V.home=()=>{
   ${ccard('links','Projects','Sample dan paid job ikut deadline',projCount(),projItems().filter(o=>!o.done).sort((a,b)=>String(a.date).localeCompare(String(b.date))).slice(0,4).map(projRow).join('')||'<p class="meta" style="margin:8px 0 0">Tiada projek menunggu.</p>')}
   ${sorterCard()||(S.workprojects&&S.workprojects.length?`<div class="card big glass" style="--c:#8676BE;margin-top:14px"><p class="eyebrow" style="margin:0">Footage Sorter · Mac mini</p>${ongoingSlot()}</div>`:'')}
   ${voAlert()}
-  ${footageAlert()}
   ${calHTML()}`};
+/* Kad B-roll paling atas Home: tempat mula semak B-roll. Swipe terus dari sini. */
+function brHome(){
+  const brs=S.broll.filter(b=>brPending(b)||b.status==='error').sort((a,b)=>(b.updated||0)-(a.updated||0));
+  const best=S.footage.filter(f=>f.status==='semak'||f.status==='backup');const c=brCfg();
+  const row=b=>{const tot=b.moments||0,seen=brSeen(b),left=Math.max(0,tot-seen),keeps=brLocalKeeps(b);const busy=ui.ftBusy&&ui.ftBusy[b.id];
+    const th=(b.thumbs||[])[0];const pick=`${c.home.replace(/\/$/,'')}/?job=${encodeURIComponent(b.job||'')}#swipe`;
+    const [line,btn]=b.status==='precut'?['Mac mini sedang potong '+Math.min(100,Math.round(b.progress||0))+'%','<span class="pill" style="--pc:var(--c)"><i class="spin"></i>Pre-cut</span>']
+      :b.status==='backup'?['Sedang simpan ke B-ROLL LIBRARY','<span class="pill" style="--pc:var(--c)"><i class="spin"></i>Simpan</span>']
+      :b.status==='error'?[String(b.msg||'Ralat').slice(0,60),`<button class="btn sm" data-act="brStart" data-id="${esc(b.key)}">Cuba lagi</button>`]
+      :left>0?[(seen?`${left} lagi · keep ${keeps}`:`${tot} moment tunggu swipe`)+(b.type==='product'&&b.closeups?` · ${b.closeups} close-up`:''),
+        b.pubParts?`<button class="btn sm solid tab" data-act="brSwipe" data-id="${esc(b.id)}">▶ Swipe</button>`:`<a class="btn sm solid tab" href="${esc(pick)}" target="_blank" rel="noopener">▶ Swipe</a>`]
+      :[`Siap swipe · keep ${keeps}`,`<button class="btn sm solid tab" data-act="brDone" data-id="${esc(b.id)}"${busy||!keeps?' disabled':''}>${busy?'<i class="spin"></i>':IC.check}Dah semak</button>`];
+    return `<div class="brhrow">${th?`<span class="brhth">${thumbImg(th)}</span>`:'<span class="brhth"></span>'}<div style="flex:1;min-width:0"><strong>${esc(b.name)}</strong><span class="meta" style="display:block">${esc(line)}</span></div>${btn}</div>`};
+  return `<div class="card glass brhome" style="--c:${TAB['to-edit'].c}"><div class="rowh" style="align-items:center"><div style="min-width:0"><p class="eyebrow" style="margin:0">Mula di sini</p><h2 style="margin:2px 0 0">🎬 B-roll${brs.length?' · '+brs.length+' perlu semak':''}</h2></div></div>
+   ${brs.length?brs.slice(0,5).map(row).join(''):`<p class="meta" style="margin:8px 0 0">Tiada B-roll tunggu semak. Letak footage dalam folder edit (VLOG, VO atau produk): Mac mini potong sendiri dan kad ni keluar di sini.</p>`}
+   ${brs.length>5?`<p class="meta" style="margin:6px 0 0">+${brs.length-5} lagi</p>`:''}
+   ${best.length?`<div class="brhrow"><span class="brhth"></span><div style="flex:1;min-width:0"><strong>${best.length} set klip terbaik</strong><span class="meta" style="display:block">Pilih simpan / buang lepas final</span></div><button class="btn sm" data-act="go" data-id="footage">Semak</button></div>`:''}
+   <div class="btns" style="margin-top:10px"><button class="btn sm" data-act="teSeg" data-x="broll">Semua B-roll ${IC.next}</button></div>
+   <p class="meta" style="margin:8px 0 0">Swipe kanan Keep, kiri Skip. Habis swipe, tekan Dah semak: klip masuk B-ROLL LIBRARY dan EDIT NOW terbuka.</p></div>`}
 /* Alert semak footage (bawah Footage Sorter): B-roll tunggu swipe / Dah semak, dan klip terbaik lepas final. Hilang bila tiada apa nak disemak. */
 function footageAlert(){
   const brs=S.broll.filter(b=>brPending(b)||b.status==='error').sort((a,b)=>(b.updated||0)-(a.updated||0));
