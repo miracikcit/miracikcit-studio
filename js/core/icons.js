@@ -24,9 +24,9 @@ const IC={
 const TABS_=[
  ['home','Home','#9A4F5D'],['ideas','Ideas','#C29A3C'],['links','Confirmed Projects','#5A8FB5'],['to-shoot','Shoot','#CF8A55'],['shot','Shot','#C2666A'],['to-edit','Edit','#8676BE'],
  ['ready','To Publish','#8A6A52'],['published','Published','#6B5548'],['caption','Caption','#B0704F'],['jobs','Jobs','#A8763E'],
- ['editor','Editor','#9C6396'],['footage','Footage','#9A8C7A'],['broll','B-Roll Picker','#B0704F'],['inspiration','Inspiration','#CF7A9A'],['transcribe','Transcribe','#8C6A4F'],['media-kit','Media Kit','#B0937B'],['lagi','Lagi','#9A8C7A']
-].map(([k,l,c])=>({k,l,c,ic:IC[k.replace('-','')]||IC.plus}));
-const NAV=['home','links','ideas','to-shoot','to-edit','editor','ready','published','lagi'];
+ ['editor','Editor','#9C6396'],['footage','Footage','#9A8C7A'],['broll','B-Roll Picker','#B0704F'],['inspiration','Inspiration','#CF7A9A'],['transcribe','Transcribe','#8C6A4F'],['media-kit','Media Kit','#B0937B'],['vo','VO','#B5546B'],['lagi','Lagi','#9A8C7A']
+].map(([k,l,c])=>({k,l,c,ic:IC[k==='vo'?'mic':k.replace('-','')]||IC.plus}));
+const NAV=['home','links','ideas','to-shoot','to-edit','vo','editor','ready','published','lagi'];
 const navLabel=l=>l.replace('Ready to Publish','Ready').replace('Confirmed Projects','Projects');
 const TAB=Object.fromEntries(TABS_.map(t=>[t.k,t]));
 const STAGE_TAB={ideas:'ideas',toshoot:'to-shoot',shot:'shot',toedit:'to-edit',ready:'ready',published:'published'};

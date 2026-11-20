@@ -97,6 +97,7 @@ V.home=()=>{
   ${ccard('ready',TAB.ready.l,'Publish dalam 1 minggu selepas siap',n.ready,urgent.map(u=>ccRow(shortName(u.r.group.name,u.r.vid),u.d?u.d.label:'tiada tarikh',u.d?u.d.color:'#999',u.d?u.d.pct:0)).join('')||`<p class="meta" style="margin:8px 0 0">${sv?'Tiada video menunggu.':'Menunggu sheet.'}</p>`)}
   ${ccard('links','Projects','Sample dan paid job ikut deadline',projCount(),projItems().filter(o=>!o.done).sort((a,b)=>String(a.date).localeCompare(String(b.date))).slice(0,4).map(projRow).join('')||'<p class="meta" style="margin:8px 0 0">Tiada projek menunggu.</p>')}
   ${sorterCard()||(S.workprojects&&S.workprojects.length?`<div class="card big glass" style="--c:#8676BE;margin-top:14px"><p class="eyebrow" style="margin:0">Footage Sorter · Mac mini</p>${ongoingSlot()}</div>`:'')}
+  ${voAlert()}
   ${footageAlert()}
   ${calHTML()}`};
 /* Alert semak footage (bawah Footage Sorter): B-roll tunggu swipe / Dah semak, dan klip terbaik lepas final. Hilang bila tiada apa nak disemak. */
@@ -155,4 +156,4 @@ function autoSheet(){if(mode!=='live'||!sheetRaw.PRODUCTS||Date.now()-autoSheetA
 
 /* Lagi: semua alat dan rekod yang jarang guna */
 V.lagi=()=>{const sv=sheetView();const t=(k,num,lab,icon)=>{const c=TAB[k].c;return `<button class="hbox glass mini" style="--c:${c}" data-act="go" data-id="${k}">${icon?`<b style="display:flex;color:${c}">${IC[icon].replace('<svg ','<svg style="width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round" ')}</b>`:`<b>${num}</b>`}<span class="l">${lab}</span></button>`};
-  return head('Alat dan rekod')+`<div class="mgrid">${t('inspiration',S.inspo.length,'Inspo')}${t('media-kit',3,'Media Kit')}${t('footage',S.footage.length,'Footage')}${t('caption',0,'Caption','caption')}${t('transcribe',0,'Transcribe','transcribe')}${t('shot',byStage('shot').length,'Shot')}</div>`};
+  return head('Alat dan rekod')+`<div class="mgrid">${t('inspiration',S.inspo.length,'Inspo')}${t('media-kit',3,'Media Kit')}${t('footage',S.footage.length,'Footage')}${t('caption',0,'Caption','caption')}${t('transcribe',0,'Transcribe','transcribe')}${t('shot',byStage('shot').length,'Shot')}${t('vo',voPending().length,'VO')}</div>`};
