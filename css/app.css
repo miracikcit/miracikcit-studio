@@ -218,3 +218,18 @@ audio{width:100%;margin-top:8px}
 .tk i svg{width:12px;height:12px;fill:none;stroke:#fff;stroke-width:2.4;opacity:0}
 .tk.on i{background:var(--ok);border-color:var(--ok)}.tk.on i svg{opacity:1}.tk.on span{text-decoration:line-through;color:var(--muted)}
 .prseg{max-width:100%;overflow-x:auto}.prseg button{white-space:nowrap}
+
+/* Footage: gambar kecil Drive, grid stok */
+.fthumbs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:10px}
+.fth{position:relative;aspect-ratio:9/16;border-radius:10px;overflow:hidden;background:rgba(0,0,0,.06);display:block}
+.fth img,.fcell img{width:100%;height:100%;object-fit:cover;display:block}
+.fth button{all:unset;display:block;width:100%;height:100%;cursor:pointer}
+.fth i{position:absolute;top:4px;right:4px;font-style:normal;font-size:11px;background:#fff;color:#1F5A30;border-radius:999px;width:20px;height:20px;display:grid;place-items:center;font-weight:600}
+.fth.off img{opacity:.3}.fth.off i{color:var(--bad)}
+.fth em{position:absolute;left:4px;bottom:4px;font-style:normal;font-size:9px;background:rgba(255,255,255,.85);border-radius:6px;padding:1px 5px;letter-spacing:.04em}
+.fplay{position:absolute;right:4px;bottom:4px;width:24px;height:24px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;display:grid;place-items:center;font-size:10px;text-decoration:none}
+.noth{display:block;width:100%;height:100%;background:repeating-linear-gradient(45deg,rgba(0,0,0,.04) 0 6px,transparent 6px 12px)}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.fcell{display:flex;flex-direction:column;gap:4px;text-decoration:none;color:var(--ink)}
+.fcell img,.fcell .noth{aspect-ratio:9/16;border-radius:12px;max-width:100%}
+.fcell span{font-size:10.5px;color:var(--muted);line-height:1.3}.fcell b{display:block;color:var(--ink);font-weight:500;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

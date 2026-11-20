@@ -619,6 +619,25 @@ def scan_folders():
 _scan_last = {"t": 0, "sig": {}}
 
 
+_ft_running = threading.Event()
+
+
+def _footage_tick(sheet):
+    """Aliran footage (B-roll auto pre-cut, klip terbaik, preview Drive) dalam thread sendiri supaya tak sekat kerja lain."""
+    if _ft_running.is_set():
+        return
+    def run():
+        _ft_running.set()
+        try:
+            import footage
+            footage.tick(sheet, drive_upload)
+        except Exception:
+            log.exception("Footage tick gagal")
+        finally:
+            _ft_running.clear()
+    threading.Thread(target=run, daemon=True).start()
+
+
 def push_scan(sheet, force=False):
     if not force and time.time() - _scan_last["t"] < 300:
         return None
@@ -635,6 +654,7 @@ def push_scan(sheet, force=False):
             sheet.call("dset", path=path, data=doc)
             _scan_last["sig"][path] = sig
     _scan_last["full"] = time.time()
+    _footage_tick(sheet)
     return {"topost": len(docs.get("sync/topost", {}).get("files", [])),
             "toedit": sum(len(s["items"]) for s in docs.get("sync/toedit", {}).get("stages", []))}
 
@@ -1072,6 +1092,9 @@ def studio_jobs(sheet, cfg):
                 outp = run_listing_save(inp, sheet)
             elif j["type"] == "ocr":
                 outp = run_ocr(inp.get("file", ""), sheet)
+            elif j["type"] in ("broll_done", "best_done", "broll_start"):
+                import footage
+                outp = getattr(footage, "job_" + j["type"])(inp, sheet, drive_upload)
             elif j["type"] == "edit_now":
                 outp = run_edit_now(inp, sheet, cfg)
             elif j["type"] == "mkfolder":
