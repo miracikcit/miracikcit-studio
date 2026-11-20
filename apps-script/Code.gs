@@ -94,6 +94,16 @@ function worker(b) {
   }
   if (b.action === 'dtrash') { try { DriveApp.getFileById(String(b.id)).setTrashed(true); } catch (e) { try { DriveApp.getFolderById(String(b.id)).setTrashed(true); } catch (e2) {} } return { ok: true }; }
   if (b.action === 'dcount') return { ok: true, n: countFiles(DriveApp.getFolderById(String(b.id))) };
+  if (b.action === 'dchunk') {   // Tiru Gaya: Mac mini muat turun video rujukan dari Drive, sekeping-sekeping
+    const f = DriveApp.getFileById(String(b.id));
+    const total = f.getSize(), start = Math.max(0, Number(b.start) || 0);
+    if (start >= total) return { ok: true, total: total, start: start, name: f.getName(), b64: '' };
+    const end = Math.min(total, start + Math.min(Number(b.len) || 15000000, 20000000)) - 1;
+    const r = UrlFetchApp.fetch('https://www.googleapis.com/drive/v3/files/' + f.getId() + '?alt=media', {
+      headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken(), Range: 'bytes=' + start + '-' + end }, muteHttpExceptions: true });
+    if (r.getResponseCode() >= 300) return { ok: false, error: 'Drive ' + r.getResponseCode() };
+    return { ok: true, total: total, start: start, name: f.getName(), mime: f.getMimeType(), b64: Utilities.base64Encode(r.getBlob().getBytes()) };
+  }
   if (b.action === 'file_get') {
     const f = DriveApp.getFileById(String(b.id).split('~')[0]);
     if (f.getSize() > 35 * 1048576) return { ok: false, error: 'fail terlalu besar' };

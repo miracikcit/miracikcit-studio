@@ -1095,6 +1095,12 @@ def studio_jobs(sheet, cfg):
             elif j["type"] in ("broll_done", "best_done", "broll_start"):
                 import footage
                 outp = getattr(footage, "job_" + j["type"])(inp, sheet, drive_upload)
+            elif j["type"] == "gaya_scan":
+                import gaya
+                outp = gaya.job_gaya_scan(inp, sheet, cfg, drive_upload, sys.modules[__name__])
+            elif j["type"] == "gaya_del":
+                import gaya
+                outp = gaya.job_gaya_del(inp, sheet)
             elif j["type"] == "edit_now":
                 outp = run_edit_now(inp, sheet, cfg)
             elif j["type"] == "mkfolder":

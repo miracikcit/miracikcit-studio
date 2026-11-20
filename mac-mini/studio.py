@@ -5,6 +5,7 @@
   python3 ~/MiracikcitTranscribe/studio.py put editor/ed-abc12345 '{"name":"...","status":"Draf","url":"..."}'
   python3 ~/MiracikcitTranscribe/studio.py merge editor/ed-abc12345 '{"status":"Siap"}'
   python3 ~/MiracikcitTranscribe/studio.py del editor/ed-abc12345
+  python3 ~/MiracikcitTranscribe/studio.py list gaya    # semua kad gaya
   python3 ~/MiracikcitTranscribe/studio.py scan        # imbas folder sekarang
 """
 import json, os, sys, time, urllib.request
@@ -37,6 +38,10 @@ elif cmd == "put":
 elif cmd == "merge":
     cur = call("dget", path=sys.argv[2]).get("doc") or {}
     cur.update(json.loads(sys.argv[3])); call("dset", path=sys.argv[2], data=stamp(cur)); print("OK")
+elif cmd == "list":        # studio.py list gaya  -> semua dokumen dalam koleksi
+    col = sys.argv[2].rstrip("/") + "/"
+    docs = [dict(x["d"], id=x["p"][len(col):]) for x in call("pull", since=0).get("docs", []) if x["p"].startswith(col) and x.get("d")]
+    print(json.dumps(docs, ensure_ascii=False, indent=2))
 elif cmd == "del":
     call("dset", path=sys.argv[2], data=None); print("OK")
 elif cmd == "scan":
