@@ -250,3 +250,5 @@ audio{width:100%;margin-top:8px}
 .gyfxrow.off{opacity:.55}
 .gystrip{flex:0 0 120px;border-radius:8px;overflow:hidden}.gystrip img{display:block;width:100%}
 .gymatch{display:flex;flex-direction:column;gap:6px;margin-top:12px;padding:12px;border-radius:12px;background:var(--tile)}
+.gyup{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.6);font-size:13px;margin-bottom:10px}
+.gybar{height:6px;border-radius:99px;background:var(--tile);overflow:hidden;margin:-4px 0 12px}.gybar i{display:block;height:100%;background:var(--c);transition:width .3s}

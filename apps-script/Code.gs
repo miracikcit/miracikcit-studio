@@ -166,6 +166,25 @@ function app(b) {
       if (r.getResponseCode() >= 300) return { ok: false, error: 'Drive ' + r.getResponseCode() };
       return { ok: true, total: total, start: start, b64: Utilities.base64Encode(r.getBlob().getBytes()) };
     }
+    case 'ustart': {   // Tiru Gaya: upload video rujukan dari phone terus ke Drive FOOTAGE/GAYA/_UPLOAD (sekeping-sekeping)
+      const parent = drivePath('studio', ['FOOTAGE', 'GAYA', '_UPLOAD']);
+      const r = UrlFetchApp.fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id', {
+        method: 'post', contentType: 'application/json; charset=UTF-8', muteHttpExceptions: true,
+        payload: JSON.stringify({ name: String(b.name || 'rujukan.mp4'), parents: [parent] }),
+        headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken(), 'X-Upload-Content-Type': b.mime || 'video/mp4', 'X-Upload-Content-Length': String(b.size) } });
+      const loc = r.getHeaders().Location || r.getHeaders().location;
+      return loc ? { ok: true, url: loc } : { ok: false, error: 'Drive tolak: ' + r.getContentText().slice(0, 200) };
+    }
+    case 'uchunk': {
+      if (!/^https:\/\/www\.googleapis\.com\/upload\/drive\//.test(String(b.url))) return { ok: false, error: 'link upload tak sah' };
+      const bytes = Utilities.base64Decode(b.b64), start = Number(b.start) || 0, end = start + bytes.length - 1;
+      const r = UrlFetchApp.fetch(String(b.url), { method: 'put', payload: bytes, contentType: 'application/octet-stream', muteHttpExceptions: true,
+        headers: { 'Content-Range': 'bytes ' + start + '-' + end + '/' + b.total } });
+      const code = r.getResponseCode();
+      if (code === 308) return { ok: true, next: end + 1 };
+      if (code === 200 || code === 201) return { ok: true, id: JSON.parse(r.getContentText()).id };
+      return { ok: false, error: 'Drive ' + code + ': ' + r.getContentText().slice(0, 150) };
+    }
     case 'product_add': return withLock(() => productAdd(b));   // Caption: simpan produk / VID baru ke tab PRODUCTS
     case 'file_delete': { try { DriveApp.getFileById(String(b.id).split('~')[0]).setTrashed(true); } catch (e) {} return { ok: true }; }
     case 'job_add': return withLock(() => {

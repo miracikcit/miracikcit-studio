@@ -295,6 +295,11 @@ def _scan(sheet, cfg, up, worker, gid):
                 os.remove(src)                       # video rujukan tak disimpan
             except Exception:
                 pass
+            if doc.get("upload"):                    # video yang Mira upload dari phone: Drive ke Trash juga
+                try:
+                    sheet.call("dtrash", id=doc["upload"])
+                except Exception as e:
+                    log.info("Trash upload gagal: %s", e)
             _merge(sheet, path, {"msg": "Claude tulis kad gaya"})
             card, usage = _claude(cfg, worker, tmp, scan, strips, data, doc, existing, alltags)
             fid = sheet.call("dpath", base="studio", path=["FOOTAGE", "GAYA", gid], share=True)["id"]

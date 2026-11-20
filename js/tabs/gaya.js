@@ -12,7 +12,20 @@ const gyChip=(on,label,act,id,x)=>`<button type="button" class="chip${on?' on':'
 function edSegs(){const n=S.gaya.filter(g=>g.status==='semak').length;const seg=ui.edSeg||'projek';
   return `<div class="seg" style="margin-bottom:14px">${[['projek','Projek'],['style','Style'+(n?' · '+n:'')]].map(([k,l])=>`<button type="button" class="${seg===k?'on':''}" data-act="edSeg" data-x="${k}">${l}</button>`).join('')}</div>`}
 A.edSeg=el=>{gyKeep();ui.edSeg=el.dataset.x;render(true)};
-function gyKeep(){if(!$('#gyL'))return;ui.gyDraft=Object.assign({},ui.gyDraft,{link:$('#gyL').value,note:$('#gyN').value,fx:$('#gyF').value})}
+function gyKeep(){if(!$('#gyN'))return;ui.gyDraft=Object.assign({},ui.gyDraft,{note:$('#gyN').value,fx:$('#gyF').value},$('#gyL')?{link:$('#gyL').value}:{})}
+/* Upload terus ke Drive: Apps Script buka sesi resumable, phone hantar 8 MB setiap kali (tiada token Claude). */
+A.gyUpload=()=>pickFile('video/*',async f=>{gyKeep();if(f.size>500*1048576){toast('Video lebih 500 MB. Potong dulu atau guna link');return}
+  ui.gyUp={name:f.name,pct:0};render(true);
+  const b64=blob=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]||'');r.onerror=rej;r.readAsDataURL(blob)});
+  try{const s=await studioCall('ustart',{name:f.name,mime:f.type||'video/mp4',size:f.size});const CH=8*1048576;let pos=0,id=null,tries=0;
+    while(pos<f.size&&!id){try{const r=await studioCall('uchunk',{url:s.url,start:pos,total:f.size,b64:await b64(f.slice(pos,pos+CH))});
+        if(r.id)id=r.id;else pos=r.next;tries=0}catch(e){if(++tries>3)throw e;await new Promise(r=>setTimeout(r,2000*tries))}
+      ui.gyUp.pct=Math.min(100,Math.round((id?f.size:pos)/f.size*100));render()}
+    if(!id)throw new Error('Drive tak bagi id fail');
+    ui.gyDraft=Object.assign({},ui.gyDraft,{link:'https://drive.google.com/file/d/'+id+'/view',up:{id,name:f.name,size:f.size}});toast('Video dah masuk Drive. Tekan Hantar ke Mac mini')}
+  catch(e){toast('Upload tak jadi: '+String((e&&e.message)||'semak internet').slice(0,80))}
+  finally{ui.gyUp=null;render(true)}});
+A.gyUpClear=()=>{gyKeep();const d=ui.gyDraft||{};if(d.up)studioCall('file_delete',{id:d.up.id}).catch(()=>{});ui.gyDraft=Object.assign({},d,{up:null,link:''});render(true)};
 function gyParseFx(s){return String(s||'').split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean).slice(0,3).map(x=>{const [a,b]=x.split(/\s*[-–]\s*/);return {a:a||'',b:b||''}}).filter(r=>/^\d/.test(r.a))}
 
 function gyFacts(c){return `<dl class="gyfacts">${GY_F.filter(([k])=>c[k]).map(([k,l])=>`<dt>${l}</dt><dd>${esc(c[k])}</dd>`).join('')}</dl>${(c.beats||[]).length?`<details class="gybeats"><summary class="meta">Susunan babak · ${c.beats.length}</summary><ol>${c.beats.map(b=>`<li>${esc(b)}</li>`).join('')}</ol></details>`:''}`}
@@ -52,7 +65,11 @@ function gyView(){const d=ui.gyDraft||{};const sel=new Set(d.tags||[]);const f=u
   const shown=saved.filter(g=>!f||(g.tags||[]).includes(f));
   return head('Tiru gaya dari video rujukan')+edSegs()+
   `<div class="card glass"><h3 style="margin-bottom:8px">Video rujukan baru</h3>
-    <label class="f"><span>Link video (Google Drive, TikTok, IG, FB)</span><input class="inp" id="gyL" value="${esc(d.link||'')}" placeholder="https://drive.google.com/file/d/..." inputmode="url" autocapitalize="off"></label>
+    ${d.up?`<div class="gyup"><span style="flex:1;min-width:0;overflow-wrap:anywhere">${IC.check} ${esc(d.up.name)} <span class="meta">(${Math.round(d.up.size/1048576)} MB, dah dalam Drive)</span></span><button type="button" class="btn sm" data-act="gyUpClear">Tukar</button></div>`
+    :ui.gyUp?`<div class="gyup"><i class="spin"></i><span style="flex:1">Upload ${esc(ui.gyUp.name)}… ${ui.gyUp.pct}%</span></div><div class="gybar"><i style="width:${ui.gyUp.pct}%"></i></div>`
+    :`<button type="button" class="btn solid tab" style="width:100%;justify-content:center" data-act="gyUpload">${IC.plus}Upload video dari phone</button>
+    <p class="meta" style="text-align:center;margin:8px 0">atau tampal link</p>
+    <label class="f"><span>Link video (Google Drive, TikTok, IG, FB)</span><input class="inp" id="gyL" value="${esc(d.link||'')}" placeholder="https://drive.google.com/file/d/..." inputmode="url" autocapitalize="off"></label>`}
     <label class="f"><span>Nota (tak wajib)</span><input class="inp" id="gyN" value="${esc(d.note||'')}" placeholder="cth. suka cara teks pop masuk ikut beat"></label>
     <label class="f"><span>Masa effect yang nak ditiru (tak wajib, maks 3)</span><input class="inp" id="gyF" value="${esc(d.fx||'')}" placeholder="cth. 0:07-0:09, 0:15"></label>
     <div class="f"><span class="meta">Tag</span><div class="chips" style="margin-top:6px">${gyTags().map(t=>gyChip(sel.has(t),t,'gyFormTag')).join('')}<button type="button" class="chip" data-act="gyTagPick">+ Tag baru</button></div></div>
@@ -66,7 +83,7 @@ function gyView(){const d=ui.gyDraft||{};const sel=new Set(d.tags||[]);const f=u
 A.gyFormTag=el=>{gyKeep();const d=ui.gyDraft=Object.assign({tags:[]},ui.gyDraft);const t=el.dataset.x;d.tags=d.tags.includes(t)?d.tags.filter(x=>x!==t):d.tags.concat(t);render(true)};
 A.gyFilter=el=>{ui.gyFilter=el.dataset.x;render(true)};
 A.gySend=()=>{gyKeep();const d=ui.gyDraft||{};const link=String(d.link||'').trim();if(!isUrl(link)){toast('Tampal link video dulu (mula dengan https://)');return}
-  const id='g'+uid();save('gaya',{id,link,note:String(d.note||'').trim(),fx:gyParseFx(d.fx),tags:d.tags||[],status:'scan',msg:'Menunggu Mac mini'});
+  const id='g'+uid();save('gaya',Object.assign({id,link,note:String(d.note||'').trim(),fx:gyParseFx(d.fx),tags:d.tags||[],status:'scan',msg:'Menunggu Mac mini'},d.up?{upload:d.up.id,srcName:d.up.name}:{}));
   ui.gyDraft={};ui.gyBusy=1;render(true);
   studioJob('gaya_scan',{id},3*60000).then(()=>toast('Mac mini mula scan. Kad keluar dalam beberapa minit')).catch(e=>{toast('Mac mini tak jawab: '+String((e&&e.message)||'').slice(0,80));save('gaya',Object.assign({},get('gaya',id),{status:'error',msg:'Mac mini tak jawab. Semak Mac mini hidup, kemudian Cuba lagi.'}))})
    .finally(()=>{ui.gyBusy=0;render()})};
