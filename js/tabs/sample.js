@@ -77,18 +77,34 @@ function smpAddRows(rows){const sv=sheetView();const lastRow=sv?Math.max(0,...sv
 const rmNum=v=>{const n=parseFloat(String(v||'').replace(/[^0-9.]/g,''));return isNaN(n)?'':(n%1?n.toFixed(2):String(n))};
 A.smpSave=()=>{const rows=ui.smp.rows.filter(r=>String(r.name).trim()&&r.date);if(!rows.length){toast('Isi nama dan tarikh dulu');return}
   smpAddRows(rows);closeModal();render();toast(rows.length+' sample ditambah ke To Shoot')};
-A.smpEdit=el=>{const it=get('items',el.dataset.id);const s=it.sample;
-  modal(`<h2>Tarikh akhir post</h2><p class="meta">${esc(it.title)} · ${smpPlat(s.plat)}</p>
-   <div class="row2" style="grid-template-columns:1fr 110px"><label class="f"><span>Hari akhir post</span><input type="date" class="inp" id="smpP" value="${esc(s.postBy)}"></label><label class="f"><span>Harga RM</span><input class="inp" id="smpR" value="${esc(s.price||'')}" inputmode="decimal" placeholder="89"></label></div>
-   <label class="f"><span>Tugasan (satu baris satu)</span><textarea class="inp" id="smpK" rows="3">${esc(s.tasks||'')}</textarea></label>
-   ${s.afterRecv&&!s.received?`<button class="btn sm solid tab" style="margin-bottom:12px" data-act="smpRecv" data-id="${it.id}">${IC.check}Dah terima barang hari ni (akhir post +${s.afterRecv} hari)</button>`:''}
-   <div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="smpEditSave" data-id="${it.id}">Simpan</button></div>`,TAB['to-shoot'].c)};
+A.smpEdit=el=>smpForm(get('items',el.dataset.id));
+/* Borang penuh sample: semua butiran boleh diubah. it kosong = sample baru (cth bila Claude tak jumpa maklumat) */
+function smpForm(it,pre,title){it=it||{};const s=Object.assign({plat:'shopee',postBy:ymdAdd(ymd(new Date()),7)},it.sample||{},pre||{});const nm=(pre&&pre.title)||it.title||'';
+  ui.smpF={id:it.id||'',plat:s.plat};
+  modal(`<h2>${esc(title||(it.id?'Edit sample':'Sample baru'))}</h2>
+   <label class="f"><span>Nama produk</span><input class="inp" id="sfT" value="${esc(nm)}" placeholder="cth BOYAMIC 2 Wireless Microphone"></label>
+   <div class="row2" style="grid-template-columns:1fr 1fr"><label class="f"><span>Brand</span><input class="inp" id="sfB" value="${esc((pre&&pre.brand)||it.brand||'')}"></label><label class="f"><span>Harga RM</span><input class="inp" id="sfR" value="${esc(s.price||'')}" inputmode="decimal" placeholder="708.10"></label></div>
+   <label class="f"><span>Dari mana</span><div class="seg" id="sfP">${['shopee','tiktok','whatsapp'].map(p=>`<button type="button" class="${s.plat===p?'on':''}" data-act="sfPlat" data-x="${p}">${smpPlat(p)}</button>`).join('')}</div></label>
+   <div class="row2" style="grid-template-columns:1fr 1fr"><label class="f"><span>Akhir post</span><input type="date" class="inp" id="sfD" value="${esc(s.postBy||'')}"></label><label class="f"><span>Hari selepas terima (0 = tiada)</span><input class="inp" id="sfA" value="${esc(s.afterRecv||0)}" inputmode="numeric"></label></div>
+   ${s.afterRecv&&!s.received&&it.id?`<button class="btn sm solid tab" style="margin-bottom:12px" data-act="smpRecv" data-id="${it.id}">${IC.check}Dah terima barang hari ni (akhir post +${s.afterRecv} hari)</button>`:s.received?`<p class="meta" style="margin:-4px 0 12px">Barang diterima ${esc(s.recvAt?dmy(s.recvAt):'')}</p>`:''}
+   <label class="f"><span>Tugasan (satu baris satu)</span><textarea class="inp" id="sfK" rows="3" placeholder="Ulasan Shopee 5 bintang (5 gambar + 1 video)">${esc(s.tasks||'')}</textarea></label>
+   <label class="f"><span>Kedai / contact</span><input class="inp" id="sfS" value="${esc(s.store||'')}"></label>
+   <div class="row2" style="grid-template-columns:1fr 1fr"><label class="f"><span>Link Shopee</span><input class="inp" id="sfLs" value="${esc(it.shopee||'')}" inputmode="url"></label><label class="f"><span>Link TikTok</span><input class="inp" id="sfLt" value="${esc(it.tiktok||'')}" inputmode="url"></label></div>
+   <div class="btns" style="justify-content:space-between">${it.id?`<button class="btn sm bad" data-act="sfDel" data-id="${it.id}">${IC.trash}Padam</button>`:'<span></span>'}<div class="btns"><button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="sfSave">Simpan</button></div></div>`,TAB['to-shoot'].c)}
+A.sfPlat=el=>{ui.smpF.plat=el.dataset.x;document.querySelectorAll('#sfP button').forEach(b=>b.classList.toggle('on',b.dataset.x===el.dataset.x))};
+A.sfDel=el=>{const it=get('items',el.dataset.id);confirmBox('Padam sample "'+(it.title||'')+'"?',()=>{del('items',it.id);toast('Dipadam')})};
+A.sfSave=()=>{const f=ui.smpF;const v=id=>(($('#'+id)||{}).value||'').trim();const title=v('sfT');if(!title){toast('Isi nama produk');return}
+  const postBy=v('sfD')||ymdAdd(ymd(new Date()),7);const it=f.id?get('items',f.id):null;const sv=sheetView();
+  const sample=Object.assign({start:ymd(new Date()),done:false,received:false,sheetRowAtAdd:sv?Math.max(0,...sv.groups.map(g=>g.start)):0},it?it.sample:{},
+    {plat:f.plat,postBy,price:rmNum(v('sfR')),afterRecv:parseInt(v('sfA'),10)||0,tasks:v('sfK'),store:v('sfS')});
+  const sh=pickUrl(v('sfLs')),tt=pickUrl(v('sfLt'));
+  const o=save('items',Object.assign({},it||{stage:'toshoot',stageAt:{toshoot:Date.now()},noteAt:Date.now(),src:'sample'},{title,brand:v('sfB'),shopee:sh,tiktok:tt,sample}));
+  closeModal();toast(it?'Sample dikemas kini':'Sample masuk Shoot, Projects dan Non paid');smpPriceSheet(o);
+  const g=sv&&sv.groups.find(x=>x.tab==='PRODUCTS'&&itMatch(o,x.name));if(g&&(sh||tt))itemLinksToSheet(o,g).catch(()=>{})};
 /* Deadline dikira dari tarikh terima barang (contoh: 7 hari selepas terima) */
 A.smpRecv=el=>{const it=get('items',el.dataset.id);const s=it.sample;const td=ymd(new Date());closeModal();
   save('items',Object.assign({},it,{sample:Object.assign({},s,{received:true,recvAt:td,start:td,postBy:ymdAdd(td,s.afterRecv||7)})}));toast('Akhir post: '+dmy(ymdAdd(td,s.afterRecv||7)))};
 const smpTasks=it=>{const t=lines((it.sample||{}).tasks);return t.length?`<ul class="smptask">${t.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''};
-A.smpEditSave=el=>{const it=get('items',el.dataset.id);const p=($('#smpP')||{}).value;if(!p){toast('Pilih tarikh');return}
-  save('items',Object.assign({},it,{sample:Object.assign({},it.sample,{postBy:p,price:rmNum(($('#smpR')||{}).value),tasks:(($('#smpK')||{}).value||'').trim()})}));closeModal();toast('Dikemas kini');smpPriceSheet(get('items',it.id))};
 /* Harga sample: simpan dalam kad, dan ke Sheet (JENIS = SAMPLE, HARGA) bila produk dah ada dalam Sheet */
 function smpPriceSheet(it){const sv=sheetView();const g=sv&&it&&it.sample&&it.sample.price&&sv.groups.find(x=>x.tab==='PRODUCTS'&&itMatch(it,x.name)&&x.start>(it.sample.sheetRowAtAdd||0));
   if(g&&MCP)sheetWrite(`PRODUCTS!R${g.start}:S${g.start}`,[[g.kind||'SAMPLE',it.sample.price]]).then(()=>toast('Harga disimpan dalam Sheet')).catch(()=>{})}
@@ -132,4 +148,4 @@ const tlMini=d=>`<div class="tl tl-mini">${PSTEPS.map((s,i)=>`<div class="s${i<=
 function cpRow(x){const p=samplePlan(x.it);const nm=String(x.it.title).split(/\s+/).slice(0,3).join(' ');const cur=PSTEPS[Math.min(x.step+1,5)];
   return `<div class="ccr" style="--c:${TAB.links.c}"><div class="rowh"><span class="ccn">${esc(nm)}</span><span class="pill smpp" style="--pc:${p.col}"><b>${Math.max(p.left,0)}</b>${esc(p.label.replace(/^\d+ /,''))}</span></div>${tlMini(x.step)}<div class="meta" style="font-size:11px;margin-top:-2px">${smpPlat(x.it.sample.plat)} · sekarang ${esc(cur)} · akhir post ${dmy(x.it.sample.postBy)}</div></div>`}
 function confirmedSection(sv){const L=confirmedList(sv).filter(x=>hit('lk',x.it.title));if(!L.length)return '';
-  return `<p class="eyebrow" style="margin-top:6px">Sample · ${L.length}</p><div class="list" style="margin-bottom:14px">${L.map(x=>`<div class="card glass"><div class="rowh" style="align-items:flex-start;gap:10px"><div style="min-width:0">${x.g?`<span class="bigno" style="font-size:20px;margin-right:6px">${esc(x.g.no)}</span>`:''}<h3 style="display:inline">${esc(x.it.title)}</h3><div class="meta">Sample ${smpPlat(x.it.sample.plat)}${x.g?' · dalam Sheet':' · belum masuk Sheet'}</div></div>${smpBadge(x.it)}</div>${timeline(x.step,'')}${x.it.sample.afterRecv&&!x.it.sample.received?`<p class="meta" style="margin:6px 0 0;color:var(--warn)">Deadline kira ${x.it.sample.afterRecv} hari dari terima barang. Tekan tarikh untuk tanda dah terima.</p>`:''}${smpTasks(x.it)}${linkRow(x.it)}</div>`).join('')}</div>`}
+  return `<p class="eyebrow" style="margin-top:6px">Sample · ${L.length}</p><div class="list" style="margin-bottom:14px">${L.map(x=>`<div class="card glass"><div class="rowh" style="align-items:flex-start;gap:10px"><div style="min-width:0">${x.g?`<span class="bigno" style="font-size:20px;margin-right:6px">${esc(x.g.no)}</span>`:''}<h3 style="display:inline">${esc(x.it.title)}</h3><div class="meta">Sample ${smpPlat(x.it.sample.plat)}${x.g?' · dalam Sheet':' · belum masuk Sheet'}</div></div>${smpBadge(x.it)}</div>${timeline(x.step,'')}${x.it.sample.afterRecv&&!x.it.sample.received?`<p class="meta" style="margin:6px 0 0;color:var(--warn)">Deadline kira ${x.it.sample.afterRecv} hari dari terima barang. Tekan tarikh untuk tanda dah terima.</p>`:''}${smpTasks(x.it)}${linkRow(x.it)}<div class="btns" style="justify-content:flex-end;margin-top:6px"><button class="btn sm" data-act="smpEdit" data-id="${x.it.id}">${IC.edit}Edit sample</button></div></div>`).join('')}</div>`}
