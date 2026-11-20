@@ -6,19 +6,33 @@
 const VO_ST={perlu:['Perlu VO','var(--warn)'],proses:['Mac mini sedang dengar…','var(--c)'],semak:['Semak ayat','#5A8FB5'],simpan:['Sedang simpan…','var(--c)'],siap:['Siap','#4E9B63'],error:['Ralat','var(--bad)']};
 const voId=sub=>'vo-'+String(sub).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60);
 const voRec={mr:null,chunks:[],t0:0,marks:[],timer:null,blob:null,url:''};
-function voList(){
-  const st=((S.sync.toedit||{}).stages||[]).find(s=>s.name==='41. TUNGGU VO');const out=[],seen=new Set();
-  (st?st.items:[]).forEach(it=>{const id=voId(it.name),d=get('vo',id);seen.add(id);out.push(Object.assign({id,folder:'41. TUNGGU VO',sub:it.name,status:'perlu',points:[]},d||{},{_new:!d}))});
-  S.vo.forEach(d=>{if(!seen.has(d.id))out.push(d)});
-  const wk=Date.now()-3*864e5;
-  return out.filter(d=>d.status!=='siap'||(d.done||0)>wk).sort((a,b)=>(a.status==='siap')-(b.status==='siap')||(b.updated||0)-(a.updated||0))}
+/* Auto: 41. TUNGGU VO + semua folder yang ada "VLOG" pada nama. Mira boleh Buang dari senarai (status buang) atau Tambah video lain. */
+const voAuto=name=>name==='41. TUNGGU VO'||/vlog/i.test(name);
+function voAll(){
+  const out=[],seen=new Set();
+  ((S.sync.toedit||{}).stages||[]).filter(s=>voAuto(s.name)).forEach(st=>st.items.forEach(it=>{const id=voId(it.name);if(seen.has(id))return;const d=get('vo',id);seen.add(id);
+    out.push(Object.assign({id,folder:st.name,sub:it.name,status:'perlu',points:[]},d||{},{_new:!d}))}));
+  S.vo.forEach(d=>{if(!seen.has(d.id))out.push(d)});return out}
+function voList(){const wk=Date.now()-3*864e5;
+  return voAll().filter(d=>d.status!=='buang'&&(d.status!=='siap'||(d.done||0)>wk)).sort((a,b)=>(a.status==='siap')-(b.status==='siap')||(b.updated||0)-(a.updated||0))}
+const voHidden=()=>voAll().filter(d=>d.status==='buang');
 const voPending=()=>voList().filter(d=>d.status!=='siap');
 function voEnsure(d){if(!d._new)return get('vo',d.id);const o=Object.assign({},d);delete o._new;return save('vo',o,true)}
 const voPill=d=>{const [l,c]=VO_ST[d.status]||VO_ST.perlu;return `<span class="pill" style="--pc:${c}">${l}</span>`};
 const voKeptDur=d=>((d.take||{}).segs||[]).filter(x=>x.keep).reduce((a,x)=>a+(x.e-x.s),0);
 V.vo=()=>{const d=ui.voOpen&&voList().find(x=>x.id===ui.voOpen);if(d)return voDetail(d);const list=voList(),n=voPending().length;
-  return head(n?n+' video perlu VO':'Rakam VO terus dari phone')+`<div class="list">${list.map(d=>`<button class="card glass" style="text-align:left;width:100%" data-act="voOpen" data-id="${esc(d.id)}">
-    <div class="rowh" style="align-items:center"><div><h3 style="margin:0">${esc(d.sub||d.title||d.id)}</h3><div class="meta">${esc((d.folder||'').replace(/^\d+\.\s*/,''))}${d.target?' · sasaran ±'+d.target+' s':''}${d.status==='siap'&&d.voDur?' · VO '+d.voDur+' s':''}</div></div>${voPill(d)}</div></button>`).join('')||`<div class="empty">Tiada video perlu VO. Video dalam folder 41. TUNGGU VO muncul di sini sendiri.</div>`}</div>`};
+  const hid=voHidden();
+  return head(n?n+' video perlu VO':'Rakam VO terus dari phone',`<button class="btn sm" data-act="voAdd">${IC.plus}Tambah</button>`)+`<div class="list">${list.map(d=>`<div class="card glass" style="position:relative">
+    <button style="all:unset;display:block;cursor:pointer;width:100%" data-act="voOpen" data-id="${esc(d.id)}"><div class="rowh" style="align-items:center;padding-right:34px"><div><h3 style="margin:0">${esc(d.sub||d.title||d.id)}</h3><div class="meta">${esc((d.folder||'').replace(/^\d+\.\s*/,''))}${d.target?' · sasaran ±'+d.target+' s':''}${d.status==='siap'&&d.voDur?' · VO '+d.voDur+' s':''}</div></div>${voPill(d)}</div></button>
+    ${d.status==='siap'?'':`<button class="btn sm" style="position:absolute;top:8px;right:8px;padding:6px" data-act="voHide" data-id="${esc(d.id)}" aria-label="Buang dari senarai VO" title="Buang dari senarai">${IC.x}</button>`}</div>`).join('')||`<div class="empty">Tiada video perlu VO. Folder 41. TUNGGU VO dan semua folder VLOG masuk sini sendiri.</div>`}</div>
+    ${hid.length?`<details style="margin-top:14px"><summary class="meta">Dibuang dari senarai (${hid.length})</summary><div class="list" style="margin-top:8px">${hid.map(d=>`<div class="rowh" style="align-items:center;padding:6px 4px"><span>${esc(d.sub||d.id)} <small class="meta">${esc((d.folder||'').replace(/^\d+\.\s*/,''))}</small></span><button class="btn sm" data-act="voUnhide" data-id="${esc(d.id)}">Pulihkan</button></div>`).join('')}</div></details>`:''}`};
+A.voHide=el=>{const d=voAll().find(x=>x.id===el.dataset.id);if(!d)return;const o=voEnsure(d);save('vo',Object.assign({},o,{status:'buang',prev:o.status==='buang'?'perlu':o.status}));toast('Dibuang dari senarai VO')};
+A.voUnhide=el=>{const d=get('vo',el.dataset.id);if(d)save('vo',Object.assign({},d,{status:d.prev&&d.prev!=='buang'?d.prev:'perlu'}))};
+A.voAdd=()=>{const have=new Set(voList().map(d=>d.id));
+  const opts=((S.sync.toedit||{}).stages||[]).map(st=>({st:st.name,items:st.items.filter(it=>!have.has(voId(it.name)))})).filter(g=>g.items.length);
+  modal(`<h2>Tambah video perlu VO</h2>${opts.length?`<div class="list" style="max-height:60vh;overflow:auto">${opts.map(g=>`<p class="eyebrow" style="margin:10px 0 4px">${esc(g.st)}</p>${g.items.map(it=>`<button class="btn" style="justify-content:flex-start;width:100%;margin-bottom:6px" data-act="voAddPick" data-id="${esc(g.st)}" data-x="${esc(it.name)}">${esc(it.name)}</button>`).join('')}`).join('')}</div>`:'<p class="meta">Semua folder edit dah ada dalam senarai.</p>'}
+  <div class="btns" style="justify-content:flex-end;margin-top:10px"><button class="btn" data-act="closeModal">Tutup</button></div>`,TAB.vo.c)};
+A.voAddPick=el=>{const id=voId(el.dataset.x),cur=get('vo',id);save('vo',Object.assign({id,folder:el.dataset.id,sub:el.dataset.x,points:[]},cur||{},{status:'perlu'}));closeModal();toast('Ditambah ke senarai VO')};
 function voDetail(d){
   const back=`<button class="btn sm" data-act="voBack">${IC.back}Senarai</button>`;
   const pts=(d.points||[]).filter(Boolean),ban=(d.banned||[]).filter(Boolean);
