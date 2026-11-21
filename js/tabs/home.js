@@ -76,7 +76,7 @@ function ongoingSlot(){const L=(S.workprojects||[]).slice().sort((a,b)=>(b.updat
    <p class="meta" style="margin:8px 0 0">Edit susunan buka page sorter (Wi-Fi rumah) terus pada projek tu: tukar nama, tambah atau padam folder, pindah gambar.</p></div>`}
 const appReady=sv=>byStage('ready').filter(it=>!(it.auto&&sv&&(it.files||[]).some(f=>matchFile(f,sv.groups))));
 V.home=()=>{
-  const sv=sheetView();const te=toEditFolders();const hr=new Date().getHours();const eds=S.editor.filter(e=>!/siap/i.test(e.status||''));
+  const sv=sheetView();const te=toEditFolders();const hr=new Date().getHours();const eds=S.editor.filter(e=>!edDone(e));
   const n={ideas:byStage('ideas').length,'to-shoot':byStage('toshoot').length,shot:byStage('shot').length,'to-edit':te.length+byStage('toedit').length,
     ready:(sv?sv.ready.length:0)+appReady(sv).length,published:publishedEntries(sv).length,links:sv?sv.groups.filter(g=>g.tab==='PRODUCTS').length:'–',
     jobs:S.jobs.filter(j=>!/siap|bayaran/i.test(j.status||'')).length,editor:eds.length,footage:S.footage.length,inspiration:S.inspo.length,'media-kit':3};
@@ -165,7 +165,7 @@ function autoSheet(){if(mode!=='live'||!sheetRaw.PRODUCTS||Date.now()-autoSheetA
   S.items.filter(it=>it.stage==='shot'||it.stage==='toedit').forEach(it=>{const g=gs.find(x=>itMatch(it,x.name));if(!g||!g.rows.length||(it.sample&&g.start<=(it.sample.sheetRowAtAdd||0)))return;
     if((it.stageAt&&(it.stageAt.shot||it.stageAt.toedit)||0)>Date.now()-3*DAY)return;
     moved++;save('items',Object.assign({},it,{stage:'published',sheetMatched:true,stageAt:Object.assign({},it.stageAt,{published:Date.now()})}),true)});
-  (((S.sync.toedit||{}).stages)||[]).forEach(st=>(st.items||[]).forEach(f=>{const key=st.name+'/'+f.name;const mk=(S.sync.toeditmarks||{}).done||{};if(!mk[key]&&folderRendered(f))markToEdit(key,'done')}));
+  (((S.sync.toedit||{}).stages)||[]).forEach(st=>(st.items||[]).forEach(f=>{const key=st.name+'/'+f.name;const mk=(S.sync.toeditmarks||{}).done||{};if(!mk[key]&&!multiKey(key)&&folderRendered(f))markToEdit(key,'done')}));
   S.items.filter(it=>it.sample||it.shopee||it.tiktok).forEach(it=>{const g=gs.find(x=>itMatch(it,x.name));if(!g)return;
     if((it.shopee&&!g.shopee)||(it.tiktok&&!g.tt)){const k='lk'+g.start;if(!autoDone[k]){autoDone[k]=1;itemLinksToSheet(it,g).catch(()=>{})}}
     if(it.sample&&it.sample.price&&(!g.price||!g.kind)){const k='pr'+g.start;if(!autoDone[k]){autoDone[k]=1;sheetWrite(`PRODUCTS!R${g.start}:S${g.start}`,[[g.kind||'SAMPLE',g.price||it.sample.price]]).catch(()=>{})}}});
