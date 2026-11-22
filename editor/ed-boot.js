@@ -112,9 +112,26 @@
   const curTab = () => { const t = document.querySelector('#tabs [aria-selected="true"]'); return t ? t.dataset.tab : ''; };
   const goTab = n => { const t = document.querySelector(`#tabs [data-tab="${n}"]`); if (t) { t.click(); return true; } return false; };
   const G = n => { try { return (0, eval)(n); } catch (e) { return undefined; } };   // pembolehubah enjin (let di skrip editor)
+  /* setiap tab tunjuk trek timeline yang berkaitan sahaja (sentiasa nampak di atas panel) */
+  const ROWS = { Title: /^(Video|Tajuk)$/, Caption: /^(Video|Caption|Highlight)$/, Effects: /^(Video|Effects|Zoom)$/, Sticker: /^(Video|Sticker)$/,
+    Bunyi: /^(Video|Bunyi|Suara|Suara asal|VO|Muzik|Music|BGM)/i, Warna: /^Video$/, 'Style Board': /^(Video|Tajuk|Caption)$/ };
+  function rows() {
+    const t = curTab(), re = ROWS[t], ok = n => !re || re.test(n || '');
+    const labs = [...document.querySelectorAll('#labels > span')];
+    labs.forEach(l => l.classList.toggle('edhide', !ok(l.getAttribute('title'))));
+    // trek dipadan ikut id (enjin kadang-kadang pindah trek tajuk keluar dari #inner), trek tanpa id ikut label "ro"
+    const ID = { hookTrack: 'Tajuk', capTrack: 'Caption', hlTrack: 'Highlight', zmTrack: 'Zoom', fxTrack: 'Effects', stTrack: 'Sticker', sfxTrack: 'Bunyi', voTrack: 'VO' };
+    const roNames = labs.filter(l => l.classList.contains('ro')).map(l => l.getAttribute('title')); let ri = 0;
+    document.querySelectorAll('.ed .track, .ed .vrow').forEach(tr => {
+      const n = tr.classList.contains('vrow') ? 'Video' : ID[tr.id] || (tr.classList.contains('ro') ? roNames[ri++] : '');
+      tr.classList.toggle('edhide', !!n && !ok(n));
+    });
+    H.classList.toggle('ednotl', t === 'Siap');
+  }
   function sync() {
     const t = curTab();
     H.classList.toggle('edsheet', !!t && t !== 'Potong');
+    rows();
     const l = $('ccTab'); if (l) l.textContent = (document.querySelector('#tabs [aria-selected="true"] .tl, #tabs [aria-selected="true"]') || {}).textContent || t;
   }
   /* playhead tetap di tengah: #inner dan #rinner ada margin 50% (CSS), jadi scrollLeft = masa × pps.
@@ -178,11 +195,10 @@
       <span class="ccsep" aria-hidden="true"></span>`);
     tr.insertAdjacentHTML('beforeend', `<button type="button" class="chip cc cctool" data-p="resetAll" aria-label="Reset ke editing asal">${ic('i-reset')}</button>`);
     const st = $('stage'); if (st) st.insertAdjacentHTML('beforeend', `<button type="button" class="ccbig" id="ccBig" aria-label="Besarkan video" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg></button>`);
-    sc.insertAdjacentHTML('afterend', `<div class="edshd" id="edshd"><b id="ccTab"></b><span class="sp"></span><button type="button" id="ccTl" aria-pressed="false">Timeline</button><button type="button" id="ccOk" aria-label="Tutup panel, balik ke timeline">✓</button></div>`);
+    sc.insertAdjacentHTML('afterend', `<div class="edshd" id="edshd"><b id="ccTab"></b><span class="sp"></span><button type="button" id="ccOk" aria-label="Tutup panel, balik ke timeline">✓</button></div>`);
     tr.addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if (b) { e.stopPropagation(); click(b.dataset.p); } }, true);
     $('ccBig').addEventListener('pointerdown', e => e.stopPropagation());
     $('ccBig').onclick = e => { e.stopPropagation(); e.preventDefault(); const on = H.classList.toggle('edbig'); $('ccBig').setAttribute('aria-pressed', on); window.dispatchEvent(new Event('resize')); };
-    $('ccTl').onclick = () => { const on = H.classList.toggle('edtl'); $('ccTl').setAttribute('aria-pressed', on); };
     $('ccOk').onclick = () => { goTab('Potong'); H.classList.remove('edtl'); };
     $('edSiap').onclick = () => { if (!goTab('Siap') && window.toast) toast('Butang render ada pada video terakhir projek ni'); };
     const tc = $('tc'), pi = $('playIc');
@@ -190,6 +206,7 @@
     if (tc) { new MutationObserver(tcs).observe(tc, { childList: true, characterData: true, subtree: true }); tcs(); }
     if (pi) new MutationObserver(() => { $('ccPlayIc').setAttribute('href', pi.getAttribute('href')); }).observe(pi, { attributes: true });
     new MutationObserver(sync).observe($('tabs'), { attributes: true, childList: true, subtree: true, attributeFilter: ['aria-selected'] });
+    const inn = $('inner'); if (inn) new MutationObserver(rows).observe(inn, { childList: true });
     sync(); timeline();
     return true;
   }

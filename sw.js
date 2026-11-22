@@ -1,5 +1,5 @@
 /* Simpan app dalam phone supaya boleh dibuka tanpa internet. Data sendiri disimpan oleh runtime.js. */
-const V = '2026.11.22-4';
+const V = '2026.11.22-5';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-180.png'];
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open('studio-' + V).then(c => c.addAll(CORE))); });   // versi baru terus aktif (editor PWA perlukan laluan terbaru)
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== 'studio-' + V && !k.startsWith('ed-')).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
@@ -74,7 +74,8 @@ self.addEventListener('fetch', e => {
   const same = u.origin === location.origin;
   const font = u.hostname.includes('fonts.g') || u.hostname === 'cdnjs.cloudflare.com';
   if (!same && !font) return;
-  // rangkaian dulu (versi terbaru), cache bila offline
-  e.respondWith(fetch(e.request).then(r => { if (r.ok) { const c = r.clone(); caches.open('studio-' + V).then(x => x.put(e.request, c)); } return r; })
+  // rangkaian dulu (versi terbaru), cache bila offline; fail editor sentiasa semak semula (elak HTTP cache lama)
+  const fresh = same && u.pathname.includes('/editor/') ? fetch(e.request, { cache: 'no-cache' }) : fetch(e.request);
+  e.respondWith(fresh.then(r => { if (r.ok) { const c = r.clone(); caches.open('studio-' + V).then(x => x.put(e.request, c)); } return r; })
     .catch(() => caches.match(e.request, { ignoreSearch: false }).then(r => r || caches.match('index.html'))));
 });

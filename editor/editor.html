@@ -385,6 +385,14 @@ button:focus-visible, [contenteditable]:focus-visible, input:focus-visible, text
 .hook b { font: var(--ks) var(--kw) calc(12.22cqw * var(--kz, 1)) var(--kf); color: var(--kc); line-height: 1.1; text-transform: var(--ku, none); -webkit-text-stroke: var(--kst, 0) currentColor; }
 .hook.tp-top, .hook.tp-mid { right: 11.11%; flex-direction: row; flex-wrap: wrap; justify-content: center; column-gap: .24em; text-align: center; }
 .hook.tp-top { top: 14.5%; }
+.hook.tp-bot { right: 11.11%; top: 56%; flex-direction: row; flex-wrap: wrap; justify-content: center; column-gap: .24em; text-align: center; }   /* Bawah: atas caption, dalam safe zone (y<=75%) */
+.hook.tp-bot b { flex-basis: 100%; }
+.ovrow { display: flex; align-items: center; gap: 10px; }
+.ovrow .ovic { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; border-radius: 50%; }
+.ovrow .ovs { width: 20px; height: 20px; color: var(--muted); flex: none; }
+.ovrow input[type=range] { flex: 1; min-width: 0; }
+.ovrow input:disabled { opacity: .4; }
+.ovrow .ovv { font: 600 12px var(--mono); color: var(--muted); min-width: 36px; text-align: right; }
 .hook.tp-mid { top: 38%; }
 .hook.tp-top b, .hook.tp-mid b { flex-basis: 100%; }
 .hook.tup > span { text-transform: uppercase; }
@@ -848,7 +856,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
   #fxForm { scroll-margin-top: calc(var(--hH, 0px) + var(--sh, 42vh) + 30px); }
 }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=202611222133">
+<link rel="stylesheet" href="../../ed-capcut.css?v=c4f5c41536">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -951,9 +959,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=202611222133"></script>
-<script src="../../../js/runtime.js?v=202611222133"></script>
-<script src="../../ed-boot.js?v=202611222133"></script>
+<script src="../../../js/config.js?v=c4f5c41536"></script>
+<script src="../../../js/runtime.js?v=c4f5c41536"></script>
+<script src="../../ed-boot.js?v=c4f5c41536"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -1395,7 +1403,7 @@ function setSaved(txt, cls) { const s = $("saved"); s.textContent = txt; s.class
 function docBody() {
   const fixes = {}, cuts = [], hl = {};
   S.words.forEach((w, i) => { if (w.t !== D.words[i].t) fixes[i] = w.t; if (w.cut) cuts.push(i); if (w.hl === 0 || w.hl === 1) hl[i] = w.hl; });
-  return { v: 1, clips: S.clips, bin: S.bin, hook: S.hook, fixes, cuts, globalMute: S.globalMute, sfx: S.sfx, zooms: S.zooms, music: S.music, vo: S.vo, stickers: S.stickers, capMode: S.capMode, capSize: S.capSize, capGap: S.capGap, capPos: S.capPos, capChest: S.capPos === "dada", capAuto: S.capPos === "auto" ? CAPPLAN : null, hl, hlStyle: "color", hlFont: "", hlColor: S.hlColor, hlMode: S.hlMode || "", hlFix: S.hlFix || 0, hlKind: S.hlKind, hlLook: S.hlLook, hlFx: S.hlFx, hlSize: S.hlSize, hlx: S.hlx || {}, hlItems: HLS.map(h => ({ t: h.t, d: h.d, x: +h.x.toFixed(4), y: +h.y.toFixed(4), text: h.text, css: h.css, fs: h.fs, fx: h.fx })), overlay: S.overlay, hookEnd: HOOK_END, style: S.style, final: S.final, brandKit: S.brandKit || null, popDone: S.popDone, at: new Date().toISOString() };
+  return { v: 1, clips: S.clips, bin: S.bin, hook: S.hook, fixes, cuts, globalMute: S.globalMute, origVol: S.origVol ?? 1, sfx: S.sfx, zooms: S.zooms, music: S.music, vo: S.vo, stickers: S.stickers, capMode: S.capMode, capSize: S.capSize, capGap: S.capGap, capPos: S.capPos, capChest: S.capPos === "dada", capAuto: S.capPos === "auto" ? CAPPLAN : null, hl, hlStyle: "color", hlFont: "", hlColor: S.hlColor, hlMode: S.hlMode || "", hlFix: S.hlFix || 0, hlKind: S.hlKind, hlLook: S.hlLook, hlFx: S.hlFx, hlSize: S.hlSize, hlx: S.hlx || {}, hlItems: HLS.map(h => ({ t: h.t, d: h.d, x: +h.x.toFixed(4), y: +h.y.toFixed(4), text: h.text, css: h.css, fs: h.fs, fx: h.fx })), overlay: S.overlay, hookEnd: HOOK_END, style: S.style, final: S.final, brandKit: S.brandKit || null, popDone: S.popDone, at: new Date().toISOString() };
 }
 /* talking-head: each sticker/effect remembers the spot in her speech (s.src = offsets[file] + source second).
    When clips change, it moves with that spot; when only stickers change, src follows the new place. */
@@ -1460,7 +1468,7 @@ function applyDoc(saved) {
   const d = JSON.parse(JSON.stringify(saved));   /* the store hands back frozen objects; editing needs a working copy */
   S.clips = d.clips || S.clips; S.bin = d.bin || S.bin; S.hook = d.hook ?? S.hook;
   { const known = new Set([...S.clips, ...S.bin].map(c => String(c.id).split("-")[0])); (D.bin || []).forEach(c => { if (!known.has(c.id)) S.bin.push({ ...c, muted: !!c.muted }); }); }   /* p14: shot baru dari Mac */
-  S.globalMute = !!d.globalMute; S.sfx = d.sfx || []; if (d.zooms) S.zooms = d.zooms; if (d.music) S.music = { ...S.music, ...d.music };
+  S.globalMute = !!d.globalMute; S.origVol = d.origVol ?? 1; S.sfx = d.sfx || []; if (d.zooms) S.zooms = d.zooms; if (d.music) S.music = { ...S.music, ...d.music };
   if (d.vo && d.vo.length) S.vo = d.vo;
   if (d.stickers) S.stickers = d.stickers;
   S.capMode = d.capMode || "frasa"; S.capSize = d.capSize || 1; S.capPos = d.capPos || (d.capChest ? "dada" : "bawah");
@@ -1803,7 +1811,7 @@ function drawHead() {
   drawCaption(); markWord(); showStickers(); showHL(); drawFx();
   if (playing) { const sc = $("tscroll"), x = pos * pps; if (x < sc.scrollLeft + 10 || x > sc.scrollLeft + sc.clientWidth - 30) sc.scrollLeft = x - sc.clientWidth * .25; }
 }
-function setVideoMute() { const c = S.clips[curIdx]; $("mv").muted = S.globalMute || !!(c && c.muted); applyGrade(c); }
+function setVideoMute() { const c = S.clips[curIdx]; $("mv").muted = S.globalMute || !!(c && c.muted); $("mv").volume = Math.max(0, Math.min(1, S.origVol ?? 1)); applyGrade(c); }
 /* Adjust (macam CapCut). Same maths in render_draft.py grade_filter() so the final matches this preview. */
 const GRADE_SMART = [["br", "Brightness", "Terang atau gelap"], ["ct", "Contrast", "Beza terang dan gelap"], ["sa", "Saturation", "Warna lebih pekat atau pudar"], ["bl", "Brilliance", "Angkat bahagian gelap tanpa putihkan yang terang"], ["sh", "Sharpen", "Lebih tajam (0 hingga 100)"]];
 const GRADE_CUSTOM = [["b", "Blacks", "Gelapkan atau angkat bahagian hitam"], ["t", "Temp", "Kiri sejuk (biru), kanan panas (kuning)"], ["h", "Hue", "Anjak semua warna"]];
@@ -2057,17 +2065,17 @@ function bPanel(only) {
   else if (key === "title") {
     /* One list of title styles, and every button replays the title on the video at once (user 2026-11-12). */
     const hx = hookFx(), ts = ["viral", "retro", "scriptt", "bigb", "italic", "campur"].map(id => optOf("font", id));
-    const posOf = hx ? (hx.al === "l" ? "left" : hx.al === "r" ? "right" : (hx.y ?? .5) < .34 ? "top" : "mid") : st.titlePos, out = hx ? !!hx.ol : st.titleOutline;
+    const posOf = hx ? (hx.al === "l" ? "left" : hx.al === "r" ? "right" : (hx.y ?? .5) < .34 ? "top" : (hx.y ?? .5) > .6 ? "bot" : "mid") : st.titlePos, out = hx ? !!hx.ol : st.titleOutline;
     const smp = hx || { a: plain, text: keyW, b: "", items: [""] };
     const hkList = fillCat("hook:", HOOKS.map(h => ["e-hook" + h[0], h[1], h[2], {}])).map(r => [r[0].replace("e-hook", ""), r[1], r[2], r[4]]);
     const hkCard = ([n, nm, ds, isNew]) => { const b = vBase(n), v = vSkin(n), on = !!hx && hx.k === "e-hook" + b && (hx.sk || "") === v.sk && (hx.tn || "") === v.tn; return `<div class="opt"><button class="mini hk${skCls(n)}" aria-pressed="${on}" ${hx ? `data-hks="${n}"` : `data-hadd="e-hook${b}"`} aria-label="Guna ${nm}"><div>${effectHTML({ ...smp, k: "e-hook" + b, al: "", ol: 0, fx: "" }, photoUrl)}</div></button>${isNew ? `<span class="newtag">baru</span>` : ""}<h3>${nm}</h3><p>${ds}</p>${lk("hook:" + n)}</div>`; };
-    main = `<div class="row"><span class="lab">Kedudukan tajuk</span><div class="chips">${chip("Left", posOf === "left", 'data-tp="left"')}${chip("Top centre", posOf === "top", 'data-tp="top"')}${chip("Middle centre", posOf === "mid", 'data-tp="mid"')}${chip("Right", posOf === "right", 'data-tp="right"')}</div></div>
-      <div class="row"><span class="lab">Huruf</span><div class="chips">${chip("Filled", !out, 'data-tout="0"')}${chip("Outline", out, 'data-tout="1"')}</div></div>
-      ${hx ? `<div class="row"><label class="lab" for="hookIn">Teks tajuk (pisahkan baris dengan /)</label><input id="hookIn" type="text" value="${esc([hx.a || "", hx.text || "", hx.b || ""].join(" / "))}">
+    main = `${hx ? `<div class="row"><label class="lab" for="hookIn">Teks tajuk (pisahkan baris dengan /)</label><input id="hookIn" type="text" value="${esc([hx.a || "", hx.text || "", hx.b || ""].join(" / "))}">
         <label class="lab" for="hookPill">Nama produk</label><input id="hookPill" type="text" value="${esc((hx.items || [])[0] || "")}">
         <label class="lab" for="hookSize">Saiz tajuk: <span id="hookSizeV">${Math.round((hx.s || .19) / .19 * 100)}%</span></label><input id="hookSize" type="range" min="60" max="140" step="2" value="${Math.round((hx.s || .19) / .19 * 100)}">
         <label class="lab" for="hookDur">Tempoh tajuk: <span id="hookDurV">${hx.d.toFixed(1)} s</span></label><input id="hookDur" type="range" min="15" max="60" step="1" value="${Math.round(hx.d * 10)}"><span class="legend">Caption mula sebaik sahaja tajuk hilang.</span></div>`
       : `<div class="row"><label class="lab" for="hookIn">Tajuk (huruf BESAR jadi warna kunci)</label><input id="hookIn" type="text" value="${esc(S.hook)}"></div>`}
+      <div class="row"><span class="lab">Kedudukan tajuk</span><div class="chips">${chip("Atas", posOf === "top", 'data-tp="top"')}${chip("Tengah", posOf === "mid", 'data-tp="mid"')}${chip("Bawah", posOf === "bot", 'data-tp="bot"')}${chip("Kiri", posOf === "left", 'data-tp="left"')}${chip("Kanan", posOf === "right", 'data-tp="right"')}</div></div>
+      <div class="row"><span class="lab">Huruf</span><div class="chips">${chip("Filled", !out, 'data-tout="0"')}${chip("Outline", out, 'data-tout="1"')}</div></div>
       <div class="row"><span class="lab">Gaya tajuk</span><div class="grid">${hkList.map(hkCard).join("")}</div>
       ${hx ? "" : `<span class="legend">Enam gaya di atas ialah tajuk gaya editor (tiga baris + nama produk). Di bawah ni gaya tajuk biasa.</span><div class="grid">${ts.map(o => { const up = o.ku === "uppercase" ? keyW.toUpperCase() : o.ku === "capitalize" ? keyW[0].toUpperCase() + keyW.slice(1) : keyW; return card("font", o, `<div style="color:#fff"><span style="font:${o.hs} ${o.hw} ${(11 * (o.hz || 1)).toFixed(1)}cqw ${q(o.hf)}">${esc(plain)}</span><br><span style="font:${o.ks} ${o.kw} ${Math.min(19, 86 / (up.length * (o.fit || .55))).toFixed(1)}cqw ${q(o.kf)};color:${optOf("pal", o.pal || st.pal).k};${o.kst ? "-webkit-text-stroke:.5cqw currentColor" : ""}">${esc(up)}</span></div>`, st.font === o.id); }).join("")}</div>`}</div>
       <div class="row"><span class="lab">Animasi tajuk</span>${hx ? `<div class="chips">${HOOK_FX.map(([id, nm]) => chip(nm, (hx.fx || "pop") === id, `data-hfx="${id}"`)).join("")}</div>` : `<div class="grid">${fxList("title").map(([id, x]) => fxCard("title", id, x, `<div style="font:700 15cqw var(--hf);color:#fff" data-fx="${id}">${fxUnits(keyW, id, 0).html}</div>`)).join("")}</div>`}</div>
@@ -2233,7 +2241,7 @@ function musicHTML() {
     <span class="legend">Muzik main sepanjang video, di bawah suara kau. Render final guna lagu dan kuat yang sama.</span>` : `<span class="legend">Belum ada lagu dalam page ni.</span>`}</div>`;
 }
 function soundHTML() {
-  return `<div class="row"><span class="lab">Suara video asal</span><button class="chip mute" id="gm" aria-pressed="${S.globalMute}">${S.globalMute ? "Original sound muted. Tap to unmute" : "Mute original sound"}</button>
+  return `<div class="row"><span class="lab">Suara video asal</span><div class="ovrow"><button class="chip mute ovic" id="gm" aria-pressed="${S.globalMute}" aria-label="${S.globalMute ? "Bunyi asal dimute, tekan untuk hidupkan" : "Mute bunyi asal"}" title="${S.globalMute ? "Hidupkan bunyi asal" : "Mute bunyi asal"}"><svg class="ic"><use href="#${S.globalMute ? "i-mute" : "i-sound"}"/></svg></button><svg class="ic ovs" aria-hidden="true"><use href="#i-sound"/></svg><input type="range" id="ov" min="0" max="100" step="1" value="${Math.round((S.origVol ?? 1) * 100)}" aria-label="Kuat bunyi asal"${S.globalMute ? " disabled" : ""}><span class="ovv" id="ovV">${Math.round((S.origVol ?? 1) * 100)}%</span></div>
       <span class="legend">${hasVO() ? "VO kekal walaupun suara asal dimute." : "Tekan Main untuk dengar."} Butang mute atas timeline untuk satu klip sahaja.</span></div>
       <div class="row"><span class="lab">Bunyi dalam video (${S.sfx.length})</span>${S.sfx.length ? `<div class="pool">${S.sfx.map((x, i) => [x, i]).sort((a, b) => a[0].t - b[0].t).map(([x, i]) => `<div class="sfxrow${i === sfxSel ? " on" : ""}"><span>${fmt(x.t)} · ${esc((SFX_LIST.find(f => f[0] === x.f) || [0, x.f])[1])}</span><span><button class="chip" data-sfxgo="${i}">Tengok</button><button class="chip" data-sfxdel="${i}">Buang</button></span></div>`).join("")}</div>${S.sfx.length > 1 ? `<button class="chip" data-sfxdel="all">Buang semua bunyi</button>` : ""}` : `<span class="legend">Tiada bunyi.</span>`}</div>
       <div class="row"><span class="lab">Tambah bunyi</span>${SFX_LIST.map(([f, n]) => `<div class="sfxrow"><span>${n}</span><span><button class="chip" data-hear="${f}">Listen</button><button class="chip" data-add="${f}">Add</button></span></div>`).join("")}
@@ -2834,7 +2842,7 @@ document.addEventListener("click", e => {
   if (d.op) { S.style[d.op] = d.v; if (d.op === "font") { const f = optOf("font", d.v); if (f.pal) S.style.pal = f.pal; if (f.tp) S.style.titlePos = f.tp; } touched(); refreshGroups(); drawPanel(); drawStageStatic(); if (tab === "Title") titleJump(); return; }
   if (d.look) { const lk = LOOKS.find(x => x.id === d.look), l = d.look === "kit" ? S.brandKit : lk.s; S.style = { ...S.style, ...l }; if (lk && lk.x) Object.assign(S, lk.x); touched(); refreshGroups(); drawPanel(); drawStageStatic(); return demoFx("title"); }
   if (d.fxk) { S.style[d.fxk === "title" ? "titleFx" : "capFx"] = d.fxv; touched(); drawPanel(); drawStageStatic(); return demoFx(d.fxk); }
-  if (d.tp) { const hx = hookFx(); if (hx) { snapshot(); hx.x = .5; if (d.tp === "left") hx.al = "l"; else if (d.tp === "right") hx.al = "r"; else { delete hx.al; hx.y = d.tp === "top" ? .16 : .5; } } else S.style.titlePos = d.tp; touched(); drawPanel(); drawStageStatic(); return hookDemo(); }
+  if (d.tp) { const hx = hookFx(); if (hx) { snapshot(); hx.x = .5; if (d.tp === "left") hx.al = "l"; else if (d.tp === "right") hx.al = "r"; else { delete hx.al; hx.y = d.tp === "top" ? .16 : d.tp === "bot" ? .66 : .5; } } else S.style.titlePos = d.tp; touched(); drawPanel(); drawStageStatic(); return hookDemo(); }
   if (d.tout) { const hx = hookFx(); if (hx) { snapshot(); hx.ol = d.tout === "1" ? 1 : 0; } else S.style.titleOutline = d.tout === "1"; touched(); drawPanel(); drawStageStatic(); return hookDemo(); }
   if (d.hfx) { const hx = hookFx(); if (hx) { snapshot(); hx.fx = d.hfx; touched(); drawPanel(); } return hookDemo(); }
   if (b.id === "hookReplay") return hookDemo();
@@ -2920,6 +2928,7 @@ document.addEventListener("dblclick", e => { const el = e.target; if (!el.datase
 document.addEventListener("input", e => {
   const id = e.target.id;
   if (id === "zoom") { pps = ppsFromZ(+e.target.value); return drawTimeline(); }
+  if (id === "ov") { S.origVol = +e.target.value / 100; const v = $("ovV"); if (v) v.textContent = e.target.value + "%"; setVideoMute(); return touched(); }   /* kuat bunyi asal (render: origVol) */
   if (e.target.dataset && e.target.dataset.gr) { const c = S.clips[sel]; if (!c) return; const k = e.target.dataset.gr, v = +e.target.value; c.grade = { ...gradeOf(c), [k]: v }; $("grV_" + k).textContent = (v > 0 ? "+" : "") + v; if (curIdx !== sel && !playing) seek(startOf(sel) + .05); lastGrade = ""; setVideoMute(); gradeKick(); drawPresetState(); return touched(); }
   if ((id === "hookIn" || id === "hookPill") && !playing) { const hx = hookFx(), e2 = hx ? hx.t + hx.d : HOOK_END; if (pos >= e2 - .05 || (hx && pos < hx.t)) titleJump(); }
   if (id === "hookIn") {

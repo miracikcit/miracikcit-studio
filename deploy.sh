@@ -7,6 +7,8 @@ MSG="${1:-Kemaskini Studio}"
 for f in js/*.js js/core/*.js js/tabs/*.js sw.js; do
   node -e "new Function(require('fs').readFileSync(process.argv[1],'utf8'))" "$f" || { echo "RALAT JS dalam $f, tak dihantar"; exit 1; }
 done
+# Editor PWA: bina semula editor.html supaya versi fail ed-boot / ed-capcut / runtime ikut isi terbaru
+[ -f "$HOME/.claude/assets/reel-page-template/build_editor.py" ] && python3 "$HOME/.claude/assets/reel-page-template/build_editor.py" --pwa >/dev/null
 if [ -z "$(git status --porcelain)" ]; then echo "Tiada perubahan."; exit 0; fi
 ./bump.sh
 git add -A

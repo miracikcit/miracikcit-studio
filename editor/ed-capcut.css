@@ -68,13 +68,16 @@ html.pwa body { padding-block: 0 28px; }
   /* tab selain Cut: panel jadi helaian bawah; baris butang tinggal main/undo sahaja; timeline disorok (butang Timeline untuk tunjuk) */
   html.pwa.edsheet .transport .chip:not(.cc), html.pwa.edsheet .transport .cctool, html.pwa.edsheet .transport .ccsep { display: none !important; }   /* belah + buang kekal */
   html.pwa.edsheet .transport { justify-content: center; }
-  html.pwa.edsheet .edshd { display: flex; order: 3; align-items: center; gap: 8px; margin: 4px 8px 0; padding: 8px 10px; border-radius: 14px 14px 0 0; background: var(--panel2); border: 1px solid var(--line); border-bottom: 0; }
+  html.pwa.edsheet .edshd { display: flex; align-items: center; gap: 8px; margin: 4px 8px 0; padding: 8px 10px; border-radius: 14px 14px 0 0; background: var(--panel2); border: 1px solid var(--line); border-bottom: 0; }
   html.pwa.edsheet .edshd b { font: 400 22px/1 var(--head); }
   html.pwa.edsheet .edshd .sp { flex: 1; }
   html.pwa.edsheet .edshd button { border: 1px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 999px; padding: 6px 12px; font: 600 13px var(--display); cursor: pointer; }
   html.pwa.edsheet .edshd #ccOk { width: 38px; height: 38px; padding: 0; font-size: 18px; background: var(--fg); color: var(--bg); border-color: var(--fg); }
   html.pwa.edsheet .edshd #ccTl[aria-pressed="true"] { background: var(--brownsoft); }
-  html.pwa.edsheet .controls { order: 4; margin: 0 8px; padding: 10px; background: var(--panel2); border: 1px solid var(--line); border-top: 0; border-radius: 0 0 14px 14px; }
-  html.pwa.edsheet:not(.edtl) .lenbar, html.pwa.edsheet:not(.edtl) .rbar, html.pwa.edsheet:not(.edtl) .ed { display: none !important; }
-  html.pwa.edsheet.edtl .lenbar { order: 5; } html.pwa.edsheet.edtl .rbar { order: 6; } html.pwa.edsheet.edtl .ed { order: 7; }
+  html.pwa.edsheet .controls { margin: 0 8px; padding: 10px; background: var(--panel2); border: 1px solid var(--line); border-top: 0; border-radius: 0 0 14px 14px; }
+  /* helaian: timeline tab ni (trek berkaitan sahaja) kekal di atas panel */
+  html.pwa.edsheet .lenbar { display: none !important; }
+  html.pwa.edsheet .rbar { order: 3; } html.pwa.edsheet .ed { order: 4; } html.pwa.edsheet .edshd { order: 5; } html.pwa.edsheet .controls { order: 6; }
+  html.pwa .edhide { display: none !important; }
+  html.pwa.ednotl .rbar, html.pwa.ednotl .ed { display: none !important; }
 }
