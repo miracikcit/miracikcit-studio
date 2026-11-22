@@ -856,7 +856,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
   #fxForm { scroll-margin-top: calc(var(--hH, 0px) + var(--sh, 42vh) + 30px); }
 }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=c2f9eee294">
+<link rel="stylesheet" href="../../ed-capcut.css?v=9f0e9a94a7">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -959,9 +959,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=c2f9eee294"></script>
-<script src="../../../js/runtime.js?v=c2f9eee294"></script>
-<script src="../../ed-boot.js?v=c2f9eee294"></script>
+<script src="../../../js/config.js?v=9f0e9a94a7"></script>
+<script src="../../../js/runtime.js?v=9f0e9a94a7"></script>
+<script src="../../ed-boot.js?v=9f0e9a94a7"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -2293,7 +2293,7 @@ function drawPanel() {
       ${checksHTML()}
       ${isLastPart() ? "" : `<div class="note"><b>Butang RENDER ALL ada di editor Part ${esc(String(SER().total))} (video terakhir).</b> Di sini kau cuma ubah video ni; perubahan disimpan sendiri. Bila semua part siap, tekan RENDER ALL sekali di editor terakhir dan semua part dirender.</div>`}
       ${isLastPart() ? `<div class="row"><span class="lab">Render</span><div class="chips">${chip("Draft 540×960", S.final.render === "draft", 'data-fp="render" data-v="draft"')}${chip("Final 1080×1920", S.final.render !== "draft", 'data-fp="render" data-v="final"')}</div></div>
-      <div class="note">${S.final.render === "draft" ? "Draf: video kecil 540×960 untuk semak potongan. Claude hantar link page supaya kau boleh tengok di phone. Sheet dan fail asal tak diusik." : (SER() ? `RENDER ALL render <b>final 1080×1920</b> untuk kesemua ${esc(String(SER().total))} part (dari edit yang disimpan dalam setiap editor) dan simpan ke 00. TO POST FINAL. Sheet dan Studio dikemaskini sekali selepas semua siap.` : "UPLOAD terus render <b>final 1080×1920</b> dan simpan ke 00. TO POST FINAL. Semak video dalam editor dulu.")}</div>
+      <div class="note">${S.final.render === "draft" ? (window.ED_SEND ? "Draf: Mac mini render video kecil 540×960 terus (tanpa Claude). Link draf keluar di sini dan dalam tab Editor Studio. Sheet dan fail asal tak diusik." : "Draf: video kecil 540×960 untuk semak potongan. Claude hantar link page supaya kau boleh tengok di phone. Sheet dan fail asal tak diusik.") : (SER() ? `RENDER ALL render <b>final 1080×1920</b> untuk kesemua ${esc(String(SER().total))} part (dari edit yang disimpan dalam setiap editor) dan simpan ke 00. TO POST FINAL. Sheet dan Studio dikemaskini sekali selepas semua siap.` : "UPLOAD terus render <b>final 1080×1920</b> dan simpan ke 00. TO POST FINAL. Semak video dalam editor dulu.")}</div>
       <div id="renderStatus">${lastStatus}</div>
       <div class="row"><span class="lab">Sheet tab</span><div class="chips">${chip("Product", S.final.tab === "product", 'data-fp="tab" data-v="product"')}${chip("Non product", S.final.tab === "non", 'data-fp="tab" data-v="non"')}</div>
       ${S.final.tab === "product" ? `<label class="lab" for="prodName">Nama produk (perkataan pertama ikut nama video)</label><input id="prodName" type="text" value="${esc(S.final.product || "")}" placeholder="${esc(D.title.replace(/^Edit\s+/, "").toUpperCase())}">` : ""}</div>
