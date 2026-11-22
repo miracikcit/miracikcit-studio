@@ -1,0 +1,6 @@
+<!doctype html><meta charset="utf-8"><title>Studio</title>
+<script>/* GitHub Pages: editor/v/<id>/ tanpa service worker -> pintu masuk editor (sekali sahaja, elak gelung) */
+var m=location.pathname.match(/^(.*)\/editor\/v\/([^/]+)\//);
+if(m&&!sessionStorage.getItem('ed404')){sessionStorage.setItem('ed404','1');location.replace(m[1]+'/editor/?v='+m[2]);}
+else{sessionStorage.removeItem('ed404');document.write('Page tiada. <a href="/miracikcit-studio/">Buka Studio</a>');}
+</script>

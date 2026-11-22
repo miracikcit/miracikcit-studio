@@ -1,5 +1,5 @@
 /* Simpan app dalam phone supaya boleh dibuka tanpa internet. Data sendiri disimpan oleh runtime.js. */
-const V = '2026.11.22-1';
+const V = '2026.11.22-2';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-180.png'];
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open('studio-' + V).then(c => c.addAll(CORE))); });   // versi baru terus aktif (editor PWA perlukan laluan terbaru)
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== 'studio-' + V && !k.startsWith('ed-')).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
@@ -8,6 +8,7 @@ const ED = {}, EDIN = {};
 const MIME = { mp4: 'video/mp4', mp3: 'audio/mpeg', m4a: 'audio/mp4', wav: 'audio/wav', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', json: 'application/json', svg: 'image/svg+xml' };
 self.addEventListener('message', e => {
   const d = e.data || {};
+  if (d.t === 'edping') { if (e.ports[0]) e.ports[0].postMessage('ed1'); return; }   // pintu masuk editor: sw ni kenal laluan editor/v/
   if (d.t !== 'edman') return;
   ED[d.vid] = d;
   e.waitUntil(caches.open('ed-meta').then(c => c.put('/edmeta/' + encodeURIComponent(d.vid), new Response(JSON.stringify(d)))).then(() => { if (e.ports[0]) e.ports[0].postMessage('ok'); }));

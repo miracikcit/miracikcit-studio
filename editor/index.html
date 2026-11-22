@@ -15,10 +15,13 @@
   const v = new URLSearchParams(location.search).get('v'), m = document.getElementById('m');
   if (!v) { m.innerHTML = 'Link editor tiada id video. <a href="../#editor">Balik ke Studio</a>'; return; }
   if (!('serviceWorker' in navigator)) { m.textContent = 'Browser ni tak sokong editor Studio.'; return; }
-  await navigator.serviceWorker.register('../sw.js', { scope: '../' });
-  await navigator.serviceWorker.ready;
-  if (!navigator.serviceWorker.controller) await new Promise(r => { navigator.serviceWorker.addEventListener('controllerchange', r, { once: true }); setTimeout(r, 3000); });
-  location.replace('v/' + encodeURIComponent(v) + '/');
+  const reg = await navigator.serviceWorker.register('../sw.js', { scope: '../' });
+  reg.update().catch(() => {});
+  // tunggu service worker versi baru (yang kenal laluan editor) mengawal page ni
+  const ping = () => new Promise(res => { const c = navigator.serviceWorker.controller; if (!c) return res(false);
+    const ch = new MessageChannel(); const t = setTimeout(() => res(false), 700); ch.port1.onmessage = e => { clearTimeout(t); res(e.data === 'ed1'); }; c.postMessage({ t: 'edping' }, [ch.port2]); });
+  for (let i = 0; i < 40; i++) { if (await ping()) return location.replace('v/' + encodeURIComponent(v) + '/'); if (i === 8) m.textContent = 'Menyediakan editor kali pertama…'; await new Promise(r => setTimeout(r, 500)); }
+  m.innerHTML = 'Editor belum sedia. Tutup app Studio sepenuhnya, buka semula, kemudian cuba lagi. <a href="">Cuba lagi</a>';
 })().catch(e => { document.getElementById('m').textContent = 'Editor tak dapat dibuka: ' + e.message; });
 </script>
 </body>

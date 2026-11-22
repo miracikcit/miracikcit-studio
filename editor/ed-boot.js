@@ -7,6 +7,7 @@
   const m = location.pathname.match(/\/editor\/v\/([^/]+)\//);
   const VID = m ? decodeURIComponent(m[1]) : '';
   window.ED_VID = VID;
+  try { sessionStorage.removeItem('ed404'); } catch (e) {}
   const LOCAL = location.hostname === 'localhost';
   const orig = claude.use.bind(claude);
   const err = (code, msg) => Object.assign(new Error(msg || code), { code });
