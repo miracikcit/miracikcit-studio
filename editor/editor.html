@@ -856,7 +856,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
   #fxForm { scroll-margin-top: calc(var(--hH, 0px) + var(--sh, 42vh) + 30px); }
 }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=4a7dc95b77">
+<link rel="stylesheet" href="../../ed-capcut.css?v=c2f9eee294">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -959,9 +959,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=4a7dc95b77"></script>
-<script src="../../../js/runtime.js?v=4a7dc95b77"></script>
-<script src="../../ed-boot.js?v=4a7dc95b77"></script>
+<script src="../../../js/config.js?v=c2f9eee294"></script>
+<script src="../../../js/runtime.js?v=c2f9eee294"></script>
+<script src="../../ed-boot.js?v=c2f9eee294"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -2217,10 +2217,10 @@ function fxPanel() {
       <span class="legend">Seret atas video untuk alih tempat. Tarik blok di baris Effects untuk alih masa dan tempoh.</span></div>`;
   }
   const placed = S.stickers.map((y, i) => inFx(y) && !y.k.startsWith("e-hook") ? [y, i] : null).filter(Boolean).sort((a, b) => a[0].t - b[0].t).map(([y, i]) => `<div${i === stSel ? ' style="outline:2px solid var(--fg);outline-offset:-2px"' : ""}><span>${fmt(y.t)} · ${esc((fxDef(y.k) || [0, y.k])[1])}${y.text ? `: ${esc(y.text.slice(0, 22))}` : ""}</span><span style="display:flex;gap:4px"><button class="chip" data-sefx="${i}">Edit</button><button class="chip" data-stdel="${i}">Delete</button></span></div>`).join("");
-  const list = fillCat("fx:", (FX_KINDS.find(g => g[0] === fxCat) || [0, []])[1]);
+  const list = fillCat("fx:", fxCat === "Suka" ? FX_KINDS.filter(g => g[0] !== "Lama").flatMap(g => g[1]).filter(it => liked("fx:" + it[0])) : (FX_KINDS.find(g => g[0] === fxCat) || [0, []])[1]);   /* ⭐ Suka: effect yang kau tanda ✅ (2026-11-22) */
   const gal = fxCat === "Zoom" ? zoomPanel() : `<div class="row"><div class="grid">${list.map(([k, n, d, o, isNew]) => `<div class="opt"><button class="mini ecard${skCls(k)}" data-eadd="${k}" aria-label="Tambah ${esc(n)} di sini"><div>${fxPreview(vBase(k), o)}</div></button>${isNew ? `<span class="newtag">baru</span>` : ""}<h3>${n}</h3><p>${d}</p><div class="optb"><button class="chip" data-eadd="${k}">+ here</button>${lk("fx:" + k)}</div></div>`).join("")}</div></div>`;
   const miss = origMissing(), back = miss.length ? `<div class="row"><span class="lab">Effects asal yang dah dibuang (${miss.length})</span><div class="pool">${miss.map(m => `<div><span>${esc(m.label)}</span><button class="chip" data-readd="${m.i}">Add back</button></div>`).join("")}</div>${miss.length > 1 ? `<button class="chip" data-readd="all">Add back semua</button>` : ""}</div>` : "";
-  const cats = `<div class="catbar" role="tablist" aria-label="Kategori effect">${FX_CATS.map(c => `<button class="cat" aria-pressed="${c === fxCat}" data-fxcat="${c}">${c}</button>`).join("")}</div>`;
+  const cats = `<div class="catbar" role="tablist" aria-label="Kategori effect">${[...(PREFS.like.some(k => k.startsWith("fx:")) ? ["Suka"] : []), ...FX_CATS].map(c => `<button class="cat" aria-pressed="${c === fxCat}" data-fxcat="${c}">${c === "Suka" ? "⭐ Suka" : c}</button>`).join("")}</div>`;
   const nPl = S.stickers.filter(y => inFx(y) && !y.k.startsWith("e-hook")).length;
   return `${zmSel >= 0 && S.zooms[zmSel] ? zoomForm() : form}${popupRows()}${placed ? `<details class="fold" id="fxList"${fxListOpen ? " open" : ""}><summary class="lab">Dalam video ni (${nPl}) · tekan untuk ${fxListOpen ? "tutup" : "buka"} senarai</summary><div class="pool">${placed}</div></details>` : ""}${back}${cats}${gal}`;
 }

@@ -1129,6 +1129,60 @@ def _ed_new_run(sheet, folder, out, vid, title, cfg=None):
         fail(e)
 
 
+def run_ed_draft(inp, sheet, cfg):
+    """Butang Siap (Draf) dalam Editor PWA: render draf 540x960 terus di Mac mini dengan render_draft.py (0 token Claude),
+    muat naik ke Drive EDITOR PWA/<id>/draft.mp4, status dalam doc edpwa/<id> medan draft {status, id, at, msg}."""
+    vid = re.sub(r"[^a-z0-9-]", "", str(inp.get("vid") or ""))
+    doc = sheet.call("dget", path="edpwa/" + vid).get("doc") or {}
+    if not doc.get("project") or not os.path.isfile(doc["project"]):
+        raise RuntimeError("project.json untuk video ni tak dijumpai; minta Claude render")
+    doc["draft"] = {"status": "proses", "at": int(time.time() * 1000)}
+    sheet.call("dset", path="edpwa/" + vid, data=doc)
+    threading.Thread(target=_ed_draft_run, args=(sheet, vid, doc), daemon=True).start()
+    return {"vid": vid}
+
+
+def _ed_draft_run(sheet, vid, doc):
+    def put(**kw):
+        cur = sheet.call("dget", path="edpwa/" + vid).get("doc") or doc
+        cur["draft"] = dict(kw, at=int(time.time() * 1000))
+        sheet.call("dset", path="edpwa/" + vid, data=cur)
+    try:
+        base = "edx/%s~edits~current" % vid
+        ed = sheet.call("dget", path=base).get("doc")
+        if ed and ed.get("_c"):
+            ed = json.loads("".join((sheet.call("dget", path="%s~c%d" % (base, i)).get("doc") or {}).get("s", "") for i in range(int(ed["_c"]))))
+        build = os.path.join(HOME, "ed_drafts", vid)
+        shutil.rmtree(build, ignore_errors=True)
+        os.makedirs(build, exist_ok=True)
+        edits = os.path.join(build, "edits.json")
+        if ed:
+            json.dump(ed, open(edits, "w"), ensure_ascii=False)
+        tpl = os.path.expanduser("~/.claude/assets/reel-page-template/render_draft.py")
+        env = dict(os.environ, PATH="/opt/homebrew/bin:/usr/local/bin:" + os.environ.get("PATH", ""))
+        r = subprocess.run([sys.executable, tpl, doc["project"], edits if ed else "none", build], capture_output=True, text=True, timeout=5400, env=env)
+        mp4 = os.path.join(build, "draft", "draft_540.mp4")
+        if r.returncode != 0 or not os.path.isfile(mp4):
+            return put(status="error", msg=("render: " + (r.stderr or r.stdout)[-240:]).strip())
+        pid = sheet.call("dpath", base="studio", path=["EDITOR PWA", vid], share=True)["id"]
+        old = (doc.get("draft") or {}).get("id")
+        fid = drive_upload(sheet, mp4, pid, "draft.mp4")
+        if old and old != fid:
+            try:
+                sheet.call("dtrash", id=old)
+            except Exception:
+                pass
+        put(status="sedia", id=fid, mb=round(os.path.getsize(mp4) / 1e6, 1))
+        shutil.rmtree(build, ignore_errors=True)
+        log.info("Draf Editor PWA siap: %s", vid)
+    except Exception as e:
+        log.exception("Draf Editor PWA gagal: %s", vid)
+        try:
+            put(status="error", msg=str(e)[:240])
+        except Exception:
+            pass
+
+
 _ANSI = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(\x07|\x1b\\)|\x1b[()][A-Z0-9]|[\x00-\x08\x0b-\x1f]")
 
 
@@ -1269,6 +1323,8 @@ def studio_jobs(sheet, cfg):
                 outp = getattr(vo, "job_" + j["type"])(inp, sheet, cfg, sys.modules[__name__])
             elif j["type"] == "ed_new":
                 outp = run_ed_new(inp, sheet, cfg)
+            elif j["type"] == "ed_draft":
+                outp = run_ed_draft(inp, sheet, cfg)
             elif j["type"] == "ed_send":
                 outp = run_ed_send(inp, sheet, cfg)
             elif j["type"] == "edit_now":

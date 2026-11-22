@@ -113,7 +113,14 @@ def main():
         json.dump(st, open(STATE, "w"), indent=1)
     now = int(time.time() * 1000)
     cur = call("dget", path="edpwa/" + vid).get("doc") or {"created": now}
+    proj = a[a.index("--project") + 1] if "--project" in a else ""
+    if not proj:   # project.json dalam folder page (Edit sendiri) atau folder induk
+        for c in (os.path.join(d, "project.json"), os.path.join(os.path.dirname(d), "project.json")):
+            if os.path.isfile(c):
+                proj = c; break
     cur.update({"title": title, "dir": d, "files": files, "updated": now, "n": len(files), "status": "sedia"})
+    if proj:
+        cur["project"] = os.path.abspath(proj)
     cur.pop("msg", None)
     s = json.dumps(cur)
     if len(s) > 48000:

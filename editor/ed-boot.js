@@ -89,13 +89,36 @@
     if (b) { b.hidden = false; b.innerHTML = 'Editor tak dapat dibuka: ' + String((e && e.message) || e) + '<br><a href="../../../#editor">Balik ke Studio</a>'; }
   };
 
-  /* ---- Siap: hantar ke Mac mini ---- */
-  window.ED_SEND = async (btn, payload, text, upMsg) => {
-    upMsg('Menghantar ke Mac mini…');
+  /* ---- Siap: Draf = Mac mini render terus (0 token); Final / Render All = sesi Claude di Mac mini ---- */
+  const dview = id => 'https://drive.google.com/file/d/' + encodeURIComponent(id) + '/view';
+  let draftT = 0;
+  async function watchDraft(upMsg, t0) {
+    clearTimeout(draftT);
     try {
-      await new Promise(r => setTimeout(r, 1500));   // bagi simpanan terakhir sampai ke Sheet dulu
+      const j = await studioCall('pull', { since: t0 - 1 });
+      const d = ((j.docs || []).find(x => x.p === 'edpwa/' + VID) || {}).d;
+      const dr = d && d.draft;
+      if (dr && dr.at >= t0 - 5000) {
+        if (dr.status === 'sedia') { upMsg('Draf siap (' + (dr.mb || '?') + ' MB). '); const m = document.getElementById('upMsg'); if (m) m.insertAdjacentHTML('beforeend', `<a href="${dview(dr.id)}" target="_blank" rel="noopener"><b>▶ Tonton draf</b></a>`); return; }
+        if (dr.status === 'error') { upMsg('Draf gagal: ' + (dr.msg || 'ralat') + '. Pilihan kau dah disimpan; tekan Render sekali lagi atau pilih Final supaya Claude bantu.'); return; }
+      }
+    } catch (e) {}
+    draftT = setTimeout(() => watchDraft(upMsg, t0), 15000);
+  }
+  window.ED_SEND = async (btn, payload, text, upMsg) => {
+    upMsg('Menyimpan pilihan terakhir…');
+    try {
+      try { await (0, eval)('dbDoc && dbDoc.set(docBody())'); } catch (e) {}   // pastikan edit terbaru dah sampai ke Sheet
+      const draft = payload && payload.action === 'upload' && payload.render === 'draft' && (window.ED_MAN || {}).project;
+      if (draft) {
+        const t0 = Date.now();
+        await studioCall('job_add', { type: 'ed_draft', input: { vid: VID } });
+        upMsg('Mac mini sedang render draf 540×960 (2–6 minit). Kau boleh tutup page ni; draf juga keluar dalam tab Editor Studio.');
+        watchDraft(upMsg, t0);
+        return;
+      }
       await studioCall('job_add', { type: 'ed_send', input: { vid: VID, title: (window.ED_MAN || {}).title || '', dir: (window.ED_MAN || {}).dir || '', text, payload } });
-      upMsg('Arahan dah sampai ke Mac mini. Sesi Claude akan dibuka di sana, tengok chat Claude kau.');
+      upMsg('Arahan dah sampai ke Mac mini. Sesi Claude akan dibuka di sana untuk render final, tengok chat Claude kau.');
     } catch (e) { upMsg('Tak dapat hantar (' + ((e && (e.message || e.code)) || 'ralat') + '). Pilihan kau dah disimpan, cuba lagi.'); }
   };
 })();

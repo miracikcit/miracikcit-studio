@@ -114,3 +114,8 @@ html.pwa body { padding-block: 0 28px; }
   html.pwa .edshd #ccEmm { font-size: 12px !important; padding: 6px 10px !important; }
   html.pwa .edshd #ccEmm:disabled { opacity: .5; }
 }
+@media (max-width: 680px) {   /* kotak 3 lajur: nama sahaja, penerangan panjang disorok macam CapCut */
+  html.pwa.edtab-Effects #panel .grid .opt > p, html.pwa.edtab-Sticker #panel .grid .opt > p { display: none; }
+  html.pwa.edtab-Effects #panel .grid .opt > h3, html.pwa.edtab-Sticker #panel .grid .opt > h3 { font-size: 12px; margin: 4px 0 2px; }
+  html.pwa.edtab-Effects #panel .grid .optb { gap: 4px; flex-wrap: wrap; }
+}
