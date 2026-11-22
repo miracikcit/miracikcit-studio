@@ -856,7 +856,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
   #fxForm { scroll-margin-top: calc(var(--hH, 0px) + var(--sh, 42vh) + 30px); }
 }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=c4f5c41536">
+<link rel="stylesheet" href="../../ed-capcut.css?v=4a7dc95b77">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -959,9 +959,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=c4f5c41536"></script>
-<script src="../../../js/runtime.js?v=c4f5c41536"></script>
-<script src="../../ed-boot.js?v=c4f5c41536"></script>
+<script src="../../../js/config.js?v=4a7dc95b77"></script>
+<script src="../../../js/runtime.js?v=4a7dc95b77"></script>
+<script src="../../ed-boot.js?v=4a7dc95b77"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -2458,6 +2458,8 @@ let nameN = 0;
 function split() {
   if (playing) stop();
   if (voSel >= 0) return splitVo();
+  { const x = stSel >= 0 ? S.stickers[stSel] : null;   /* effect / sticker yang dipilih: belah di playhead (2026-11-22, Mira) */
+    if (x && pos > x.t + .1 && pos < x.t + x.d - .1) { snapshot(); const y = JSON.parse(JSON.stringify(x)); y.t = +pos.toFixed(2); y.d = +(x.t + x.d - pos).toFixed(2); x.d = +(pos - x.t).toFixed(2); S.stickers.push(y); stSel = S.stickers.length - 1; touched(); draw(); return say("Dibelah di garis hitam"); } }
   clearPick();
   const l = locate(pos); if (l.i < 0) return;
   const c = S.clips[l.i];

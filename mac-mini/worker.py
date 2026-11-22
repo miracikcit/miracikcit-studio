@@ -1027,11 +1027,51 @@ def run_ed_new(inp, sheet, cfg):
     vid = edpwa.vid_of(out)
     now = int(time.time() * 1000)
     sheet.call("dset", path="edpwa/" + vid, data={"title": title, "status": "proses", "src": "sendiri", "created": now, "updated": now, "files": {}})
-    threading.Thread(target=_ed_new_run, args=(sheet, folder, out, vid, title), daemon=True).start()
+    threading.Thread(target=_ed_new_run, args=(sheet, folder, out, vid, title, cfg), daemon=True).start()
     return {"vid": vid}
 
 
-def _ed_new_run(sheet, folder, out, vid, title):
+def _ed_words(folder, clips, handle, cfg):
+    """Caption untuk Edit sendiri: transkrip suara dalam bahagian klip yang masuk timeline (whisper local, percuma).
+    Pulang (words, offsets) ikut format talking-head make_page: masa = offsets[fail] + saat dalam fail."""
+    if backend(cfg) != "mlx":
+        return [], {}
+    import mlx_whisper
+    ffmpeg = find_tool("ffmpeg") or "ffmpeg"
+    words, offsets, cum = [], {}, 0.0
+    tmp = tempfile.mkdtemp(prefix="ednew-")
+    try:
+        for c in clips:
+            f = c["file"]
+            if f in offsets:
+                continue
+            offsets[f] = round(cum, 3)
+            cum += float(c.get("dur", c["out"])) + 1.0
+            span = min(float(c.get("dur", c["out"])), 45.0)   # dengar 45 s pertama setiap klip
+            wav = os.path.join(tmp, "a.wav")
+            r = subprocess.run([ffmpeg, "-v", "error", "-y", "-i", os.path.join(folder, f), "-t", f"{span:.2f}", "-vn", "-ac", "1", "-ar", "16000", wav],
+                               capture_output=True, timeout=300)
+            if r.returncode != 0 or not os.path.exists(wav):
+                continue
+            with TLOCK:
+                res = mlx_whisper.transcribe(wav, path_or_hf_repo=cfg["mlx_model"], language="ms", task="transcribe",
+                                             condition_on_previous_text=False, word_timestamps=True, verbose=None)
+            c["speech"] = False
+            for sg in res.get("segments", []):
+                if HALLU.match((sg.get("text") or "").strip()):
+                    continue
+                for x in sg.get("words", []) or []:
+                    tx = (x.get("word") or "").strip()
+                    if tx:
+                        c["speech"] = True
+                        words.append({"t": tx, "s": round(offsets[f] + x["start"], 3), "e": round(offsets[f] + x["end"], 3), "unsure": (x.get("probability") or 1) < 0.5})
+        gc.collect()
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    return words, offsets
+
+
+def _ed_new_run(sheet, folder, out, vid, title, cfg=None):
     def fail(msg):
         log.warning("Edit sendiri gagal (%s): %s", vid, msg)
         try:
@@ -1058,12 +1098,24 @@ def _ed_new_run(sheet, folder, out, vid, title):
             except ValueError:
                 continue
             if d >= 0.5:
-                clips.append({"file": f, "in": 0, "out": round(min(d, 6.0), 2)})
+                clips.append({"file": f, "in": 0, "out": round(min(d, 6.0), 2), "dur": round(d, 3)})
         if not clips:
             return fail("Video tak dapat dibaca")
         os.makedirs(out, exist_ok=True)
         pj = os.path.join(out, "project.json")
-        json.dump({"title": title, "src": "../..", "clips": clips, "handle": 6.0}, open(pj, "w"), ensure_ascii=False, indent=1)
+        proj = {"title": title, "src": "../..", "clips": [{k: c[k] for k in ("file", "in", "out")} for c in clips], "handle": 6.0}
+        try:   # caption: transkrip suara (kalau ada) supaya tab Caption terus boleh guna
+            words, offsets = _ed_words(folder, clips, 6.0, cfg or {})
+            talky = sum(1 for c in clips if c.get("speech")) >= max(1, round(len(clips) * 0.6))
+            # mod talking-head: editor potong sendiri ikut ayat (klip tanpa suara tak masuk), jadi hanya bila kebanyakan klip ada suara
+            if len(words) >= 3 and talky:
+                proj["clips"] = [{"file": c["file"], "in": 0, "out": round(min(c["dur"], 30.0), 2)} for c in clips]
+                proj["handle"] = 10.0
+                json.dump({"words": words}, open(os.path.join(out, "words.json"), "w"), ensure_ascii=False)
+                proj.update({"talk": True, "words": "words.json", "offsets": offsets})
+        except Exception as e:
+            log.warning("Caption Edit sendiri dilangkau: %s", e)
+        json.dump(proj, open(pj, "w"), ensure_ascii=False, indent=1)
         tpl = os.path.expanduser("~/.claude/assets/reel-page-template/make_page.py")
         env = dict(os.environ, EDPWA="0")
         r = subprocess.run([sys.executable, tpl, pj, out], capture_output=True, text=True, timeout=3600, env=env)

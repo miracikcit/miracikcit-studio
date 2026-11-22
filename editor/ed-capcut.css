@@ -77,7 +77,40 @@ html.pwa body { padding-block: 0 28px; }
   html.pwa.edsheet .controls { margin: 0 8px; padding: 10px; background: var(--panel2); border: 1px solid var(--line); border-top: 0; border-radius: 0 0 14px 14px; }
   /* helaian: timeline tab ni (trek berkaitan sahaja) kekal di atas panel */
   html.pwa.edsheet .lenbar { display: none !important; }
+  /* tab selain Cut: trek video disorok (kekal dalam layout supaya lebar timeline betul), scrub pada trek tab */
+  html.pwa.edsheet .ed { height: 0 !important; max-height: 0 !important; padding: 0 !important; margin: 0 !important; border: 0 !important; overflow: hidden !important; visibility: hidden; }
+  html.pwa .rbar { position: relative; }
+  html.pwa #rscroll { touch-action: pan-x; overscroll-behavior-x: contain; }
+  html.pwa:not(.edsheet) #edph2 { display: none; }
   html.pwa.edsheet .rbar { order: 3; } html.pwa.edsheet .ed { order: 4; } html.pwa.edsheet .edshd { order: 5; } html.pwa.edsheet .controls { order: 6; }
   html.pwa .edhide { display: none !important; }
   html.pwa.ednotl .rbar, html.pwa.ednotl .ed { display: none !important; }
+}
+
+/* Effects / Sticker / Title: kotak pilihan 3 lajur macam CapCut (2026-11-22) */
+@media (max-width: 680px) {
+  html.pwa.edtab-Effects #panel .grid, html.pwa.edtab-Sticker #panel .grid, html.pwa.edtab-Title #panel .grid,
+  html.pwa.edtab-StyleBoard #panel .grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 8px !important; }
+  html.pwa.edtab-Effects #panel .grid .opt, html.pwa.edtab-Sticker #panel .grid .opt, html.pwa.edtab-Title #panel .grid .opt,
+  html.pwa.edtab-StyleBoard #panel .grid .opt { min-width: 0; font-size: 11px; }
+  html.pwa.edtab-Effects #panel .grid .opt *, html.pwa.edtab-Sticker #panel .grid .opt * { overflow-wrap: anywhere; }
+}
+
+/* Caption gaya CapCut: pratonton kecil, senarai ayat */
+@media (max-width: 680px) {
+  html.pwa.edtab-Caption:not(.edbig) { --sh: 30vh !important; }
+  html.pwa.edtab-Caption #panel .words { max-height: none; }
+  html.pwa .words.edrows { display: block; padding: 4px 8px; }
+  html.pwa .edrow { display: flex; gap: 10px; align-items: flex-start; padding: 7px 4px; border-bottom: 1px solid var(--line); border-radius: 8px; }
+  html.pwa .edrow:last-child { border-bottom: 0; }
+  html.pwa .edrow:has(.w.now) { background: var(--brownsoft); }
+  html.pwa .edrow .edt { flex: 0 0 auto; min-width: 52px; border: 0; background: none; padding: 2px 0; font: 600 12px var(--mono); color: var(--muted); text-align: left; cursor: pointer; font-variant-numeric: tabular-nums; }
+  html.pwa .edrow:has(.w.now) .edt { color: var(--fg); }
+  html.pwa .edrow .edws { display: flex; flex-wrap: wrap; gap: 3px 2px; min-width: 0; }
+  html.pwa .edshd .cccap { display: inline-flex; gap: 6px; align-items: center; }
+  html.pwa .edshd .ccseg { display: inline-flex; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 2px; }
+  html.pwa .edshd .ccseg button { border: 0 !important; padding: 5px 10px !important; background: none !important; font-size: 12px !important; }
+  html.pwa .edshd .ccseg button[aria-pressed="true"] { background: var(--fg) !important; color: var(--bg) !important; border-radius: 999px; }
+  html.pwa .edshd #ccEmm { font-size: 12px !important; padding: 6px 10px !important; }
+  html.pwa .edshd #ccEmm:disabled { opacity: .5; }
 }

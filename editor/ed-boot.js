@@ -131,6 +131,7 @@
   function sync() {
     const t = curTab();
     H.classList.toggle('edsheet', !!t && t !== 'Potong');
+    [...H.classList].filter(c => c.startsWith('edtab-')).forEach(c => H.classList.remove(c)); if (t) H.classList.add('edtab-' + t.replace(/\s+/g, ''));
     rows();
     const l = $('ccTab'); if (l) l.textContent = (document.querySelector('#tabs [aria-selected="true"] .tl, #tabs [aria-selected="true"]') || {}).textContent || t;
   }
@@ -144,37 +145,47 @@
     Object.defineProperty(sc, 'scrollLeft', { configurable: true, get() { return SL.get.call(this); }, set(v) { if (own || Date.now() - touchAt < 900) SL.set.call(this, v); } });
   }
   function setSL(sc, x) { own = true; SL.set.call(sc, x); own = false; }
+  // tab Cut: timeline penuh (#tscroll). Tab lain: hanya trek tab tu di bawah pembaris (#rscroll), trek video disorok.
+  const scroller = () => (H.classList.contains('edsheet') ? $('rscroll') : $('tscroll'));
   function follow(t) {
-    const sc = $('tscroll'), pps = G('pps'), pos = G('pos'), playing = G('playing');
+    const pps = G('pps'), pos = G('pos'), playing = G('playing'), sc = scroller();
     const dt = lastT ? Math.min(0.1, (t - lastT) / 1000) : 0; lastT = t;
     if (sc && pps && pos != null) {
       if (playing) { disp += dt; if (Math.abs(disp - pos) > 0.15) disp = pos; } else disp = pos;
-      if (Date.now() - touchAt > 900) { const x = disp * pps; if (Math.abs(SL.get.call(sc) - x) > 0.5) setSL(sc, x); }
-      const ph = $('edph'); if (ph) ph.style.left = (sc.offsetLeft + sc.clientWidth / 2) + 'px';
+      if (Date.now() - touchAt > 900) {
+        const x = disp * pps;
+        [$('tscroll'), $('rscroll')].forEach(el => { if (el && Math.abs(SL.get.call(el) - x) > 0.5) setSL(el, x); });
+      }
+      [['edph', $('tscroll')], ['edph2', $('rscroll')]].forEach(([id, el]) => { const ph = $(id); if (ph && el) ph.style.left = (el.offsetLeft + el.clientWidth / 2) + 'px'; });
     }
     requestAnimationFrame(follow);
   }
   function timeline() {
-    const sc = $('tscroll'); if (!sc || sc.dataset.cc) return; sc.dataset.cc = '1';
-    lock(sc);
-    const ed = document.querySelector('.ed'); if (ed && !$('edph')) ed.insertAdjacentHTML('beforeend', '<div class="edph" id="edph" aria-hidden="true"></div>');
-    const mark = () => { touchAt = Date.now(); };
-    ['touchstart', 'touchmove', 'pointerdown', 'wheel'].forEach(ev => sc.addEventListener(ev, mark, { passive: true }));
-    sc.addEventListener('scroll', () => {
-      if (Date.now() - touchAt > 900) return;   // scroll oleh program, bukan jari
-      touchAt = Date.now();
-      if (G('playing')) { try { (0, eval)('stop()'); } catch (e) {} }
-      clearTimeout(seekT);
-      seekT = setTimeout(() => { const pps = G('pps'); if (!pps) return; try { window.__edSeek = sc.scrollLeft / pps; (0, eval)('seek(window.__edSeek); drawStickers && drawStickers();'); } catch (e) {} }, 140);   // seek bila jari berhenti
-    }, { passive: true });
-    sc.addEventListener('touchstart', e => { if (e.touches.length === 2) { const z = $('zoom'); pinch = { d: Math.abs(e.touches[0].clientX - e.touches[1].clientX) || 1, z: +(z && z.value) || 25 }; } }, { passive: true });
-    sc.addEventListener('touchmove', e => {
-      if (!pinch || e.touches.length !== 2) return;
-      const d = Math.abs(e.touches[0].clientX - e.touches[1].clientX) || 1, z = $('zoom'); if (!z) return;
-      const v = Math.max(+z.min || 0, Math.min(+z.max || 100, Math.round(pinch.z + (d / pinch.d - 1) * 60)));
-      if (+z.value !== v) { z.value = v; z.dispatchEvent(new Event('input', { bubbles: true })); }
-    }, { passive: true });
-    sc.addEventListener('touchend', e => { if (e.touches.length < 2) pinch = null; }, { passive: true });
+    const tsc = $('tscroll'), rsc = $('rscroll'); if (!tsc || !rsc || tsc.dataset.cc) return; tsc.dataset.cc = '1';
+    const ed = document.querySelector('.ed'), rb = document.querySelector('.rbar');
+    if (ed && !$('edph')) ed.insertAdjacentHTML('beforeend', '<div class="edph" id="edph" aria-hidden="true"></div>');
+    if (rb && !$('edph2')) rb.insertAdjacentHTML('beforeend', '<div class="edph" id="edph2" aria-hidden="true"></div>');
+    [tsc, rsc].forEach(sc => {
+      lock(sc);
+      const mark = () => { touchAt = Date.now(); };
+      ['touchstart', 'touchmove', 'pointerdown', 'wheel'].forEach(ev => sc.addEventListener(ev, mark, { passive: true }));
+      sc.addEventListener('scroll', () => {
+        if (Date.now() - touchAt > 900 || sc !== scroller()) return;   // scroll oleh program, bukan jari
+        touchAt = Date.now();
+        const other = sc === tsc ? rsc : tsc; setSL(other, SL.get.call(sc));
+        if (G('playing')) { try { (0, eval)('stop()'); } catch (e) {} }
+        clearTimeout(seekT);
+        seekT = setTimeout(() => { const pps = G('pps'); if (!pps) return; try { window.__edSeek = SL.get.call(sc) / pps; (0, eval)('seek(window.__edSeek); drawStickers && drawStickers();'); } catch (e) {} }, 140);   // seek bila jari berhenti
+      }, { passive: true });
+      sc.addEventListener('touchstart', e => { if (e.touches.length === 2) { const z = $('zoom'); pinch = { d: Math.abs(e.touches[0].clientX - e.touches[1].clientX) || 1, z: +(z && z.value) || 25 }; } }, { passive: true });
+      sc.addEventListener('touchmove', e => {
+        if (!pinch || e.touches.length !== 2) return;
+        const d = Math.abs(e.touches[0].clientX - e.touches[1].clientX) || 1, z = $('zoom'); if (!z) return;
+        const v = Math.max(+z.min || 0, Math.min(+z.max || 100, Math.round(pinch.z + (d / pinch.d - 1) * 60)));
+        if (+z.value !== v) { z.value = v; z.dispatchEvent(new Event('input', { bubbles: true })); }
+      }, { passive: true });
+      sc.addEventListener('touchend', e => { if (e.touches.length < 2) pinch = null; }, { passive: true });
+    });
     requestAnimationFrame(follow);
   }
   function build() {
@@ -195,11 +206,10 @@
       <span class="ccsep" aria-hidden="true"></span>`);
     tr.insertAdjacentHTML('beforeend', `<button type="button" class="chip cc cctool" data-p="resetAll" aria-label="Reset ke editing asal">${ic('i-reset')}</button>`);
     const st = $('stage'); if (st) st.insertAdjacentHTML('beforeend', `<button type="button" class="ccbig" id="ccBig" aria-label="Besarkan video" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg></button>`);
-    sc.insertAdjacentHTML('afterend', `<div class="edshd" id="edshd"><b id="ccTab"></b><span class="sp"></span><button type="button" id="ccOk" aria-label="Tutup panel, balik ke timeline">✓</button></div>`);
+    sc.insertAdjacentHTML('afterend', `<div class="edshd" id="edshd"><b id="ccTab"></b><span class="sp"></span></div>`);
     tr.addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if (b) { e.stopPropagation(); click(b.dataset.p); } }, true);
     $('ccBig').addEventListener('pointerdown', e => e.stopPropagation());
     $('ccBig').onclick = e => { e.stopPropagation(); e.preventDefault(); const on = H.classList.toggle('edbig'); $('ccBig').setAttribute('aria-pressed', on); window.dispatchEvent(new Event('resize')); };
-    $('ccOk').onclick = () => { goTab('Potong'); H.classList.remove('edtl'); };
     $('edSiap').onclick = () => { if (!goTab('Siap') && window.toast) toast('Butang render ada pada video terakhir projek ni'); };
     const tc = $('tc'), pi = $('playIc');
     const tcs = () => { $('ccTc').textContent = (tc.textContent || '').replace(/\s*·\s*f\d+/, ''); };
@@ -211,4 +221,78 @@
     return true;
   }
   let n = 0; const t = setInterval(() => { if (build() || ++n > 160) clearInterval(t); }, 250);
+})();
+
+/* ---- Caption gaya CapCut (2026-11-22): pratonton kecil, senarai Baris (▶ masa + ayat) atau Perenggan.
+   Cara edit kekal: perkataan menyala ikut video, tap untuk betulkan terus. + Buang emm sekali tekan. ---- */
+(function () {
+  const $ = id => document.getElementById(id), H = document.documentElement;
+  const G = n => { try { return (0, eval)(n); } catch (e) { return undefined; } };
+  let mode = 'baris'; try { mode = localStorage.getItem('edCapMode') || 'baris'; } catch (e) {}
+  const FILL = /^(e+m+|e+r+m+|a+h*|u+h+|u+m+|h+m+|e+h+)$/i;
+  const fmt = t => { t = Math.max(0, t || 0); return Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0'); };
+  function head() {
+    const hd = $('edshd'); if (!hd) return;
+    let box = $('ccCap');
+    if (!H.classList.contains('edtab-Caption')) { if (box) box.hidden = true; return; }
+    if (!box) {
+      hd.insertAdjacentHTML('beforeend', `<span class="cccap" id="ccCap"><span class="ccseg" role="group" aria-label="Paparan caption"><button type="button" data-cm="baris">Baris</button><button type="button" data-cm="para">Perenggan</button></span><button type="button" id="ccEmm">✂ Buang emm</button></span>`);
+      box = $('ccCap');
+      box.addEventListener('click', e => {
+        const b = e.target.closest('button'); if (!b) return;
+        if (b.dataset.cm) { mode = b.dataset.cm; try { localStorage.setItem('edCapMode', mode); } catch (x) {} const w = $('words'); if (w) delete w.dataset.cc; apply(); }
+        if (b.id === 'ccEmm') emm();
+      });
+    }
+    box.hidden = false;
+    box.querySelectorAll('[data-cm]').forEach(b => b.setAttribute('aria-pressed', b.dataset.cm === mode));
+    const S = G('S'), n = S && S.words ? S.words.filter(w => !w.cut && FILL.test(String(w.t || '').replace(/[^\p{L}]/gu, ''))).length : 0;
+    $('ccEmm').textContent = n ? `✂ Buang emm (${n})` : '✂ Tiada emm';
+    $('ccEmm').disabled = !n;
+  }
+  function emm() {
+    try {
+      const S = G('S'); let n = 0;
+      try { (0, eval)('snapshot()'); } catch (e) {}
+      S.words.forEach(w => { if (!w.cut && FILL.test(String(w.t || '').replace(/[^\p{L}]/gu, ''))) { w.cut = true; n++; } });
+      (0, eval)('touched(); refreshGroups(); draw();');
+      if (window.toast) toast(n + ' emm dibuang. Undo kalau silap');
+    } catch (e) { if (window.toast) toast('Tak dapat buang emm'); }
+  }
+  function apply() {
+    head();
+    const box = $('words'); if (!box || !H.classList.contains('edtab-Caption')) return;
+    const want = mode === 'baris' ? 'baris' : 'para';
+    if (box.dataset.cc === want) return;
+    const spans = [...box.querySelectorAll('.w')];
+    if (want === 'para') { box.classList.remove('edrows'); spans.forEach(s => box.appendChild(s)); box.querySelectorAll('.edrow').forEach(r => r.remove()); box.dataset.cc = 'para'; return; }
+    let WT = null; try { WT = (0, eval)('WT || (WT = wordTimes())'); } catch (e) {}
+    const tOf = {}; (WT || []).forEach(x => { if (x) tOf[x.i] = x.es; });
+    const frag = document.createDocumentFragment(); let row = null, n = 0, last = -9;
+    spans.forEach(s => {
+      const i = +s.dataset.w, t = tOf[i], txt = s.textContent || '';
+      const brk = !row || n >= 8 || (t != null && last > -9 && t - last > 0.7) || /[.?!]$/.test(row.lastTxt || '');
+      if (brk) {
+        row = document.createElement('div'); row.className = 'edrow';
+        row.innerHTML = `<button type="button" class="edt" data-t="${t != null ? t : ''}" aria-label="Main dari sini">▶ ${t != null ? fmt(t) : '–'}</button><span class="edws"></span>`;
+        frag.appendChild(row); n = 0;
+      }
+      row.querySelector('.edws').appendChild(s); row.lastTxt = txt; n++;
+      if (t != null) { const b = row.querySelector('.edt'); if (b.dataset.t === '') { b.dataset.t = t; b.textContent = '▶ ' + fmt(t); } }
+      if (t != null) last = t;
+    });
+    box.innerHTML = ''; box.appendChild(frag); box.classList.add('edrows'); box.dataset.cc = 'baris';
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('.edrow .edt'); if (!b || b.dataset.t === '') return;
+    e.stopPropagation();
+    window.__edSeek = +b.dataset.t;
+    try { (0, eval)('if (playing) stop(); seek(window.__edSeek);'); const p = document.querySelector('[data-p="play"]'); if (p) p.click(); } catch (x) {}
+  }, true);
+  let t = setInterval(() => {
+    const p = $('panel'); if (!p) return; clearInterval(t);
+    new MutationObserver(() => apply()).observe(p, { childList: true, subtree: true });
+    new MutationObserver(() => { apply(); }).observe(H, { attributes: true, attributeFilter: ['class'] });
+    apply();
+  }, 300);
 })();
