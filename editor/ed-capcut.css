@@ -10,7 +10,11 @@ html.pwa body { padding-block: 0 28px; }
 .top .edx:focus-visible, .top .edsiap:focus-visible, .edshd button:focus-visible { outline: 2px solid var(--brown); outline-offset: 2px; }
 .transport .cctc { flex: 0 0 auto; min-width: 40px; font: 600 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .transport .ccplay { background: var(--fg) !important; color: var(--bg); border-radius: 50% !important; }
-.transport #ccBig[aria-pressed="true"] { background: var(--brownsoft) !important; }
+.stage .ccbig { position: absolute; right: 8px; bottom: 8px; left: auto; top: auto; z-index: 6; display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 8px; background: rgba(0,0,0,.42); color: #fff; cursor: pointer; }
+.stage .ccbig svg { width: 16px; height: 16px; }
+.stage .ccbig[aria-pressed="true"] { background: rgba(0,0,0,.7); }
+.edph { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--fg); z-index: 6; pointer-events: none; }
+.edph::before { content: ""; position: absolute; top: 0; left: -5px; width: 12px; height: 12px; background: var(--fg); border-radius: 2px 2px 7px 7px; }
 .transport .ccsep { flex: 0 0 1px; align-self: stretch; margin: 4px 2px; background: var(--line); }
 .edshd { display: none; }
 
@@ -24,6 +28,17 @@ html.pwa body { padding-block: 0 28px; }
   html.pwa .ed { order: 5; }
   html.pwa .controls { order: 6; padding: 12px 10px 0; }
 
+  /* skrin tetap macam CapCut: video, butang dan timeline sentiasa nampak; hanya panel bawah yang scroll */
+  html.pwa, html.pwa body { height: 100%; overflow: hidden; }
+  html.pwa body { padding-bottom: 0; }
+  html.pwa .app { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+  html.pwa #main:not([hidden]) { flex: 1 1 auto; min-height: 0; }
+  html.pwa .stagecol, html.pwa .transport, html.pwa .lenbar, html.pwa .rbar, html.pwa .ed, html.pwa .edshd { flex: none; }
+  html.pwa .stagecol { position: relative !important; top: auto !important; }
+  html.pwa .ed { max-height: 30vh; overflow-y: auto; overscroll-behavior: contain; }
+  html.pwa .controls { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding-bottom: 24px; }
+  html.pwa { --sh: 44vh; }
+
   /* video sentiasa di tengah skrin; rel tab terapung di kiri, kecil */
   html.pwa .stagecol { display: flex; justify-content: center; padding: 6px 0 12px; }
   html.pwa .stagecol .stage { margin: 0 auto; max-width: calc(100vw - 16px); }
@@ -33,13 +48,17 @@ html.pwa body { padding-block: 0 28px; }
   html.pwa.edbig .stagecol .tabs { display: none; }   /* video besar: rel tab disorok supaya video di tengah dan tak terkeluar */
   html.pwa .stagecol::after { content: none; }
 
-  /* SATU baris butang (boleh tolak ke tepi), tanpa baris kedua */
-  html.pwa .sidectl, html.pwa .tbar2, html.pwa .transport #undo, html.pwa .transport #rowsBtn, html.pwa .transport #resetAll:not(.cc) { display: none !important; }
+  /* SATU baris butang: masa, frame, main, undo, BELAH, BUANG sentiasa nampak; alat lain tolak ke tepi */
+  html.pwa .sidectl, html.pwa .tbar2, html.pwa .transport #undo, html.pwa .transport #rowsBtn, html.pwa .transport #resetAll:not(.cc),
+  html.pwa .transport #split, html.pwa .transport #del { display: none !important; }
+  html.pwa .transport #addFoot .tl { display: inline !important; }
+  html.pwa #ph, html.pwa #rph { visibility: hidden; }   /* playhead tetap .edph di tengah */
   html.pwa .transport { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; gap: 4px; padding: 6px 8px; }
   html.pwa .transport::-webkit-scrollbar { display: none; }
-  html.pwa .transport .chip { flex: 0 0 auto; width: 38px; height: 38px; padding: 0; justify-content: center; }
+  html.pwa .transport .chip { flex: 0 0 auto; width: 36px; height: 36px; padding: 0; justify-content: center; }
+  html.pwa .transport .cctc { min-width: 34px; font-size: 11px; }
   html.pwa .transport #addFoot { width: auto; padding: 0 10px; }
-  html.pwa .transport .ccplay { width: 44px; height: 44px; }
+  html.pwa .transport .ccplay { width: 42px; height: 42px; }
 
   /* timeline: playhead tetap di tengah (ed-boot.js scroll ikut masa) */
   html.pwa #inner, html.pwa #rinner { margin-left: 50%; margin-right: 50%; }
@@ -47,7 +66,7 @@ html.pwa body { padding-block: 0 28px; }
   html.pwa .ed { position: relative; }
 
   /* tab selain Cut: panel jadi helaian bawah; baris butang tinggal main/undo sahaja; timeline disorok (butang Timeline untuk tunjuk) */
-  html.pwa.edsheet .transport .chip:not(.cc), html.pwa.edsheet .transport .cctool, html.pwa.edsheet .transport .ccsep { display: none !important; }
+  html.pwa.edsheet .transport .chip:not(.cc), html.pwa.edsheet .transport .cctool, html.pwa.edsheet .transport .ccsep { display: none !important; }   /* belah + buang kekal */
   html.pwa.edsheet .transport { justify-content: center; }
   html.pwa.edsheet .edshd { display: flex; order: 3; align-items: center; gap: 8px; margin: 4px 8px 0; padding: 8px 10px; border-radius: 14px 14px 0 0; background: var(--panel2); border: 1px solid var(--line); border-bottom: 0; }
   html.pwa.edsheet .edshd b { font: 400 22px/1 var(--head); }

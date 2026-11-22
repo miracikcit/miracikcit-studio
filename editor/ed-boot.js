@@ -117,15 +117,30 @@
     H.classList.toggle('edsheet', !!t && t !== 'Potong');
     const l = $('ccTab'); if (l) l.textContent = (document.querySelector('#tabs [aria-selected="true"] .tl, #tabs [aria-selected="true"]') || {}).textContent || t;
   }
-  /* playhead tetap di tengah: #inner dan #rinner ada margin 50% (CSS), jadi scrollLeft = masa × pps */
-  let touchAt = 0, seekT = 0, pinch = null;
-  function follow() {
-    const sc = $('tscroll'), pps = G('pps'), pos = G('pos');
-    if (sc && pps && pos != null && Date.now() - touchAt > 900) { const x = Math.round(pos * pps); if (Math.abs(sc.scrollLeft - x) > 1) sc.scrollLeft = x; }
+  /* playhead tetap di tengah: #inner dan #rinner ada margin 50% (CSS), jadi scrollLeft = masa × pps.
+     Enjin juga cuba scroll timeline semasa main (drawHead) — tulisan tu diabaikan supaya tak bergegar; hanya ed-boot yang scroll.
+     Semasa main, kedudukan dilicinkan setiap frame (pos enjin bergerak berperingkat). */
+  let touchAt = 0, seekT = 0, pinch = null, own = false, disp = 0, lastT = 0;
+  const SL = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollLeft');
+  function lock(sc) {
+    if (sc.dataset.lk) return; sc.dataset.lk = '1';
+    Object.defineProperty(sc, 'scrollLeft', { configurable: true, get() { return SL.get.call(this); }, set(v) { if (own || Date.now() - touchAt < 900) SL.set.call(this, v); } });
+  }
+  function setSL(sc, x) { own = true; SL.set.call(sc, x); own = false; }
+  function follow(t) {
+    const sc = $('tscroll'), pps = G('pps'), pos = G('pos'), playing = G('playing');
+    const dt = lastT ? Math.min(0.1, (t - lastT) / 1000) : 0; lastT = t;
+    if (sc && pps && pos != null) {
+      if (playing) { disp += dt; if (Math.abs(disp - pos) > 0.15) disp = pos; } else disp = pos;
+      if (Date.now() - touchAt > 900) { const x = disp * pps; if (Math.abs(SL.get.call(sc) - x) > 0.5) setSL(sc, x); }
+      const ph = $('edph'); if (ph) ph.style.left = (sc.offsetLeft + sc.clientWidth / 2) + 'px';
+    }
     requestAnimationFrame(follow);
   }
   function timeline() {
     const sc = $('tscroll'); if (!sc || sc.dataset.cc) return; sc.dataset.cc = '1';
+    lock(sc);
+    const ed = document.querySelector('.ed'); if (ed && !$('edph')) ed.insertAdjacentHTML('beforeend', '<div class="edph" id="edph" aria-hidden="true"></div>');
     const mark = () => { touchAt = Date.now(); };
     ['touchstart', 'touchmove', 'pointerdown', 'wheel'].forEach(ev => sc.addEventListener(ev, mark, { passive: true }));
     sc.addEventListener('scroll', () => {
@@ -158,12 +173,15 @@
       <button type="button" class="chip cc ccplay" data-p="play" aria-label="Main / henti"><svg class="ic"><use id="ccPlayIc" href="#i-play"/></svg></button>
       <button type="button" class="chip cc" data-p="fFwd" aria-label="Maju 1 frame">${ic('i-ffwd')}</button>
       <button type="button" class="chip cc" data-p="undo" aria-label="Undo">${ic('i-undo')}</button>
-      <button type="button" class="chip cc" id="ccBig" aria-label="Besarkan video" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+      <button type="button" class="chip cc cckey" data-p="split" aria-label="Belah klip">${ic('i-split')}</button>
+      <button type="button" class="chip cc cckey" data-p="del" aria-label="Buang">${ic('i-del')}</button>
       <span class="ccsep" aria-hidden="true"></span>`);
     tr.insertAdjacentHTML('beforeend', `<button type="button" class="chip cc cctool" data-p="resetAll" aria-label="Reset ke editing asal">${ic('i-reset')}</button>`);
+    const st = $('stage'); if (st) st.insertAdjacentHTML('beforeend', `<button type="button" class="ccbig" id="ccBig" aria-label="Besarkan video" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg></button>`);
     sc.insertAdjacentHTML('afterend', `<div class="edshd" id="edshd"><b id="ccTab"></b><span class="sp"></span><button type="button" id="ccTl" aria-pressed="false">Timeline</button><button type="button" id="ccOk" aria-label="Tutup panel, balik ke timeline">✓</button></div>`);
     tr.addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if (b) { e.stopPropagation(); click(b.dataset.p); } }, true);
-    $('ccBig').onclick = e => { e.stopPropagation(); const on = H.classList.toggle('edbig'); $('ccBig').setAttribute('aria-pressed', on); window.dispatchEvent(new Event('resize')); };
+    $('ccBig').addEventListener('pointerdown', e => e.stopPropagation());
+    $('ccBig').onclick = e => { e.stopPropagation(); e.preventDefault(); const on = H.classList.toggle('edbig'); $('ccBig').setAttribute('aria-pressed', on); window.dispatchEvent(new Event('resize')); };
     $('ccTl').onclick = () => { const on = H.classList.toggle('edtl'); $('ccTl').setAttribute('aria-pressed', on); };
     $('ccOk').onclick = () => { goTab('Potong'); H.classList.remove('edtl'); };
     $('edSiap').onclick = () => { if (!goTab('Siap') && window.toast) toast('Butang render ada pada video terakhir projek ni'); };
