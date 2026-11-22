@@ -1011,6 +1011,72 @@ def run_ed_send(inp, sheet, cfg):
     return {"opened": True, "folder": os.path.basename(main)}
 
 
+def run_ed_new(inp, sheet, cfg):
+    """Kad Home 'Edit sendiri': sediakan Editor PWA dari folder footage TANPA Claude (0 token).
+    Semua klip video dalam folder jadi klip timeline (6 s pertama, boleh panjangkan hingga 12 s), make_page.py buat proxy,
+    edpwa.py muat naik ke Drive. Jalan dalam thread; status dalam doc edpwa/<id> (proses -> sedia / error)."""
+    root = os.path.expanduser("~/Desktop/WORK 2026/CLAUDE EDITS")
+    stage, item = _safe_name(inp.get("stage")), _safe_name(inp.get("item"))
+    folder = os.path.join(root, stage, item)
+    if not stage or not item or not os.path.isdir(folder):
+        raise RuntimeError("Folder tak dijumpai: %s/%s" % (stage, item))
+    title = str(inp.get("name") or item)[:60]
+    out = os.path.join(folder, "editor", "sendiri")
+    sys.path.insert(0, HOME)
+    import edpwa
+    vid = edpwa.vid_of(out)
+    now = int(time.time() * 1000)
+    sheet.call("dset", path="edpwa/" + vid, data={"title": title, "status": "proses", "src": "sendiri", "created": now, "updated": now, "files": {}})
+    threading.Thread(target=_ed_new_run, args=(sheet, folder, out, vid, title), daemon=True).start()
+    return {"vid": vid}
+
+
+def _ed_new_run(sheet, folder, out, vid, title):
+    def fail(msg):
+        log.warning("Edit sendiri gagal (%s): %s", vid, msg)
+        try:
+            cur = sheet.call("dget", path="edpwa/" + vid).get("doc") or {}
+            cur.update({"status": "error", "msg": str(msg)[:300], "updated": int(time.time() * 1000)})
+            sheet.call("dset", path="edpwa/" + vid, data=cur)
+        except Exception:
+            pass
+    try:
+        ext = (".mp4", ".mov", ".m4v")
+        files = sorted(f for f in os.listdir(folder) if f.lower().endswith(ext) and not f.startswith("."))
+        if not files:   # footage dalam subfolder satu tingkat
+            files = sorted(os.path.join(d, f) for d in os.listdir(folder) if os.path.isdir(os.path.join(folder, d)) and d not in ("editor", "page", "draft", "render", "VO")
+                           for f in os.listdir(os.path.join(folder, d)) if f.lower().endswith(ext) and not f.startswith("."))
+        if not files:
+            return fail("Tiada video dalam folder ni")
+        ffprobe = find_tool("ffprobe") or "ffprobe"
+        clips = []
+        for f in files[:30]:
+            r = subprocess.run([ffprobe, "-v", "error", "-show_entries", "format=duration", "-of", "default=nw=1:nk=1", os.path.join(folder, f)],
+                               capture_output=True, text=True, timeout=60)
+            try:
+                d = float(r.stdout.strip())
+            except ValueError:
+                continue
+            if d >= 0.5:
+                clips.append({"file": f, "in": 0, "out": round(min(d, 6.0), 2)})
+        if not clips:
+            return fail("Video tak dapat dibaca")
+        os.makedirs(out, exist_ok=True)
+        pj = os.path.join(out, "project.json")
+        json.dump({"title": title, "src": "../..", "clips": clips, "handle": 6.0}, open(pj, "w"), ensure_ascii=False, indent=1)
+        tpl = os.path.expanduser("~/.claude/assets/reel-page-template/make_page.py")
+        env = dict(os.environ, EDPWA="0")
+        r = subprocess.run([sys.executable, tpl, pj, out], capture_output=True, text=True, timeout=3600, env=env)
+        if r.returncode != 0:
+            return fail("make_page: " + (r.stderr or r.stdout)[-250:])
+        r = subprocess.run([sys.executable, os.path.join(HOME, "edpwa.py"), out, "--title", title], capture_output=True, text=True, timeout=3600)
+        if r.returncode != 0:
+            return fail("edpwa: " + (r.stderr or r.stdout)[-250:])
+        log.info("Edit sendiri sedia: %s (%d klip)", vid, len(clips))
+    except Exception as e:
+        fail(e)
+
+
 _ANSI = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(\x07|\x1b\\)|\x1b[()][A-Z0-9]|[\x00-\x08\x0b-\x1f]")
 
 
@@ -1149,6 +1215,8 @@ def studio_jobs(sheet, cfg):
             elif j["type"] in ("vo_take", "vo_save"):
                 import vo
                 outp = getattr(vo, "job_" + j["type"])(inp, sheet, cfg, sys.modules[__name__])
+            elif j["type"] == "ed_new":
+                outp = run_ed_new(inp, sheet, cfg)
             elif j["type"] == "ed_send":
                 outp = run_ed_send(inp, sheet, cfg)
             elif j["type"] == "edit_now":

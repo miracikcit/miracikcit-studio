@@ -100,45 +100,80 @@
   };
 })();
 
-/* ---- Layout gaya CapCut (2026-11-22): ✕ + Siap di atas, rel tab kiri video, controller bawah video, panel tab jadi helaian bawah ---- */
+/* ---- Layout gaya CapCut (2026-11-22 v2): ✕ + Siap di atas, rel tab kiri, video sentiasa di tengah, SATU baris butang,
+   timeline semua trek dengan playhead tetap di tengah (seret timeline = seek bila jari berhenti, cubit = zoom),
+   tab selain Cut jadi helaian bawah. Butang lama dipanggil terus (click proxy), enjin tak diubah. ---- */
 (function () {
   const $ = id => document.getElementById(id);
-  document.documentElement.classList.add('pwa');
+  const H = document.documentElement;
+  H.classList.add('pwa');
+  try { if (localStorage.getItem('reelRows') === null) localStorage.setItem('reelRows', '1'); } catch (e) {}   // semua trek (VO, effect, bunyi...) dalam Cut
   const click = id => { const b = $(id); if (b) b.click(); };
   const curTab = () => { const t = document.querySelector('#tabs [aria-selected="true"]'); return t ? t.dataset.tab : ''; };
   const goTab = n => { const t = document.querySelector(`#tabs [data-tab="${n}"]`); if (t) { t.click(); return true; } return false; };
+  const G = n => { try { return (0, eval)(n); } catch (e) { return undefined; } };   // pembolehubah enjin (let di skrip editor)
   function sync() {
-    const t = curTab(), sheet = !!t && t !== 'Potong';
-    document.documentElement.classList.toggle('edsheet', sheet);
-    const l = $('ccTab'); if (l) l.textContent = t;
+    const t = curTab();
+    H.classList.toggle('edsheet', !!t && t !== 'Potong');
+    const l = $('ccTab'); if (l) l.textContent = (document.querySelector('#tabs [aria-selected="true"] .tl, #tabs [aria-selected="true"]') || {}).textContent || t;
+  }
+  /* playhead tetap di tengah: #inner dan #rinner ada margin 50% (CSS), jadi scrollLeft = masa × pps */
+  let touchAt = 0, seekT = 0, pinch = null;
+  function follow() {
+    const sc = $('tscroll'), pps = G('pps'), pos = G('pos');
+    if (sc && pps && pos != null && Date.now() - touchAt > 900) { const x = Math.round(pos * pps); if (Math.abs(sc.scrollLeft - x) > 1) sc.scrollLeft = x; }
+    requestAnimationFrame(follow);
+  }
+  function timeline() {
+    const sc = $('tscroll'); if (!sc || sc.dataset.cc) return; sc.dataset.cc = '1';
+    const mark = () => { touchAt = Date.now(); };
+    ['touchstart', 'touchmove', 'pointerdown', 'wheel'].forEach(ev => sc.addEventListener(ev, mark, { passive: true }));
+    sc.addEventListener('scroll', () => {
+      if (Date.now() - touchAt > 900) return;   // scroll oleh program, bukan jari
+      touchAt = Date.now();
+      if (G('playing')) { try { (0, eval)('stop()'); } catch (e) {} }
+      clearTimeout(seekT);
+      seekT = setTimeout(() => { const pps = G('pps'); if (!pps) return; try { window.__edSeek = sc.scrollLeft / pps; (0, eval)('seek(window.__edSeek); drawStickers && drawStickers();'); } catch (e) {} }, 140);   // seek bila jari berhenti
+    }, { passive: true });
+    sc.addEventListener('touchstart', e => { if (e.touches.length === 2) { const z = $('zoom'); pinch = { d: Math.abs(e.touches[0].clientX - e.touches[1].clientX) || 1, z: +(z && z.value) || 25 }; } }, { passive: true });
+    sc.addEventListener('touchmove', e => {
+      if (!pinch || e.touches.length !== 2) return;
+      const d = Math.abs(e.touches[0].clientX - e.touches[1].clientX) || 1, z = $('zoom'); if (!z) return;
+      const v = Math.max(+z.min || 0, Math.min(+z.max || 100, Math.round(pinch.z + (d / pinch.d - 1) * 60)));
+      if (+z.value !== v) { z.value = v; z.dispatchEvent(new Event('input', { bubbles: true })); }
+    }, { passive: true });
+    sc.addEventListener('touchend', e => { if (e.touches.length < 2) pinch = null; }, { passive: true });
+    requestAnimationFrame(follow);
   }
   function build() {
-    const top = $('top'), sc = document.querySelector('.stagecol');
-    if (!top || !sc || top.dataset.cc) return !!(top && top.dataset.cc);
+    const top = $('top'), sc = document.querySelector('.stagecol'), tr = document.querySelector('.transport');
+    if (!top || !sc || !tr || !$('tscroll')) return false;
+    if (top.dataset.cc) return true;
     top.dataset.cc = '1';
     top.insertAdjacentHTML('afterbegin', '<a class="edx" href="../../../#editor" aria-label="Balik ke Studio">✕</a>');
     top.insertAdjacentHTML('beforeend', '<button class="edsiap" id="edSiap" type="button">Siap</button>');
     const ic = n => `<svg class="ic"><use href="#${n}"/></svg>`;
-    sc.insertAdjacentHTML('afterend', `<div class="edctl" id="edctl">
-      <button type="button" id="ccBig" aria-label="Besarkan video" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
-      <span class="cctc" id="ccTc">0:00 / 0:00</span>
-      <button type="button" data-p="fBack" aria-label="Undur 1 frame">${ic('i-fback')}</button>
-      <button type="button" data-p="play" class="ccplay" aria-label="Main / henti"><svg class="ic"><use id="ccPlayIc" href="#i-play"/></svg></button>
-      <button type="button" data-p="fFwd" aria-label="Maju 1 frame">${ic('i-ffwd')}</button>
-      <button type="button" data-p="undo" aria-label="Undo">${ic('i-undo')}</button>
-    </div>
-    <div class="edshd" id="edshd"><b id="ccTab"></b><span class="sp"></span><button type="button" id="ccTl" aria-pressed="false">Timeline</button><button type="button" id="ccOk" aria-label="Tutup panel, balik ke timeline">✓</button></div>`);
-    $('edctl').addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if (b) click(b.dataset.p); });
-    $('ccBig').onclick = () => { const on = document.documentElement.classList.toggle('edbig'); $('ccBig').setAttribute('aria-pressed', on); window.dispatchEvent(new Event('resize')); };
-    $('ccTl').onclick = () => { const on = document.documentElement.classList.toggle('edtl'); $('ccTl').setAttribute('aria-pressed', on); };
-    $('ccOk').onclick = () => { goTab('Potong'); document.documentElement.classList.remove('edtl'); };
+    tr.insertAdjacentHTML('afterbegin', `<span class="cctc" id="ccTc">0:00</span>
+      <button type="button" class="chip cc" data-p="fBack" aria-label="Undur 1 frame">${ic('i-fback')}</button>
+      <button type="button" class="chip cc ccplay" data-p="play" aria-label="Main / henti"><svg class="ic"><use id="ccPlayIc" href="#i-play"/></svg></button>
+      <button type="button" class="chip cc" data-p="fFwd" aria-label="Maju 1 frame">${ic('i-ffwd')}</button>
+      <button type="button" class="chip cc" data-p="undo" aria-label="Undo">${ic('i-undo')}</button>
+      <button type="button" class="chip cc" id="ccBig" aria-label="Besarkan video" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+      <span class="ccsep" aria-hidden="true"></span>`);
+    tr.insertAdjacentHTML('beforeend', `<button type="button" class="chip cc cctool" data-p="resetAll" aria-label="Reset ke editing asal">${ic('i-reset')}</button>`);
+    sc.insertAdjacentHTML('afterend', `<div class="edshd" id="edshd"><b id="ccTab"></b><span class="sp"></span><button type="button" id="ccTl" aria-pressed="false">Timeline</button><button type="button" id="ccOk" aria-label="Tutup panel, balik ke timeline">✓</button></div>`);
+    tr.addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if (b) { e.stopPropagation(); click(b.dataset.p); } }, true);
+    $('ccBig').onclick = e => { e.stopPropagation(); const on = H.classList.toggle('edbig'); $('ccBig').setAttribute('aria-pressed', on); window.dispatchEvent(new Event('resize')); };
+    $('ccTl').onclick = () => { const on = H.classList.toggle('edtl'); $('ccTl').setAttribute('aria-pressed', on); };
+    $('ccOk').onclick = () => { goTab('Potong'); H.classList.remove('edtl'); };
     $('edSiap').onclick = () => { if (!goTab('Siap') && window.toast) toast('Butang render ada pada video terakhir projek ni'); };
     const tc = $('tc'), pi = $('playIc');
-    if (tc) new MutationObserver(() => { $('ccTc').textContent = tc.textContent; }).observe(tc, { childList: true, characterData: true, subtree: true });
+    const tcs = () => { $('ccTc').textContent = (tc.textContent || '').replace(/\s*·\s*f\d+/, ''); };
+    if (tc) { new MutationObserver(tcs).observe(tc, { childList: true, characterData: true, subtree: true }); tcs(); }
     if (pi) new MutationObserver(() => { $('ccPlayIc').setAttribute('href', pi.getAttribute('href')); }).observe(pi, { attributes: true });
     new MutationObserver(sync).observe($('tabs'), { attributes: true, childList: true, subtree: true, attributeFilter: ['aria-selected'] });
-    sync();
+    sync(); timeline();
     return true;
   }
-  let n = 0; const t = setInterval(() => { if (build() || ++n > 120) clearInterval(t); }, 250);
+  let n = 0; const t = setInterval(() => { if (build() || ++n > 160) clearInterval(t); }, 250);
 })();

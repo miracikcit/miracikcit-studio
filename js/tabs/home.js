@@ -100,6 +100,7 @@ V.home=()=>{
   ${voAlert()}
   ${footageAlert()}
   ${brHome()}
+  ${edSelfHome()}
   ${calHTML()}`};
 /* Kad B-roll (bawah Footage perlu semak), design sama macam kad Home lain: swipe terus dari sini. */
 function brHome(){

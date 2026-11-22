@@ -113,7 +113,8 @@ def main():
         json.dump(st, open(STATE, "w"), indent=1)
     now = int(time.time() * 1000)
     cur = call("dget", path="edpwa/" + vid).get("doc") or {"created": now}
-    cur.update({"title": title, "dir": d, "files": files, "updated": now, "n": len(files)})
+    cur.update({"title": title, "dir": d, "files": files, "updated": now, "n": len(files), "status": "sedia"})
+    cur.pop("msg", None)
     s = json.dumps(cur)
     if len(s) > 48000:
         sys.exit("Senarai fail terlalu panjang untuk satu doc (%d aksara)" % len(s))

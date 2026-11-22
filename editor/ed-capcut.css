@@ -1,38 +1,54 @@
-/* Editor reel dalam Studio PWA: layout gaya CapCut (2026-11-22).
+/* Editor reel dalam Studio PWA: layout gaya CapCut (2026-11-22 v2).
    Warna kekal tema editor (warm light, pilihan Mira). Hanya susun atur berubah; enjin dan semua butang lama kekal.
-   Phone: [✕ tajuk simpan Siap] / [rel tab | video] / [⤢ masa ◀▮ ▶ ▮▶ ↶] / timeline (tab Potong) atau panel tab (helaian bawah). */
+   Phone: [✕ tajuk simpan Siap] / video di tengah (rel tab kecil di kiri) / SATU baris butang / timeline semua trek, playhead di tengah
+   / panel tab (Cut: butiran klip; tab lain: helaian bawah). */
 html.pwa { --sh: 50vh; }
-html.pwa.edbig { --sh: 72vh !important; }
+html.pwa.edbig { --sh: 68vh !important; }
 html.pwa body { padding-block: 0 28px; }
 .top .edx { flex: 0 0 auto; display: grid; place-items: center; width: 34px; height: 34px; margin-right: 2px; border-radius: 50%; color: var(--fg); text-decoration: none; font-size: 20px; line-height: 1; }
 .top .edsiap { flex: 0 0 auto; border: 0; border-radius: 10px; padding: 8px 14px; background: var(--fg); color: var(--bg); font: 700 14px var(--display); cursor: pointer; }
-.top .edx:focus-visible, .top .edsiap:focus-visible, .edctl button:focus-visible, .edshd button:focus-visible { outline: 2px solid var(--brown); outline-offset: 2px; }
-.edctl { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 4px 8px 6px; }
-.edctl button { display: grid; place-items: center; width: 42px; height: 42px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--fg); cursor: pointer; }
-.edctl button .ic { width: 22px; height: 22px; }
-.edctl .ccplay { width: 50px; height: 50px; background: var(--fg); color: var(--bg); }
-.edctl .ccplay .ic { width: 24px; height: 24px; }
-.edctl #ccBig[aria-pressed="true"] { background: var(--brownsoft); }
-.edctl .cctc { order: -1; margin-right: auto; font: 600 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.edctl #ccBig { order: 9; margin-left: auto; }
+.top .edx:focus-visible, .top .edsiap:focus-visible, .edshd button:focus-visible { outline: 2px solid var(--brown); outline-offset: 2px; }
+.transport .cctc { flex: 0 0 auto; min-width: 40px; font: 600 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.transport .ccplay { background: var(--fg) !important; color: var(--bg); border-radius: 50% !important; }
+.transport #ccBig[aria-pressed="true"] { background: var(--brownsoft) !important; }
+.transport .ccsep { flex: 0 0 1px; align-self: stretch; margin: 4px 2px; background: var(--line); }
 .edshd { display: none; }
 
 @media (max-width: 680px) {
   html.pwa #main:not([hidden]) { display: flex; flex-direction: column; }
   html.pwa .body { display: contents; }
   html.pwa .stagecol { order: 1; }
-  html.pwa .edctl { order: 2; }
-  html.pwa .transport { order: 3; }
-  html.pwa .tbar2 { order: 4; }
-  html.pwa .lenbar { order: 5; }
-  html.pwa .rbar { order: 6; }
-  html.pwa .ed { order: 7; }
-  html.pwa .controls { order: 8; padding: 12px 10px 0; }
-  /* controller CapCut ganti butang tepi video; −1/+1 frame di bar bawah tak perlu lagi */
-  html.pwa .sidectl, html.pwa .tbar2 #fBack, html.pwa .tbar2 #fFwd, html.pwa .tbar2 .tc, html.pwa .transport #undo { display: none !important; }
-  html.pwa .stagecol .stage { margin-left: auto; margin-right: auto; }
-  html.pwa .stagecol::after { content: ""; flex: 0 0 var(--railW, 56px); }   /* imbang rel kiri supaya video di tengah */
-  /* tab selain Potong: panel jadi helaian bawah, timeline disorok (butang Timeline untuk tunjuk) */
+  html.pwa .transport { order: 2; }
+  html.pwa .lenbar { order: 3; }
+  html.pwa .rbar { order: 4; }
+  html.pwa .ed { order: 5; }
+  html.pwa .controls { order: 6; padding: 12px 10px 0; }
+
+  /* video sentiasa di tengah skrin; rel tab terapung di kiri, kecil */
+  html.pwa .stagecol { display: flex; justify-content: center; padding: 6px 0 12px; }
+  html.pwa .stagecol .stage { margin: 0 auto; max-width: calc(100vw - 16px); }
+  html.pwa .stagecol .tabs { position: absolute; left: 4px; top: 6px; bottom: 12px; width: 50px; height: auto; flex: none; justify-content: flex-start; gap: 0; z-index: 4; }
+  html.pwa .stagecol .tab, html.pwa .stagecol .tab.ictab { flex: 0 0 auto; min-height: 0; height: 44px; padding: 2px 0; font-size: 9px; }
+  html.pwa .stagecol .tab .ic, html.pwa .stagecol .tab.ictab .ic { width: 17px; height: 17px; }
+  html.pwa.edbig .stagecol .tabs { display: none; }   /* video besar: rel tab disorok supaya video di tengah dan tak terkeluar */
+  html.pwa .stagecol::after { content: none; }
+
+  /* SATU baris butang (boleh tolak ke tepi), tanpa baris kedua */
+  html.pwa .sidectl, html.pwa .tbar2, html.pwa .transport #undo, html.pwa .transport #rowsBtn, html.pwa .transport #resetAll:not(.cc) { display: none !important; }
+  html.pwa .transport { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; gap: 4px; padding: 6px 8px; }
+  html.pwa .transport::-webkit-scrollbar { display: none; }
+  html.pwa .transport .chip { flex: 0 0 auto; width: 38px; height: 38px; padding: 0; justify-content: center; }
+  html.pwa .transport #addFoot { width: auto; padding: 0 10px; }
+  html.pwa .transport .ccplay { width: 44px; height: 44px; }
+
+  /* timeline: playhead tetap di tengah (ed-boot.js scroll ikut masa) */
+  html.pwa #inner, html.pwa #rinner { margin-left: 50%; margin-right: 50%; }
+  html.pwa #tscroll { touch-action: pan-x; overscroll-behavior-x: contain; }
+  html.pwa .ed { position: relative; }
+
+  /* tab selain Cut: panel jadi helaian bawah; baris butang tinggal main/undo sahaja; timeline disorok (butang Timeline untuk tunjuk) */
+  html.pwa.edsheet .transport .chip:not(.cc), html.pwa.edsheet .transport .cctool, html.pwa.edsheet .transport .ccsep { display: none !important; }
+  html.pwa.edsheet .transport { justify-content: center; }
   html.pwa.edsheet .edshd { display: flex; order: 3; align-items: center; gap: 8px; margin: 4px 8px 0; padding: 8px 10px; border-radius: 14px 14px 0 0; background: var(--panel2); border: 1px solid var(--line); border-bottom: 0; }
   html.pwa.edsheet .edshd b { font: 400 22px/1 var(--head); }
   html.pwa.edsheet .edshd .sp { flex: 1; }
@@ -40,9 +56,6 @@ html.pwa body { padding-block: 0 28px; }
   html.pwa.edsheet .edshd #ccOk { width: 38px; height: 38px; padding: 0; font-size: 18px; background: var(--fg); color: var(--bg); border-color: var(--fg); }
   html.pwa.edsheet .edshd #ccTl[aria-pressed="true"] { background: var(--brownsoft); }
   html.pwa.edsheet .controls { order: 4; margin: 0 8px; padding: 10px; background: var(--panel2); border: 1px solid var(--line); border-top: 0; border-radius: 0 0 14px 14px; }
-  html.pwa.edsheet:not(.edtl) .transport, html.pwa.edsheet:not(.edtl) .tbar2, html.pwa.edsheet:not(.edtl) .lenbar,
-  html.pwa.edsheet:not(.edtl) .rbar, html.pwa.edsheet:not(.edtl) .ed { display: none !important; }
-  html.pwa.edsheet.edtl .transport { order: 5; } html.pwa.edsheet.edtl .tbar2 { order: 6; } html.pwa.edsheet.edtl .lenbar { order: 7; }
-  html.pwa.edsheet.edtl .rbar { order: 8; } html.pwa.edsheet.edtl .ed { order: 9; }
+  html.pwa.edsheet:not(.edtl) .lenbar, html.pwa.edsheet:not(.edtl) .rbar, html.pwa.edsheet:not(.edtl) .ed { display: none !important; }
+  html.pwa.edsheet.edtl .lenbar { order: 5; } html.pwa.edsheet.edtl .rbar { order: 6; } html.pwa.edsheet.edtl .ed { order: 7; }
 }
-@media (prefers-reduced-motion: reduce) { .edctl button { transition: none; } }

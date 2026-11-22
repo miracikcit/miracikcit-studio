@@ -1,5 +1,5 @@
 /* Simpan app dalam phone supaya boleh dibuka tanpa internet. Data sendiri disimpan oleh runtime.js. */
-const V = '2026.11.22-2';
+const V = '2026.11.22-3';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-180.png'];
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open('studio-' + V).then(c => c.addAll(CORE))); });   // versi baru terus aktif (editor PWA perlukan laluan terbaru)
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== 'studio-' + V && !k.startsWith('ed-')).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
