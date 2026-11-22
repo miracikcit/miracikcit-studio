@@ -39,6 +39,7 @@
   function apply(p, d) { if (d == null) delete cache[p]; else cache[p] = d; emitCol(colOf(p)); emitDoc(p); }
 
   let pulling = false, flushing = false, firstPull = null;
+  let pullOk = false, pulledRes; const pulled = new Promise(r => { pulledRes = r; });   // editor PWA tunggu tarikan pertama
   async function pull() {
     if (pulling) return; pulling = true;
     try {
@@ -46,7 +47,7 @@
       const j = await call('pull', { since });
       const pending = new Set(outbox.map(w => w.p));
       j.docs.forEach(x => { if (!pending.has(x.p)) apply(x.p, x.d); since = Math.max(since, x.u); });
-      persist(); setNet('ok');
+      persist(); setNet('ok'); pullOk = true;
     } catch (e) { setNet(e.code === 'unavailable' ? 'offline' : 'err'); }
     finally { pulling = false; }
   }
@@ -244,7 +245,8 @@
   }
 
   window.Studio = {
-    ready: () => gate().then(() => { firstPull = 'started'; pull().then(() => { firstPull = 'done'; Object.keys(colSubs).forEach(emitCol); Object.keys(docSubs).forEach(emitDoc); }); }),
-    lock() { lsSet('code', ''); location.reload(); }
+    ready: () => gate().then(() => { firstPull = 'started'; pull().then(() => { firstPull = 'done'; pulledRes(pullOk); Object.keys(colSubs).forEach(emitCol); Object.keys(docSubs).forEach(emitDoc); }); }),
+    lock() { lsSet('code', ''); location.reload(); },
+    pulled
   };
 })();

@@ -166,6 +166,19 @@ function app(b) {
       if (r.getResponseCode() >= 300) return { ok: false, error: 'Drive ' + r.getResponseCode() };
       return { ok: true, total: total, start: start, b64: Utilities.base64Encode(r.getBlob().getBytes()) };
     }
+    case 'ed_chunk': {   // Editor reel PWA: media editor (Drive EDITOR PWA/...) ke phone, sekeping-sekeping
+      const f = DriveApp.getFileById(String(b.id));
+      let okp = false, lv = [f.getParents()];
+      for (let d = 0; d < 3 && !okp; d++) { const nx = []; lv.forEach(ps => { while (ps.hasNext()) { const x = ps.next(); if (x.getName() === 'EDITOR PWA') okp = true; nx.push(x.getParents()); } }); lv = nx; }
+      if (!okp) return { ok: false, error: 'fail ni bukan media editor' };
+      const total = f.getSize(), start = Math.max(0, Number(b.start) || 0);
+      if (start >= total) return { ok: true, total: total, start: start, b64: '' };
+      const end = Math.min(total, start + Math.min(Number(b.len) || 8000000, 20000000)) - 1;
+      const r = UrlFetchApp.fetch('https://www.googleapis.com/drive/v3/files/' + f.getId() + '?alt=media', {
+        headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken(), Range: 'bytes=' + start + '-' + end }, muteHttpExceptions: true });
+      if (r.getResponseCode() >= 300) return { ok: false, error: 'Drive ' + r.getResponseCode() };
+      return { ok: true, total: total, start: start, b64: Utilities.base64Encode(r.getBlob().getBytes()) };
+    }
     case 'ustart': {   // Tiru Gaya: upload video rujukan dari phone terus ke Drive FOOTAGE/GAYA/_UPLOAD (sekeping-sekeping)
       const parent = drivePath('studio', ['FOOTAGE', 'GAYA', '_UPLOAD']);
       const r = UrlFetchApp.fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id', {

@@ -14,6 +14,30 @@ class H(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *a, **k):
         super().__init__(*a, directory=APP, **k)
 
+    def do_GET(self):
+        # uji editor PWA: /edlocal/<id>/<fail> dari folder page yang didaftar oleh edpwa.py --local
+        if self.path.startswith("/edlocal/"):
+            import urllib.parse
+            bits = urllib.parse.unquote(self.path.split("?")[0]).split("/", 3)
+            vid, rest = bits[2], (bits[3] if len(bits) > 3 else "")
+            lm = json.load(open(os.path.expanduser("~/MiracikcitTranscribe/edpwa_local.json")))
+            d = lm.get(vid)
+            if not d:
+                return self.send_error(404)
+            if rest == "__manifest":
+                sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+                import edpwa
+                out = json.dumps({"title": vid, "dir": d, "files": {r: "L" for r in edpwa.files_of(d)}}).encode()
+                ctype = "application/json"
+            else:
+                f = os.path.realpath(os.path.join(d, rest))
+                if not f.startswith(os.path.realpath(d)) or not os.path.isfile(f):
+                    return self.send_error(404)
+                out = open(f, "rb").read(); ctype = "application/octet-stream"
+            self.send_response(200); self.send_header("Content-Type", ctype); self.send_header("Content-Length", str(len(out))); self.end_headers(); self.wfile.write(out)
+            return
+        return super().do_GET()
+
     def do_POST(self):
         if self.path != "/api":
             return self.send_error(404)

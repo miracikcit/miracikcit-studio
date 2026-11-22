@@ -974,6 +974,43 @@ def run_edit_now(inp, sheet, cfg):
     return {"editor": ed_id, "folder": key}
 
 
+def run_ed_send(inp, sheet, cfg):
+    """Butang Siap dalam Editor PWA: buka sesi Claude Code dalam folder utama projek (gaya folder tu), Opus 5.5 medium,
+    Remote Control hidup, dengan arahan yang sama macam butang Siap artifact + di mana edit disimpan."""
+    vid = re.sub(r"[^a-z0-9-]", "", str(inp.get("vid") or ""))
+    if not vid:
+        raise RuntimeError("tiada id editor")
+    pdir = str(inp.get("dir") or "")
+    root = os.path.expanduser("~/Desktop/WORK 2026/CLAUDE EDITS")
+    main = root
+    if pdir.startswith(root + os.sep):
+        main = os.path.join(root, pdir[len(root) + 1:].split(os.sep)[0])
+    if not os.path.isdir(main):
+        main = root
+    cli = find_tool("claude", [cfg.get("claude_cli")])
+    if not cli:
+        raise RuntimeError("Claude Code tak dijumpai dalam Mac mini.")
+    edits = "edx/%s~edits~current" % vid
+    prompt = (str(inp.get("text") or "")[:3000] +
+              f"\n\n(Dari Editor PWA Studio, bukan artifact. Edit Mira disimpan dalam Studio: python3 ~/MiracikcitTranscribe/studio.py get '{edits}'"
+              f" (untuk projek berbilang part: edx/{vid}~edits~p1, p2, ...; prefs: edx/{vid}~prefs~style). Kalau doc ada _c, sambung edx/...~c0, ~c1 ... ikut turutan (medan s)."
+              f" Folder page editor: {pdir}. Data butang: {json.dumps(inp.get('payload') or {}, ensure_ascii=False)[:1500]})")
+    q = lambda x: "'" + str(x).replace("'", "'\\''") + "'"
+    d = os.path.join(HOME, "edit-now")
+    os.makedirs(d, exist_ok=True)
+    title = (str(inp.get("title") or vid))[:50] + " · Siap"
+    cmdf = os.path.join(d, "edsend-" + vid[:40] + ".command")
+    with open(cmdf, "w", encoding="utf-8") as fh:
+        fh.write("#!/bin/zsh -l\n# Dibuat oleh butang Siap dalam Editor PWA Studio\n"
+                 f"cd {q(main)} || exit 1\n"
+                 f"exec {q(cli)} --model {EDIT_MODEL} --effort {EDIT_EFFORT} -n {q(title)} --remote-control {q(title)} {q(prompt)}\n")
+    os.chmod(cmdf, 0o755)
+    r = subprocess.run(["/usr/bin/open", "-a", "Terminal", cmdf], capture_output=True, text=True, timeout=30)
+    if r.returncode != 0:
+        raise RuntimeError("Tak dapat buka Terminal: " + (r.stderr or "")[-200:])
+    return {"opened": True, "folder": os.path.basename(main)}
+
+
 _ANSI = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(\x07|\x1b\\)|\x1b[()][A-Z0-9]|[\x00-\x08\x0b-\x1f]")
 
 
@@ -1112,6 +1149,8 @@ def studio_jobs(sheet, cfg):
             elif j["type"] in ("vo_take", "vo_save"):
                 import vo
                 outp = getattr(vo, "job_" + j["type"])(inp, sheet, cfg, sys.modules[__name__])
+            elif j["type"] == "ed_send":
+                outp = run_ed_send(inp, sheet, cfg)
             elif j["type"] == "edit_now":
                 outp = run_edit_now(inp, sheet, cfg)
             elif j["type"] == "mkfolder":

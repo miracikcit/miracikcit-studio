@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Editor · Miracikcit Studio</title>
+<meta name="theme-color" content="#101014">
+<style>body{margin:0;background:#101014;color:#eee;font:15px/1.5 system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;text-align:center;padding:20px}a{color:#58c7d6}</style>
+</head>
+<body>
+<p id="m">Membuka editor…</p>
+<script>
+/* Pintu masuk editor: editor/?v=<id>. Pastikan service worker Studio aktif, kemudian pergi ke editor/v/<id>/ (dihidang oleh sw.js). */
+(async () => {
+  const v = new URLSearchParams(location.search).get('v'), m = document.getElementById('m');
+  if (!v) { m.innerHTML = 'Link editor tiada id video. <a href="../#editor">Balik ke Studio</a>'; return; }
+  if (!('serviceWorker' in navigator)) { m.textContent = 'Browser ni tak sokong editor Studio.'; return; }
+  await navigator.serviceWorker.register('../sw.js', { scope: '../' });
+  await navigator.serviceWorker.ready;
+  if (!navigator.serviceWorker.controller) await new Promise(r => { navigator.serviceWorker.addEventListener('controllerchange', r, { once: true }); setTimeout(r, 3000); });
+  location.replace('v/' + encodeURIComponent(v) + '/');
+})().catch(e => { document.getElementById('m').textContent = 'Editor tak dapat dibuka: ' + e.message; });
+</script>
+</body>
+</html>
