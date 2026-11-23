@@ -865,7 +865,13 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .chip.txt .ic { display: none; } #resetAll .ic { display: block; }
 #main.compact #inner .track { display: none; }
 #main.compact #labels > span:not(.lv) { display: none; }
-.hlw { position: absolute; transform: translate(-50%, -50%); width: max-content; pointer-events: auto; touch-action: none; cursor: grab; }
+#hllayer .hlw { position: absolute; transform: translate(-50%, -50%); width: max-content; pointer-events: auto; touch-action: none; cursor: grab; }   /* p19: skop, bukan senarai Caption */
+.hlpick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.hlpk { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px; border-radius: 10px; border: 1px solid var(--line, #ddd); background: #2c2a33; color: #fff; cursor: pointer; min-width: 0; }
+.hlpk[aria-pressed="true"] { outline: 3px solid #fbd36b; }
+.hlpk .hlpv { height: 46px; display: flex; align-items: center; justify-content: center; overflow: hidden; max-width: 100%; --kc: #ffd447; }
+.hlpk .hlpv span { white-space: nowrap; }
+.hlpk small { font: 600 11px/1.2 system-ui, sans-serif; color: #e8e4f0; text-align: center; }
 .hlw.sel { outline: 2px dashed #fff; outline-offset: 4px; border-radius: 4px; }
 .stage.anim .hlw.sel { outline: none; }
 .hli { display: inline-block; white-space: nowrap; }
@@ -990,7 +996,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .e-stamp .sp { animation: stampIn .26s cubic-bezier(.55,.06,.68,.19) both, hxShake .36s linear .26s; }
 @keyframes stampIn { from { opacity: 0; transform: scale(2.6) rotate(-14deg); } to { opacity: 1; transform: scale(1) rotate(-8deg); } }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=295acf6046">
+<link rel="stylesheet" href="../../ed-capcut.css?v=a61561051e">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1093,9 +1099,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=295acf6046"></script>
-<script src="../../../js/runtime.js?v=295acf6046"></script>
-<script src="../../ed-boot.js?v=295acf6046"></script>
+<script src="../../../js/config.js?v=a61561051e"></script>
+<script src="../../../js/runtime.js?v=a61561051e"></script>
+<script src="../../ed-boot.js?v=a61561051e"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -1456,7 +1462,7 @@ let tab = "Potong", safeOn = false, mode = "fix", bTab = "brand", wSel = -1;
 /* Zoom slider is logarithmic: 0 = 6 px per second (whole video), 100 = 300 px per second (frame-level trims). */
 const ppsFromZ = v => 6 * Math.pow(50, v / 100), zFromPps = p => Math.round(Math.log(p / 6) / Math.log(50) * 100);
 let pps = 16, pos = 0, sel = 0, playing = false, curIdx = 0, lastPos = 0, sfxSel = -1, voSel = -1, stSel = -1, zmSel = -1, lastT = 0;
-const S0 = () => ({ clips: [], bin: [], hook: "", words: [], globalMute: true, sfx: [], zooms: [], vo: [], stickers: [], capMode: "frasa", capSize: 1, capGap: 1, capPos: "bawah", hlStyle: "color", hlFont: "", hlColor: "", hlMode: "", hlKind: "ikut", hlLook: "none", hlFx: "pop", hlSize: 1, hlx: {}, hlPlace: "cap", overlay: {}, style: { ...DEF_STYLE }, final: { render: "final", src: "simpan", list: "simpan" }, popDone: {}, music: { f: "", vol: .15, duck: true } });
+const S0 = () => ({ clips: [], bin: [], hook: "", words: [], globalMute: true, sfx: [], zooms: [], vo: [], stickers: [], capMode: "frasa", capSize: 1, capGap: 1, capPos: "bawah", hlStyle: "color", hlFont: "", hlColor: "", hlMode: "", hlKind: "ikut", hlLook: "none", hlFx: "pop", hlSize: 1, hlx: {}, hlPlace: "big", hlY: null, overlay: {}, style: { ...DEF_STYLE }, final: { render: "final", src: "simpan", list: "simpan" }, popDone: {}, music: { f: "", vol: .15, duck: true } });
 let S = S0();
 /* One editor for every part of a product (2026-11-12): parts.json at the page root lists the videos, each in its own folder (v1/, v2/ ...).
    Without parts.json the page is a single video, as before. Saved edits: edits/current (single) or edits/p1, edits/p2 ... (combined). */
@@ -1573,7 +1579,7 @@ function setSaved(txt, cls) { const s = $("saved"); s.textContent = txt; s.class
 function docBody() {
   const fixes = {}, cuts = [], hl = {};
   S.words.forEach((w, i) => { if (w.t !== D.words[i].t) fixes[i] = w.t; if (w.cut) cuts.push(i); if (w.hl === 0 || w.hl === 1) hl[i] = w.hl; });
-  return { v: 1, clips: S.clips, bin: S.bin, hook: S.hook, fixes, cuts, globalMute: S.globalMute, origVol: S.origVol ?? 1, sfx: S.sfx, zooms: S.zooms, music: S.music, vo: S.vo, stickers: S.stickers, capMode: S.capMode, capSize: S.capSize, capGap: S.capGap, capPos: S.capPos, capChest: S.capPos === "dada", capAuto: S.capPos === "auto" ? CAPPLAN : null, hl, hlStyle: "color", hlFont: "", hlColor: S.hlColor, hlMode: S.hlMode || "", hlFix: S.hlFix || 0, hlKind: S.hlKind, hlLook: S.hlLook, hlFx: S.hlFx, hlSize: S.hlSize, hlx: S.hlx || {}, hlPlace: S.hlPlace || "cap", hlCap: S.hlPlace === "big" ? null : capHlMap(), hlItems: (S.hlPlace === "big" ? HLS : []).map(h => ({ t: h.t, d: h.d, x: +h.x.toFixed(4), y: +h.y.toFixed(4), text: h.text, css: h.css, fs: h.fs, fx: h.fx })), overlay: S.overlay, hookEnd: HOOK_END, style: S.style, final: S.final, brandKit: S.brandKit || null, popDone: S.popDone, at: new Date().toISOString() };
+  return { v: 1, clips: S.clips, bin: S.bin, hook: S.hook, fixes, cuts, globalMute: S.globalMute, origVol: S.origVol ?? 1, sfx: S.sfx, zooms: S.zooms, music: S.music, vo: S.vo, stickers: S.stickers, capMode: S.capMode, capSize: S.capSize, capGap: S.capGap, capPos: S.capPos, capChest: S.capPos === "dada", capAuto: S.capPos === "auto" ? CAPPLAN : null, hl, hlStyle: "color", hlFont: "", hlColor: S.hlColor, hlMode: S.hlMode || "", hlFix: S.hlFix || 0, hlKind: S.hlKind, hlLook: S.hlLook, hlFx: S.hlFx, hlSize: S.hlSize, hlx: S.hlx || {}, hlPlace: S.hlPlace || "big", hlv: 2, hlY: S.hlY ?? null, hlCap: S.hlPlace === "big" ? null : capHlMap(), hlItems: (S.hlPlace === "big" ? HLS : []).map(h => ({ t: h.t, d: h.d, x: +h.x.toFixed(4), y: +h.y.toFixed(4), text: h.text, css: h.css, fs: h.fs, fx: h.fx })), overlay: S.overlay, hookEnd: HOOK_END, style: S.style, final: S.final, brandKit: S.brandKit || null, popDone: S.popDone, at: new Date().toISOString() };
 }
 /* talking-head: each sticker/effect remembers the spot in her speech (s.src = offsets[file] + source second).
    When clips change, it moves with that spot; when only stickers change, src follows the new place. */
@@ -1643,7 +1649,7 @@ function applyDoc(saved) {
   if (d.stickers) S.stickers = d.stickers;
   S.capMode = d.capMode || "frasa"; S.capSize = d.capSize || 1; S.capPos = d.capPos || (d.capChest ? "dada" : "bawah");
   S.capGap = d.capGap ?? 1; S.hlStyle = "color"; S.hlFont = ""; S.hlColor = d.hlColor || ""; S.overlay = d.overlay || {};
-  S.hlMode = d.hlMode || ""; S.hlFix = d.hlFix || 0; S.hlKind = d.hlKind || "ikut"; S.hlPlace = d.hlPlace || "cap"; S.hlLook = d.hlLook || "none"; S.hlFx = d.hlFx || "pop"; S.hlSize = d.hlSize || 1; S.hlx = d.hlx || {};
+  S.hlMode = d.hlMode || ""; S.hlFix = d.hlFix || 0; S.hlKind = d.hlKind || "ikut"; S.hlPlace = d.hlv === 2 ? (d.hlPlace || "big") : "big"; S.hlY = d.hlY ?? null;   /* p19 */ S.hlLook = d.hlLook || "none"; S.hlFx = d.hlFx || "pop"; S.hlSize = d.hlSize || 1; S.hlx = d.hlx || {};
   Object.entries(d.hl || {}).forEach(([i, v]) => { if (S.words[i]) S.words[i].hl = v; });
   S.style = { ...DEF_STYLE, ...(d.style || {}) };
   if (d.final) S.final = { ...S.final, ...d.final, render: d.final.render === "draft" ? "draft" : "final" };
@@ -1783,6 +1789,8 @@ const HLK = { ikut: ["Ikut caption", "", .46], script: ["Skrip", "font:700 1em/1
   playfair: ["Playfair italic", "font:italic 500 1em/1 'Playfair Display',serif;", .46], caslon: ["Caslon italic", "font:italic 400 1em/1 'Libre Caslon Text',serif;", .5], allura: ["Allura", "font:400 1.3em/1 'Allura',cursive;", .36],
   beth: ["Beth Ellen", "font:400 .8em/1.25 'Beth Ellen',cursive;", .6], patrick: ["Patrick Hand", "font:400 1em/1 'Patrick Hand SC',cursive;", .42], courier: ["Typewriter", "font:400 .9em/1 'Courier Prime',monospace;", .6],
   outfit: ["Outfit", "font:800 .95em/1 'Outfit',sans-serif;", .5], nunito: ["Nunito", "font:800 .95em/1 'Nunito',sans-serif;", .5], reenie: ["Reenie", "font:400 1.3em/1 'Reenie Beanie',cursive;", .36],
+  poppins: ["Poppins tebal", "font:800 .9em/1 'Poppins',sans-serif;letter-spacing:-.04em;", .56], poppinsl: ["Poppins nipis", "font:300 .95em/1 'Poppins',sans-serif;", .52], fredoka: ["Fredoka bulat", "font:700 1em/1 'Fredoka',sans-serif;", .5],
+  anton: ["Anton majalah", "font:400 1.05em/1 'Anton',sans-serif;text-transform:uppercase;", .42], josefin: ["Josefin jarang", "font:300 .8em/1.2 'Josefin Sans',sans-serif;text-transform:uppercase;letter-spacing:.25em;", .8], delafield: ["Tandatangan", "font:400 1.5em/1 'Mrs Saint Delafield',cursive;", .4],
   glass: ["Glass type", "font:900 .46em/1.2 'Montserrat',sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:.5em 1.2em;border-radius:1.5em;background:rgba(255,255,255,.2);-webkit-backdrop-filter:blur(.5em);backdrop-filter:blur(.5em);border:.07em solid rgba(255,255,255,.6);box-shadow:0 .25em .8em rgba(0,0,0,.25);", .34] };
 const HLL = { none: ["Biasa", "text-shadow:0 .045em .16em rgba(0,0,0,.5),0 0 .03em rgba(0,0,0,.35);"], glow: ["Glow", "text-shadow:0 0 .08em #fff,0 0 .28em var(--c),0 0 .6em var(--c);"],
   grad: ["Gradient", "background:linear-gradient(180deg,#fff 18%,var(--c) 88%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 .05em .1em rgba(0,0,0,.45));"],
@@ -1804,7 +1812,7 @@ function hlRuns() {
     const o = X[r.id] || {}, t = Math.max(HOOK_END, r.es + (o.dt ?? -.05)), nx = all[n + 1];
     let d = o.d ?? Math.max(1.2, r.ee - r.es + .7); if (nx) d = Math.min(d, Math.max(.5, nx.es + ((X[nx.id] || {}).dt ?? -.05) - t - .02)); d = Math.max(.3, Math.min(d, end - t));
     return { id: r.id, ids: r.ids, t: +t.toFixed(3), d: +d.toFixed(3), text: o.text || r.ids.map(i => showWord(S.words[i])).join(" "), kind: HLK[o.kind] ? o.kind : (HLK[S.hlKind] ? S.hlKind : "ikut"), look: HLL[o.look] ? o.look : (HLL[S.hlLook] ? S.hlLook : "none"),
-      fx: HLM[o.fx] ? o.fx : (HLM[S.hlFx] ? S.hlFx : "pop"), size: (o.size || 1) * (S.hlSize || 1), color: o.color ?? (S.hlColor || ""), x: o.x, y: o.y };
+      fx: HLM[o.fx] ? o.fx : (HLM[S.hlFx] ? S.hlFx : "pop"), size: (o.size || 1) * (S.hlSize || 1), color: o.color ?? (S.hlColor || ""), x: o.x ?? (o.y == null && S.hlY != null ? .5 : undefined), y: o.y ?? (S.hlY ?? undefined) };
   });
 }
 function hlIkut() {   /* p14 */
@@ -1919,8 +1927,9 @@ function hlPanel() {
     <span class="lab">Guna pada</span><div class="chips">${chip("Semua highlight", !one, 'data-hscope="all"')}<button class="chip" aria-pressed="${!!one}" data-hscope="one" ${cur || capM ? "" : "disabled"}>Yang dipilih sahaja${cur ? `: ${esc(cur.text.slice(0, 16))}` : ""}</button></div>
     ${capM ? "" : cur ? `<label class="lab" for="hlText">Teks highlight dipilih</label><input id="hlText" type="text" value="${esc(cur.text)}">
       <div class="chips"><button class="chip" id="hlPosReset" ${cur.auto ? "disabled" : ""}>Kedudukan auto</button><button class="chip" id="hlDel">Buang highlight ni</button></div>` : `<span class="legend">Tekan perkataan besar atas video (atau blok ungu di timeline) untuk pilih satu, alih tempat dengan seret.</span>`}
-    <span class="lab">Gaya huruf</span><div class="chips">${Object.entries(HLK).filter(([k]) => !(capM && k === "glass")).map(([k, x]) => chip(x[0], v("kind") === k, `data-hkind="${k}"`)).join("")}</div>
-    <span class="lab">Effect</span><div class="chips">${Object.entries(HLL).map(([k, x]) => chip(x[0], v("look") === k, `data-hlook="${k}"`)).join("")}</div>
+    ${(() => { const yy = Math.round(((one && cur && cur.y != null) ? cur.y : (S.hlY ?? .21)) * 100); return `<div class="row"><label class="lab" for="hlYR">Naik / turun highlight: <span id="hlYV">${yy}%</span></label><input id="hlYR" type="range" min="14" max="74" step="1" value="${yy}"><span class="legend">Kiri = naik, kanan = turun. Ikut "Guna pada" (semua / yang dipilih). Boleh juga seret perkataan atas video.</span></div>`; })()}
+    <span class="lab">Font highlight (tekan contoh)</span><div class="hlpick">${Object.entries(HLK).filter(([k]) => !(capM && k === "glass")).map(([k, x]) => { const sm = { text: (cur ? cur.text : (HLS[0] ? HLS[0].text : "bajet")).slice(0, 10), kind: k, look: v("look"), fx: "fade", color: v("color"), size: 1 }; return `<button class="hlpk" aria-pressed="${v("kind") === k}" data-hkind="${k}"><span class="hlpv"><span style="${hlStyle(sm)};font-size:${Math.min(30, 160 / Math.max(3, sm.text.length * (HLK[k][2] || .5)))}px">${esc(sm.text)}</span></span><small>${esc(x[0])}</small></button>`; }).join("")}</div>
+    <span class="lab">Gaya highlight (tekan contoh)</span><div class="hlpick">${Object.entries(HLL).map(([k, x]) => { const sm = { text: "bajet", kind: v("kind"), look: k, fx: "fade", color: v("color"), size: 1 }; return `<button class="hlpk" aria-pressed="${v("look") === k}" data-hlook="${k}"><span class="hlpv"><span style="${hlStyle(sm)};font-size:24px">bajet</span></span><small>${esc(x[0])}</small></button>`; }).join("")}</div>
     ${capM ? "" : `<span class="lab">Gerak masuk</span><div class="chips">${Object.entries(HLM).map(([k, n]) => chip(n, v("fx") === k, `data-hmove="${k}"`)).join("")}</div>`}
     <span class="lab">Warna</span><div class="chips">${HLC.map(([c, nm]) => `<button class="chip" aria-pressed="${v("color") === c}" data-hcol="${c}">${c && c !== "key" ? `<i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${c};border:1px solid rgba(0,0,0,.2);margin-right:5px;vertical-align:-1px"></i>` : ""}${nm}</button>`).join("")}</div></div>
     <div class="row"><label class="lab" for="hlSizeR">Saiz highlight: <span id="hlSizeV">${sz}%</span></label><input id="hlSizeR" type="range" min="50" max="200" step="5" value="${sz}"></div>`;
@@ -3145,6 +3154,7 @@ document.addEventListener("input", e => {
   if (id === "hookPill") { const hx = hookFx(); if (hx) { hx.items = [e.target.value]; drawStickers(); touched(); } return; }
   if (id === "hookSize") { const hx = hookFx(); if (hx) { hx.s = +(.19 * e.target.value / 100).toFixed(4); $("hookSizeV").textContent = e.target.value + "%"; if (!playing && (pos < hx.t || pos >= hx.t + hx.d - .05)) seek(hx.t + Math.min(hx.d - .1, 2.2)); drawStickers(); touched(); } return; }
   if (id === "hookDur") { const hx = hookFx(); if (hx) { hx.d = +e.target.value / 10; $("hookDurV").textContent = hx.d.toFixed(1) + " s"; touched(); refreshGroups(); drawTimeline(); drawStageStatic(); } return; }
+  if (id === "hlYR") { const v = +e.target.value / 100, one = hlScope === "one" && HLS.some(h => h.id === hlSel); S.hlx = S.hlx || {}; if (one) S.hlx[hlSel] = { ...(S.hlx[hlSel] || {}), y: v, x: (S.hlx[hlSel] || {}).x ?? .5 }; else { S.hlY = v; Object.values(S.hlx).forEach(o => { delete o.y; delete o.x; }); } $("hlYV").textContent = Math.round(v * 100) + "%"; touched(); drawHL(); showHL(); hlPeek(); return; }
   if (id === "titleYR") { const v = +e.target.value, hx = hookFx(); if (hx) hx.ty = v; else S.style.titleY = v; $("titleYV").textContent = (v > 0 ? "+" : "") + v; touched(); drawStageStatic(); if (typeof hookDemo === "function" && !playing) hookDemo(); return; }
   if (id === "hlSizeR") { const v = +e.target.value / 100, one = hlScope === "one" && HLS.some(h => h.id === hlSel); S.hlx = S.hlx || {}; if (one) S.hlx[hlSel] = { ...(S.hlx[hlSel] || {}), size: v }; else S.hlSize = v; $("hlSizeV").textContent = e.target.value + "%"; touched(); drawHL(); planCaps(); grKey = ""; drawCaption(); if (!HLS.some(h => h.id === hlPeekId || (pos >= h.t && pos < h.t + h.d) || h.id === hlSel)) hlPeek(); return; }
   if (id === "hlText") { const h = HLS.find(q => q.id === hlSel); if (h) { S.hlx = S.hlx || {}; S.hlx[h.id] = { ...(S.hlx[h.id] || {}), text: e.target.value }; touched(); drawHL(); } return; }
