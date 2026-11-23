@@ -7,12 +7,10 @@ const TH_MAX=500,TH_TONE=['Auto','Santai','Cerita','Tips','Soalan','Jual lembut'
 const TH_PRE={asli:{l:'Asli',b:0,c:0,s:0,w:0},cantik:{l:'Auto cantik',b:8,c:10,s:14,w:4},cerah:{l:'Cerah',b:16,c:4,s:6,w:2},hangat:{l:'Hangat',b:6,c:6,s:10,w:16},
   pastel:{l:'Pastel',b:14,c:-12,s:-10,w:6},pop:{l:'Pop',b:4,c:18,s:28,w:0},filem:{l:'Filem',b:2,c:-6,s:-18,w:10},sejuk:{l:'Sejuk',b:6,c:6,s:4,w:-14}};
 const TH_RATIO={asal:'Asal','4:5':'4:5','1:1':'1:1','3:4':'3:4'};
-const thUi=()=>ui.th||(ui.th={imgs:[],sel:0,points:'',tone:'Auto',thread:false,res:null,pick:0,edit:{},busy:false,learnBusy:false});
+const thUi=()=>ui.th||(ui.th={imgs:[],sel:0,points:'',tone:'Auto',thread:false,res:null,edit:{},postIds:{},busy:false,learnBusy:false});
 const thStyle=()=>(S.settings&&S.settings.thStyle)||{};
 const thPosts=()=>S.threads.slice().sort((a,b)=>(b.created||0)-(a.created||0));
 const thFinal=p=>String(p.final||'').trim();
-/* Mod jimat: 1 versi, 3-5 contoh, tiada beza draf, tiada tips. Bergantung pada ringkasan gaya (Belajar gaya). */
-const thLite=()=>!!(S.settings&&S.settings.thLite);
 
 /* ---------- gambar: edit dengan canvas ---------- */
 function thFilter(e){const b=100+e.b,c=100+e.c,s=100+e.s;return `brightness(${b}%) contrast(${c}%) saturate(${s}%)`+(e.w>0?` sepia(${e.w*0.9}%)`:'')+(e.w<0?` hue-rotate(${e.w*0.8}deg)`:'')}
@@ -50,75 +48,76 @@ A.thAll=()=>{const t=thUi();const im=t.imgs[t.sel];t.imgs.forEach(x=>{x.pre=im.p
 async function thFiles(){const t=thUi();const out=[];for(const im of t.imgs){const b=await thBlob(im);out.push(new File([b],'threads-'+(im.name||'gambar')+'.jpg',{type:'image/jpeg'}))}return out}
 A.thSave=async()=>{const fs=await thFiles();for(const f of fs){await DL_save(f);await new Promise(r=>setTimeout(r,350))}toast(fs.length+' gambar disimpan')};
 const DL_save=f=>{const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=f.name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)};
-A.thShare=async()=>{const fs=await thFiles();const txt=thCurText();const d={files:fs};if(txt)d.text=txt;
+A.thShare=async()=>{const fs=await thFiles();const i=thCurIdx();const txt=thCurText();const d={files:fs};if(txt)d.text=txt;
   if(txt)copyText(txt,'Ayat dicopy. Paste dalam Threads kalau tak masuk sendiri');
-  try{if(navigator.canShare&&!navigator.canShare(d))delete d.text;await navigator.share(d);if(txt)thLearn()}catch(e){if(e.name!=='AbortError')toast('Tak dapat share. Guna Simpan')}};
+  try{if(navigator.canShare&&!navigator.canShare(d))delete d.text;await navigator.share(d);if(txt)thLearn(i)}catch(e){if(e.name!=='AbortError')toast('Tak dapat share. Guna Simpan')}};
 document.addEventListener('input',e=>{const el=e.target;if(!el.dataset||!el.dataset.thsl)return;const t=thUi();const im=t.imgs[t.sel];if(!im)return;
   const k=el.dataset.thsl;im.e[k]=+el.value;im.pre='';const p=$('#thPrev');if(p)p.style.filter=thFilter(im.e);const v=document.querySelector(`[data-v="${k}"]`);if(v)v.textContent=(im.e[k]>0?'+':'')+im.e[k];
   const cool=document.querySelector('.thcool');if(cool)cool.style.opacity=im.e.w<0?-im.e.w/100:0});
 
 /* ---------- ayat ---------- */
 const thParts=txt=>String(txt||'').split(/\n\s*-{3,}\s*\n/).map(s=>s.trim()).filter(Boolean);
-function thCurText(){const t=thUi();if(!t.res)return '';const v=t.res.versions[t.pick];return v?((t.edit[t.pick]??v.text)||''):''}
+/* Share: versi pertama yang belum dicopy */
+function thCurIdx(){const t=thUi();if(!t.res)return -1;const i=t.res.versions.findIndex((v,k)=>!t.postIds[k]);return i<0?0:i}
+function thCurText(){const t=thUi();const i=thCurIdx();const v=t.res&&t.res.versions[i];return v?thParts(t.edit[i]??v.text).join('\n\n'):''}
 function thTextBox(){const t=thUi();const st=thStyle();
   return `<div class="card big glass" style="margin-top:12px"><span class="num">2 · Apa kau nak cakap</span>
     <label class="f" style="margin-top:8px"><span class="inwrap" style="align-items:flex-start"><textarea class="inp" id="thPts" data-thf="points" rows="5" placeholder="Tulis point, sepatah dua pun boleh. Atau tekan mic dan cakap macam biasa.">${esc(t.points)}</textarea>${DICT?`<button type="button" class="btn icon sm ${t.rec?'solid rose':''}" data-act="thMic" aria-label="Cakap">${IC.mic}</button>`:''}</span></label>
     <span class="num" style="display:block;margin:4px 0 6px">Nada</span>
     <div class="btns" style="gap:6px">${TH_TONE.map(a=>`<button class="btn sm ${t.tone===a?'solid tab':''}" data-act="thTone" data-x="${a}" aria-pressed="${t.tone===a}">${a}</button>`).join('')}</div>
     <div style="margin-top:10px">${chk(t.thread,'thThread','','Pecah jadi thread bersiri (lebih 500 aksara)')}</div>
-    <div class="btns" style="margin-top:14px"><button class="btn ${t.points.trim()?'solid tab':''}" data-act="thGen"${t.busy?' disabled':''}>${t.busy?'Sedang tulis...':IC.ideas+(thLite()?'Tulis 1 versi':'Tulis 3 versi')}</button>${tok(thLite()?TOK.threadsLite:TOK.threads,thLite()?'1 versi, mod jimat':'3 versi ayat')}</div>
-    <div style="margin-top:10px">${chk(thLite(),'thLite','','Mod jimat token (1 versi, tiada cadangan)')}</div>
+    <div class="btns" style="margin-top:14px"><button class="btn ${t.points.trim()?'solid tab':''}" data-act="thGen"${t.busy?' disabled':''}>${t.busy?'Sedang tulis...':IC.ideas+'Tulis 3 versi'}</button>${tok(TOK.threads,'3 versi, isi sama, ayat lain')}</div>
     <p class="meta" style="margin:10px 0 0">${t.busy?ldr('Claude sedang tulis'):`Belajar dari ${thPosts().filter(thFinal).length} posting kau${st.notes&&st.notes.length?' + nota gaya':''}.`}</p></div>`}
-function thResBox(){const t=thUi();if(!t.res)return '';const v=t.res.versions[t.pick];if(!v)return '';const txt=t.edit[t.pick]??v.text;const parts=thParts(txt);
-  return `<div class="rowh" style="align-items:center;margin-top:20px"><p class="eyebrow" style="margin:0">Versi ${t.pick+1}${v.angle?' · '+esc(v.angle):''}</p><div class="btns" style="gap:6px">${t.res.versions.map((x,i)=>`<button class="btn sm ${i===t.pick?'solid tab':''}" data-act="thPickV" data-x="${i}">${i+1}</button>`).join('')}</div></div>
-    <div class="card glass" style="margin-top:10px"><textarea class="inp" id="thOut" data-thedit="${t.pick}" rows="${Math.max(7,Math.ceil(txt.length/34)+3)}" style="font-size:15px;line-height:1.5">${esc(txt)}</textarea>
-      <div class="rowh" style="align-items:center;margin-top:8px"><span class="meta" id="thCount">${thCountTxt(parts)}</span>
-      <div class="btns" style="gap:6px">${t.edit[t.pick]!=null?`<button class="btn sm" data-act="thReset">Asal</button>`:''}<button class="btn sm solid tab" data-act="thCopy">${IC.copy}Copy</button></div></div>
-      ${parts.length>1?`<div class="btns" style="gap:6px;margin-top:8px">${parts.map((p,i)=>`<button class="btn sm" data-act="thCopyPart" data-x="${i}">${IC.copy}Post ${i+1}</button>`).join('')}</div>`:''}
-      <p class="meta" style="margin:8px 0 0">Edit terus dalam kotak. Bila kau copy, versi kau disimpan supaya aku belajar gaya kau.${parts.length>1?' Garis --- memisahkan setiap post.':''}</p></div>
-    ${(t.res.tips||[]).length?`<div class="card glass" style="margin-top:12px"><span class="num">Cadangan untuk post ni</span><ul class="thtips">${t.res.tips.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}
-    <div class="btns" style="margin-top:10px"><button class="btn sm" data-act="thGen" data-x="again"${t.busy?' disabled':''}>${IC.ideas}Tulis semula</button></div>`}
+function thResBox(){const t=thUi();if(!t.res)return '';
+  const box=(v,i)=>{const txt=t.edit[i]??v.text;const parts=thParts(txt);const done=t.postIds[i];
+    return `<div class="card glass" style="margin-top:12px"><div class="rowh" style="align-items:center"><span class="num">Versi ${i+1} · hari ${i+1}</span>${done?`<span class="pill" style="--pc:var(--ok)">Dicopy</span>`:''}</div>
+      <textarea class="inp" id="thOut${i}" data-thedit="${i}" rows="${Math.max(6,Math.ceil(txt.length/34)+2)}" style="margin-top:8px;font-size:15px;line-height:1.5">${esc(txt)}</textarea>
+      <div class="rowh" style="align-items:center;margin-top:8px"><span class="meta" id="thCount${i}">${thCountTxt(parts)}</span>
+      <div class="btns" style="gap:6px">${t.edit[i]!=null?`<button class="btn sm" data-act="thReset" data-x="${i}">Asal</button>`:''}<button class="btn sm solid tab" data-act="thCopy" data-x="${i}">${IC.copy}Copy</button></div></div>
+      ${parts.length>1?`<div class="btns" style="gap:6px;margin-top:8px">${parts.map((p,k)=>`<button class="btn sm" data-act="thCopyPart" data-x="${i}|${k}">${IC.copy}Post ${k+1}</button>`).join('')}</div>`:''}</div>`};
+  return `<p class="eyebrow" style="margin:20px 0 0">3 versi · isi sama, ayat lain · satu untuk setiap hari</p>${t.res.versions.map(box).join('')}
+    <p class="meta" style="margin:8px 0 0">Betulkan terus dalam kotak, kemudian Copy. Apa yang kau betulkan, aku belajar.</p>
+    ${(t.res.tips||[]).length?`<div class="card glass" style="margin-top:12px"><span class="num">Cadangan</span><ul class="thtips">${t.res.tips.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}
+    <div class="btns" style="margin-top:10px"><button class="btn sm" data-act="thGen" data-x="again"${t.busy?' disabled':''}>${IC.ideas}Tulis semula</button>${tok(TOK.threads,'3 versi baru')}</div>`}
 const thCountTxt=parts=>parts.length>1?parts.map((p,i)=>`Post ${i+1}: ${p.length}`).join(' · '):`${(parts[0]||'').length}/${TH_MAX} aksara${(parts[0]||'').length>TH_MAX?' · terlebih, tanda thread bersiri':''}`;
 document.addEventListener('input',e=>{const el=e.target;if(!el.dataset)return;const t=ui.th;if(!t)return;
   if(el.dataset.thf)t[el.dataset.thf]=el.value;
-  else if(el.dataset.thedit!=null){t.edit[+el.dataset.thedit]=el.value;const c=$('#thCount');if(c)c.textContent=thCountTxt(thParts(el.value))}});
-A.thLite=()=>{saveSettings({thLite:!thLite()});render(true)};
+  else if(el.dataset.thedit!=null){const i=+el.dataset.thedit;t.edit[i]=el.value;const c=$('#thCount'+i);if(c)c.textContent=thCountTxt(thParts(el.value))}});
 A.thTone=el=>{thUi().tone=el.dataset.x;render(true)};
 A.thThread=()=>{const t=thUi();t.thread=!t.thread;render(true)};
-A.thPickV=el=>{thUi().pick=+el.dataset.x;render(true)};
-A.thReset=()=>{const t=thUi();delete t.edit[t.pick];render(true)};
+A.thReset=el=>{delete thUi().edit[+el.dataset.x];render(true)};
 A.thMic=async()=>{const t=thUi();if(!DICT)return;if(t.rec){t.rec=false;DICT.stop().catch(()=>{});render(true);return}
   if(!ui.thDict){ui.thDict=true;DICT.onFinal(({text})=>{if(!ui.th||!ui.th.rec)return;ui.th.points=(ui.th.points?ui.th.points.replace(/\s+$/,'')+' ':'')+text;const n=$('#thPts');if(n)n.value=ui.th.points});
     DICT.onState(({state})=>{if(state==='idle'&&ui.th&&ui.th.rec){ui.th.rec=false;render(true)}})}
   try{t.rec=true;render(true);await DICT.start({language:'ms'});toast('Cakaplah. Tekan mic lagi bila siap')}catch(e){t.rec=false;render(true);toast('Benarkan mic dalam Settings')}};
-A.thCopy=()=>{const txt=(($('#thOut')||{}).value||'').trim();if(!txt)return;copyText(thParts(txt).join('\n\n'),'Dicopy. Paste dalam Threads');thLearn()};
-A.thCopyPart=el=>{const txt=(($('#thOut')||{}).value||'');const p=thParts(txt)[+el.dataset.x];if(p){copyText(p,'Post '+(+el.dataset.x+1)+' dicopy');thLearn()}};
+A.thCopy=el=>{const i=+el.dataset.x;const txt=(($('#thOut'+i)||{}).value||'').trim();if(!txt)return;copyText(thParts(txt).join('\n\n'),'Versi '+(i+1)+' dicopy. Paste dalam Threads');thLearn(i)};
+A.thCopyPart=el=>{const [i,k]=el.dataset.x.split('|').map(Number);const p=thParts((($('#thOut'+i)||{}).value||''))[k];if(p){copyText(p,'Post '+(k+1)+' dicopy');thLearn(i)}};
 
-/* Simpan versi akhir Mira sebagai contoh sebenar (sekali setiap hasil; copy semula = kemaskini) */
-function thLearn(){const t=thUi();if(!t.res)return;const v=t.res.versions[t.pick];const fin=String(t.edit[t.pick]??v.text).trim();if(!fin)return;
-  const o=t.postId&&get('threads',t.postId)||{};const edited=fin!==String(v.text).trim();
-  const p=save('threads',Object.assign({},o,{points:t.points.trim(),tone:t.tone,draft:v.text,final:fin,edited,angle:v.angle||''}),true);t.postId=p.id;
-  const n=thPosts().filter(thFinal).length,last=thStyle().learnedAt||0;
-  if(n>=5&&thPosts().filter(x=>thFinal(x)&&(x.updated||0)>last).length>=5&&!t.nudged){t.nudged=true;setTimeout(()=>toast('Dah 5 posting baru. Tekan "Belajar gaya" di bawah'),2600)}}
+/* Simpan versi akhir Mira (setiap versi berasingan; copy semula = kemaskini). Setiap 5 posting baru, belajar gaya sendiri. */
+function thLearn(i){const t=thUi();if(!t.res)return;const v=t.res.versions[i];if(!v)return;const fin=String(t.edit[i]??v.text).trim();if(!fin)return;
+  const o=t.postIds[i]&&get('threads',t.postIds[i])||{};const edited=fin!==String(v.text).trim();
+  const p=save('threads',Object.assign({},o,{points:t.points.trim(),tone:t.tone,draft:v.text,final:fin,edited,day:i+1}),true);t.postIds[i]=p.id;render(true);thAutoStudy()}
+function thAutoStudy(){const last=thStyle().learnedAt||0;const ps=thPosts().filter(thFinal);const fresh=ps.filter(x=>(x.updated||0)>last).length;
+  if(ps.length>=3&&(fresh>=5||(!last&&ps.length>=3)))A.thStudy()}
 
-function thPrompt(again){const t=thUi();const st=thStyle();const L=thLite();const ex=thPosts().filter(thFinal).slice(0,L?(st.summary?3:5):12);
-  const edits=L?[]:thPosts().filter(p=>p.edited&&p.draft).slice(0,4);const nv=L?1:3;
+function thPrompt(again){const t=thUi();const st=thStyle();const ex=thPosts().filter(p=>thFinal(p)&&!p.edited).slice(0,8);
+  const edits=thPosts().filter(p=>p.edited&&p.draft).slice(0,6);
   return `Kau penulis posting Threads untuk Mira (@miracikcit), content creator Malaysia (lifestyle, produk, vlog, keluarga).
-Tulis ${nv} versi posting Threads dari point Mira di bawah. MESTI bunyi macam Mira tulis sendiri, bukan macam AI.
-${st.summary?'\nGAYA MIRA (dipelajari):\n'+st.summary+'\n':''}${st.notes&&st.notes.length?'Peraturan gaya:\n- '+st.notes.join('\n- ')+'\n':''}${ex.length?'\nCONTOH POSTING SEBENAR MIRA (ikut cara ayat, panjang, emoji, huruf besar kecil, bahasa rojak):\n'+ex.map((p,i)=>`[${i+1}] ${p.final}`).join('\n\n')+'\n':''}${edits.length?'\nBEZA DRAF AI vs VERSI MIRA (belajar apa dia ubah):\n'+edits.map(p=>`DRAF: ${p.draft}\nMIRA: ${p.final}`).join('\n\n')+'\n':''}
+Tulis 3 versi posting Threads dari point Mira di bawah. Ketiga-tiga versi bawa ISI DAN MESEJ YANG SAMA, tapi ayat, hook dan susunan berlainan, sebab setiap satu akan di-post pada hari berbeza. Setiap versi berdiri sendiri, jangan rujuk versi lain. MESTI bunyi macam Mira tulis sendiri, bukan macam AI.
+${st.summary?'\\nGAYA MIRA (dipelajari):\\n'+st.summary+'\\n':''}${st.notes&&st.notes.length?'Peraturan gaya:\\n- '+st.notes.join('\\n- ')+'\\n':''}${edits.length?'\\nPEMBETULAN MIRA (draf kau vs versi yang dia betulkan; ini paling penting, jangan ulang kesilapan draf):\\n'+edits.map(p=>`DRAF: ${p.draft}\\nMIRA: ${p.final}`).join('\\n\\n')+'\\n':''}${ex.length?'\\nCONTOH POSTING SEBENAR MIRA:\\n'+ex.map((p,i)=>`[${i+1}] ${p.final}`).join('\\n\\n')+'\\n':''}
 POINT MIRA:
 ${t.points.trim()}
-${thUi().imgs.length?`\nPosting ni ada ${thUi().imgs.length} gambar.\n`:''}Nada: ${t.tone==='Auto'?(nv>1?'ikut point, 3 versi dengan sudut berbeza':'ikut point'):t.tone}
-${t.thread?'Pecahkan setiap versi jadi thread bersiri 2 hingga 5 post. Asingkan setiap post dengan baris "---". Setiap post bawah 500 aksara, post pertama hook paling kuat.':'Satu post sahaja, bawah 500 aksara.'}
-Peraturan: hook di baris pertama (berhenti scroll), ayat pendek, perenggan pendek, tiada hashtag berlambak (maksimum 1, atau tiada), jangan reka fakta yang tiada dalam point, tiada harga melainkan Mira tulis.${again?'\nIni permintaan tulis semula: beri versi yang lain dari sebelum ni. ('+Date.now()+')':''}
-${L?'Balas JSON sahaja: {"versions":[{"angle":"..","text":".."}]}':`tips: 2 hingga 3 cadangan ringkas untuk naikkan engagement post ni (cth. soalan penutup, masa post, gambar mana dulu).
-Balas JSON sahaja: {"versions":[{"angle":"..","text":".."},{"angle":"..","text":".."},{"angle":"..","text":".."}],"tips":[".."]}`}`}
+${t.imgs.length?`\\nPosting ni ada ${t.imgs.length} gambar.\\n`:''}Nada: ${t.tone==='Auto'?'ikut point':t.tone}
+${t.thread?'Pecahkan setiap versi jadi thread bersiri 2 hingga 5 post. Asingkan setiap post dengan baris "---". Setiap post bawah 500 aksara, post pertama hook paling kuat.':'Setiap versi satu post sahaja, bawah 500 aksara.'}
+Peraturan: hook di baris pertama (berhenti scroll), ayat pendek, perenggan pendek, maksimum 1 hashtag atau tiada, jangan reka fakta yang tiada dalam point, tiada harga melainkan Mira tulis.${again?'\\nIni permintaan tulis semula: ayat lain dari sebelum ni. ('+Date.now()+')':''}
+tips: 2 cadangan ringkas untuk naikkan engagement (cth. soalan penutup, masa post, gambar mana dulu).
+Balas JSON sahaja: {"versions":[{"text":".."},{"text":".."},{"text":".."}],"tips":[".."]}`}
 A.thGen=async el=>{const t=thUi();if(!t.points.trim()){toast('Tulis point dulu');const n=$('#thPts');if(n)n.focus();return}
   if(!SAMPLE){toast('Generate tak tersedia sekarang');return}
   if(t.rec){t.rec=false;DICT&&DICT.stop().catch(()=>{})}
   t.busy=true;render(true);
-  try{const j=await SAMPLE.json(thPrompt(el&&el.dataset.x==='again'));const vs=(j&&Array.isArray(j.versions)?j.versions:[]).filter(x=>x&&x.text).slice(0,3).map(x=>({angle:String(x.angle||''),text:String(x.text).trim()}));
-    if(!vs.length)throw new Error('kosong');t.res={versions:vs,tips:(Array.isArray(j.tips)?j.tips:[]).map(String).slice(0,3)};t.pick=0;t.edit={};t.postId=null;toast('3 versi siap')}
+  try{const j=await SAMPLE.json(thPrompt(el&&el.dataset.x==='again'));const vs=(j&&Array.isArray(j.versions)?j.versions:[]).filter(x=>x&&x.text).slice(0,3).map(x=>({text:String(x.text).trim()}));
+    if(!vs.length)throw new Error('kosong');t.res={versions:vs,tips:(Array.isArray(j.tips)?j.tips:[]).map(String).slice(0,3)};t.edit={};t.postIds={};toast('3 versi siap')}
   catch(e){if(!(e&&(e.code==='declined'||e.name==='AbortError')))toast(e&&e.code==='timeout'?'Mac mini lambat jawab. Cuba lagi sekejap':'Tak berjaya. Semak Mac mini hidup')}
   finally{t.busy=false;render(true)}};
 
@@ -129,26 +128,26 @@ function thStyleBox(){const st=thStyle();const t=thUi();const ps=thPosts().filte
     ${st.notes&&st.notes.length?`<ul class="thtips">${st.notes.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
     ${st.tips&&st.tips.length?`<span class="num" style="display:block;margin-top:12px">Cadangan untuk naikkan posting kau</span><ul class="thtips">${st.tips.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
     ${st.learnedAt?`<p class="meta" style="margin:6px 0 0">Kemaskini ${fmtD(st.learnedAt)}</p>`:''}
-    <div class="btns" style="gap:6px;margin-top:12px"><button class="btn sm ${ps.length>=3?'solid tab':''}" data-act="thStudy"${t.learnBusy||ps.length<3?' disabled':''}>${t.learnBusy?'Sedang belajar...':IC.ideas+'Belajar gaya'}</button><button class="btn sm" data-act="thPasteOld">${IC.plus}Tampal posting lama</button>${tok(TOK.thstyle,'belajar gaya')}</div>
-    ${ps.length<3?`<p class="meta" style="margin:8px 0 0">Perlu sekurang-kurangnya 3 contoh.</p>`:''}</div>`}
+    <div class="btns" style="gap:6px;margin-top:12px"><button class="btn sm" data-act="thPasteOld">${IC.plus}Tampal posting lama</button></div>
+    <p class="meta" style="margin:8px 0 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">${t.learnBusy?ldr('Sedang belajar gaya kau'):`Belajar sendiri setiap 5 posting baru (${ps.filter(x=>(x.updated||0)>(st.learnedAt||0)).length}/5)`}${tok(TOK.thstyle,'belajar gaya, auto')}</p></div>`}
 A.thPasteOld=()=>modal(`<h2>Tampal posting lama</h2><p class="meta">Tampal posting Threads kau yang perform. Asingkan setiap posting dengan baris kosong berganda atau ---.</p>
   <textarea class="inp" id="thOld" rows="10" style="margin:10px 0"></textarea><div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="thOldOk">Simpan</button></div>`,TAB.threads.c);
 A.thOldOk=()=>{const v=(($('#thOld')||{}).value||'');const ps=v.split(/\n\s*-{3,}\s*\n|\n\s*\n\s*\n/).map(s=>s.trim()).filter(s=>s.length>=15);
-  if(!ps.length){toast('Tiada posting');return}ps.forEach(p=>save('threads',{final:p,source:'lama',edited:false},true));closeModal();render(true);toast(ps.length+' posting disimpan sebagai contoh')};
-A.thStudy=async()=>{const t=thUi();const ps=thPosts().filter(thFinal).slice(0,20);if(ps.length<3||!SAMPLE)return;const st=thStyle();
+  if(!ps.length){toast('Tiada posting');return}ps.forEach(p=>save('threads',{final:p,source:'lama',edited:false},true));closeModal();render(true);toast(ps.length+' posting disimpan sebagai contoh');thAutoStudy()};
+A.thStudy=async()=>{const t=thUi();if(t.learnBusy)return;const ps=thPosts().filter(thFinal).slice(0,20);if(ps.length<3||!window.studioJob)return;const st=thStyle();
   const prompt=`Analisis cara Mira (@miracikcit, content creator Malaysia) menulis posting Threads dari contoh sebenar di bawah.
 ${st.summary?'Ringkasan gaya sebelum ni (kemaskini, jangan buang yang masih betul):\n'+st.summary+'\n':''}
 CONTOH (terbaru dulu):
-${ps.map((p,i)=>`[${i+1}]${p.edited&&p.draft?' (draf AI: '+p.draft.slice(0,160)+')\n VERSI MIRA:':''} ${p.final}`).join('\n\n')}
+${ps.map((p,i)=>`[${i+1}]${p.edited&&p.draft?' (draf AI: '+p.draft+')\n VERSI MIRA:':''} ${p.final}`).join('\n\n')}
 
 Balas JSON sahaja:
 {"summary":"2-3 ayat gaya Mira (bahasa, panjang, nada, emoji, cara buka dan tutup)",
-"notes":["5-8 peraturan gaya spesifik yang boleh diikut penulis lain, termasuk perkataan/frasa kegemaran dan apa yang Mira selalu buang dari draf AI"],
+"notes":["5-8 peraturan gaya spesifik yang boleh diikut penulis lain, termasuk perkataan/frasa kegemaran dan apa yang Mira selalu betulkan/buang dari draf AI (DRAF vs VERSI MIRA)"],
 "tips":["3-5 cadangan konkrit untuk Mira naikkan engagement Threads, berdasarkan kelemahan dalam contoh"]}`;
   t.learnBusy=true;render(true);
-  try{const j=await SAMPLE.json(prompt);if(!j||!j.summary)throw new Error('kosong');
-    saveSettings({thStyle:{summary:String(j.summary),notes:(j.notes||[]).map(String).slice(0,8),tips:(j.tips||[]).map(String).slice(0,5),learnedAt:Date.now(),n:ps.length}});toast('Gaya dikemaskini')}
-  catch(e){if(!(e&&e.code==='declined'))toast('Tak berjaya belajar. Semak Mac mini hidup')}
+  try{const o=await window.studioJob('ai',{prompt},6*60000);const j=o&&o.json;if(!j||!j.summary)throw new Error('kosong');
+    saveSettings({thStyle:{summary:String(j.summary),notes:(j.notes||[]).map(String).slice(0,8),tips:(j.tips||[]).map(String).slice(0,5),learnedAt:Date.now(),n:ps.length}});toast('Gaya kau dikemaskini')}
+  catch(e){}
   finally{t.learnBusy=false;render(true)}};
 
 /* ---------- sejarah ---------- */
