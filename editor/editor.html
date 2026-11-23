@@ -1091,7 +1091,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .ttln input[type=text] { flex: 1 1 auto; min-width: 0; font-size: 16px; padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(0,0,0,.15); }
 .ttln label { flex: 0 0 120px; font-size: 11px; display: flex; flex-direction: column; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=1417e62fce">
+<link rel="stylesheet" href="../../ed-capcut.css?v=35082e9ab7">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1195,9 +1195,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=1417e62fce"></script>
-<script src="../../../js/runtime.js?v=1417e62fce"></script>
-<script src="../../ed-boot.js?v=1417e62fce"></script>
+<script src="../../../js/config.js?v=35082e9ab7"></script>
+<script src="../../../js/runtime.js?v=35082e9ab7"></script>
+<script src="../../ed-boot.js?v=35082e9ab7"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -1706,12 +1706,27 @@ function touched() {
   if (dbDoc) setSaved("Menyimpan…", "busy");
   clearTimeout(saveTimer); saveTimer = setTimeout(flush, 800);
 }
+/* p22c (2026-11-23, Mira: klip yang dia tukar bertukar balik sendiri): editor terbuka di dua device (Mac + phone) saling tindih
+   dengan keadaan lama. Sekarang: sebelum simpan, dan setiap 5 s, semak doc. Kalau device lain dah simpan lebih baru, muat yang itu. */
+let lastAt = "";
+async function remoteNewer() {
+  if (!dbDoc || !lastAt) return null;
+  try { const sn = await dbDoc.get(); const d = sn.exists ? sn.data() : null; return d && d.at && d.at > lastAt ? d : null; } catch (e) { return null; }
+}
+function applyRemote(d, lost) {
+  const p0 = pos; freshState(); applyDoc(d); lastAt = d.at;
+  undoStack = []; clearPick(); segsMemo = null; clipSig = null; lastGrade = ""; WT = null; capSig = ""; if (isTalk()) syncStickers(); HOOK_END = calcHookEnd(); hlMigrate(); hlRematch();
+  if (sel >= S.clips.length) sel = 0; draw(); seek(Math.min(p0, endT() - .05));
+  setSaved("Semua perubahan disimpan"); toast(lost ? "Edit dari device lain lebih baru, jadi itu yang dimuat. Buat semula perubahan terakhir kau." : "Dikemas kini dengan edit dari device lain");
+}
+setInterval(async () => { if (!loaded || dirty || saving || playing || document.visibilityState !== "visible") return; const d = await remoteNewer(); if (d && !dirty && !saving) applyRemote(d, false); }, 5000);
 async function flush() {
   if (!loaded) return;
   if (!dbDoc) { setSaved("Tak boleh simpan di sini. Guna Salin pilihan dalam tab Siap.", "err"); return; }
   if (saving) { saveTimer = setTimeout(flush, 500); return; }
   saving = true; dirty = false;
-  try { await dbDoc.set(docBody()); if (!dirty) setSaved("Semua perubahan disimpan"); }
+  try { const rm = await remoteNewer(); if (rm) { saving = false; return applyRemote(rm, true); }
+    const body = docBody(); await dbDoc.set(body); lastAt = body.at; if (!dirty) setSaved("Semua perubahan disimpan"); }
   catch (e) { dirty = true; setSaved("Gagal simpan. Perubahan belum selamat.", "err"); }
   saving = false;
 }
@@ -3541,7 +3556,7 @@ function resetAll() {
   actBar("Video dah kembali ke editing asal.", "Batalkan reset", () => { freshState(); applyDoc(JSON.parse(backup)); afterLoad(); toast("Reset dibatalkan, edit kau kembali"); });
 }
 function resetState() {
-  loaded = false; dirty = false; clearTimeout(saveTimer); dbDoc = null; D = null;
+  loaded = false; dirty = false; clearTimeout(saveTimer); dbDoc = null; D = null; lastAt = "";
   S = S0(); undoStack = []; clearPick(); sel = 0; pos = 0; lastPos = 0; curIdx = 0; wSel = -1; segsMemo = null; GR = []; grKey = ""; WT = null; clipSig = null; lastGrade = ""; HOOK_END = 4.35; lastStatus = ""; CAPPLAN = null; capSig = "";
   Object.keys(tiles).forEach(k => delete tiles[k]);
 }
@@ -3596,7 +3611,7 @@ async function boot() {
     clearTimeout(timer); dbDoc = doc;
     if (D.brand) { S.brandKit = D.brand; if (!snap.exists) S.style = { ...S.style, ...D.brand }; }
     if (!snap.exists) { if (D.style) S.style = { ...S.style, ...D.style }; if (D.capInit) Object.assign(S, D.capInit); }
-    if (snap.exists) applyDoc(snap.data());
+    if (snap.exists) { applyDoc(snap.data()); lastAt = snap.data().at || ""; }
     try { const fr = await db.doc("requests/footage").get(); if (fr.exists) footReq = JSON.parse(JSON.stringify(fr.data())); } catch (e) {}   /* p14 */
     if (!prefsOn) { try { const ps = await db.doc("prefs/style").get(); if (ps.exists) { const p = JSON.parse(JSON.stringify(ps.data())); PREFS = { like: p.like || [], no: p.no || [], names: p.names || {} }; } } catch (e) {} }
     open("Semua perubahan disimpan");
