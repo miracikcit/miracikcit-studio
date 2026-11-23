@@ -12,15 +12,15 @@ function edDeadline(name,start){const it=smpFor(name);if(!it)return {d:deadline(
 V['to-edit']=()=>{const te=S.sync.toedit;const folders=toEditFolders();const fset=new Set(folders.map(f=>nrm(f.name)));
   const rows=folders.map(x=>({kind:'f',key:x.key,stage:x.stage,no:fno(x.stage),name:x.name,sub:[x.stage.replace(/^\d+\.\s*/,''),(x.clips||0)+' klip'+(x.images?' + '+x.images+' gambar':'')].join(' · '),start:x.mtime}))
    .concat(byStage('toedit').filter(it=>!fset.has(nrm(it.title))).map(it=>({kind:'i',key:it.id,stage:it.folder||'',no:fno(it.folder),name:it.title,sub:[(it.folder||'Belum pilih folder').replace(/^\d+\.\s*/,''),it.account,'folder belum ada footage'].filter(Boolean).join(' · '),start:(it.stageAt&&it.stageAt.toedit)||it.created})))
-   .map(r=>Object.assign(r,edDeadline(r.name,r.start),{ed:edFor(r.key,r.name)})).sort((a,b)=>(a.d?a.d.left:99)-(b.d?b.d.left:99));
+   .filter(r=>!isPublishedName(r.name)).map(r=>Object.assign(r,edDeadline(r.name,r.start),{ed:edFor(r.key,r.name)})).sort((a,b)=>(a.d?a.d.left:99)-(b.d?b.d.left:99));
   const off=macOff();
   if(ui.teSeg==='broll')return head('B-roll untuk semak')+teSegs()+ftSemakView();
   return head(te?'Folder sync '+fmtD(te.syncedAt):'Belum sync',`<button class="btn sm" data-act="addEdit">${IC.plus}Tambah</button>`)+teSegs()+shotList()+
-  doneStrip()+`<p class="eyebrow" style="margin:4px 0 10px">Dalam folder edit · ${rows.length}</p>${off?`<div class="banner glass">Mac mini tak jawab sejak ${esc(off)}. EDIT NOW perlukan Mac mini hidup dan app Claude dibuka.</div>`:''}<div class="list">${rows.map(r=>{const e=r.ed;const busy=ui.edNow&&ui.edNow[r.key];
+  `<p class="eyebrow" style="margin:4px 0 10px">Dalam folder edit · ${rows.length}</p>${off?`<div class="banner glass">Mac mini tak jawab sejak ${esc(off)}. EDIT NOW perlukan Mac mini hidup dan app Claude dibuka.</div>`:''}<div class="list">${rows.map(r=>{const e=r.ed;const busy=ui.edNow&&ui.edNow[r.key];
     return `<div class="card glass"><div class="rowh">${fnoBadge(r.no)}<div style="flex:1;min-width:0"><h3>${esc(r.name)}</h3><div class="meta">${esc(r.sub)}${r.start?' · masuk '+fmtD(r.start):''}</div></div>${e?`<span class="pill" style="--pc:${edTone(e.status)}">${esc(e.status||'Draf')}</span>`:''}</div>
     ${trk(r.d,r.t)}
     ${brSteps(r,e)}
-    <div class="btns" style="margin-top:12px">${edBtns(r,e,busy,off)}<button class="btn icon sm bad" data-act="${r.kind==='f'?'fHide':'delItem'}" data-id="${esc(r.key)}" aria-label="Buang">${IC.trash}</button></div>
+    <div class="btns" style="margin-top:12px">${edBtns(r,e,busy,off)}${r.kind==='f'?`<button class="btn sm" data-act="peek" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}">${IC.footage}Lihat footage</button>`:''}<button class="btn icon sm bad" data-act="${r.kind==='f'?'fHide':'delItem'}" data-id="${esc(r.key)}" aria-label="Buang">${IC.trash}</button></div>
     ${edNote(r,e)}</div>`}).join('')||`<div class="empty">${te?'Tiada video tunggu edit.':'Belum sync. Tekan Sync folder di Home.'}</div>`}</div>`};
 /* Butang kad: belum mula = EDIT NOW; dah tekan = link terus ke chat Claude (Remote Control) atau status */
 function edBtns(r,e,busy,off){/* 23 Nov: EDIT NOW tak lagi tunggu semua B-roll disemak; Claude guna klip Final yang dah ada */
@@ -49,7 +49,11 @@ A.addEditSave=()=>{const t=$('#aeT').value.trim();if(!t){toast('Isi nama video')
 /* Shoot terus ke folder edit: Mac mini buat folder <folder edit>/<produk>, kemudian imbas semula */
 function mkEditFolder(stage,name){if(!window.studioJob)return;studioJob('mkfolder',{stage,name},2*60000).then(r=>toast('Folder dibuat: '+stage.replace(/^\d+\.\s*/,'')+' / '+r.name+'. Masukkan footage')).catch(()=>{})}
 
-/* Projek yang baru siap render (7 hari): dah keluar dari senarai edit, sekarang di To Publish */
-function doneStrip(){const L=S.editor.filter(e=>e.folder&&(e.final||/siap/i.test(e.status||''))&&(e.updated||0)>Date.now()-7*DAY).sort((a,b)=>(b.updated||0)-(a.updated||0));if(!L.length)return '';
-  return `<div class="card glass" style="margin-bottom:14px"><p class="eyebrow" style="margin:0">Dah render, pindah ke To Publish · ${L.length}</p>
-   ${L.map(e=>`<div class="rowh" style="align-items:center;gap:8px;margin-top:8px">${fnoBadge(fno(e.folder))}<div style="min-width:0;flex:1"><strong>${esc(e.folder.split('/').pop())}</strong><span class="meta" style="display:block">${esc(e.final?String(e.final).split('/').pop():'Siap')} · ${fmtD(e.updated)}</span></div><button class="btn sm solid tab" data-act="go" data-id="ready">To Publish${IC.next}</button></div>`).join('')}</div>`}
+/* 2026-11-23 (Mira): video yang dah published (semua baris Sheet dah settled) terus keluar dari senarai edit */
+function isPublishedName(name){if(nrm(name).length<4)return false;const sv=sheetView();return publishedEntries(sv).some(e=>e.vids>=e.total&&pMatch(e.name,name))}
+/* Lihat footage: Mac mini buat gambar grid frame setiap video dalam folder (job folder_peek, 0 token) */
+A.peek=async el=>{const stage=el.dataset.x,name=el.dataset.n;
+  modal(`<h2>${esc(name)}</h2><p class="meta">${esc(stage)}</p><div id="pkBox"><p class="meta"><i class="spin"></i> Mac mini sedang ambil gambar setiap video…</p></div><div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Tutup</button></div>`,TAB['to-edit'].c);
+  try{const r=await studioJob('folder_peek',{stage,name},3*60000);const b=$('#pkBox');if(!b)return;
+    b.innerHTML=r&&r.img?`<img src="${esc(r.img)}" alt="Gambar footage ${esc(name)}" style="width:100%;border-radius:12px;display:block"><p class="meta" style="margin:8px 0 0">${r.n} video${r.n>=24?' (24 pertama)':''}: ${esc((r.names||[]).join(', ')).slice(0,600)}</p>`:'<p class="meta">Tiada video dalam folder ni.</p>'}
+  catch(e){const b=$('#pkBox');if(b)b.innerHTML=`<p class="meta" style="color:var(--bad)">Tak dapat: ${esc(String((e&&(e.message||e.code))||'semak Mac mini hidup').slice(0,100))}</p>`}};

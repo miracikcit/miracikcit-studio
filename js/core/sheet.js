@@ -11,7 +11,7 @@ function parseSheet(){
     else if(g){const c=String(r[2]||'').trim();if(isUrl(c)&&!g.tt)g.tt=c}
     if(g&&String(r[4]||'').trim()!=='')g.rows.push({tab:'PRODUCTS',row:rn,vid:String(r[4]),caption:r[5]||'',sched:[6,7,8,9].map(c=>isT(r[c])),posted:[10,11,12,13].map(c=>isT(r[c])),acc:[String(r[14]||'').trim(),String(r[15]||'').trim()],sub:String(r[16]||''),group:g})});
   (sheetRaw.NON||[]).forEach((r,i)=>{const rn=i+1;if(rn<5)return;r=r||[];const nm=String(r[1]||'').trim();if(!nm)return;
-    const ng={tab:'NON',name:nm,rows:[],start:rn};ng.rows.push({tab:'NON',row:rn,vid:'',caption:r[2]||'',sched:[3,4,5,6].map(c=>isT(r[c])),posted:[7,8,9,10].map(c=>isT(r[c])),acc:[String(r[11]||'').trim(),String(r[12]||'').trim()],group:ng});groups.push(ng)});
+    const ng={tab:'NON',name:nm,rows:[],start:rn};ng.rows.push({tab:'NON',row:rn,vid:'',caption:r[2]||'',sched:[3,4,5,6].map(c=>isT(r[c])),posted:[7,8,9,10].map(c=>isT(r[c])),acc:[String(r[11]||'').trim(),String(r[12]||'').trim()],sub:String(r[13]||''),group:ng});groups.push(ng)});
   return groups}
 const isPub=r=>r.sched.some(Boolean)?r.sched.every((sc,i)=>!sc||r.posted[i]):r.posted.every(Boolean);
 function matchFile(name,groups){const t=name.replace(/\.(mp4|mov|m4v)$/i,'').split(/[_-]+/);const t1=nrm(t[0]),t2=nrm(t[1]);

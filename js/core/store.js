@@ -24,7 +24,7 @@ async function initStore(){
   if(!db){clearTimeout(timer);mode='local';localLoad();render();return}
   DB=db;let got=0;const done=()=>{if(++got>=COLS.length&&mode!=='live'){mode='live';clearTimeout(timer);setTimeout(()=>{jobsFromSheet();autoAdvance()},800)}};
   COLS.forEach(col=>{let first=true;DB.collection(col).onSnapshot(snap=>{S[col]=snap.docs.map(d=>Object.assign({},d.data(),{id:d.id}));if(col==='brlib')S[col]=brMerge(S[col]);if(col==='broll')S[col]=S[col].filter(b=>BR_VO.test(String(b.key||b.project||'').split('/')[0]));if(first){first=false;done()}render()},()=>{clearTimeout(timer);mode='error';render()})});
-  ['folders','topost','toedit','toeditmarks','brfolders','storage'].forEach(k=>DB.doc('sync/'+k).onSnapshot(snap=>{S.sync[k]=snap.exists?snap.data():null;render();if(k==='topost')autoAdvance()},()=>{}));
+  ['folders','topost','toedit','toeditmarks','brfolders','storage','finalsup'].forEach(k=>DB.doc('sync/'+k).onSnapshot(snap=>{S.sync[k]=snap.exists?snap.data():null;render();if(k==='topost')autoAdvance()},()=>{}));
   DB.doc('reference/editstyles').onSnapshot(snap=>{S.styles=snap.exists?snap.data():null;render()},()=>{});
   DB.doc('settings/main').onSnapshot(snap=>{S.settings=snap.exists?Object.assign({},snap.data()):null;render()},()=>{});
 }

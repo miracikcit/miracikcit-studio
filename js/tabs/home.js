@@ -87,7 +87,7 @@ V.home=()=>{
   const ed=TAB.editor;const cp=confirmedList(sv);
   return `<div class="head"><div><p class="eyebrow">${hr<12?'Selamat pagi':hr<18?'Selamat petang':'Selamat malam'}, Mira</p><h1>Home</h1></div><button class="btn sm" data-act="syncReq">${IC.copy}Sync folder</button></div>
   ${sheetNote()}
-  ${weekCard(sv)}
+  
   <div class="hgrid">
    ${box('links',projCount(),'Projects')}${box('to-shoot')}${box('to-edit',n.shot+n['to-edit'])}
    <button class="hbox big2 edbox glass" style="--c:${ed.c}" data-act="go" data-id="editor"><span class="edn"><b>${n.editor}</b><span class="l">Editor</span></span><span class="edl">${eds.slice(0,6).map(e=>`<span class="edr"><span>${esc(shortName(e.name))}</span><i style="--pc:${/draf|sedia|semak/i.test(e.status||'')?'var(--warn)':'var(--c)'}">${esc(edShort(e.status))}</i></span>`).join('')||'<span>Tiada projek berjalan</span>'}${eds.length>6?`<span>+${eds.length-6} lagi</span>`:''}</span></button>

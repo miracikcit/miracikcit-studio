@@ -278,3 +278,12 @@ audio{width:100%;margin-top:8px}
 .tokn svg{width:11px;height:11px;transform:rotate(-90deg)}.tokn circle{fill:none;stroke:rgba(46,39,35,.15);stroke-width:2.4}.tokn circle.a{stroke:var(--tc);stroke-linecap:round}
 .tokn.free circle{stroke:var(--ok);opacity:.55}
 .toknote{display:block;margin-top:4px}
+/* 2026-11-23 senarai ringkas (Shoot Creative, Published Creative) */
+.clist{display:flex;flex-direction:column;gap:6px}
+.crow{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:14px}
+.crow .crt{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+.crow .crt b{font-size:14px;line-height:1.25}
+.crow .crt small{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crow .crb{display:flex;gap:4px;flex:0 0 auto;align-items:center}
+.crow .crb .btn.sm{padding-left:9px;padding-right:9px}
+.stbar{margin-top:6px}.stbar .stt{display:flex;justify-content:space-between;font-size:12px;font-weight:600}.stbar .stg{height:7px;border-radius:5px;background:rgba(0,0,0,.08);overflow:hidden;margin-top:3px}.stbar .stg i{display:block;height:100%;background:var(--c,#8A6A52);border-radius:5px;transition:width .6s}

@@ -410,12 +410,32 @@ FINALS_STATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "finals.
 _finals = {"running": False}
 
 
-def drive_upload(sheet, path, parent, name=None):
+class _Prog:
+    """Pembaca fail yang lapor % (bar upload dalam To Publish)."""
+    def __init__(self, fh, size, cb):
+        self.fh, self.size, self.cb, self.n, self.last = fh, size, cb, 0, -1
+    def read(self, k=-1):
+        b = self.fh.read(1 << 20 if k is None or k < 0 else min(k, 1 << 20))
+        self.n += len(b)
+        p = int(self.n * 100 / max(1, self.size)) // 10 * 10
+        if p != self.last:
+            self.last = p
+            try:
+                self.cb(p)
+            except Exception:
+                pass
+        return b
+    def __len__(self):
+        return self.size
+
+
+def drive_upload(sheet, path, parent, name=None, progress=None):
     """Apps Script buka sesi muat naik sekali guna; Mac mini hantar bait fail terus ke Drive."""
     size = os.path.getsize(path)
     mime = mimetypes.guess_type(path)[0] or "application/octet-stream"
     url = sheet.call("rstart", name=name or os.path.basename(path), parent=parent, size=size, mime=mime)["url"]
-    with open(path, "rb") as fh:
+    with open(path, "rb") as fh0:
+        fh = _Prog(fh0, size, progress) if progress else fh0
         req = urllib.request.Request(url, data=fh, method="PUT",
                                      headers={"Content-Length": str(size), "Content-Type": mime})
         with urllib.request.urlopen(req, timeout=1800) as r:
@@ -466,8 +486,12 @@ def _finals_run(sheet):
             parent = parent or sheet.call("dpath", base="studio", path=["TO POST FINAL"], share=True)["id"]
             if rec:
                 sheet.call("dtrash", id=rec["id"])
-            fid = drive_upload(sheet, os.path.join(tp, fn), parent)
+            todo = [n for n in sorted(names, key=lambda n: -names[n].st_mtime) if n != fn and not (state.get(n) and state[n].get("size") == names[n].st_size)]
+            up = lambda p, fn=fn, todo=todo: sheet.call("dset", path="sync/finalsup", data={"name": fn, "pct": p, "queue": todo, "at": int(time.time() * 1000)})
+            up(0)
+            fid = drive_upload(sheet, os.path.join(tp, fn), parent, progress=up)
             state[fn] = {"id": fid, "size": st.st_size, "mtime": int(st.st_mtime)}
+            sheet.call("dset", path="sync/finalsup", data={"name": "", "pct": 100, "queue": todo, "done": fn, "at": int(time.time() * 1000)})
             save_finals(state)
             _scan_last["t"] = 0
             log.info("Final dimuat naik ke Drive: %s", fn)
@@ -579,6 +603,36 @@ def run_listing_delete(inp, sheet):
     return {"trashed": os.path.basename(src)}
 
 
+_hooks_cache = {"t": 0, "m": {}}
+
+
+def final_hooks():
+    """Nama kad New Videos (2026-11-23): fail <Produk>_<N>.mp4 dari editor berbilang part -> ayat hook part N
+    (data.json hook, atau tajuk part). Cache 10 minit."""
+    if time.time() - _hooks_cache["t"] < 600:
+        return _hooks_cache["m"]
+    m = {}
+    nk = lambda x: re.sub(r"[^a-z0-9]", "", str(x).lower())
+    for pj in glob.glob(os.path.join(STUDIO_BASE, "*", "*", "build", "*", "parts.json")):
+        try:
+            P = json.load(open(pj))
+            proj = os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(pj))))
+            for i, part in enumerate(P.get("parts") or [], 1):
+                h = ""
+                try:
+                    d = json.load(open(os.path.join(os.path.dirname(pj), part.get("base") or "", "data.json")))
+                    h = (d.get("hook") or "").strip()
+                except Exception:
+                    pass
+                h = h or re.sub(r"^Edit\s+", "", part.get("title") or "")
+                if h:
+                    m[nk(proj) + "|" + str(i)] = h[:90]
+        except Exception:
+            continue
+    _hooks_cache.update(t=time.time(), m=m)
+    return m
+
+
 def scan_folders():
     """Senarai folder untuk tab To Edit, Ready dan Links. Cuma baca nama fail, tak buka video."""
     base = STUDIO_BASE
@@ -595,7 +649,13 @@ def scan_folders():
                 st = os.stat(full)
                 rec = fin.get(fn) or {}
                 drv = rec.get("id") if rec.get("size") == st.st_size else None
-                files.append({"name": fn, "size": st.st_size, "mtime": int(st.st_mtime * 1000), "drive": drv})
+                rec2 = {"name": fn, "size": st.st_size, "mtime": int(st.st_mtime * 1000), "drive": drv}
+                mm = re.match(r"(.+?)_(\d+)\.(mp4|mov|m4v)$", fn, re.I)
+                if mm:
+                    hk = final_hooks().get(re.sub(r"[^a-z0-9]", "", mm.group(1).lower()) + "|" + mm.group(2))
+                    if hk:
+                        rec2["hook"] = hk
+                files.append(rec2)
         files.sort(key=lambda x: -x["mtime"])
         docs["sync/topost"] = {"path": rel + "/00. TO POST FINAL", "syncedAt": now, "files": files}
     pl = os.path.join(base, "R1. PRODUCT LISTING")
@@ -1404,6 +1464,9 @@ def studio_jobs(sheet, cfg):
                 outp = run_ed_send(inp, sheet, cfg)
             elif j["type"] == "edit_now":
                 outp = run_edit_now(inp, sheet, cfg)
+            elif j["type"] == "folder_peek":   # gambar grid footage folder edit (tab Edit, 0 token)
+                import peek
+                outp = peek.run(inp, sheet, sys.modules[__name__])
             elif j["type"] == "mkfolder":
                 outp = run_mkfolder(inp, sheet)
             elif j["type"] == "jobparse":
