@@ -23,7 +23,7 @@ const voKeptDur=d=>((d.take||{}).segs||[]).filter(x=>x.keep).reduce((a,x)=>a+(x.
 V.vo=()=>{const d=ui.voOpen&&voList().find(x=>x.id===ui.voOpen);if(d)return voDetail(d);const list=voList(),n=voPending().length;
   const hid=voHidden();
   return head(n?n+' video perlu VO':'Rakam VO terus dari phone',`<button class="btn sm" data-act="voAdd">${IC.plus}Tambah</button>`)+`<div class="list">${list.map(d=>`<div class="card glass" style="position:relative">
-    <button style="all:unset;display:block;cursor:pointer;width:100%" data-act="voOpen" data-id="${esc(d.id)}"><div class="rowh" style="align-items:center;padding-right:34px"><div><h3 style="margin:0">${esc(d.sub||d.title||d.id)}</h3><div class="meta">${esc((d.folder||'').replace(/^\d+\.\s*/,''))}${d.target?' · sasaran ±'+d.target+' s':''}${(d.vos||[]).length?' · '+d.vos.length+' VO':d.status==='siap'&&d.voDur?' · VO '+d.voDur+' s':''}</div></div>${voPill(d)}</div></button>
+    <button style="all:unset;display:block;cursor:pointer;width:100%" data-act="voOpen" data-id="${esc(d.id)}"><div class="rowh" style="align-items:center;padding-right:34px"><div><h3 style="margin:0">${esc(d.sub||d.title||d.id)}</h3><div class="meta">${esc((d.folder||'').replace(/^\d+\.\s*/,''))}${d.target?' · sasaran ±'+d.target+' s':''}${(d.vos||[]).length?' · '+d.vos.length+' VO · '+voTot(d)+' s'+(d.target?' / '+d.target+' s':''):d.status==='siap'&&d.voDur?' · VO '+d.voDur+' s':''}</div></div>${voPill(d)}</div></button>
     ${d.status==='siap'?'':`<button class="btn sm" style="position:absolute;top:8px;right:8px;padding:6px" data-act="voHide" data-id="${esc(d.id)}" aria-label="Buang dari senarai VO" title="Buang dari senarai">${IC.x}</button>`}</div>`).join('')||`<div class="empty">Tiada video perlu VO. Folder 41. TUNGGU VO dan semua folder VLOG masuk sini sendiri.</div>`}</div>
     ${hid.length?`<details style="margin-top:14px"><summary class="meta">Dibuang dari senarai (${hid.length})</summary><div class="list" style="margin-top:8px">${hid.map(d=>`<div class="rowh" style="align-items:center;padding:6px 4px"><span>${esc(d.sub||d.id)} <small class="meta">${esc((d.folder||'').replace(/^\d+\.\s*/,''))}</small></span><button class="btn sm" data-act="voUnhide" data-id="${esc(d.id)}">Pulihkan</button></div>`).join('')}</div></details>`:''}`};
 A.voHide=el=>{const d=voAll().find(x=>x.id===el.dataset.id);if(!d)return;const o=voEnsure(d);save('vo',Object.assign({},o,{status:'buang',prev:o.status==='buang'?'perlu':o.status}));toast('Dibuang dari senarai VO')};
@@ -119,7 +119,7 @@ function voDetail(d){
     ${pts.length?`<ol style="margin:12px 0 0;padding-left:22px;font-size:17px;line-height:1.5">${pts.map(p=>`<li>${esc(p)}</li>`).join('')}</ol>`:`<p class="meta" style="margin:10px 0 0">Point belum ada. Tekan Edit point kalau perlu.</p>`}
     ${ban.length?`<p style="margin:10px 0 0;color:var(--bad)">Jangan sebut: ${ban.map(esc).join(', ')}</p>`:''}
     <div class="btns" style="margin-top:10px"><button class="btn sm" data-act="voEditPts" data-id="${esc(d.id)}">${IC.edit}Edit point</button></div></div>`;
-  const list=`<p class="eyebrow" style="margin-top:16px">VO dalam kad ni · ${vos.length} <span class="meta" style="text-transform:none;letter-spacing:0">(setiap VO = satu video, ayat pertama = tajuk)</span></p>
+  const list=`<p class="eyebrow" style="margin-top:16px">VO dalam kad ni · ${vos.length}${vos.length?' · '+voTot(d)+' s'+(d.target?' / sasaran '+d.target+' s setiap video':''):''} <span class="meta" style="text-transform:none;letter-spacing:0">(setiap VO = satu video, ayat pertama = tajuk)</span></p>
     <div class="clist">${vos.map(v=>`<div class="crow glass"><div class="crt"><b>VO ${v.n}${v.title?': '+esc(v.title):''}</b><small>${v.status==='proses'?'<i class="spin"></i> Mac mini sedang bersihkan & simpan…':v.status==='error'?'Ralat: '+esc(v.err||''):esc((v.dur?v.dur+' s · ':'')+String(v.file||'').split('/').pop())}</small></div>
       <div class="crb">${v.asset&&v.status!=='proses'?`<button class="btn sm" data-act="voPlayV" data-x="${esc(v.asset)}" aria-label="Dengar">▶</button>`:''}<button class="btn sm" data-act="vrOpen" data-id="${esc(d.id)}" data-x="${v.n}" aria-label="Rakam semula">${IC.mic}</button><button class="btn icon sm bad" data-act="voDelV" data-id="${esc(d.id)}" data-x="${v.n}" aria-label="Buang">${IC.trash}</button></div></div>`).join('')||'<div class="empty">Belum ada VO.</div>'}</div>
     <div style="text-align:center;margin:18px 0"><button class="btn solid rose" style="font-size:18px;padding:16px 28px;border-radius:999px" data-act="vrOpen" data-id="${esc(d.id)}" data-x="${(vos.reduce((m,v)=>Math.max(m,v.n),0))+1}">${IC.mic}Rakam VO ${(vos.reduce((m,v)=>Math.max(m,v.n),0))+1}</button></div>`;
@@ -127,7 +127,7 @@ function voDetail(d){
   return head(d.folder||'VO',back)+top+list+legacy}
 function vrView(d){const dur=vrDur(),segs=vrSegs(),cur=segs.findIndex(x=>VR.pos>=x.s&&VR.pos<=x.e);
   return head('Mod rakam',`<span class="pill" style="--pc:var(--bad)">● VO ${VR.n}</span>`)+`<div class="card glass vrbox">
-   <p class="meta" style="margin:0 0 6px">${esc(d.sub||d.id)}${(d.points||[]).length?' · '+esc(d.points[0]).slice(0,60):''}</p>
+   <p class="meta" style="margin:0 0 6px">${esc(d.sub||d.id)}</p>${vrPrompt(d)}
    <div class="vrclock" id="vrClock">${VR.rec?'● '+vrFmt((Date.now()-VR.t0)/1000):vrFmt(VR.pos)+' / '+vrFmt(dur)}</div>
    <canvas id="vrWave" class="vrwave" width="680" height="110"></canvas>
    <input type="range" id="vrPos" class="vrpos" min="0" max="${Math.max(0.1,dur).toFixed(2)}" step="0.05" value="${Math.min(VR.pos,dur).toFixed(2)}" ${VR.rec||!dur?'disabled':''}>
@@ -154,7 +154,7 @@ async function vrEnsure(){if(!VR.ctx){const AC=window.AudioContext||window.webki
 A.vrOpen=async el=>{if(!navigator.mediaDevices||!window.MediaRecorder){toast('Phone ni tak boleh rakam di sini');return}
   try{await vrEnsure()}catch(e){toast('Benarkan mikrofon untuk Studio');return}
   const d=voList().find(x=>x.id===el.dataset.id);if(d)voEnsure(d);
-  Object.assign(VR,{on:true,id:el.dataset.id,n:+el.dataset.x||1,pcm:new Float32Array(0),sr:VR.ctx.sampleRate,cuts:[],pos:0,rec:false,play:false,busy:false});render(true);window.scrollTo(0,0)};
+  wakeOn();Object.assign(VR,{pt:0,on:true,id:el.dataset.id,n:+el.dataset.x||1,pcm:new Float32Array(0),sr:VR.ctx.sampleRate,cuts:[],pos:0,rec:false,play:false,busy:false});render(true);window.scrollTo(0,0)};
 A.vrRec=()=>{if(VR.rec)return;vrStopPlay();const mime=['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(m=>MediaRecorder.isTypeSupported(m))||'';
   const ch=[];const mr=new MediaRecorder(VR.stream,mime?{mimeType:mime}:{});VR.mr=mr;
   mr.ondataavailable=e=>{if(e.data&&e.data.size)ch.push(e.data)};
@@ -176,7 +176,7 @@ A.vrDel=()=>{const segs=vrSegs(),k=segs.findIndex(x=>VR.pos>=x.s&&VR.pos<=x.e);i
     VR.pcm=out;const dl=x.e-x.s;VR.cuts=VR.cuts.filter(c=>c<x.s-0.01||c>x.e+0.01).map(c=>c>x.e?c-dl:c);VR.pos=Math.min(x.s,vrDur());render(true);toast('Bahagian dibuang')};
   if(segs.length===1)confirmBox('Buang semua rakaman ni?',go,'Ya, buang');else go()};
 A.vrQuit=()=>confirmBox('Keluar dan buang rakaman yang belum FINAL?',()=>{vrClose();render(true)},'Ya, keluar');
-function vrClose(){vrStopPlay();clearInterval(VR.tick);if(VR.mr&&VR.rec){try{VR.mr.stop()}catch(e){}}if(VR.stream){VR.stream.getTracks().forEach(t=>t.stop());VR.stream=null}Object.assign(VR,{on:false,rec:false,pcm:new Float32Array(0),cuts:[]})}
+function vrClose(){wakeOff();vrStopPlay();clearInterval(VR.tick);if(VR.mr&&VR.rec){try{VR.mr.stop()}catch(e){}}if(VR.stream){VR.stream.getTracks().forEach(t=>t.stop());VR.stream=null}Object.assign(VR,{on:false,rec:false,pcm:new Float32Array(0),cuts:[]})}
 function vrWav(){const src=VR.pcm,sr0=VR.sr,sr=24000,n=Math.floor(src.length*sr/sr0),buf=new ArrayBuffer(44+n*2),v=new DataView(buf);
   const w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2,true);
   for(let i=0;i<n;i++){const x=src[Math.min(src.length-1,Math.floor(i*sr0/sr))];v.setInt16(44+i*2,Math.max(-1,Math.min(1,x))*0x7fff,true)}return new Blob([buf],{type:'audio/wav'})}
@@ -188,3 +188,13 @@ A.vrFinal=async()=>{if(!ASSETS){toast('Upload tak tersedia');return}if(!vrDur())
   try{await studioJob('vo_final',{id,asset:r.id,n},15*60000);toast('VO '+n+' disimpan')}catch(e){toast('Mac mini tak dapat simpan: '+String((e&&e.message)||'').slice(0,80))}};
 A.voPlayV=el=>{if(!voAud)voAud=new Audio();voQ=[];voAud.src=blobUrl(el.dataset.x);voAud.play().catch(()=>toast('Tak dapat main audio'))};
 A.voDelV=el=>{const id=el.dataset.id,n=+el.dataset.x;confirmBox('Buang VO '+n+'? Fail masuk Trash Mac.',async()=>{const d=get('vo',id);save('vo',Object.assign({},d,{vos:(d.vos||[]).filter(v=>v.n!==n)}));try{await studioJob('vo_del',{id,n},3*60000)}catch(e){}},'Ya, buang')};
+
+/* Penambahbaikan 23 Nov: teleprompter (point besar, satu-satu), jumlah panjang VO, skrin tak tidur masa rakam / upload */
+const voTot=d=>Math.round((d.vos||[]).filter(v=>v.status==='siap').reduce((a,v)=>a+(+v.dur||0),0));
+function vrPrompt(d){const P=(d.points||[]).filter(Boolean);if(!P.length)return '';const k=Math.min(VR.pt||0,P.length-1);
+  return `<div class="vrtp"><button class="vrtpb" data-act="vrPt" data-x="-1" ${k?'':'disabled'} aria-label="Point sebelum">‹</button><div><small>Point ${k+1}/${P.length}</small><p>${esc(P[k])}</p></div><button class="vrtpb" data-act="vrPt" data-x="1" ${k<P.length-1?'':'disabled'} aria-label="Point seterusnya">›</button></div>`}
+A.vrPt=el=>{VR.pt=Math.max(0,(VR.pt||0)+(+el.dataset.x));const box=document.querySelector('.vrtp');const d=get('vo',VR.id);if(box&&d){box.outerHTML=vrPrompt(d)}};
+let WL=null;
+async function wakeOn(){try{if(navigator.wakeLock&&!WL){WL=await navigator.wakeLock.request('screen');WL.addEventListener('release',()=>{WL=null})}}catch(e){}}
+function wakeOff(){try{if(WL)WL.release()}catch(e){}WL=null}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&(VR.on||Object.keys(ui.fuUp||{}).length))wakeOn()});

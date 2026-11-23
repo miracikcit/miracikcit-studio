@@ -13,7 +13,8 @@ V['to-shoot']=()=>{if(!ui.shootTab){try{ui.shootTab=localStorage.getItem('ms:sho
     const left=it.shootDate?Math.ceil((new Date(it.shootDate+'T00:00:00')-Date.now())/DAY):null;const col=left===null?'var(--muted)':left>7?'var(--ok)':left>=0?'var(--warn)':'var(--bad)';
     const badge=it.sample&&!sampleDone(it)?smpBadge(it):`<div class="smpb" style="--pc:${col}">${left!==null?`<span class="pill">${left>0?left+' hari lagi':left===0?'Hari ni':'Lewat '+(-left)+' hari'}</span>`:''}<button class="smpd" data-act="tsDate" data-id="${it.id}">${it.shootDate?'Shoot '+dmy(it.shootDate):'Set tarikh shoot'}</button></div>`;
     return `<div class="card glass tsc"><div class="rowh" style="align-items:flex-start;gap:10px"><div style="min-width:0"><h3>${esc(it.title||'Nota')} ${jobPill(it)}</h3><div class="meta">${esc([it.sample?'Sample '+smpPlat(it.sample.plat):'',it.sample&&it.sample.price?'RM '+it.sample.price:'',it.brand,it.nota?'ada nota':''].filter(Boolean).join(' · '))}</div></div>${badge}</div>
-    <div class="btns tsb${it.sample?' tsb2':''}">${accSel(`id="ac-${it.id}" data-col="items" data-id="${it.id}" data-f="account"`,it.account||'','Akaun')}${it.sample?smpListing(it):''}${notaBtn(it,it.sample?'smpNotaBtn':'nota')}<button class="btn icon sm" data-act="tsEdit" data-id="${it.id}" aria-label="Edit">${IC.edit}</button><button class="btn sm" data-act="fuOpen" data-id="${it.id}">${IC.up}Upload footage</button><button class="btn sm solid tab" data-act="toShot" data-id="${it.id}">${IC.check}Shot</button><button class="btn icon sm bad" data-act="delItem" data-id="${it.id}" aria-label="Padam">${IC.trash}</button></div>${fuStatus(it)}</div>`}).join('')||`<div class="empty">Tiada job menunggu. Tambah sample, atau job dari tab Projects.</div>`}</div>`};
+    <div class="tsx">${accSel(`id="ac-${it.id}" data-col="items" data-id="${it.id}" data-f="account"`,it.account||'','Akaun')}${it.sample?smpListing(it):''}${notaBtn(it,it.sample?'smpNotaBtn':'nota')}</div>
+    <div class="tsm">${footBtn(it)}<button class="btn icon sm" data-act="tsEdit" data-id="${it.id}" aria-label="Edit">${IC.edit}</button><button class="btn icon sm bad" data-act="delItem" data-id="${it.id}" aria-label="Padam">${IC.trash}</button></div>${fuStatus(it)}</div>`}).join('')||`<div class="empty">Tiada job menunggu. Tambah sample, atau job dari tab Projects.</div>`}</div>`};
 A.tsDate=el=>{const it=get('items',el.dataset.id);modal(`<h2>Tarikh shoot</h2><p class="meta">${esc(it.title||'')}</p><label class="f"><span>Tarikh</span><input type="date" class="inp" id="tsD" value="${esc(it.shootDate||'')}"></label><div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="tsDateSave" data-id="${it.id}">Simpan</button></div>`,TAB['to-shoot'].c)};
 A.tsDateSave=el=>{const it=get('items',el.dataset.id);save('items',Object.assign({},it,{shootDate:($('#tsD')||{}).value||''}));closeModal();toast('Tarikh disimpan')};
 A.toShot=el=>moveItem(get('items',el.dataset.id),'shot',{shotAt:ymd(new Date())});
@@ -24,8 +25,8 @@ function creList(cre,ideas){
   const row=(it,idea)=>{const left=it.shootDate?Math.ceil((new Date(it.shootDate+'T00:00:00')-Date.now())/DAY):null;
     const meta=[idea?'Idea':it.shootDate?'Shoot '+dmy(it.shootDate)+(left!==null?(left>0?' · '+left+' hari lagi':left===0?' · hari ni':' · lewat '+(-left)+' hari'):''):'Belum ada tarikh',it.account,it.nota?'ada nota':'',noEmoji(it.details||((it.src&&it.src.text)||'')).slice(0,90)].filter(Boolean).join(' · ');
     return `<div class="crow glass"><div class="crt"><b>${esc(it.title||'Tanpa tajuk')}</b><small>${esc(meta)}</small></div><div class="crb">
-      ${idea?`<button class="btn sm" data-act="tsPlan" data-id="${it.id}">Nak shoot</button>`:`${notaBtn(it,'nota')}<button class="btn sm solid tab" data-act="toShot" data-id="${it.id}" aria-label="Dah shoot">${IC.check}</button>`}
-      ${idea?'':`<button class="btn sm" data-act="fuOpen" data-id="${it.id}" aria-label="Upload footage">${IC.up}</button>`}<button class="btn sm" data-act="tsEdit" data-id="${it.id}" aria-label="Edit">${IC.edit}</button><button class="btn icon sm bad" data-act="delItem" data-id="${it.id}" aria-label="Padam">${IC.trash}</button></div></div>${idea?'':fuStatus(it)}`};
+      ${idea?`<button class="btn sm" data-act="tsPlan" data-id="${it.id}">Nak shoot</button>`:`${notaBtn(it,'nota')}${footBtn(it,true)}`}
+      <button class="btn sm" data-act="tsEdit" data-id="${it.id}" aria-label="Edit">${IC.edit}</button><button class="btn icon sm bad" data-act="delItem" data-id="${it.id}" aria-label="Padam">${IC.trash}</button></div></div>${idea?'':fuStatus(it)}`};
   return `<p class="eyebrow">Nak shoot · ${cre.length}</p><div class="clist">${cre.map(it=>row(it,false)).join('')||'<div class="empty">Tiada video creative menunggu.</div>'}</div>
     <p class="eyebrow" style="margin-top:18px">Idea · ${ideas.length} <a href="#ideas" class="meta" style="margin-left:6px">+ idea baru</a></p><div class="clist">${ideas.map(it=>row(it,true)).join('')||'<div class="empty">Belum ada idea.</div>'}</div>`;
 }
@@ -64,14 +65,14 @@ function fuStatus(it){const u=(ui.fuUp||{})[it.id],d=get('footin',it.id);
 A.fuOpen=el=>{const it=get('items',el.dataset.id);if((ui.fuUp||{})[it.id]){toast('Upload sedang berjalan');return}
   modal(`<h2>Upload footage</h2><p class="meta">${esc(it.title||'')}</p>
    <label class="f"><span>Raw footage masuk folder</span>${fuSel('fuF',it.folder||'',true,it.title)}</label>
-   <p class="meta">Pilih video dari phone. Jangan tutup Studio sampai bar upload habis; lepas tu Mac mini pindahkan sendiri.</p>
+   <p class="meta">Pilih video dari phone. Skrin tak akan tidur masa upload; jangan tutup atau tukar app sampai bar habis. Lepas tu Mac mini pindahkan sendiri.</p>
    <div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="fuPick" data-id="${it.id}">${IC.up}Pilih video</button></div>`,TAB['to-shoot'].c)};
 A.fuPick=el=>{const it=get('items',el.dataset.id),v=($('#fuF')||{}).value||'';if(!v){toast('Pilih folder dulu');return}
   const [stage,name]=v.startsWith('new|')?[v.slice(4),String(it.title||'Footage').replace(/[\\/:*?"<>|]+/g,' ').trim().slice(0,60)]:[v.split('/')[0],v.split('/').slice(1).join('/')];
   const inp=document.createElement('input');inp.type='file';inp.accept='video/*';inp.multiple=true;
   inp.onchange=()=>{const fs=[...inp.files];closeModal();if(fs.length)fuRun(it,stage,name,fs)};inp.click()};
 async function fuRun(it,stage,name,fs){const b64=blob=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]||'');r.onerror=rej;r.readAsDataURL(blob)});
-  const up=[];ui.fuUp=Object.assign({},ui.fuUp);
+  const up=[];ui.fuUp=Object.assign({},ui.fuUp);wakeOn();
   try{for(let k=0;k<fs.length;k++){const f=fs[k];ui.fuUp[it.id]={i:k+1,n:fs.length,name:f.name,pct:0};render();
       const s=await studioCall('ustart',{name:f.name,mime:f.type||'video/mp4',size:f.size});const CH=8*1048576;let pos=0,id=null,tries=0;
       while(pos<f.size&&!id){try{const r=await studioCall('uchunk',{url:s.url,start:pos,total:f.size,b64:await b64(f.slice(pos,pos+CH))});if(r.id)id=r.id;else pos=r.next;tries=0}
@@ -81,4 +82,13 @@ async function fuRun(it,stage,name,fs){const b64=blob=>new Promise((res,rej)=>{c
     await studioCall('job_add',{type:'foot_in',input:{item:it.id,stage,name,files:up}});
     toast(fs.length+' video dah upload. Mac mini sedang pindah ke folder')}
   catch(e){toast('Upload tak jadi: '+String((e&&e.message)||'semak internet').slice(0,80));if(up.length)studioCall('job_add',{type:'foot_in',input:{item:it.id,stage,name,files:up}}).catch(()=>{})}
-  finally{delete ui.fuUp[it.id];render()}}
+  finally{delete ui.fuUp[it.id];if(!Object.keys(ui.fuUp).length&&!VR.on)wakeOff();render()}}
+
+/* 2026-11-23 (Mira): butang Shot dibuang. Satu butang footage: Upload footage -> bila folder ada video jadi "Ada footage · N video"
+   + butang Ke Edit (kad pindah ke tab Edit, folder dah terpaut). */
+function footCount(it){if(!it.folder)return 0;const [st,...rest]=it.folder.split('/'),nm=rest.join('/');const s=(((S.sync.toedit||{}).stages)||[]).find(x=>x.name===st);const i=s&&(s.items||[]).find(x=>x.name===nm);return i?(i.clips||0):0}
+function footBtn(it,compact){const n=footCount(it),busy=(ui.fuUp||{})[it.id];
+  if(busy)return `<button class="btn sm st-run" disabled><i class="spin"></i>${busy.pct}%</button>`;
+  if(!n)return `<button class="btn sm${compact?'':' solid tab tsgrow'}" data-act="fuOpen" data-id="${it.id}" aria-label="Upload footage">${IC.up}${compact?'':'Upload footage'}</button>`;
+  return `<button class="btn sm st-done${compact?'':' tsgrow'}" data-act="fuOpen" data-id="${it.id}" title="Tambah lagi footage">${IC.check}${compact?n:'Ada footage · '+n+' video'}</button><button class="btn sm solid tab" data-act="tsToEdit" data-id="${it.id}">Ke Edit${IC.next}</button>`}
+A.tsToEdit=el=>{const it=get('items',el.dataset.id);moveItem(it,'toedit',{folder:(it.folder||'').split('/')[0],shotAt:ymd(new Date())})};
