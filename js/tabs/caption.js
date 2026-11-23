@@ -37,7 +37,7 @@ V.caption=()=>{const c=ui.cap||(ui.cap={link:'',name:'',what:'',angle:'Auto',res
     <label class="f"><span>Apa yang ada dalam video (pilihan)</span><input class="inp" id="capWhat" data-capf="what" value="${esc(c.what)}" placeholder="cth. unboxing, test bau, pasang kat aircond"></label>
     <span class="num" style="display:block;margin:4px 0 6px">Sudut hook</span>
     <div class="btns" style="gap:6px">${CAP_ANG.map(a=>`<button class="btn sm ${c.angle===a?'solid tab':''}" data-act="capAng" data-x="${a}" aria-pressed="${c.angle===a}">${a}</button>`).join('')}</div>
-    <div class="btns" style="margin-top:14px"><button class="btn ${nm?'solid tab':''}" data-act="capGen"${c.busy?' disabled':''}>${c.busy?'Sedang generate...':nm?IC.ideas+'Generate 3 pilihan':'Taip nama produk dulu'}</button></div>
+    <div class="btns" style="margin-top:14px"><button class="btn ${nm?'solid tab':''}" data-act="capGen"${c.busy?' disabled':''}>${c.busy?'Sedang generate...':nm?IC.ideas+'Generate 3 pilihan':'Taip nama produk dulu'}</button>${tok(TOK.caption,'3 pilihan caption')}</div>
     ${c.busy?capLoader():`<p class="meta" style="margin:10px 0 0">Guna usage Claude kau di Mac mini, macam butang Ideas. Biasanya siap dalam 20 hingga 40 saat.</p>`}</div>
   ${capTagsBox()}
   ${r?`<div class="rowh" style="align-items:center;margin-top:20px"><p class="eyebrow" style="margin:0">Pilihan ${c.pick+1} · ${esc(pick.angle||'')}</p><div class="btns" style="gap:6px">${r.captions.map((x,i)=>`<button class="btn sm ${i===c.pick?'solid tab':''}" data-act="capPick" data-x="${i}" aria-label="Pilihan ${i+1}">${i+1}</button>`).join('')}</div></div>${box('sh','Shopee Video')}${box('tt','TikTok')}`:''}

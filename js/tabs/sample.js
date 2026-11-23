@@ -24,7 +24,7 @@ function smpListing(it){const l=it.listing||{};const busy=ui.lsUp&&ui.lsUp[it.id
   return `<button class="btn sm${st}" data-act="lsAdd" data-id="${it.id}"${busy?' disabled':''}>${busy?'<i class="spin"></i>'+esc(busy):(l.n?IC.check+l.n+' gambar':IC.up+'Gambar listing')}</button><button class="btn sm${lk?' st-done':''}" data-act="smpLink" data-id="${it.id}">${lk?IC.check+'Link':'+ Link'}</button>`}
 /* Butang Nota berwarna: kelabu = belum, kuning = sedang buat, hijau = siap */
 function notaBtn(it,act){const run=ui.notaUp&&ui.notaUp[it.id];const done=it.nota||it.productId;
-  return `<button class="btn sm${run?' st-run':done?' st-done':''}" data-act="${act||'nota'}" data-id="${it.id}"${run?' disabled':''}>${run?'<i class="spin"></i>'+esc(run):done?IC.check+'Nota':'Nota'}</button>`}
+  return `<button class="btn sm${run?' st-run':done?' st-done':''}" data-act="${act||'nota'}" data-id="${it.id}"${run?' disabled':''}>${run?'<i class="spin"></i>'+esc(run):done?IC.check+'Nota':'Nota'}</button>${done?'':tok(TOK.nota,'Claude baca gambar listing dan tulis nota')}`}
 function sampleBlock(it){if(!it.sample||sampleDone(it))return '';
   return `<div class="rowh" style="align-items:center;margin-top:10px;border-top:1px solid var(--line);padding-top:10px"><span class="meta">Sample ${smpPlat(it.sample.plat)}</span>${smpBadge(it)}</div>`}
 const activeSamples=()=>S.items.filter(it=>it.sample&&!sampleDone(it)).sort((a,b)=>a.sample.postBy.localeCompare(b.sample.postBy));

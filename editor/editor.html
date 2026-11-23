@@ -855,8 +855,10 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
   .ruler { height: 18px; } .ruler i { top: 2px; } .rbar { padding-top: 2px; } .rbar > span { padding-top: 22px; }
   #fxForm { scroll-margin-top: calc(var(--hH, 0px) + var(--sh, 42vh) + 30px); }
 }
+
+.tokn{display:inline-flex;align-items:center;gap:3px;font-size:9.5px;line-height:1;opacity:.75;white-space:nowrap;vertical-align:middle;margin-left:6px}.tokn svg{width:11px;height:11px;transform:rotate(-90deg)}.tokn circle{fill:none;stroke-width:2.4;stroke-linecap:round}
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=9f0e9a94a7">
+<link rel="stylesheet" href="../../ed-capcut.css?v=b96f75ade4">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -959,9 +961,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=9f0e9a94a7"></script>
-<script src="../../../js/runtime.js?v=9f0e9a94a7"></script>
-<script src="../../ed-boot.js?v=9f0e9a94a7"></script>
+<script src="../../../js/config.js?v=b96f75ade4"></script>
+<script src="../../../js/runtime.js?v=b96f75ade4"></script>
+<script src="../../ed-boot.js?v=b96f75ade4"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -2156,6 +2158,9 @@ function runChecks() {
   add(true, "Watermark MIRACIKCIT kekal pada setiap frame");
   return out;
 }
+/* Penanda token kecil (2026-11-23, sama dengan Studio): bulatan isi ikut anggaran token Claude; 0 = percuma */
+function tokRing(n) { const f = n ? Math.max(.08, Math.min(1, Math.log10(n) / Math.log10(500000))) : 1, c = 2 * Math.PI * 6, col = !n ? "#4E9B63" : n < 10000 ? "#4E9B63" : n < 100000 ? "#E3B23C" : "#C2534F";
+  return `<span class="tokn" title="Anggaran token Claude"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" style="stroke:rgba(127,127,127,.25)"/><circle cx="8" cy="8" r="6" style="stroke:${col}" stroke-dasharray="${(f * c).toFixed(1)} ${c.toFixed(1)}"/></svg>${n ? "~" + Math.round(n / 1000) + "k" : "0"} token</span>`; }
 const SER = () => D && D.series && +D.series.total > 1 ? D.series : null;   // multi-part product (user 2026-11-10: "Render All" only on the last video)
 const isLastPart = () => { const s = SER(); return !s || +s.part >= +s.total; };
 function canDeleteSrc() { const sr = D && D.series; return S.final.render !== "draft" && (!sr || +sr.part >= +sr.total); }
@@ -2300,6 +2305,7 @@ function drawPanel() {
       <div class="row"><span class="lab">Fail asal</span><div class="chips">${chip("Delete", S.final.src === "buang", 'data-fp="src" data-v="buang"' + (canDeleteSrc() ? "" : " disabled"))}${chip("Keep", S.final.src === "simpan", 'data-fp="src" data-v="simpan"')}</div></div>
       <div class="row"><span class="lab">Fail product listing</span><div class="chips">${chip("Delete", S.final.list === "buang", 'data-fp="list" data-v="buang"' + (canDeleteSrc() ? "" : " disabled"))}${chip("Keep", S.final.list === "simpan", 'data-fp="list" data-v="simpan"')}</div><span class="legend">${canDeleteSrc() ? "Buang bermaksud masuk Trash Mac selepas final siap, dan boleh dipulihkan." : D.series && +D.series.part < +D.series.total ? `Video ni bahagian ${D.series.part} daripada ${D.series.total}. Fail asal dan product listing hanya boleh dibuang masa render final video terakhir.` : "Delete hanya untuk render final."}</span></div>
       <button class="chip up" id="upload">${SER() ? (S.final.render === "draft" ? `RENDER ALL · draf ${esc(String(SER().total))} video` : `RENDER ALL · ${esc(String(SER().total))} video`) : (S.final.render === "draft" ? "UPLOAD · render draf" : "UPLOAD · render final")}</button>
+      ${tokRing(S.final.render === "draft" && window.ED_SEND ? 0 : SER() ? 250000 : 150000)}
       <span class="legend">Tekan butang, kemudian tekan Send pada kotak Claude app (app tanya setiap kali, untuk keselamatan; page tak boleh matikan). Atau taip terus dalam chat: \"${SER() ? "RENDER ALL" : "UPLOAD"}\". Mac kena hidup untuk render.</span>` : ""}
       <div class="note" id="upMsg" hidden></div>
       <div class="row"><button class="chip" data-sz="1" aria-pressed="${safeOn}">Show safe zone</button></div>

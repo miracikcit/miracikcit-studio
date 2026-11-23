@@ -73,7 +73,7 @@ function gyView(){const d=ui.gyDraft||{};const sel=new Set(d.tags||[]);const f=u
     <label class="f"><span>Nota (tak wajib)</span><input class="inp" id="gyN" value="${esc(d.note||'')}" placeholder="cth. suka cara teks pop masuk ikut beat"></label>
     <label class="f"><span>Masa effect yang nak ditiru (tak wajib, maks 3)</span><input class="inp" id="gyF" value="${esc(d.fx||'')}" placeholder="cth. 0:07-0:09, 0:15"></label>
     <div class="f"><span class="meta">Tag</span><div class="chips" style="margin-top:6px">${gyTags().map(t=>gyChip(sel.has(t),t,'gyFormTag')).join('')}<button type="button" class="chip" data-act="gyTagPick">+ Tag baru</button></div></div>
-    <div class="btns" style="margin-top:12px;justify-content:flex-end"><button class="btn solid tab" data-act="gySend"${ui.gyBusy?' disabled':''}>${ui.gyBusy?'<i class="spin"></i>':''}Hantar ke Mac mini</button></div>
+    <div class="btns" style="margin-top:12px;justify-content:flex-end"><button class="btn solid tab" data-act="gySend"${ui.gyBusy?' disabled':''}>${ui.gyBusy?'<i class="spin"></i>':''}Hantar ke Mac mini</button>${tok(TOK.gaya,'Claude tulis kad gaya sekali')}</div>
     <p class="meta" style="margin:8px 0 0">Mac mini scan tanpa token. Claude tulis kad sekali sahaja (lebih kurang 5,000–15,000 token). Video rujukan dibuang lepas scan. Tiru struktur dan rupa sahaja, bukan muzik, logo atau watermark orang lain.</p></div>
   ${pend.length?`<p class="eyebrow" style="margin-top:20px">Menunggu · ${pend.length}</p><div class="list">${pend.map(gyCard).join('')}</div>`:''}
   <p class="eyebrow" style="margin-top:22px">Gaya tersimpan · ${saved.length}</p>

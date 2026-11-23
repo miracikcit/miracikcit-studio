@@ -39,7 +39,7 @@ function jobForm(j,paid){const nx=jobNext(j);const left=nx?daysTo(nx.date):null;
 A.jobEdit=el=>{const j=get('jobs',el.dataset.id);if(j)modal(jobForm(j,j.paid!==false),TAB.jobs.c)};
 A.jobAdd=()=>{ui.jadd={files:[],text:'',busy:false};jobAddModal()};
 function jobAddModal(){const m=ui.jadd;
-  modal(`<h2>Tambah dari screenshot</h2><p class="meta" style="margin-top:-4px">Screenshot chat Shopee / TikTok, WhatsApp, email atau brief. Mac mini baca dan tentukan sendiri: job berbayar masuk Paid, sample / kupon / barter masuk Non paid dan Shoot (dengan harga, tugasan dan deadline).</p>
+  modal(`<h2>Tambah dari screenshot</h2><p class="meta" style="margin-top:-4px">Screenshot chat Shopee / TikTok, WhatsApp, email atau brief. Mac mini baca dan tentukan sendiri ${tok(TOK.jobparse,'Claude baca screenshot')}: job berbayar masuk Paid, sample / kupon / barter masuk Non paid dan Shoot (dengan harga, tugasan dan deadline).</p>
    <button class="jdrop" type="button" data-act="jaPick"${m.busy?' disabled':''}>${IC.up}<span><b>${m.files.length?m.files.length+' gambar dipilih':'Pilih screenshot'}</b><span class="meta" style="display:block">Boleh pilih beberapa gambar sekali (sampai 6)</span></span></button>
    <label class="f"><span>Atau tampal teks chat / nota</span><textarea class="inp" id="jaT" rows="4" placeholder="Brief, harga, tarikh...">${esc(m.text)}</textarea></label>
    <div class="btns" style="justify-content:space-between"><button class="btn" data-act="jaManual">Isi sendiri</button><button class="btn solid tab" data-act="jaRead"${m.busy?' disabled':''}>${m.busy?'<i class="spin"></i>'+esc(m.busy):'Baca & isi'}</button></div>`,TAB.jobs.c)}

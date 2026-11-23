@@ -492,6 +492,9 @@ def _broll_backup(sheet, up, key, r):
             if not s.get("running"):
                 break
             time.sleep(5)
+        msg = str(s.get("msg") or "")
+        if msg.startswith("Error"):              # Picker could not cut the clips: say so, don't report 0 clips as done
+            raise RuntimeError(msg.replace("\n", " ")[:100])
         stt = json.load(open(os.path.join(BR_DATA, "cache", r["job"], "state.json")))
         meta = json.load(open(os.path.join(BR_DATA, "cache", r["job"], "moments.json")))
         mom = {m["id"]: m for m in meta.get("moments", [])}
@@ -514,6 +517,8 @@ def _broll_backup(sheet, up, key, r):
                                   "thumb": _upload(sheet, up, th, pid) if os.path.exists(th) else None,
                                   "prev": _upload(sheet, up, pv, pid) if pv else None,
                                   "backup": _upload(sheet, up, p, bid)})
+        if not clips:
+            raise RuntimeError("Tiada klip Final keluar dari Picker")
         lib = os.path.dirname(clips[0]["path"]) if clips else ""
         _merge(sheet, "broll/" + r["slug"], {"status": "stok", "clips": clips, "kept": len(clips), "lib": lib.replace(os.path.expanduser("~"), "~"),
                                              "size": sum(c["size"] for c in clips), "backedUp": all(c.get("backup") for c in clips), "msg": ""})

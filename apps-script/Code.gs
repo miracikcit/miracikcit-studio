@@ -92,6 +92,7 @@ function worker(b) {
     const loc = r.getHeaders().Location || r.getHeaders().location;
     return loc ? { ok: true, url: loc } : { ok: false, error: 'Drive tolak: ' + r.getContentText().slice(0, 200) };
   }
+  if (b.action === 'dquota') return { ok: true, used: DriveApp.getStorageUsed(), limit: DriveApp.getStorageLimit() };
   if (b.action === 'dtrash') { try { DriveApp.getFileById(String(b.id)).setTrashed(true); } catch (e) { try { DriveApp.getFolderById(String(b.id)).setTrashed(true); } catch (e2) {} } return { ok: true }; }
   if (b.action === 'dcount') return { ok: true, n: countFiles(DriveApp.getFolderById(String(b.id))) };
   if (b.action === 'dchunk') {   // Tiru Gaya: Mac mini muat turun video rujukan dari Drive, sekeping-sekeping

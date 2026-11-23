@@ -1312,6 +1312,9 @@ def studio_jobs(sheet, cfg):
             elif j["type"] in ("broll_done", "best_done", "broll_start"):
                 import footage
                 outp = getattr(footage, "job_" + j["type"])(inp, sheet, drive_upload)
+            elif j["type"] == "brtag":
+                import brlib
+                outp = brlib.job_brtag(inp, sheet)
             elif j["type"] == "gaya_scan":
                 import gaya
                 outp = gaya.job_gaya_scan(inp, sheet, cfg, drive_upload, sys.modules[__name__])
@@ -1396,6 +1399,11 @@ def main():
                 except Exception:
                     log.exception("Tak dapat tulis status Gagal")
         n = studio_jobs(sheet, cfg)
+        try:
+            import brlib
+            brlib.quick(sheet)          # kiraan B-roll, library, ruang, hard disk (thread sendiri, tiada token)
+        except Exception as e:
+            log.warning("brlib gagal: %s", e)
         try:
             push_scan(sheet)
         except Exception as e:

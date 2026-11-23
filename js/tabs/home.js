@@ -59,7 +59,7 @@ function sorterCard(){if(!sorterRaw||!sorterRaw.length)return '';
   const meter=(name,used,total)=>{used=+used||0;total=+total||0;if(!total)return '';const pct=Math.min(100,Math.round(used/total*100));const col=pct>85?'var(--bad)':'var(--ok)';
     return `<div style="--sc:${col};margin-top:10px"><div class="trk"><div class="t"><span>${esc(name)}</span><span>${used} / ${total>=1000?(total/1000).toFixed(1)+' TB':total+' GB'}</span></div></div><div class="bar"><i style="width:${pct}%"></i></div></div>`};
   const rows=folders.filter(f=>f.review>0).sort((a,b)=>b.review-a.review).slice(0,6);
-  return `<div class="rbox glass cc" style="--c:#8676BE;cursor:default"><div class="rowh" style="align-items:center"><div style="min-width:0"><h2>Footage Sorter</h2><div class="meta">Belum disemak${checkMe?' · '+checkMe+' dalam Check Me':''} · ${esc(cell(1,1))}</div></div><b class="rn">${toReview}</b></div>
+  return `<div class="rbox glass cc" style="--c:#8676BE;cursor:default"><div class="rowh" style="align-items:center"><div style="min-width:0"><h2>Footage baru dari phone</h2><div class="meta">Belum disemak${checkMe?' · '+checkMe+' dalam Check Me':''} · ${esc(cell(1,1))}</div></div><b class="rn">${toReview}</b></div>
    ${rows.slice(0,3).map(f=>`<div class="ccr"><div class="rowh"><span class="ccn">${esc(f.label.replace(/^[^\w]+\s*/,''))}</span><span class="pill" style="--pc:var(--warn)">${f.review} semak</span></div></div>`).join('')}
    ${meter(cell(3,1)||'Hard disk',cell(3,2),cell(3,3))}${meter('iCloud',cell(4,2),cell(4,3))}
    ${/^https?:\/\//.test(link)?`<a class="ccmore" href="${esc(link)}" target="_blank" rel="noopener" style="text-decoration:none">Buka folder &amp; semak (Wi-Fi rumah) ${IC.next}</a>`:''}${ongoingSlot()}</div>`}
@@ -93,42 +93,32 @@ V.home=()=>{
    <button class="hbox big2 edbox glass" style="--c:${ed.c}" data-act="go" data-id="editor"><span class="edn"><b>${n.editor}</b><span class="l">Editor</span></span><span class="edl">${eds.slice(0,6).map(e=>`<span class="edr"><span>${esc(shortName(e.name))}</span><i style="--pc:${/draf|sedia|semak/i.test(e.status||'')?'var(--warn)':'var(--c)'}">${esc(edShort(e.status))}</i></span>`).join('')||'<span>Tiada projek berjalan</span>'}${eds.length>6?`<span>+${eds.length-6} lagi</span>`:''}</span></button>
    ${box('ready')}${box('published')}
   </div>
-  <div class="mgrid">${mini('ideas',n.ideas,'Ideas')}${mini('lagi',0,'Lagi','plus')}${mini('inspiration',n.inspiration,'Inspo')}${mini('media-kit',n['media-kit'],'Media Kit')}${mini('footage',ftSemak()||S.footage.length+S.broll.length,ftSemak()?'Footage · semak':'Footage')}${mini('shot',n.shot,'Shot')}${mini('caption',0,'Caption','caption')}${mini('transcribe',0,'Transcribe','transcribe')}</div>
+  <div class="mgrid">${mini('ideas',n.ideas,'Ideas')}${mini('lagi',0,'Lagi','plus')}${mini('inspiration',n.inspiration,'Inspo')}${mini('media-kit',n['media-kit'],'Media Kit')}${mini('footage',(S.brlib||[]).reduce((a,d)=>a+(d.clips||[]).length,0)||S.footage.length+S.broll.length,'Library klip')}${mini('shot',n.shot,'Shot')}${mini('caption',0,'Caption','caption')}${mini('transcribe',0,'Transcribe','transcribe')}</div>
   ${ccard('ready',TAB.ready.l,'Publish dalam 1 minggu selepas siap',n.ready,urgent.map(u=>ccRow(shortName(u.r.group.name,u.r.vid),u.d?u.d.label:'tiada tarikh',u.d?u.d.color:'#999',u.d?u.d.pct:0)).join('')||`<p class="meta" style="margin:8px 0 0">${sv?'Tiada video menunggu.':'Menunggu sheet.'}</p>`)}
   ${ccard('links','Projects','Sample dan paid job ikut deadline',projCount(),projItems().filter(o=>!o.done).sort((a,b)=>String(a.date).localeCompare(String(b.date))).slice(0,4).map(projRow).join('')||'<p class="meta" style="margin:8px 0 0">Tiada projek menunggu.</p>')}
   ${sorterCard()||(S.workprojects&&S.workprojects.length?`<div class="card big glass" style="--c:#8676BE;margin-top:14px"><p class="eyebrow" style="margin:0">Footage Sorter · Mac mini</p>${ongoingSlot()}</div>`:'')}
   ${voAlert()}
-  ${footageAlert()}
   ${brHome()}
   ${edSelfHome()}
   ${calHTML()}`};
 /* Kad B-roll (bawah Footage perlu semak), design sama macam kad Home lain: swipe terus dari sini. */
 function brHome(){
-  const brs=S.broll.filter(b=>brPending(b)||b.status==='error').sort((a,b)=>(b.updated||0)-(a.updated||0));if(!brs.length)return '';
-  const c=brCfg();
-  const row=b=>{const tot=b.moments||0,seen=brSeen(b),left=Math.max(0,tot-seen),keeps=brLocalKeeps(b);const busy=ui.ftBusy&&ui.ftBusy[b.id];
-    const pick=`${c.home.replace(/\/$/,'')}/?job=${encodeURIComponent(b.job||'')}#swipe`;const pb='class="pill" style="--pc:%s;cursor:pointer;border:0;font-family:inherit;color:inherit"';
-    const [line,act,col,pct]=b.status==='precut'?['Mac mini sedang potong',`<span class="pill" style="--pc:var(--c)">Pre-cut ${Math.min(100,Math.round(b.progress||0))}%</span>`,'var(--c)',Math.min(100,Math.round(b.progress||0))]
-      :b.status==='backup'?['Sedang simpan ke B-ROLL LIBRARY','<span class="pill" style="--pc:var(--c)">Simpan…</span>','var(--c)',100]
-      :b.status==='error'?[String(b.msg||'Ralat').slice(0,60),`<button ${pb.replace('%s','var(--bad)')} data-act="brStart" data-id="${esc(b.key)}">Cuba lagi</button>`,'var(--bad)',0]
-      :left>0?[(seen?`${left} lagi · keep ${keeps}`:`${tot} moment tunggu swipe`)+(b.type==='product'&&b.closeups?` · ${b.closeups} close-up`:''),
-        b.pubParts?`<button ${pb.replace('%s','var(--warn)')} data-act="brSwipe" data-id="${esc(b.id)}">▶ Swipe</button>`:`<a ${pb.replace('%s','var(--warn)')} href="${esc(pick)}" target="_blank" rel="noopener">▶ Swipe</a>`,'var(--warn)',tot?Math.round(seen/tot*100):0]
-      :[`Siap swipe · keep ${keeps}`,`<button ${pb.replace('%s','#4E9B63')} data-act="brDone" data-id="${esc(b.id)}"${busy||!keeps?' disabled':''}>${busy?'Simpan…':'✓ Dah semak'}</button>`,'#4E9B63',100];
-    return `<div class="ccr" style="--sc:${col}"><div class="rowh"><span class="ccn">${esc(b.name)}</span>${act}</div><div class="bar"><i style="width:${pct}%"></i></div><div class="meta" style="font-size:11px;margin-top:3px">${esc(line)}</div></div>`};
-  return `<div class="rbox glass cc" style="--c:${TAB['to-edit'].c};cursor:default"><div class="rowh" style="align-items:center"><div style="min-width:0"><h2>B-roll</h2><div class="meta">Swipe terus dari sini, kemudian Dah semak</div></div><b class="rn">${brs.length}</b></div>
-   ${brs.slice(0,4).map(row).join('')}${brs.length>4?`<p class="meta" style="margin:6px 0 0">+${brs.length-4} lagi</p>`:''}
-   <div class="ccmore" role="button" tabindex="0" data-act="teSeg" data-x="broll" style="cursor:pointer">Semua B-roll ${IC.next}</div></div>`}
-/* Alert semak footage (bawah Footage Sorter): B-roll tunggu swipe / Dah semak, dan klip terbaik lepas final. Hilang bila tiada apa nak disemak. */
-function footageAlert(){
+  /* 23 Nov: satu kad sahaja untuk B-roll (dulu ada kad 🔔 Footage perlu semak yang sama). Swipe / edit / Final dalam Picker. */
   const brs=S.broll.filter(b=>brPending(b)||b.status==='error').sort((a,b)=>(b.updated||0)-(a.updated||0));
-  const best=S.footage.filter(f=>f.status==='semak'||f.status==='backup');
-  const n=brs.length+best.length;if(!n)return '';
-  const row=b=>{const tot=b.moments||0,seen=b.seen||0;
-    const [pill,col,pct]=b.status==='precut'?['Pre-cut '+Math.round(b.progress||0)+'%','var(--c)',Math.min(100,Math.round(b.progress||0))]:b.status==='backup'?['Simpan…','var(--c)',100]:b.status==='error'?['Ralat','var(--bad)',0]
-      :!seen?[tot+' tunggu swipe','var(--warn)',0]:seen<tot?[(tot-seen)+' lagi · keep '+(b.kept||0),'var(--warn)',Math.round(seen/tot*100)]:['Tekan Dah semak','#4E9B63',100];
-    return ccRow(String(b.name||''),pill,col,pct)};
-  return ccard('footage','🔔 Footage perlu semak','B-roll untuk swipe dan klip terbaik lepas final',n,
-    brs.slice(0,4).map(row).join('')+(best.length?ccRow(best.length+' set klip terbaik','pilih simpan / buang','var(--warn)',0):'')+(brs.length>4?`<p class="meta" style="margin:6px 0 0">+${brs.length-4} lagi</p>`:''))}
+  const best=S.footage.filter(f=>f.status==='semak'||f.status==='backup');if(!brs.length&&!best.length)return '';
+  const pb='class="pill" style="--pc:%s;cursor:pointer;border:0;font-family:inherit;color:inherit;text-decoration:none"';
+  const row=b=>{const tot=b.moments||0,left=brLeft(b);
+    let line,act,col,pct;
+    if(b.status==='precut'){pct=Math.min(100,Math.round(b.progress||0));line='Mac mini sedang potong';act=ldr('Pre-cut',pct);col='var(--c)'}
+    else if(b.status==='backup'){line='Sedang simpan ke B-ROLL LIBRARY';act=ldr('Simpan');col='var(--c)';pct=100}
+    else if(b.status==='error'){line=String(b.msg||'Ralat').slice(0,60);act=`<button ${pb.replace('%s','var(--bad)')} data-act="brStart" data-id="${esc(b.key)}">Cuba lagi</button>`;col='var(--bad)';pct=0}
+    else{const [t,cl,p,run]=brState(b);line=t;col=cl;pct=run?Math.round(p):tot?Math.round((tot-left)/tot*100):0;
+      act=run?ldr('Final',p):`<a ${pb.replace('%s',cl)} href="${esc(brPick(b))}" target="_blank" rel="noopener">${left?'▶ Swipe':'✓ Final'}</a>`}
+    return `<div class="ccr" style="--sc:${col}"><div class="rowh"><span class="ccn">${esc(b.name)}</span>${act}</div><div class="bar"><i style="width:${pct}%"></i></div><div class="meta" style="font-size:11px;margin-top:3px">${esc(line)}</div></div>`};
+  return `<div class="rbox glass cc" style="--c:${TAB['to-edit'].c};cursor:default"><div class="rowh" style="align-items:center"><div style="min-width:0"><h2>B-roll perlu semak</h2><div class="meta">Swipe, edit dan ✓ Final dalam Picker (Wi-Fi rumah) · ${tok(0)}</div></div><b class="rn">${brs.length+best.length}</b></div>
+   ${brs.slice(0,4).map(row).join('')}${brs.length>4?`<p class="meta" style="margin:6px 0 0">+${brs.length-4} lagi</p>`:''}
+   ${best.length?ccRow(best.length+' set klip terbaik lepas final','pilih simpan / buang','var(--warn)',0):''}
+   <div class="ccmore" role="button" tabindex="0" data-act="teSeg" data-x="broll" style="cursor:pointer">Semua B-roll ${IC.next}</div></div>`}
 /* Baris kad Projects di Home: sample guna slider aliran, paid guna slider job */
 function projRow(o){if(o.kind==='sample')return cpRow({it:o.it,step:o.step});const j=o.j;const nx=jobNext(j);const left=nx?daysTo(nx.date):null;const col=left===null?'#999':left>7?'#4E9B63':left>=3?'#E3B23C':'#C2534F';
   return `<div class="ccr" style="--c:${TAB.links.c}"><div class="rowh"><span class="ccn">${esc(String(o.name).split(/\s+/).slice(0,3).join(' '))}</span><span class="pill smpp" style="--pc:${col}"><b>${left===null?'·':Math.max(left,0)}</b>${nx?esc(nx.label):'tiada tarikh'}</span></div><div class="tl tl-mini">${JSTEPS.map((s,i)=>`<div class="s${i<=o.step?' d':i===o.step+1?' cur':''}"><i>${i<=o.step?IC.check:''}</i></div>`).join('')}</div><div class="meta" style="font-size:11px;margin-top:-2px">Paid RM${esc(rm2(j.fee)||'0')} · sekarang ${esc(JSTEPS[Math.min(o.step+1,5)])}</div></div>`}

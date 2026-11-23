@@ -12,12 +12,21 @@ const brMoms=b=>(S.brm||[]).filter(x=>x.slug===b.id).sort((a,c)=>(a.part||0)-(c.
 const brDec=b=>((S.brd||[]).find(x=>x.id===b.id)||{}).d||{};
 const brLocalKeeps=b=>{const d=brDec(b),p=b.pdec||{};const ids=new Set([...Object.keys(d),...Object.keys(p)]);let n=0;ids.forEach(id=>{const a=d[id]?d[id].a:p[id];if(a==='k')n++});return n};
 const brSeen=b=>new Set([...Object.keys(brDec(b)),...Object.keys(b.pdec||{})]).size;
+/* 23 Nov: kiraan terus dari Picker (Mac hantar setiap ~30 s): left = shot perlu swipe (wakil shot serupa sahaja), final = klip Final */
+const brLeft=b=>b.left!=null?b.left:Math.max(0,(b.moments||0)-brSeen(b));
+const brPick=b=>`${brCfg().home.replace(/\/$/,'')}/?job=${encodeURIComponent(b.job||'')}#${brLeft(b)?'swipe':'kept'}`;
+/* status satu set B-roll: [teks, warna, % atau null, sedang kerja] */
+function brState(b){const e=b.exp||{};const k=b.kept!=null?b.kept:brLocalKeeps(b),f=b.final||0,left=brLeft(b);
+  if(e.running)return ['Mac simpan Final '+(e.done||0)+'/'+(e.total||0),'var(--c)',e.total?e.done/e.total*100:0,true];
+  if(left>0)return [left+' tunggu swipe · keep '+k,'var(--warn)',null,false];
+  if(k&&f<k)return ['Final '+f+'/'+k+' · tekan ✓ Final dalam Picker','var(--warn)',null,false];
+  return ['Siap swipe · keep '+k,'#4E9B63',null,false]}
 
 /* Langkah projek dalam kad Edit: B-roll → Edit → Draf → Final */
 function brSteps(r,e){const bbs=r.kind==='f'?brsFor(r.key):[];const st=String((e&&e.status)||'');
   const pend=bbs.filter(b=>brPending(b)||b.status==='error');const pre=pend.find(b=>b.status==='precut');
   const tot=pend.reduce((a,b)=>a+(b.moments||0),0),seen=pend.reduce((a,b)=>a+brSeen(b),0);
-  const brLab=!bbs.length?(r.kind==='f'&&/^(2[1-46]|28|29|3[12]|41)/.test(r.stage||'')?'Belum pre-cut':'—'):pre?'Pre-cut '+Math.min(100,Math.round(pre.progress||0))+'%':pend.length?(tot-seen>0?(tot-seen)+' tunggu swipe':'Tekan Dah semak'):'Siap ✓';
+  const lefts=pend.reduce((a,b)=>a+brLeft(b),0);const brLab=!bbs.length?(r.kind==='f'&&/^(2[1-46]|28|29|3[12]|41)/.test(r.stage||'')?'Belum pre-cut':'—'):pre?'Pre-cut '+Math.min(100,Math.round(pre.progress||0))+'%':pend.length?(lefts>0?lefts+' tunggu swipe':'Final dalam Picker'):'Siap ✓';
   const brOk=bbs.length&&!pend.length;
   const steps=[['B-roll',brLab,brOk,pend.length>0],['Edit',e?'Sesi dibuka':'',!!e&&!/sesi/i.test(st),!!e&&/sesi/i.test(st)],['Draf',/draf|semak|render/i.test(st)?st:'',/render|siap/i.test(st)||!!(e&&e.final),/draf|semak/i.test(st)],['Final','',!!(e&&(e.final||/siap/i.test(st))),false]];
   const prod=bbs.filter(b=>b.type==='product');const ar=prod.reduce((a,b)=>a+(b.arollVideos||0),0),cu=prod.reduce((a,b)=>a+(b.closeups||0),0);
@@ -86,20 +95,20 @@ function brProjects(){const P={};const add=(key,stage,name)=>P[key]||(P[key]={ke
   S.broll.forEach(b=>{const k=b.project||String(b.key||'').split('/').slice(0,2).join('/');const p=add(k,b.stage||k.split('/')[0],k.split('/')[1]||k);
     if(!p.subs.some(s=>s.rel===b.key))p.subs.push({rel:b.key,sub:b.key===k?'':String(b.key).split('/').pop()})});
   return Object.values(P).filter(p=>p.subs.length).map(p=>{p.subs.forEach(s=>{s.b=S.broll.find(b=>b.key===s.rel)||null;const b=s.b;
-      s.st=!b||b.skip?'belum':b.status==='precut'?'precut':b.status==='backup'?'backup':b.status==='error'?'error':b.status==='stok'?'siap':brSeen(b)<(b.moments||0)?'swipe':'semak'});
+      s.st=!b||b.skip?'belum':b.status==='precut'?'precut':b.status==='backup'?'backup':b.status==='error'?'error':b.status==='stok'?'siap':brLeft(b)>0?'swipe':'semak'});
     const has=k=>p.subs.some(s=>s.st===k);p.rank=has('swipe')||has('semak')||has('error')?0:has('precut')||has('backup')?1:has('belum')?2:3;return p})
    .sort((a,b)=>a.rank-b.rank||String(a.key).localeCompare(String(b.key)))}
 function brSubRow(s,c){const b=s.b;const busy=ui.ftBusy&&(ui.ftBusy[s.rel]||(b&&ui.ftBusy[b.id]));const nm=s.sub||'Semua video';
-  const pick=b?`${c.home.replace(/\/$/,'')}/?job=${encodeURIComponent(b.job||'')}#swipe`:'';const keeps=b?brLocalKeeps(b):0;
-  const [txt,col,act]=s.st==='belum'?['Belum pre-cut','#999',`<button class="btn sm" data-act="brStart" data-id="${esc(s.rel)}"${busy?' disabled':''}>${busy?'<i class="spin"></i>':''}Pre-cut</button>`]
-   :s.st==='precut'?['Pre-cut '+Math.min(100,Math.round(b.progress||0))+'%','var(--c)','<i class="spin"></i>']
-   :s.st==='backup'?['Sedang simpan','var(--c)','<i class="spin"></i>']
-   :s.st==='error'?[String(b.msg||'Ralat').slice(0,50),'var(--bad)',`<button class="btn sm" data-act="brStart" data-id="${esc(s.rel)}">Cuba lagi</button>`]
-   :s.st==='siap'?['✓ '+(b.kept||(b.clips||[]).length||0)+' klip dalam library','var(--ok)','']
-   :s.st==='swipe'?[`${(b.moments||0)-brSeen(b)} tunggu swipe · keep ${keeps}${b.closeups?' · '+b.closeups+' close-up':''}`,'var(--warn)',
-      b.pubParts?`<button class="btn sm solid tab" data-act="brSwipe" data-id="${esc(b.id)}">▶ Swipe</button>`:`<a class="btn sm solid tab" href="${esc(pick)}" target="_blank" rel="noopener">▶ Swipe</a>`]
-   :[`Siap swipe · keep ${keeps}`,'#4E9B63',`<button class="btn sm solid tab" data-act="brDone" data-id="${esc(b.id)}"${busy||!keeps?' disabled':''}>${busy?'<i class="spin"></i>':IC.check}Dah semak</button>`];
-  return `<div class="brrow"><div style="flex:1;min-width:0"><strong>${esc(nm)}</strong><span class="meta" style="display:block;color:${col}">${esc(txt)}</span></div>${act}${b&&s.st!=='belum'&&s.st!=='precut'?`<a class="btn icon sm" href="${esc(pick)}" target="_blank" rel="noopener" aria-label="Buka dalam Picker (trim)" title="Trim dalam Picker">${IC.ext}</a>`:''}</div>`}
+  const pick=b?brPick(b):'';
+  const ext=`<a class="btn icon sm" href="${esc(pick)}" target="_blank" rel="noopener" aria-label="Buka dalam Picker" title="Swipe, edit dan Final dalam Picker (Wi-Fi rumah)">${IC.ext}</a>`;
+  let txt,col,act='';
+  if(s.st==='belum'){txt='Belum pre-cut';col='#999';act=`<button class="btn sm" data-act="brStart" data-id="${esc(s.rel)}"${busy?' disabled':''}>${busy?'<i class="spin"></i>':''}Pre-cut</button>`}
+  else if(s.st==='precut'){txt='Mac mini sedang potong';col='var(--c)';act=ldr('Pre-cut',b.progress||0)}
+  else if(s.st==='backup'){txt='Sedang simpan';col='var(--c)';act=ldr('Simpan')}
+  else if(s.st==='error'){txt=String(b.msg||'Ralat').slice(0,50);col='var(--bad)';act=`<button class="btn sm" data-act="brStart" data-id="${esc(s.rel)}">Cuba lagi</button>`}
+  else if(s.st==='siap'){txt='✓ '+(b.kept||(b.clips||[]).length||0)+' klip dalam library';col='var(--ok)'}
+  else{const [t,cl,pct,run]=brState(b);txt=t;col=cl;if(run)act=ldr('Final',pct)}
+  return `<div class="brrow"><div style="flex:1;min-width:0"><strong>${esc(nm)}</strong><span class="meta" style="display:block;color:${col}">${esc(txt)}</span></div>${act}${b&&s.st!=='belum'&&s.st!=='precut'?ext:''}</div>`}
 function brProjectsView(){const c=brCfg();const L=brProjects();
   const card=p=>{const belum=p.subs.filter(s=>s.st==='belum').length;const busy=ui.ftBusy&&ui.ftBusy[p.key];const prod=p.subs.some(s=>s.b&&s.b.type==='product');
     return `<div class="card glass"><div class="rowh" style="align-items:center">${fnoBadge(fno(p.stage))}<div style="flex:1;min-width:0"><h3>${esc(p.name)}</h3><div class="meta">${esc(String(p.stage).replace(/^\d+\.\s*/,''))}${p.subs.length>1?' · '+p.subs.length+' folder':''}</div></div></div>

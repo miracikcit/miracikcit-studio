@@ -274,3 +274,7 @@ audio{width:100%;margin-top:8px}
 .brbar{display:flex;gap:10px;margin-top:12px}.brbar .big2b{flex:1;min-height:52px;font-size:13px;letter-spacing:.16em}
 .brshot{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin-top:6px}.brshot input{margin-top:3px}.brshot em{color:var(--muted);font-style:normal;font-size:11px}
 .brrow{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(46,39,35,.08)}
+.tokn{display:inline-flex;align-items:center;gap:3px;font-size:9.5px;line-height:1;color:var(--muted);white-space:nowrap;vertical-align:middle;letter-spacing:0}
+.tokn svg{width:11px;height:11px;transform:rotate(-90deg)}.tokn circle{fill:none;stroke:rgba(46,39,35,.15);stroke-width:2.4}.tokn circle.a{stroke:var(--tc);stroke-linecap:round}
+.tokn.free circle{stroke:var(--ok);opacity:.55}
+.toknote{display:block;margin-top:4px}
