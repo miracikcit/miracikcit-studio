@@ -2,7 +2,7 @@
    Kad folder edit sync sendiri dari Mac mini. EDIT NOW: Mac mini buka sesi Claude Code baru (Opus 5.5, medium)
    dalam folder utama dengan /edit-reel <no>/<projek> dan Remote Control hidup, jadi boleh dikawal dari phone.
    Status (Sesi dibuka > Storyboard > Draf) dibaca dari tracker Editor. Kad hilang bila video final masuk 00. TO POST FINAL. */
-const edFor=(key,name)=>S.editor.filter(e=>e.folder===key||(!e.folder&&pMatch(e.name,name))).sort((a,b)=>(b.updated||0)-(a.updated||0))[0]||null;
+const edFor=(key,name)=>S.editor.filter(e=>(e.folder===key||(!e.folder&&pMatch(e.name,name)))&&(e.chat||e.url||e.status||e.final)).sort((a,b)=>(b.updated||0)-(a.updated||0))[0]||null;
 const edTone=st=>/siap|jalan/i.test(st||'')?'var(--ok)':/perlu/i.test(st||'')?'var(--bad)':/sesi/i.test(st||'')?'var(--c)':'var(--warn)';
 /* Deadline: ikut tarikh akhir post sample kalau ada, kalau tiada 2 minggu dari folder masuk */
 const smpFor=name=>S.items.find(it=>it.sample&&!sampleDone(it)&&itMatch(it,name))||null;

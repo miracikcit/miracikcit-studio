@@ -23,15 +23,14 @@ function brState(b){const e=b.exp||{};const k=b.kept!=null?b.kept:brLocalKeeps(b
   return ['Siap swipe · keep '+k,'#4E9B63',null,false]}
 
 /* Langkah projek dalam kad Edit: B-roll → Edit → Draf → Final */
-function brSteps(r,e){const bbs=r.kind==='f'?brsFor(r.key):[];const st=String((e&&e.status)||'');
+function brSteps(r,e){const useBr=r.kind==='f'&&BR_VO.test(r.stage||'');const bbs=useBr?brsFor(r.key):[];const st=String((e&&e.status)||'');
   const pend=bbs.filter(b=>brPending(b)||b.status==='error');const pre=pend.find(b=>b.status==='precut');
   const tot=pend.reduce((a,b)=>a+(b.moments||0),0),seen=pend.reduce((a,b)=>a+brSeen(b),0);
-  const lefts=pend.reduce((a,b)=>a+brLeft(b),0);const brLab=!bbs.length?(r.kind==='f'&&/^(2[1-46]|28|29|3[12]|41)/.test(r.stage||'')?'Belum pre-cut':'—'):pre?'Pre-cut '+Math.min(100,Math.round(pre.progress||0))+'%':pend.length?(lefts>0?lefts+' tunggu swipe':'Final dalam Picker'):'Siap ✓';
+  const lefts=pend.reduce((a,b)=>a+brLeft(b),0);const brLab=!bbs.length?(useBr?'Belum pre-cut':'—'):pre?'Pre-cut '+Math.min(100,Math.round(pre.progress||0))+'%':pend.length?(lefts>0?lefts+' tunggu swipe':'Final dalam Picker'):'Siap ✓';
   const brOk=bbs.length&&!pend.length;
-  const steps=[['B-roll',brLab,brOk,pend.length>0],['Edit',e?'Sesi dibuka':'',!!e&&!/sesi/i.test(st),!!e&&/sesi/i.test(st)],['Draf',/draf|semak|render/i.test(st)?st:'',/render|siap/i.test(st)||!!(e&&e.final),/draf|semak/i.test(st)],['Final','',!!(e&&(e.final||/siap/i.test(st))),false]];
-  const prod=bbs.filter(b=>b.type==='product');const ar=prod.reduce((a,b)=>a+(b.arollVideos||0),0),cu=prod.reduce((a,b)=>a+(b.closeups||0),0);
+  const steps=[...(useBr?[['B-roll',brLab,brOk,pend.length>0]]:[]),['Edit',e?'Sesi dibuka':'',!!e&&!/sesi/i.test(st),!!e&&/sesi/i.test(st)],['Draf',/draf|semak|render/i.test(st)?st:'',/render|siap/i.test(st)||!!(e&&e.final),/draf|semak/i.test(st)],['Final','',!!(e&&(e.final||/siap/i.test(st))),false]];
   return `<div class="brsteps">${steps.map(([n,l,ok,cur])=>`<button type="button" class="brs${ok?' ok':''}${cur?' cur':''}"${n==='B-roll'&&bbs.length?' data-act="teSeg" data-x="broll"':' tabindex="-1"'}><i>${ok?IC.check:''}</i><b>${n}</b>${l?`<span>${esc(l)}</span>`:''}</button>`).join('<em></em>')}</div>
-   ${prod.length?`<p class="meta" style="margin:6px 0 0">Produk: ${ar?ar+' video bercakap jadi suara':'tiada video bercakap'}${cu?' · '+cu+' close-up dari video bercakap (tanpa bunyi)':''}</p>`:''}`}
+`}
 
 /* Segmen Edit: Folder | B-roll */
 function teSegs(){const n=S.broll.filter(b=>brPending(b)||b.status==='error').length;const seg=ui.teSeg||'folder';
