@@ -17,7 +17,7 @@ V['to-edit']=()=>{const te=S.sync.toedit;const folders=toEditFolders();const fse
   if(ui.teSeg==='broll')return head('B-roll untuk semak')+teSegs()+ftSemakView();
   return head(te?'Folder sync '+fmtD(te.syncedAt):'Belum sync',`<button class="btn sm" data-act="addEdit">${IC.plus}Tambah</button>`)+teSegs()+shotList()+
   `<p class="eyebrow" style="margin:4px 0 10px">Dalam folder edit · ${rows.length}</p>${off?`<div class="banner glass">Mac mini tak jawab sejak ${esc(off)}. EDIT NOW perlukan Mac mini hidup dan app Claude dibuka.</div>`:''}<div class="list">${rows.map(r=>{const e=r.ed;const busy=ui.edNow&&ui.edNow[r.key];
-    return `<div class="card glass"><div class="rowh">${fnoBadge(r.no)}<div style="flex:1;min-width:0"><h3>${esc(r.name)}</h3><div class="meta">${esc(r.sub)}${r.start?' · masuk '+fmtD(r.start):''}</div></div>${e?`<span class="pill" style="--pc:${edTone(e.status)}">${esc(e.status||'Draf')}</span>`:''}</div>
+    return `<div class="card glass"><div class="rowh">${fnoBadge(r.no)}<div style="flex:1;min-width:0"><h3>${esc(r.name)}</h3><div class="meta">${esc(r.sub)}${r.start?' · masuk '+fmtD(r.start):''}</div></div>${e?`<span class="pill" style="--pc:${edTone(e.status)}">${esc(e.status||'Draf')}</span>`:''}${voMic(r)}</div>
     ${trk(r.d,r.t)}
     ${brSteps(r,e)}
     <div class="btns" style="margin-top:12px">${edBtns(r,e,busy,off)}${r.kind==='f'?`<button class="btn sm" data-act="peek" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}">${IC.footage}Lihat footage</button>`:''}<button class="btn icon sm bad" data-act="${r.kind==='f'?'fHide':'delItem'}" data-id="${esc(r.key)}" aria-label="Buang">${IC.trash}</button></div>
@@ -57,3 +57,8 @@ A.peek=async el=>{const stage=el.dataset.x,name=el.dataset.n;
   try{const r=await studioJob('folder_peek',{stage,name},3*60000);const b=$('#pkBox');if(!b)return;
     b.innerHTML=r&&r.img?`<img src="${esc(r.img)}" alt="Gambar footage ${esc(name)}" style="width:100%;border-radius:12px;display:block"><p class="meta" style="margin:8px 0 0">${r.n} video${r.n>=24?' (24 pertama)':''}: ${esc((r.names||[]).join(', ')).slice(0,600)}</p>`:'<p class="meta">Tiada video dalam folder ni.</p>'}
   catch(e){const b=$('#pkBox');if(b)b.innerHTML=`<p class="meta" style="color:var(--bad)">Tak dapat: ${esc(String((e&&(e.message||e.code))||'semak Mac mini hidup').slice(0,100))}</p>`}};
+
+/* 2026-11-23 (Mira): butang mic. Merah = folder perlu VO tapi belum ada, hijau = VO dah ada. Tekan = terus ke kad VO. */
+function voMic(r){const id=voId(r.name),d=get('vo',id),need=voAuto(r.stage||'')||(d&&d.status!=='buang'),has=d&&(((d.vos||[]).some(v=>v.status==='siap'))||d.status==='siap');
+  if(!need&&!has)return '';return `<button class="micb ${has?'ok':'need'}" data-act="voGo" data-id="${esc(id)}" data-x="${esc(r.stage||'')}" data-n="${esc(r.name)}" aria-label="${has?'VO dah ada':'Perlu rakam VO'}">${IC.mic.replace('<svg ','<svg style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8" ')}</button>`}
+A.voGo=el=>{const id=el.dataset.id;if(!get('vo',id))save('vo',{id,folder:el.dataset.x,sub:el.dataset.n,status:'perlu',points:[]},true);ui.voOpen=id;location.hash='#vo'};

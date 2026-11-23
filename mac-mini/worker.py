@@ -1495,7 +1495,7 @@ def studio_jobs(sheet, cfg):
             elif j["type"] == "gaya_del":
                 import gaya
                 outp = gaya.job_gaya_del(inp, sheet)
-            elif j["type"] in ("vo_take", "vo_save"):
+            elif j["type"] in ("vo_take", "vo_save", "vo_final", "vo_del"):
                 import vo
                 outp = getattr(vo, "job_" + j["type"])(inp, sheet, cfg, sys.modules[__name__])
             elif j["type"] == "ed_new":
@@ -1509,6 +1509,9 @@ def studio_jobs(sheet, cfg):
                 outp = run_ed_send(inp, sheet, cfg)
             elif j["type"] == "edit_now":
                 outp = run_edit_now(inp, sheet, cfg)
+            elif j["type"] == "foot_in":   # UPLOAD FOOTAGE dari kad Shoot (0 token)
+                import footin
+                outp = footin.run(inp, sheet, sys.modules[__name__])
             elif j["type"] == "folder_peek":   # gambar grid footage folder edit (tab Edit, 0 token)
                 import peek
                 outp = peek.run(inp, sheet, sys.modules[__name__])

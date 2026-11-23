@@ -23,7 +23,7 @@ const voKeptDur=d=>((d.take||{}).segs||[]).filter(x=>x.keep).reduce((a,x)=>a+(x.
 V.vo=()=>{const d=ui.voOpen&&voList().find(x=>x.id===ui.voOpen);if(d)return voDetail(d);const list=voList(),n=voPending().length;
   const hid=voHidden();
   return head(n?n+' video perlu VO':'Rakam VO terus dari phone',`<button class="btn sm" data-act="voAdd">${IC.plus}Tambah</button>`)+`<div class="list">${list.map(d=>`<div class="card glass" style="position:relative">
-    <button style="all:unset;display:block;cursor:pointer;width:100%" data-act="voOpen" data-id="${esc(d.id)}"><div class="rowh" style="align-items:center;padding-right:34px"><div><h3 style="margin:0">${esc(d.sub||d.title||d.id)}</h3><div class="meta">${esc((d.folder||'').replace(/^\d+\.\s*/,''))}${d.target?' · sasaran ±'+d.target+' s':''}${d.status==='siap'&&d.voDur?' · VO '+d.voDur+' s':''}</div></div>${voPill(d)}</div></button>
+    <button style="all:unset;display:block;cursor:pointer;width:100%" data-act="voOpen" data-id="${esc(d.id)}"><div class="rowh" style="align-items:center;padding-right:34px"><div><h3 style="margin:0">${esc(d.sub||d.title||d.id)}</h3><div class="meta">${esc((d.folder||'').replace(/^\d+\.\s*/,''))}${d.target?' · sasaran ±'+d.target+' s':''}${(d.vos||[]).length?' · '+d.vos.length+' VO':d.status==='siap'&&d.voDur?' · VO '+d.voDur+' s':''}</div></div>${voPill(d)}</div></button>
     ${d.status==='siap'?'':`<button class="btn sm" style="position:absolute;top:8px;right:8px;padding:6px" data-act="voHide" data-id="${esc(d.id)}" aria-label="Buang dari senarai VO" title="Buang dari senarai">${IC.x}</button>`}</div>`).join('')||`<div class="empty">Tiada video perlu VO. Folder 41. TUNGGU VO dan semua folder VLOG masuk sini sendiri.</div>`}</div>
     ${hid.length?`<details style="margin-top:14px"><summary class="meta">Dibuang dari senarai (${hid.length})</summary><div class="list" style="margin-top:8px">${hid.map(d=>`<div class="rowh" style="align-items:center;padding:6px 4px"><span>${esc(d.sub||d.id)} <small class="meta">${esc((d.folder||'').replace(/^\d+\.\s*/,''))}</small></span><button class="btn sm" data-act="voUnhide" data-id="${esc(d.id)}">Pulihkan</button></div>`).join('')}</div></details>`:''}`};
 A.voHide=el=>{const d=voAll().find(x=>x.id===el.dataset.id);if(!d)return;const o=voEnsure(d);save('vo',Object.assign({},o,{status:'buang',prev:o.status==='buang'?'perlu':o.status}));toast('Dibuang dari senarai VO')};
@@ -33,7 +33,7 @@ A.voAdd=()=>{const have=new Set(voList().map(d=>d.id));
   modal(`<h2>Tambah video perlu VO</h2>${opts.length?`<div class="list" style="max-height:60vh;overflow:auto">${opts.map(g=>`<p class="eyebrow" style="margin:10px 0 4px">${esc(g.st)}</p>${g.items.map(it=>`<button class="btn" style="justify-content:flex-start;width:100%;margin-bottom:6px" data-act="voAddPick" data-id="${esc(g.st)}" data-x="${esc(it.name)}">${esc(it.name)}</button>`).join('')}`).join('')}</div>`:'<p class="meta">Semua folder edit dah ada dalam senarai.</p>'}
   <div class="btns" style="justify-content:flex-end;margin-top:10px"><button class="btn" data-act="closeModal">Tutup</button></div>`,TAB.vo.c)};
 A.voAddPick=el=>{const id=voId(el.dataset.x),cur=get('vo',id);save('vo',Object.assign({id,folder:el.dataset.id,sub:el.dataset.x,points:[]},cur||{},{status:'perlu'}));closeModal();toast('Ditambah ke senarai VO')};
-function voDetail(d){
+function voDetailOld(d){
   const back=`<button class="btn sm" data-act="voBack">${IC.back}Senarai</button>`;
   const pts=(d.points||[]).filter(Boolean),ban=(d.banned||[]).filter(Boolean);
   const top=`<div class="card glass"><div class="rowh" style="align-items:center"><div><h2 style="margin:0">${esc(d.sub||d.id)}</h2><div class="meta">${esc(d.folder||'')}${d.target?' · sasaran ±'+d.target+' s':''}</div></div>${voPill(d)}</div>
@@ -67,7 +67,7 @@ function voAlert(){const l=voPending();if(!l.length)return '';
   return `<button class="card big glass" style="--c:${TAB.vo.c};margin-top:14px;text-align:left;width:100%" data-act="go" data-id="vo"><div class="rowh" style="align-items:center"><h2 style="margin:0">🎙 VO perlu dirakam</h2><b class="bigno" style="font-size:40px">${l.length}</b></div>
   ${l.slice(0,4).map(d=>`<div class="rowh" style="margin-top:8px"><span>${esc(d.sub||d.id)}</span>${voPill(d)}</div>`).join('')}</button>`}
 A.voOpen=el=>{ui.voOpen=el.dataset.id;render(true);window.scrollTo(0,0)};
-A.voBack=()=>{if(voRec.mr){toast('Berhenti rakam dulu');return}ui.voOpen=null;render(true)};
+A.voBack=()=>{if(voRec.mr||VR.on){toast('Tekan FINAL atau Batal dulu');return}ui.voOpen=null;render(true)};
 A.voEditPts=el=>{const d=voList().find(x=>x.id===el.dataset.id);if(!d)return;
   modal(`<h2>Point penting</h2><p class="meta">Satu point satu baris. Ayat kau cakap sendiri.</p><textarea class="inp" id="voP" rows="7">${esc((d.points||[]).join('\n'))}</textarea>
   <label class="f"><span>Jangan sebut (asing dengan koma)</span><input class="inp" id="voB" value="${esc((d.banned||[]).join(', '))}"></label>
@@ -102,3 +102,89 @@ A.voPlayAll=el=>{const d=get('vo',el.dataset.id);voPlaySegs(d,d.take.segs.filter
 A.voSave=async el=>{const d=get('vo',el.dataset.id);const keep=d.take.segs.map((x,i)=>x.keep?i:-1).filter(i=>i>=0);if(!keep.length){toast('Pilih sekurang-kurangnya satu ayat');return}
   save('vo',Object.assign({},d,{status:'simpan',err:''}));
   try{const r=await studioJob('vo_save',{id:d.id,keep,gap:d.gap||'tiada'},10*60000);toast(r&&r.moved?'VO siap. Folder dipindah ke 28. EDIT + VO':'VO siap disimpan')}catch(e){toast('Simpan gagal: '+String((e&&e.message)||'').slice(0,80))}};
+
+/* ---------- VO v3 (2026-11-23, Mira) ----------
+   Satu kad = banyak VO; setiap VO jadi satu video utama yang Claude edit; ayat pertama VO = tajuk.
+   Perakam: RECORD masuk mod rakam, STOP berhenti tapi kekal dalam mod, PLAY + slider untuk dengar semula,
+   CUT belah di slider, DELETE buang bahagian di slider, FINAL baru keluar mod, simpan WAV (job vo_final). */
+const VR={on:false,id:'',n:0,stream:null,mr:null,ctx:null,pcm:new Float32Array(0),sr:48000,cuts:[],pos:0,rec:false,t0:0,src:null,play:false,raf:0,busy:false,tick:0};
+const vrDur=()=>VR.pcm.length/VR.sr;
+const vrFmt=t=>{t=Math.max(0,t||0);return Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0')+'.'+Math.floor(t*10%10)};
+function vrSegs(){const d=vrDur(),b=[0,...VR.cuts.filter(c=>c>0.05&&c<d-0.05).sort((a,b)=>a-b),d];return b.slice(1).map((e,i)=>({s:b[i],e}))}
+function voDetail(d){
+  if(VR.on&&VR.id===d.id)return vrView(d);
+  const back=`<button class="btn sm" data-act="voBack">${IC.back}Senarai</button>`;
+  const pts=(d.points||[]).filter(Boolean),ban=(d.banned||[]).filter(Boolean),vos=(d.vos||[]).slice().sort((a,b)=>a.n-b.n);
+  const top=`<div class="card glass"><div class="rowh" style="align-items:center"><div><h2 style="margin:0">${esc(d.sub||d.id)}</h2><div class="meta">${esc(d.folder||'')}${d.target?' · sasaran ±'+d.target+' s':''}</div></div>${voPill(d)}</div>
+    ${pts.length?`<ol style="margin:12px 0 0;padding-left:22px;font-size:17px;line-height:1.5">${pts.map(p=>`<li>${esc(p)}</li>`).join('')}</ol>`:`<p class="meta" style="margin:10px 0 0">Point belum ada. Tekan Edit point kalau perlu.</p>`}
+    ${ban.length?`<p style="margin:10px 0 0;color:var(--bad)">Jangan sebut: ${ban.map(esc).join(', ')}</p>`:''}
+    <div class="btns" style="margin-top:10px"><button class="btn sm" data-act="voEditPts" data-id="${esc(d.id)}">${IC.edit}Edit point</button></div></div>`;
+  const list=`<p class="eyebrow" style="margin-top:16px">VO dalam kad ni · ${vos.length} <span class="meta" style="text-transform:none;letter-spacing:0">(setiap VO = satu video, ayat pertama = tajuk)</span></p>
+    <div class="clist">${vos.map(v=>`<div class="crow glass"><div class="crt"><b>VO ${v.n}${v.title?': '+esc(v.title):''}</b><small>${v.status==='proses'?'<i class="spin"></i> Mac mini sedang bersihkan & simpan…':v.status==='error'?'Ralat: '+esc(v.err||''):esc((v.dur?v.dur+' s · ':'')+String(v.file||'').split('/').pop())}</small></div>
+      <div class="crb">${v.asset&&v.status!=='proses'?`<button class="btn sm" data-act="voPlayV" data-x="${esc(v.asset)}" aria-label="Dengar">▶</button>`:''}<button class="btn sm" data-act="vrOpen" data-id="${esc(d.id)}" data-x="${v.n}" aria-label="Rakam semula">${IC.mic}</button><button class="btn icon sm bad" data-act="voDelV" data-id="${esc(d.id)}" data-x="${v.n}" aria-label="Buang">${IC.trash}</button></div></div>`).join('')||'<div class="empty">Belum ada VO.</div>'}</div>
+    <div style="text-align:center;margin:18px 0"><button class="btn solid rose" style="font-size:18px;padding:16px 28px;border-radius:999px" data-act="vrOpen" data-id="${esc(d.id)}" data-x="${(vos.reduce((m,v)=>Math.max(m,v.n),0))+1}">${IC.mic}Rakam VO ${(vos.reduce((m,v)=>Math.max(m,v.n),0))+1}</button></div>`;
+  const legacy=d.status==='semak'&&d.take?voReview(d):'';
+  return head(d.folder||'VO',back)+top+list+legacy}
+function vrView(d){const dur=vrDur(),segs=vrSegs(),cur=segs.findIndex(x=>VR.pos>=x.s&&VR.pos<=x.e);
+  return head('Mod rakam',`<span class="pill" style="--pc:var(--bad)">● VO ${VR.n}</span>`)+`<div class="card glass vrbox">
+   <p class="meta" style="margin:0 0 6px">${esc(d.sub||d.id)}${(d.points||[]).length?' · '+esc(d.points[0]).slice(0,60):''}</p>
+   <div class="vrclock" id="vrClock">${VR.rec?'● '+vrFmt((Date.now()-VR.t0)/1000):vrFmt(VR.pos)+' / '+vrFmt(dur)}</div>
+   <canvas id="vrWave" class="vrwave" width="680" height="110"></canvas>
+   <input type="range" id="vrPos" class="vrpos" min="0" max="${Math.max(0.1,dur).toFixed(2)}" step="0.05" value="${Math.min(VR.pos,dur).toFixed(2)}" ${VR.rec||!dur?'disabled':''}>
+   <p class="meta" style="margin:4px 0 10px">${dur?`${segs.length} bahagian · bahagian di slider: ${cur+1}. Tekan CUT di awal dan akhir bahagian yang tak suka, letak slider di tengah, tekan DELETE. Rakaman baru disambung di hujung.`:'Tekan RECORD dan mula cakap. Ayat pertama jadi tajuk video.'}</p>
+   <div class="vrbtns">
+    <button class="vrb rec${VR.rec?' on':''}" data-act="vrRec" ${VR.busy?'disabled':''}><b>●</b>Record</button>
+    <button class="vrb" data-act="vrStop" ${VR.rec||VR.play?'':'disabled'}><b>■</b>Stop</button>
+    <button class="vrb" data-act="vrPlay" ${VR.rec||!dur?'disabled':''}><b>${VR.play?'❚❚':'▶'}</b>${VR.play?'Pause':'Play'}</button>
+    <button class="vrb" data-act="vrCut" ${VR.rec||!dur?'disabled':''}><b>✂</b>Cut</button>
+    <button class="vrb bad" data-act="vrDel" ${VR.rec||!dur?'disabled':''}><b>🗑</b>Delete</button>
+    <button class="vrb fin" data-act="vrFinal" ${VR.rec||!dur||VR.busy?'disabled':''}><b>✓</b>FINAL</button>
+   </div>
+   <div class="btns" style="justify-content:center;margin-top:10px"><button class="btn sm" data-act="vrQuit">Batal (buang rakaman ni)</button></div></div>`}
+AFTER.vo=()=>{if(VR.on){vrDraw();const r=$('#vrPos');if(r)r.oninput=()=>{VR.pos=+r.value;if(VR.play)vrPlayFrom(VR.pos);vrDraw();vrClock()}}};
+function vrClock(){const c=$('#vrClock');if(c)c.textContent=VR.rec?'● '+vrFmt((Date.now()-VR.t0)/1000):vrFmt(VR.pos)+' / '+vrFmt(vrDur())}
+function vrDraw(){const cv=$('#vrWave');if(!cv)return;const g=cv.getContext('2d'),W=cv.width,H=cv.height,d=vrDur(),n=VR.pcm.length;g.clearRect(0,0,W,H);
+  if(n){const step=Math.max(1,Math.floor(n/W));const segs=vrSegs(),cur=segs.find(x=>VR.pos>=x.s&&VR.pos<=x.e);
+    if(cur&&segs.length>1){g.fillStyle='rgba(181,84,107,.12)';g.fillRect(cur.s/d*W,0,(cur.e-cur.s)/d*W,H)}
+    g.fillStyle='#b5546b';for(let x=0;x<W;x++){let m=0;const o=x*step;for(let k=0;k<step;k+=4){const v=Math.abs(VR.pcm[o+k]||0);if(v>m)m=v}const h=Math.max(1,m*H*.95);g.fillRect(x,(H-h)/2,1,h)}
+    g.fillStyle='#1d1b1a';VR.cuts.forEach(c=>g.fillRect(c/d*W-1,0,2,H));g.fillStyle='#2b7a4b';g.fillRect(Math.min(W-2,VR.pos/d*W),0,2,H)}
+  else{g.fillStyle='rgba(0,0,0,.08)';g.fillRect(0,H/2-1,W,2)}}
+async function vrEnsure(){if(!VR.ctx){const AC=window.AudioContext||window.webkitAudioContext;VR.ctx=new AC();}if(VR.ctx.state==='suspended')await VR.ctx.resume();
+  if(!VR.stream)VR.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:true}})}
+A.vrOpen=async el=>{if(!navigator.mediaDevices||!window.MediaRecorder){toast('Phone ni tak boleh rakam di sini');return}
+  try{await vrEnsure()}catch(e){toast('Benarkan mikrofon untuk Studio');return}
+  const d=voList().find(x=>x.id===el.dataset.id);if(d)voEnsure(d);
+  Object.assign(VR,{on:true,id:el.dataset.id,n:+el.dataset.x||1,pcm:new Float32Array(0),sr:VR.ctx.sampleRate,cuts:[],pos:0,rec:false,play:false,busy:false});render(true);window.scrollTo(0,0)};
+A.vrRec=()=>{if(VR.rec)return;vrStopPlay();const mime=['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(m=>MediaRecorder.isTypeSupported(m))||'';
+  const ch=[];const mr=new MediaRecorder(VR.stream,mime?{mimeType:mime}:{});VR.mr=mr;
+  mr.ondataavailable=e=>{if(e.data&&e.data.size)ch.push(e.data)};
+  mr.onstop=async()=>{VR.busy=true;render(true);try{const ab=await new Blob(ch,{type:mr.mimeType||'audio/mp4'}).arrayBuffer();const buf=await new Promise((res,rej)=>VR.ctx.decodeAudioData(ab,res,rej));
+      const L=buf.getChannelData(0),R=buf.numberOfChannels>1?buf.getChannelData(1):null,add=new Float32Array(L.length);for(let i=0;i<L.length;i++)add[i]=R?(L[i]+R[i])/2:L[i];
+      const out=new Float32Array(VR.pcm.length+add.length);out.set(VR.pcm);out.set(add,VR.pcm.length);if(VR.pcm.length)VR.cuts.push(vrDur());VR.pcm=out;VR.sr=buf.sampleRate;VR.pos=vrDur()}
+    catch(e){toast('Rakaman tak dapat dibaca. Cuba rakam lagi')}VR.busy=false;render(true)};
+  mr.start();VR.rec=true;VR.t0=Date.now();clearInterval(VR.tick);VR.tick=setInterval(vrClock,200);if(navigator.vibrate)navigator.vibrate(30);render(true)};
+A.vrStop=()=>{if(VR.rec&&VR.mr){VR.rec=false;clearInterval(VR.tick);VR.mr.stop();return}if(VR.play){vrStopPlay();render(true)}};
+function vrStopPlay(){if(VR.src){try{VR.src.onended=null;VR.src.stop()}catch(e){}VR.src=null}VR.play=false;cancelAnimationFrame(VR.raf)}
+function vrPlayFrom(t){vrStopPlay();const d=vrDur();if(t>=d-0.05)t=0;const b=VR.ctx.createBuffer(1,VR.pcm.length,VR.sr);b.copyToChannel(VR.pcm,0);
+  const s=VR.ctx.createBufferSource();s.buffer=b;s.connect(VR.ctx.destination);const t0=VR.ctx.currentTime-t;s.start(0,t);VR.src=s;VR.play=true;
+  s.onended=()=>{if(VR.src===s){VR.play=false;VR.src=null;render(true)}};
+  const loop=()=>{if(!VR.play)return;VR.pos=Math.min(d,VR.ctx.currentTime-t0);const r=$('#vrPos');if(r)r.value=VR.pos;vrDraw();vrClock();VR.raf=requestAnimationFrame(loop)};loop()}
+A.vrPlay=async()=>{if(VR.play){vrStopPlay();render(true);return}await vrEnsure();vrPlayFrom(VR.pos);render(true)};
+A.vrCut=()=>{const p=+VR.pos.toFixed(2);if(p<0.05||p>vrDur()-0.05){toast('Gerakkan slider ke tempat nak belah');return}if(VR.cuts.some(c=>Math.abs(c-p)<0.1))return;VR.cuts.push(p);if(navigator.vibrate)navigator.vibrate(20);render(true)};
+A.vrDel=()=>{const segs=vrSegs(),k=segs.findIndex(x=>VR.pos>=x.s&&VR.pos<=x.e);if(k<0)return;const x=segs[k];
+  const go=()=>{vrStopPlay();const a=Math.round(x.s*VR.sr),b=Math.round(x.e*VR.sr),len=b-a;const out=new Float32Array(VR.pcm.length-len);out.set(VR.pcm.subarray(0,a));out.set(VR.pcm.subarray(b),a);
+    VR.pcm=out;const dl=x.e-x.s;VR.cuts=VR.cuts.filter(c=>c<x.s-0.01||c>x.e+0.01).map(c=>c>x.e?c-dl:c);VR.pos=Math.min(x.s,vrDur());render(true);toast('Bahagian dibuang')};
+  if(segs.length===1)confirmBox('Buang semua rakaman ni?',go,'Ya, buang');else go()};
+A.vrQuit=()=>confirmBox('Keluar dan buang rakaman yang belum FINAL?',()=>{vrClose();render(true)},'Ya, keluar');
+function vrClose(){vrStopPlay();clearInterval(VR.tick);if(VR.mr&&VR.rec){try{VR.mr.stop()}catch(e){}}if(VR.stream){VR.stream.getTracks().forEach(t=>t.stop());VR.stream=null}Object.assign(VR,{on:false,rec:false,pcm:new Float32Array(0),cuts:[]})}
+function vrWav(){const src=VR.pcm,sr0=VR.sr,sr=24000,n=Math.floor(src.length*sr/sr0),buf=new ArrayBuffer(44+n*2),v=new DataView(buf);
+  const w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2,true);
+  for(let i=0;i<n;i++){const x=src[Math.min(src.length-1,Math.floor(i*sr0/sr))];v.setInt16(44+i*2,Math.max(-1,Math.min(1,x))*0x7fff,true)}return new Blob([buf],{type:'audio/wav'})}
+A.vrFinal=async()=>{if(!ASSETS){toast('Upload tak tersedia');return}if(!vrDur())return;vrStopPlay();VR.busy=true;render(true);
+  const id=VR.id,n=VR.n,f=new File([vrWav()],id+'-vo'+n+'-'+Date.now()+'.wav',{type:'audio/wav'});toast('Sedang simpan VO '+n);
+  let r;try{r=await ASSETS.upload(f)}catch(e){VR.busy=false;render(true);toast('Upload gagal. Rakaman masih ada, tekan FINAL sekali lagi');return}
+  vrClose();const d=get('vo',id)||{id};const vos=(d.vos||[]).filter(v=>v.n!==n).concat([{n,asset:r.id,status:'proses',at:Date.now()}]).sort((a,b)=>a.n-b.n);
+  save('vo',Object.assign({},d,{vos}));render(true);
+  try{await studioJob('vo_final',{id,asset:r.id,n},15*60000);toast('VO '+n+' disimpan')}catch(e){toast('Mac mini tak dapat simpan: '+String((e&&e.message)||'').slice(0,80))}};
+A.voPlayV=el=>{if(!voAud)voAud=new Audio();voQ=[];voAud.src=blobUrl(el.dataset.x);voAud.play().catch(()=>toast('Tak dapat main audio'))};
+A.voDelV=el=>{const id=el.dataset.id,n=+el.dataset.x;confirmBox('Buang VO '+n+'? Fail masuk Trash Mac.',async()=>{const d=get('vo',id);save('vo',Object.assign({},d,{vos:(d.vos||[]).filter(v=>v.n!==n)}));try{await studioJob('vo_del',{id,n},3*60000)}catch(e){}},'Ya, buang')};

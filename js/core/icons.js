@@ -26,7 +26,7 @@ const TABS_=[
  ['ready','To Publish','#8A6A52'],['published','Published','#6B5548'],['caption','Caption','#B0704F'],['jobs','Jobs','#A8763E'],
  ['editor','Editor','#9C6396'],['footage','Library klip','#9A8C7A'],['broll','B-Roll Picker','#B0704F'],['inspiration','Inspiration','#CF7A9A'],['transcribe','Transcribe','#8C6A4F'],['media-kit','Media Kit','#B0937B'],['vo','VO','#B5546B'],['lagi','Lagi','#9A8C7A']
 ].map(([k,l,c])=>({k,l,c,ic:IC[k==='vo'?'mic':k.replace('-','')]||IC.plus}));
-const NAV=['home','links','ideas','to-shoot','to-edit','vo','editor','ready','published','lagi'];
+const NAV=['home','links','to-shoot','vo','to-edit','editor','ready','published','lagi'];   /* 23 Nov: Ideas dalam Lagi, VO antara Shoot dan Edit */
 const navLabel=l=>l.replace('Ready to Publish','Ready').replace('Confirmed Projects','Projects');
 const TAB=Object.fromEntries(TABS_.map(t=>[t.k,t]));
 const STAGE_TAB={ideas:'ideas',toshoot:'to-shoot',shot:'shot',toedit:'to-edit',ready:'ready',published:'published'};

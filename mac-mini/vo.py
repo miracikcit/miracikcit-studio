@@ -223,3 +223,92 @@ def job_vo_save(inp, sheet, cfg, worker):
     except Exception as e:
         _merge(sheet, vid, {"status": "semak", "err": str(e)[:300]})
         raise
+
+
+# ---------------------------------------------------------------- VO v3 (2026-11-23, Mira)
+# Satu kad boleh ada banyak VO; setiap VO = satu video utama yang Claude edit. Ayat pertama VO = tajuk.
+# Phone dah potong / sambung sendiri (record, stop, cut, delete) dan hantar satu WAV bila tekan FINAL.
+
+def _slug(t):
+    return re.sub(r"[^A-Za-z0-9]+", "-", t).strip("-")[:40] or "VO"
+
+
+def job_vo_final(inp, sheet, cfg, worker):
+    vid, asset = str(inp.get("id") or ""), str(inp.get("asset") or "")
+    if not re.match(r"^[\w-]+$", vid) or not asset:
+        raise RuntimeError("id atau rakaman tiada")
+    doc = sheet.call("dget", path="vo/" + vid).get("doc") or {}
+    vos = list(doc.get("vos") or [])
+    n = int(inp.get("n") or (max([v.get("n", 0) for v in vos] or [0]) + 1))
+    vos = [v for v in vos if v.get("n") != n] + [{"n": n, "asset": asset, "status": "proses", "at": int(time.time() * 1000)}]
+    _merge(sheet, vid, {"vos": sorted(vos, key=lambda v: v["n"]), "err": ""})
+    try:
+        f = sheet.call("file_get", id=asset)
+        with tempfile.TemporaryDirectory(prefix="miracikcit-vo-") as tmp:
+            raw = os.path.join(tmp, "raw" + (os.path.splitext(f.get("name") or "")[1] or ".wav"))
+            with open(raw, "wb") as fh:
+                fh.write(base64.b64decode(f["b64"]))
+            final = os.path.join(tmp, "VO.wav")
+            r = subprocess.run([FFMPEG, "-y", "-loglevel", "error", "-i", raw, "-af",
+                                "highpass=f=80,afftdn=nf=-25,loudnorm=I=-16:TP=-1.5:LRA=11", "-ar", "48000", "-ac", "1", final],
+                               capture_output=True, text=True, timeout=300)
+            if r.returncode:
+                raise RuntimeError("Bersihkan VO gagal: " + (r.stderr or "")[-200:])
+            title = ""
+            try:
+                wav = worker.to_wav(final, tmp)
+                _, segs = worker.transcribe(wav, cfg)
+                txt = " ".join(str(s[2]).strip() for s in segs[:3]) if segs else ""
+                title = re.split(r"(?<=[.?!])\s", txt.strip())[0][:90] if txt else ""
+            except Exception as e:
+                log.info("Tajuk VO tak dapat (%s)", e)
+            proj = _dest_folder(doc)
+            moved = ""
+            if proj and doc.get("folder") == "41. TUNGGU VO":
+                dest = os.path.join(BASE, "28. EDIT + VO", doc["sub"])
+                if not os.path.exists(dest):
+                    shutil.move(proj, dest)
+                    proj, moved = dest, "28. EDIT + VO"
+            vdir = os.path.join(proj, "VO") if proj else os.path.expanduser("~/Downloads")
+            os.makedirs(vdir, exist_ok=True)
+            for old in [x for x in os.listdir(vdir) if re.match(r"VO-%02d-" % n, x)]:
+                worker.trash_local(os.path.join(vdir, old))
+            outp = os.path.join(vdir, "VO-%02d-%s.wav" % (n, _slug(title)))
+            shutil.copy(final, outp)
+            dur = float(subprocess.run([os.path.join(os.path.dirname(FFMPEG), "ffprobe"), "-v", "error", "-show_entries", "format=duration",
+                                        "-of", "csv=p=0", outp], capture_output=True, text=True).stdout.strip() or 0)
+        rel = os.path.relpath(outp, BASE) if outp.startswith(BASE) else outp
+        doc = sheet.call("dget", path="vo/" + vid).get("doc") or doc
+        vos = [v for v in (doc.get("vos") or []) if v.get("n") != n] + [{"n": n, "asset": asset, "status": "siap", "file": rel, "dur": round(dur, 1), "title": title, "at": int(time.time() * 1000)}]
+        fields = {"vos": sorted(vos, key=lambda v: v["n"]), "status": "siap", "done": int(time.time() * 1000)}
+        if moved:
+            fields["folder"] = moved
+        _merge(sheet, vid, fields)
+        worker._scan_last["t"] = 0
+        return {"file": rel, "title": title, "dur": round(dur, 1), "moved": moved}
+    except Exception as e:
+        doc = sheet.call("dget", path="vo/" + vid).get("doc") or {}
+        vos = [dict(v, status="error", err=str(e)[:200]) if v.get("n") == n else v for v in (doc.get("vos") or [])]
+        _merge(sheet, vid, {"vos": vos, "err": str(e)[:300]})
+        raise
+
+
+def job_vo_del(inp, sheet, cfg, worker):
+    """Buang satu VO dari kad: fail WAV ke Trash (boleh pulih), rakaman Drive dibuang."""
+    vid, n = str(inp.get("id") or ""), int(inp.get("n") or 0)
+    doc = sheet.call("dget", path="vo/" + vid).get("doc") or {}
+    keep, gone = [], None
+    for v in doc.get("vos") or []:
+        (keep.append(v) if v.get("n") != n else None)
+        if v.get("n") == n:
+            gone = v
+    if gone:
+        p = os.path.join(BASE, gone["file"]) if gone.get("file") and not os.path.isabs(gone["file"]) else gone.get("file")
+        if p and os.path.isfile(p):
+            worker.trash_local(p)
+        try:
+            sheet.call("file_delete", id=gone.get("asset"))
+        except Exception:
+            pass
+    _merge(sheet, vid, {"vos": keep, "status": "siap" if keep else "perlu"})
+    return {"left": len(keep)}
