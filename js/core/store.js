@@ -33,5 +33,5 @@ async function initStore(){
 /* brlib: doc besar dipecah oleh worker (brlib/<tempat>--p2 ...); gabung balik ikut place */
 function brMerge(a){const m={};a.filter(d=>!d.part).forEach(d=>m[d.place]=Object.assign({},d,{clips:(d.clips||[]).slice()}));
  a.filter(d=>d.part).sort((x,y)=>x.part-y.part).forEach(d=>{const t=m[d.place];if(t)t.clips=t.clips.concat(d.clips||[])});return Object.values(m)}
-/* B-roll hanya untuk folder VLOG / VO (Mira 23 Nov): folder produk / bercakap tak tunjuk B-roll */
-const BR_VO=/VLOG|\+ ?VO|TUNGGU VO/i;
+/* B-roll hanya untuk folder 29. VLOG BATCH (Mira 23 Nov): folder produk / bercakap tak tunjuk B-roll */
+const BR_VO=/VLOG BATCH/i;

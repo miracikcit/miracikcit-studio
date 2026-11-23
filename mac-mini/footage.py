@@ -28,8 +28,10 @@ _busy = set()
 def ftype(rel):
     """Sama dengan engine.folder_type: jenis ikut nama folder utama."""
     main = (rel or "").split("/")[0].upper()
-    if re.search(r"VLOG|\+ ?VO|TUNGGU VO", main):
+    if re.search(r"VLOG BATCH", main):   # 23 Nov: B-roll hanya folder 29. VLOG BATCH
         return "vlog"
+    if re.search(r"VLOG|\+ ?VO|TUNGGU VO", main):
+        return "vo"
     if re.search(r"SHOP|UNBOXING|COOK", main):
         return "product"
     if "TALK" in main:
