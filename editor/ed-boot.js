@@ -220,6 +220,7 @@
     top.insertAdjacentHTML('beforeend', '<button class="edsiap" id="edSiap" type="button">Siap</button>');
     const ic = n => `<svg class="ic"><use href="#${n}"/></svg>`;
     tr.insertAdjacentHTML('afterbegin', `<span class="cctc" id="ccTc">0:00</span>
+      <button type="button" class="chip cc" data-p="toStart" aria-label="Ke permulaan">${ic('i-start')}</button>
       <button type="button" class="chip cc" data-p="fBack" aria-label="Undur 1 frame">${ic('i-fback')}</button>
       <button type="button" class="chip cc ccplay" data-p="play" aria-label="Main / henti"><svg class="ic"><use id="ccPlayIc" href="#i-play"/></svg></button>
       <button type="button" class="chip cc" data-p="fFwd" aria-label="Maju 1 frame">${ic('i-ffwd')}</button>
@@ -259,19 +260,20 @@
     let box = $('ccCap');
     if (!H.classList.contains('edtab-Caption')) { if (box) box.hidden = true; return; }
     if (!box) {
-      hd.insertAdjacentHTML('beforeend', `<span class="cccap" id="ccCap"><span class="ccseg" role="group" aria-label="Paparan caption"><button type="button" data-cm="baris">Baris</button><button type="button" data-cm="para">Perenggan</button></span><button type="button" id="ccEmm">✂ Buang emm</button></span>`);
+      hd.insertAdjacentHTML('beforeend', `<span class="cccap" id="ccCap"><span class="ccseg" role="group" aria-label="Paparan caption"><button type="button" data-cm="baris">Baris</button><button type="button" data-cm="para">Perenggan</button></span><button type="button" id="ccHl">★ Highlight</button></span>`);
       box = $('ccCap');
       box.addEventListener('click', e => {
         const b = e.target.closest('button'); if (!b) return;
         if (b.dataset.cm) { mode = b.dataset.cm; try { localStorage.setItem('edCapMode', mode); } catch (x) {} const w = $('words'); if (w) delete w.dataset.cc; apply(); }
-        if (b.id === 'ccEmm') emm();
+        if (b.id === 'ccHl') { const o = $('hlBtn'); if (o) o.click(); setTimeout(head, 50); }
       });
     }
     box.hidden = false;
     box.querySelectorAll('[data-cm]').forEach(b => b.setAttribute('aria-pressed', b.dataset.cm === mode));
-    const S = G('S'), n = S && S.words ? S.words.filter(w => !w.cut && FILL.test(String(w.t || '').replace(/[^\p{L}]/gu, ''))).length : 0;
-    $('ccEmm').textContent = n ? `✂ Buang emm (${n})` : '✂ Tiada emm';
-    $('ccEmm').disabled = !n;
+    /* butang ★ highlight di kepala (23 Nov): ikut perkataan yang dipilih dalam senarai */
+    const wSel = G('wSel'), KS = G('KEYSET'), hb = $('ccHl'), on = wSel >= 0 && KS && KS.has(wSel);
+    hb.textContent = wSel >= 0 ? (on ? '★ Buang highlight' : '★ Jadi highlight') : '★ Highlight';
+    hb.classList.toggle('on', !!on); hb.classList.toggle('ready', wSel >= 0);
   }
   function emm() {
     try {
@@ -306,6 +308,7 @@
     });
     box.innerHTML = ''; box.appendChild(frag); box.classList.add('edrows'); box.dataset.cc = 'baris';
   }
+  document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#words')) setTimeout(head, 30); });
   document.addEventListener('click', e => {
     const b = e.target.closest && e.target.closest('.edrow .edt'); if (!b || b.dataset.t === '') return;
     e.stopPropagation();

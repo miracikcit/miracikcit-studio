@@ -111,11 +111,16 @@ html.pwa body { padding-block: 0 28px; }
   html.pwa .edshd .ccseg { display: inline-flex; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 2px; }
   html.pwa .edshd .ccseg button { border: 0 !important; padding: 5px 10px !important; background: none !important; font-size: 12px !important; }
   html.pwa .edshd .ccseg button[aria-pressed="true"] { background: var(--fg) !important; color: var(--bg) !important; border-radius: 999px; }
-  html.pwa .edshd #ccEmm { font-size: 12px !important; padding: 6px 10px !important; }
-  html.pwa .edshd #ccEmm:disabled { opacity: .5; }
+  html.pwa .edshd #ccHl { font-size: 13px !important; padding: 7px 12px !important; font-weight: 700; border-radius: 999px; }
+  html.pwa .edshd #ccHl.ready { background: #cdb4f2 !important; color: #1d1b1a !important; }
+  html.pwa .edshd #ccHl.on { background: #1d1b1a !important; color: #fff !important; }
+  html.pwa.edtab-Caption #hlBtn { display: none !important; }   /* 23 Nov: butang ★ dipindah ke kepala panel */
 }
 @media (max-width: 680px) {   /* kotak 3 lajur: nama sahaja, penerangan panjang disorok macam CapCut */
   html.pwa.edtab-Effects #panel .grid .opt > p, html.pwa.edtab-Sticker #panel .grid .opt > p { display: none; }
   html.pwa.edtab-Effects #panel .grid .opt > h3, html.pwa.edtab-Sticker #panel .grid .opt > h3 { font-size: 12px; margin: 4px 0 2px; }
   html.pwa.edtab-Effects #panel .grid .optb { gap: 4px; flex-wrap: wrap; }
 }
+
+/* 23 Nov (Mira): tab Caption tanpa trek caption / highlight; tinggal pembaris untuk scrub */
+html.pwa.edtab-Caption .rbar .rlab, html.pwa.edtab-Caption .rbar .track { display: none !important; }
