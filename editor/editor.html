@@ -331,6 +331,41 @@
 .tn-cream :is(.e-chip, .e-badges span, .e-check, .e-emboss span, .e-marq span, .e-pola, .e-cardrow span, .e-gtype, .e-checkg, .e-chart, .e-wipe, .e-fbreak .fr, .ug .pn, .uh .fr, .k2 .pn, .k2 .cp, .k3 .fr, .t-glass, .h5 .st, .e-hook .pl) { background: #fbf3e2 !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; border-color: rgba(58,42,38,.18) !important; color: #3a2a26 !important; text-shadow: none !important; }
 .tn-cream :is(.e-chip, .e-badges span, .e-check, .e-emboss span, .e-marq span, .e-pola, .e-gtype, .e-checkg, .e-chart, .ug .pn, .k2 .pn, .k2 .cp, .t-glass, .h5 .st) :is(b, i, em, s, h5, p, small, div, span) { color: #3a2a26 !important; text-shadow: none !important; }
 
+/* p15: trend effects, solid surfaces (no blur behind text) */
+.dg { display: inline-block; height: 1em; overflow: hidden; vertical-align: bottom; }
+.strip { display: flex; flex-direction: column; }
+.strip i { display: block; height: 1em; line-height: 1em; font-style: normal; text-align: center; }
+.nd { display: inline-block; }
+.e-wheel { display: flex; flex-direction: column; align-items: center; gap: 1.6cqw; white-space: nowrap; }
+.e-wheel .lb { background: #1d1b1a; color: #fff; font: 800 3.6cqw/1 "Plus Jakarta Sans", sans-serif; padding: 1.5cqw 3.2cqw; border-radius: 99px; letter-spacing: .02em; }
+.e-wheel .nm { display: flex; align-items: flex-end; font: 900 20cqw/1 "Montserrat", sans-serif; color: var(--kc, #ffd447); letter-spacing: -.04em; filter: drop-shadow(0 1cqw 0 #1d1b1a) drop-shadow(0 1.4cqw 2.4cqw rgba(0,0,0,.35)); }
+.e-wheel .nm .nd { font-size: .5em; align-self: center; margin-right: .08em; }
+.e-wheel .tp { background: #fff; color: #1d1b1a; font: 800 3.8cqw/1 "Plus Jakarta Sans", sans-serif; padding: 1.6cqw 3.4cqw; border-radius: 99px; box-shadow: 0 .6cqw 0 #1d1b1a; }
+.e-receipt { width: 66cqw; background: #fffdf6; color: #1d1b1a; padding: 4.4cqw 5cqw 5.6cqw; font: 400 3.9cqw/1.25 "Courier Prime", monospace; box-shadow: 0 1.5cqw 4cqw rgba(0,0,0,.35); position: relative; transform: rotate(-1.5deg); }
+.e-receipt h5 { margin: 0 0 2.2cqw; font: 900 4.6cqw/1 "Montserrat", sans-serif; text-transform: uppercase; letter-spacing: .06em; text-align: center; padding-bottom: 2.2cqw; border-bottom: .45cqw dashed #1d1b1a; }
+.e-receipt .rw { display: flex; justify-content: space-between; gap: 3cqw; padding: .8cqw 0; }
+.e-receipt .rw b { font-weight: 400; }
+.e-receipt .tt { display: flex; justify-content: space-between; align-items: center; margin-top: 2cqw; padding-top: 2.4cqw; border-top: .45cqw dashed #1d1b1a; font: 900 4.4cqw/1 "Montserrat", sans-serif; }
+.e-receipt .tt b { display: inline-flex; align-items: flex-end; font: 900 8.4cqw/1 "Montserrat", sans-serif; background: var(--kc, #ffd447); padding: .8cqw 1.8cqw; border-radius: 1.2cqw; }
+.e-receipt .tt .nd { font-size: .6em; align-self: center; }
+.e-receipt .zz { position: absolute; left: 0; right: 0; bottom: -2.2cqw; height: 2.3cqw; background: linear-gradient(-45deg, transparent 50%, #fffdf6 50%) 0 0/4cqw 100% repeat-x, linear-gradient(45deg, transparent 50%, #fffdf6 50%) 0 0/4cqw 100% repeat-x; }
+.e-ticket { display: flex; filter: drop-shadow(0 1.2cqw 2.4cqw rgba(0,0,0,.35)); white-space: nowrap; }
+.e-ticket .mn { background: var(--kc, #ffd447); color: #1d1b1a; padding: 3.4cqw 5.4cqw; border-radius: 2.4cqw 0 0 2.4cqw; display: flex; flex-direction: column; align-items: flex-start; -webkit-mask: radial-gradient(circle 2.2cqw at 100% 0, transparent 98%, #000 100%) top/100% 51% no-repeat, radial-gradient(circle 2.2cqw at 100% 100%, transparent 98%, #000 100%) bottom/100% 51% no-repeat; mask: radial-gradient(circle 2.2cqw at 100% 0, transparent 98%, #000 100%) top/100% 51% no-repeat, radial-gradient(circle 2.2cqw at 100% 100%, transparent 98%, #000 100%) bottom/100% 51% no-repeat; }
+.e-ticket .mn em { font: 800 3.6cqw/1.1 "Plus Jakarta Sans", sans-serif; font-style: normal; }
+.e-ticket .mn b { font: 900 14cqw/1 "Montserrat", sans-serif; letter-spacing: -.03em; }
+.e-ticket .sb { background: #1d1b1a; color: #fff; width: 13cqw; border-radius: 0 2.4cqw 2.4cqw 0; display: flex; align-items: center; justify-content: center; border-left: .5cqw dashed var(--kc, #ffd447); transform-origin: 0 0; -webkit-mask: radial-gradient(circle 2.2cqw at 0 0, transparent 98%, #000 100%) top/100% 51% no-repeat, radial-gradient(circle 2.2cqw at 0 100%, transparent 98%, #000 100%) bottom/100% 51% no-repeat; mask: radial-gradient(circle 2.2cqw at 0 0, transparent 98%, #000 100%) top/100% 51% no-repeat, radial-gradient(circle 2.2cqw at 0 100%, transparent 98%, #000 100%) bottom/100% 51% no-repeat; }
+.e-ticket .sb span { writing-mode: vertical-rl; transform: rotate(180deg); font: 900 4cqw/1 "Montserrat", sans-serif; letter-spacing: .2em; }
+.e-pin { display: flex; flex-direction: column; align-items: center; gap: 1.2cqw; }
+.e-pin .pn { position: relative; width: 14cqw; display: block; }
+.e-pin .pn svg { width: 100%; display: block; filter: drop-shadow(0 1cqw 1.4cqw rgba(0,0,0,.35)); position: relative; }
+.e-pin .rp { position: absolute; left: 50%; bottom: -1.5cqw; width: 12cqw; height: 4cqw; margin-left: -6cqw; border-radius: 50%; border: .6cqw solid var(--kc, #ffd447); }
+.e-pin .cd { background: #fff; color: #1d1b1a; padding: 2.2cqw 4.2cqw; border-radius: 2.6cqw; text-align: center; box-shadow: 0 .7cqw 0 #1d1b1a; white-space: nowrap; }
+.e-pin .cd b { display: block; font: 900 6.4cqw/1.05 "Montserrat", sans-serif; }
+.e-pin .cd em { display: block; font: 800 3.5cqw/1.2 "Plus Jakarta Sans", sans-serif; font-style: normal; opacity: .75; margin-top: .6cqw; }
+.e-slam { display: flex; flex-direction: column; align-items: center; gap: 1.2cqw; }
+.e-slam .lb { background: var(--kc, #ffd447); color: #1d1b1a; font: 800 3.6cqw/1 "Plus Jakarta Sans", sans-serif; padding: 1.3cqw 3cqw; border-radius: 99px; transform: rotate(-2deg); }
+.e-slam .sl { display: block; font: 400 21cqw/.86 "League Gothic", sans-serif; text-transform: uppercase; color: #fff; -webkit-text-stroke: .5cqw #1d1b1a; paint-order: stroke fill; text-shadow: 1.2cqw 1.4cqw 0 #1d1b1a; white-space: nowrap; letter-spacing: .01em; }
+
 /* Layout: desktop keeps video + panel on top, timeline below. On a phone: video and tabs stay stuck at the top, timeline comes right under the video, panel last. The Caption tab keeps its panel above the timeline. Look follows Cikcit Studio: warm light theme by the owner's choice. */
 :root {
   --bg: #faf7f4; --panel: #ffffff; --panel2: #f3eeea; --line: #ece5df;
@@ -857,8 +892,22 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 }
 
 .tokn{display:inline-flex;align-items:center;gap:3px;font-size:9.5px;line-height:1;opacity:.75;white-space:nowrap;vertical-align:middle;margin-left:6px}.tokn svg{width:11px;height:11px;transform:rotate(-90deg)}.tokn circle{fill:none;stroke-width:2.4;stroke-linecap:round}
+
+/* p15: trend effects (preview motion; the render uses GSAP with the same timing) */
+.e-wheel .strip, .e-receipt .strip { animation: whl 1.1s cubic-bezier(.22,1,.36,1) both; animation-delay: calc(var(--d, 0s) + .12s + var(--n, 0) * .05s); }
+@keyframes whl { from { transform: translateY(0); } to { transform: translateY(calc(var(--yp) * 1%)); } }
+.e-wheel .nm { animation: eu .32s cubic-bezier(.34,1.56,.64,1) both, whp .26s ease-out both; animation-delay: var(--d, 0s), 1.2s; }
+@keyframes whp { 50% { scale: 1.08; } }
+.e-ticket .sb { animation: tkt .45s cubic-bezier(.55,.06,.68,.19) 1.1s both; }
+@keyframes tkt { from { transform: none; } to { transform: translate(3cqw, 4cqw) rotate(12deg); } }
+.e-pin .pn { animation: pinDrop .55s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes pinDrop { from { opacity: 0; translate: 0 -24cqw; } to { opacity: 1; translate: 0 0; } }
+.e-pin .rp { animation: pinRip .9s ease-out .45s both; }
+@keyframes pinRip { from { transform: scale(.2); opacity: .9; } to { transform: scale(2.4); opacity: 0; } }
+.e-slam .sl { animation: slamIn .22s cubic-bezier(.55,.06,.68,.19) both, hxShake .42s linear .22s; }
+@keyframes slamIn { from { opacity: 0; scale: 2.2; } to { opacity: 1; scale: 1; } }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=48087ddddd">
+<link rel="stylesheet" href="../../ed-capcut.css?v=531884ac2f">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -961,9 +1010,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=48087ddddd"></script>
-<script src="../../../js/runtime.js?v=48087ddddd"></script>
-<script src="../../ed-boot.js?v=48087ddddd"></script>
+<script src="../../../js/config.js?v=531884ac2f"></script>
+<script src="../../../js/runtime.js?v=531884ac2f"></script>
+<script src="../../ed-boot.js?v=531884ac2f"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -1108,6 +1157,7 @@ function fxUnits(text, fx, base, n0 = 0) {
 const TXT_OLD = [["t-hl", "Teks skrip", "", { text: "Sejuk!" }], ["t-hls", "Teks serif", "", { text: "lembut" }], ["t-hlm", "Teks marker", "", { text: "BEST!" }]];
 const TXT_KINDS = [["t-glass", "Butang kaca", "Kotak kaca, contohnya Tengok beg bawah.", { text: "Tengok beg bawah" }]];
 const FX_KINDS = [
+  ["Trend", [["e-wheel", "Kaunter nombor", "Nombor bergolek macam mesin kira, label atas, pill jumlah bawah.", { a: "RM238", text: "bilik SkyWorlds", b: "jumlah RM238" }], ["e-receipt", "Resit jumlah", "Resit kertas: baris masuk satu-satu, TOTAL bergolek.", { a: "Bajet trip", items: ["Bilik|RM238", "Tiket|RM140"], b: "RM378" }], ["e-ticket", "Tiket koyak", "Tiket berwarna, stub terkoyak.", { a: "RM70", text: "beli 1 FREE 1", b: "TIKET" }], ["e-pin", "Pin lokasi", "Pin jatuh dengan riak, nama tempat.", { a: "Awana", text: "bukan di puncak" }], ["e-slam", "Tajuk slam", "Tajuk besar hentak masuk dan bergegar.", { a: "", text: "WORTH IT!" }]]],
   ["Text", [...TXT_KINDS, ["e-gtype", "Glass type", "Tulisan besar dalam panel kaca. Huruf BESAR jadi italic.", { a: "kenapa aku suka", text: "dua-dua KACA" }], ["e-arrow", "Arrow note", "Nota tangan dengan anak panah.", { text: "cuba yang ni" }], ["e-strike", "Crossed word", "Perkataan kena potong.", { text: "kos renovation" }]]],
   ["Photos", [["e-polg", "Frame kaca", "Satu gambar, frame lut sinar macam kaca.", { text: "", ph: 1 }], ["e-polt", "Frame nipis", "Satu gambar, frame putih nipis.", { text: "", ph: 1 }], ["e-fbreak", "Frame break", "Gambar terkeluar dari frame kaca.", { text: "", ph: 1 }], ["e-wipe", "Before / after", "Garis sapu dari sebelum ke selepas.", { a: "sebelum", b: "selepas", ph: 2 }], ["e-phone", "Phone mock-up", "Gambar dalam telefon.", { ph: 1 }], ["e-pola", "Polaroid", "Satu gambar senget.", { text: "sebelum", ph: 1 }], ["e-stack", "Stack of three", "Tiga gambar bertindan.", { ph: 3 }], ["e-fan", "Photo fan", "Tiga gambar macam kipas.", { ph: 3 }], ["e-cardrow", "Video cards", "Tiga kad video berbingkai.", { ph: 3 }]]],
   ["USP", [["e-uspa", "A Serif + skrip", "Serif italic besar, tulisan tangan atas bawah, atas close-up.", { a: "bau dia macam", text: "fruity, floral", b: "& SWEET", items: ["playful & chic ♡"], ph: 1 }], ["e-uspg", "G Panel kaca", "Panel kaca: skrip kecil, serif italic besar, tiga chip kaca.", { a: "kenapa best", text: "jag kaca", items: ["tak kuning", "tak melekat bau", "tahan panas"], ph: 1 }], ["e-usph", "H Dua frame kaca", "Tajuk serif, dua gambar dalam frame kaca.", { text: "dua jag", a: "jus & kering", items: ["jag jus", "jag kering"], ph: 3 }], ["e-uspm", "M Marker + senarai", "Perkataan marker besar, senarai tulisan tangan.", { a: "satu mesin je", text: "9 in 1", items: ["cincang", "parut", "perah"], ph: 1 }], ["e-uspb4", "B4 Empat gambar", "Empat gambar besar bersusun 2 x 2.", { text: "Reversible", a: "2 warna dalam 1 selimut", items: ["gelap · cerah", "hijau", "pink", "beige"], ph: 4 }]]],
@@ -1125,6 +1175,8 @@ let fxCat = "Text", fxListOpen = false;
 document.addEventListener("toggle", e => { if (e.target && e.target.id === "fxList") { fxListOpen = e.target.open; const sm = e.target.querySelector("summary"); if (sm) sm.textContent = sm.textContent.replace(/tekan untuk (tutup|buka)/, "tekan untuk " + (fxListOpen ? "tutup" : "buka")); } }, true);
 /* field labels of the newer effects: text, a, b, items */
 const FXL = {
+  "e-wheel": { a: "Nombor (digit bergolek)", text: "Label atas", b: "Pill bawah (boleh kosong)" }, "e-receipt": { a: "Tajuk resit", items: "Satu baris setiap item: Nama|Harga", b: "Total" },
+  "e-ticket": { a: "Nombor besar", text: "Ayat kecil atas", b: "Tulisan stub" }, "e-pin": { a: "Nama tempat", text: "Ayat kecil" }, "e-slam": { a: "Label kecil atas (boleh kosong)", text: "Tajuk" },
   "e-uspg": { text: "Ayat besar serif", a: "Baris kecil atas", items: "Tiga chip kaca, satu baris setiap chip" }, "e-usph": { text: "Tajuk", a: "Ayat kecil bawah tajuk", items: "Tulisan bawah dua frame, satu baris setiap frame" },
   "e-uspm": { text: "Perkataan marker besar", a: "Baris kecil atas", items: "Senarai ✓, satu baris setiap satu" },
   "e-endc2": { a: "Nama produk", text: "Butang bawah (CTA)", items: "USP, satu baris setiap chip: PERKATAAN BESAR|ayat kecil" }, "e-endc3": { a: "Nama produk", text: "Butang bawah (CTA)", items: "Perkataan USP, satu baris setiap satu" },
@@ -1133,6 +1185,19 @@ const FXL = {
   "e-gtype": { a: "Label kecil atas", text: "Text (huruf BESAR jadi italic)" }, "e-chart": { a: "Tajuk", items: "Satu baris setiap bar: Label|nombor" }, "e-wipe": { a: "Label sebelum", b: "Label selepas" },
   "e-checkg": { a: "Tajuk" }, "e-fbreak": { text: "Tulisan bawah gambar" }, "e-pcut": { text: "Text (huruf BESAR jadi warna kunci)" }, "e-dboil": { text: "Tulisan bawah bulatan (boleh kosong)" }
 };
+/* p15: trend effects (HyperFrames registry: number-wheel, apple-money-count, headline-slam). Same markup in render_draft.py fx3_html() */
+const wheelDigits = v => { let n = 0; return [...String(v || "")].map(c => { if (!/\d/.test(c)) return `<span class="nd">${esc(c)}</span>`; const st = 10 + +c, yp = (-st / (st + 1) * 100).toFixed(3), h = `<span class="dg"><span class="strip" style="--yp:${yp};--n:${n}">${Array.from({ length: st + 1 }, (_, i) => `<i>${i % 10}</i>`).join("")}</span></span>`; n++; return h; }).join(""); };
+function fx3(x) {
+  const it = x.items || [], part = (t, n) => ((t || "").split("|").concat(["", ""]))[n].trim();
+  switch (x.k) {
+    case "e-wheel": return `<div class="e-wheel">${x.text ? `<span class="eu lb" style="--d:0s">${esc(x.text)}</span>` : ""}<div class="eu nm" style="--d:.05s">${wheelDigits(x.a)}</div>${x.b ? `<span class="eu tp" style="--d:1.15s">${esc(x.b)}</span>` : ""}</div>`;
+    case "e-receipt": return `<div class="e-receipt eu" style="--d:0s"><h5>${esc(x.a || "")}</h5>${it.map((t, i) => `<div class="eu rw" style="--d:${(.35 + i * .28).toFixed(2)}s"><span>${esc(part(t, 0))}</span><b>${esc(part(t, 1))}</b></div>`).join("")}<div class="eu tt" style="--d:${(.45 + it.length * .28).toFixed(2)}s"><span>TOTAL</span><b>${wheelDigits(x.b)}</b></div><i class="zz"></i></div>`;
+    case "e-ticket": return `<div class="e-ticket eu" style="--d:0s"><div class="mn"><em>${esc(x.text || "")}</em><b>${esc(x.a || "")}</b></div><div class="sb"><span>${esc(x.b || "TIKET")}</span></div></div>`;
+    case "e-pin": return `<div class="e-pin"><span class="pn"><i class="rp"></i><svg viewBox="0 0 40 52"><path d="M20 51C20 51 3 31 3 19a17 17 0 0 1 34 0c0 12-17 32-17 32z" fill="var(--kc,#ffd447)" stroke="#1d1b1a" stroke-width="3"/><circle cx="20" cy="19" r="6.5" fill="#1d1b1a"/></svg></span><span class="eu cd" style="--d:.35s"><b>${esc(x.a || "")}</b>${x.text ? `<em>${esc(x.text)}</em>` : ""}</span></div>`;
+    case "e-slam": return `<div class="e-slam">${x.a ? `<span class="eu lb" style="--d:.3s">${esc(x.a)}</span>` : ""}<span class="sl">${esc(x.text || "")}</span></div>`;
+  }
+  return null;
+}
 /* markup of the newer effects; same markup in render_draft.py fx2() */
 function fx2(x, url) {
   const k = x.k, it = x.items || [], e = esc, pu = i => url((x.photos || [])[i] || ((D.photos || [])[i] || {}).id), d = v => `--d:${v.toFixed(2)}s`;
@@ -1168,7 +1233,7 @@ const ok = key => !PREFS.no.includes(key), liked = key => PREFS.like.includes(ke
 function savePrefs() { clearTimeout(prefsT); prefsT = setTimeout(() => { if (db) db.doc("prefs/style").set({ like: PREFS.like, no: PREFS.no, names: PREFS.names, need: prefsNeed(), at: new Date().toISOString() }).catch(() => {}); }, 600); }
 const SKINS = [["serif", "serif italic"], ["script", "skrip"], ["marker", "marker"], ["gothic", "gothic"], ["bold", "bold"], ["mono", "mesin taip"]], TONES = [["glass", "kaca"], ["", ""], ["cream", "krim"], ["dark", "gelap"]];
 const KTAG = { "t-glass": "bold glass", "e-gtype": "bold glass", "e-arrow": "script", "e-strike": "mono cream", "e-polg": "glass script", "e-polt": "script", "e-fbreak": "glass script", "e-wipe": "glass bold", "e-pola": "script", "e-uspa": "serif", "e-uspg": "serif glass", "e-usph": "serif glass", "e-uspm": "marker", "e-uspb4": "serif cream",
-  "e-endc": "script cream", "e-endc2": "serif glass", "e-endc3": "script glass", "e-endc4": "marker", "e-chip": "bold", "e-badges": "bold", "e-marq": "mono", "e-emboss": "mono", "e-dboil": "script", "e-checkg": "bold glass", "e-check": "bold", "e-chart": "serif glass", "e-price": "mono cream", "e-num": "serif", "e-cal": "serif",
+  "e-endc": "script cream", "e-endc2": "serif glass", "e-endc3": "script glass", "e-endc4": "marker", "e-wheel": "bold", "e-receipt": "mono", "e-ticket": "bold", "e-pin": "bold", "e-slam": "bold", "e-chip": "bold", "e-badges": "bold", "e-marq": "mono", "e-emboss": "mono", "e-dboil": "script", "e-checkg": "bold glass", "e-check": "bold", "e-chart": "serif glass", "e-price": "mono cream", "e-num": "serif", "e-cal": "serif",
   "e-pcut": "serif cream", "e-torn": "script cream", "e-strip": "mono cream", "e-note": "script cream", "e-hwall": "gothic", "e-cover": "serif", "e-bigmix": "bold serif", "e-bigblur": "bold serif", "e-bigserif": "serif", "e-bigmark": "marker", "e-hook1": "serif script", "e-hook2": "bold serif", "e-hook3": "marker script", "e-hook4": "script", "e-hook5": "serif glass", "e-hook6": "script serif" };
 function taste() { const c = {}; PREFS.like.forEach(key => { const id = key.slice(key.indexOf(":") + 1), v = vSkin(id); [...(KTAG[vBase(id)] || "").split(" "), v.sk, v.tn].filter(Boolean).forEach(t => { c[t] = (c[t] || 0) + 1; }); }); const by = L => L.slice().sort((a, b) => (c[b[0]] || 0) - (c[a[0]] || 0)); return { sk: by(SKINS), tn: by(TONES) }; }
 function fillCat(pre, list) {   // list rows: [id, name, text, options]; returns what the category shows, never fewer than six while a base is left
@@ -1223,6 +1288,7 @@ function paraHTML(x) {   // 2026-11-09 static block: no .eu, so nothing animates
   return `<div class="e-para"><div class="ps"></div><div class="pz pa">${esc(x.a || "")}</div><div class="pz pt">${kk(x.text || "")}</div><div class="pz pb">${kk(x.b || "")}</div>${pill ? `<div class="pz pp"><span>${esc(pill)}</span></div>` : ""}</div>`;
 }
 function effectHTML(x, url) {
+  { const z = fx3(x); if (z != null) return z; }
   { const z = fx2(x, url); if (z != null) return z; }
   if (x.k === "e-para") return paraHTML(x);
   if (x.k === "e-endc") {   // end card, 2 s at the very end; items "BIG|small", b = four tile colours, a = name under the sketch, text = pill
@@ -1288,7 +1354,7 @@ let tab = "Potong", safeOn = false, mode = "fix", bTab = "brand", wSel = -1;
 /* Zoom slider is logarithmic: 0 = 6 px per second (whole video), 100 = 300 px per second (frame-level trims). */
 const ppsFromZ = v => 6 * Math.pow(50, v / 100), zFromPps = p => Math.round(Math.log(p / 6) / Math.log(50) * 100);
 let pps = 16, pos = 0, sel = 0, playing = false, curIdx = 0, lastPos = 0, sfxSel = -1, voSel = -1, stSel = -1, zmSel = -1, lastT = 0;
-const S0 = () => ({ clips: [], bin: [], hook: "", words: [], globalMute: true, sfx: [], zooms: [], vo: [], stickers: [], capMode: "frasa", capSize: 1, capGap: 1, capPos: "bawah", hlStyle: "color", hlFont: "", hlColor: "", hlMode: "", hlKind: "ikut", hlLook: "none", hlFx: "pop", hlSize: 1, hlx: {}, overlay: {}, style: { ...DEF_STYLE }, final: { render: "final", src: "simpan", list: "simpan" }, popDone: {}, music: { f: "", vol: .15, duck: true } });
+const S0 = () => ({ clips: [], bin: [], hook: "", words: [], globalMute: true, sfx: [], zooms: [], vo: [], stickers: [], capMode: "frasa", capSize: 1, capGap: 1, capPos: "bawah", hlStyle: "color", hlFont: "", hlColor: "", hlMode: "", hlKind: "ikut", hlLook: "none", hlFx: "pop", hlSize: 1, hlx: {}, hlPlace: "cap", overlay: {}, style: { ...DEF_STYLE }, final: { render: "final", src: "simpan", list: "simpan" }, popDone: {}, music: { f: "", vol: .15, duck: true } });
 let S = S0();
 /* One editor for every part of a product (2026-11-12): parts.json at the page root lists the videos, each in its own folder (v1/, v2/ ...).
    Without parts.json the page is a single video, as before. Saved edits: edits/current (single) or edits/p1, edits/p2 ... (combined). */
@@ -1405,7 +1471,7 @@ function setSaved(txt, cls) { const s = $("saved"); s.textContent = txt; s.class
 function docBody() {
   const fixes = {}, cuts = [], hl = {};
   S.words.forEach((w, i) => { if (w.t !== D.words[i].t) fixes[i] = w.t; if (w.cut) cuts.push(i); if (w.hl === 0 || w.hl === 1) hl[i] = w.hl; });
-  return { v: 1, clips: S.clips, bin: S.bin, hook: S.hook, fixes, cuts, globalMute: S.globalMute, origVol: S.origVol ?? 1, sfx: S.sfx, zooms: S.zooms, music: S.music, vo: S.vo, stickers: S.stickers, capMode: S.capMode, capSize: S.capSize, capGap: S.capGap, capPos: S.capPos, capChest: S.capPos === "dada", capAuto: S.capPos === "auto" ? CAPPLAN : null, hl, hlStyle: "color", hlFont: "", hlColor: S.hlColor, hlMode: S.hlMode || "", hlFix: S.hlFix || 0, hlKind: S.hlKind, hlLook: S.hlLook, hlFx: S.hlFx, hlSize: S.hlSize, hlx: S.hlx || {}, hlItems: HLS.map(h => ({ t: h.t, d: h.d, x: +h.x.toFixed(4), y: +h.y.toFixed(4), text: h.text, css: h.css, fs: h.fs, fx: h.fx })), overlay: S.overlay, hookEnd: HOOK_END, style: S.style, final: S.final, brandKit: S.brandKit || null, popDone: S.popDone, at: new Date().toISOString() };
+  return { v: 1, clips: S.clips, bin: S.bin, hook: S.hook, fixes, cuts, globalMute: S.globalMute, origVol: S.origVol ?? 1, sfx: S.sfx, zooms: S.zooms, music: S.music, vo: S.vo, stickers: S.stickers, capMode: S.capMode, capSize: S.capSize, capGap: S.capGap, capPos: S.capPos, capChest: S.capPos === "dada", capAuto: S.capPos === "auto" ? CAPPLAN : null, hl, hlStyle: "color", hlFont: "", hlColor: S.hlColor, hlMode: S.hlMode || "", hlFix: S.hlFix || 0, hlKind: S.hlKind, hlLook: S.hlLook, hlFx: S.hlFx, hlSize: S.hlSize, hlx: S.hlx || {}, hlPlace: S.hlPlace || "cap", hlCap: S.hlPlace === "big" ? null : capHlMap(), hlItems: (S.hlPlace === "big" ? HLS : []).map(h => ({ t: h.t, d: h.d, x: +h.x.toFixed(4), y: +h.y.toFixed(4), text: h.text, css: h.css, fs: h.fs, fx: h.fx })), overlay: S.overlay, hookEnd: HOOK_END, style: S.style, final: S.final, brandKit: S.brandKit || null, popDone: S.popDone, at: new Date().toISOString() };
 }
 /* talking-head: each sticker/effect remembers the spot in her speech (s.src = offsets[file] + source second).
    When clips change, it moves with that spot; when only stickers change, src follows the new place. */
@@ -1475,7 +1541,7 @@ function applyDoc(saved) {
   if (d.stickers) S.stickers = d.stickers;
   S.capMode = d.capMode || "frasa"; S.capSize = d.capSize || 1; S.capPos = d.capPos || (d.capChest ? "dada" : "bawah");
   S.capGap = d.capGap ?? 1; S.hlStyle = "color"; S.hlFont = ""; S.hlColor = d.hlColor || ""; S.overlay = d.overlay || {};
-  S.hlMode = d.hlMode || ""; S.hlFix = d.hlFix || 0; S.hlKind = d.hlKind || "ikut"; S.hlLook = d.hlLook || "none"; S.hlFx = d.hlFx || "pop"; S.hlSize = d.hlSize || 1; S.hlx = d.hlx || {};
+  S.hlMode = d.hlMode || ""; S.hlFix = d.hlFix || 0; S.hlKind = d.hlKind || "ikut"; S.hlPlace = d.hlPlace || "cap"; S.hlLook = d.hlLook || "none"; S.hlFx = d.hlFx || "pop"; S.hlSize = d.hlSize || 1; S.hlx = d.hlx || {};
   Object.entries(d.hl || {}).forEach(([i, v]) => { if (S.words[i]) S.words[i].hl = v; });
   S.style = { ...DEF_STYLE, ...(d.style || {}) };
   if (d.final) S.final = { ...S.final, ...d.final, render: d.final.render === "draft" ? "draft" : "final" };
@@ -1547,7 +1613,7 @@ function drawCaption() {
   if (key !== grKey) {
     grKey = key;
     let n0 = 0; const fx = S.style.capFx; cap.dataset.fx = fx; cap.classList.toggle("sg", S.capMode === "single" || S.capMode === "short");
-    cap.innerHTML = `<div class="cl">${g.words.map(w => { const u = fxUnits(showWord(w), fx, 0, n0); n0 += u.n; return `<span data-i="${w.i}" class="${isKey(w) ? "key" : ""}">${u.html}</span>`; }).join(" ")}</div>`;
+    cap.innerHTML = `<div class="cl">${g.words.map(w => { const u = fxUnits(showWord(w), fx, 0, n0); n0 += u.n; return `<span data-i="${w.i}" class="${isKey(w) ? "key" : ""}"${isKey(w) && CAPHL[w.i] ? ` style="${CAPHL[w.i]}"` : ""}>${u.html}</span>`; }).join(" ")}</div>`;
     if (S.capPos === "scatter") { const s = scatterAt(g); cap.style.cssText = `left:${11.11 + s.x * 100}%;right:${11.11 - s.x * 100}%;top:${s.top * 100}%;bottom:auto`; }
     else if (S.capPos === "auto" && CAPPLAN && CAPPLAN[g.idx]) cap.style.cssText = `top:${(CAPPLAN[g.idx][1] * 100).toFixed(2)}%;bottom:auto`;
     else cap.style.cssText = "";
@@ -1607,9 +1673,17 @@ function faceAt(t) { return null; }
    for the render (hlItems), so the two can never differ. Fonts in single quotes: the CSS goes into a style="" attribute. ---- */
 const HLK = { ikut: ["Ikut caption", "", .46], script: ["Skrip", "font:700 1em/1 'Caveat',cursive;transform:rotate(-4deg);", .42], serif: ["Serif italic", "font:italic 400 1.05em/1 'Instrument Serif',serif;", .42], marker: ["Marker", "font:400 .82em/1.05 'Permanent Marker',cursive;transform:rotate(-3deg);", .5],
   wall: ["Headline wall", "font:400 1.15em/.92 'League Gothic',sans-serif;text-transform:uppercase;letter-spacing:.01em;", .42], cover: ["Cover story", "font:400 .95em/1 'Gloock',serif;letter-spacing:-.01em;", .5], bold: ["Bold", "font:800 .8em/1 'Plus Jakarta Sans',sans-serif;letter-spacing:-.03em;", .46],
+  gloock: ["Gloock", "font:400 1em/1 'Gloock',serif;", .5], mont: ["Montserrat Black", "font:900 .9em/1 'Montserrat',sans-serif;letter-spacing:-.02em;", .56], londrina: ["Londrina", "font:400 1.05em/1 'Londrina Solid',sans-serif;", .44],
+  playfair: ["Playfair italic", "font:italic 500 1em/1 'Playfair Display',serif;", .46], caslon: ["Caslon italic", "font:italic 400 1em/1 'Libre Caslon Text',serif;", .5], allura: ["Allura", "font:400 1.3em/1 'Allura',cursive;", .36],
+  beth: ["Beth Ellen", "font:400 .8em/1.25 'Beth Ellen',cursive;", .6], patrick: ["Patrick Hand", "font:400 1em/1 'Patrick Hand SC',cursive;", .42], courier: ["Typewriter", "font:400 .9em/1 'Courier Prime',monospace;", .6],
+  outfit: ["Outfit", "font:800 .95em/1 'Outfit',sans-serif;", .5], nunito: ["Nunito", "font:800 .95em/1 'Nunito',sans-serif;", .5], reenie: ["Reenie", "font:400 1.3em/1 'Reenie Beanie',cursive;", .36],
   glass: ["Glass type", "font:900 .46em/1.2 'Montserrat',sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:.5em 1.2em;border-radius:1.5em;background:rgba(255,255,255,.2);-webkit-backdrop-filter:blur(.5em);backdrop-filter:blur(.5em);border:.07em solid rgba(255,255,255,.6);box-shadow:0 .25em .8em rgba(0,0,0,.25);", .34] };
 const HLL = { none: ["Biasa", "text-shadow:0 .045em .16em rgba(0,0,0,.5),0 0 .03em rgba(0,0,0,.35);"], glow: ["Glow", "text-shadow:0 0 .08em #fff,0 0 .28em var(--c),0 0 .6em var(--c);"],
   grad: ["Gradient", "background:linear-gradient(180deg,#fff 18%,var(--c) 88%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 .05em .1em rgba(0,0,0,.45));"],
+  box: ["Kotak warna", "background:var(--c);color:#1d1b1a;-webkit-text-fill-color:#1d1b1a;padding:.02em .2em .06em;border-radius:.16em;text-shadow:none;"],
+  under: ["Garis marker", "background:linear-gradient(transparent 60%,var(--c) 60%,var(--c) 90%,transparent 90%);padding:0 .06em;text-shadow:0 .04em .12em rgba(0,0,0,.35);"],
+  sticker: ["Sticker putih", "background:#fff;color:#1d1b1a;-webkit-text-fill-color:#1d1b1a;padding:.04em .22em;border-radius:.2em;transform:rotate(-3deg);box-shadow:0 .08em .25em rgba(0,0,0,.35);text-shadow:none;"],
+  pop3d: ["Bayang 3D", "text-shadow:.05em .06em 0 #1d1b1a,.09em .1em 0 var(--c);"],
   outline: ["Outline tebal", "-webkit-text-fill-color:transparent;-webkit-text-stroke:.05em var(--c);filter:drop-shadow(0 .04em .1em rgba(0,0,0,.45));"], stroke: ["Stroke + shadow", "-webkit-text-stroke:.06em #1d1b1a;paint-order:stroke fill;text-shadow:.07em .08em 0 #1d1b1a;"] };
 const HLM = { pop: "Pop / bounce", zoom: "Zoom-in", slide: "Slide-up", shake: "Shake", type: "Typewriter", fade: "Fade" };
 const HLC = [["", "Putih"], ["key", "Warna kunci"], ["#cdb4f2", "Purple"], ["#fdf4a0", "Butter"], ["#f4c2cf", "Pink"], ["#bfe8e3", "Mint"]];
@@ -1633,14 +1707,23 @@ function hlIkut() {   /* p14 */
 }
 function hlStyle(h) {   // inline CSS of one highlight; sizes in cqw / em so the 1080 frame and the preview match
   const K = HLK[h.kind], look = h.kind === "glass" && (h.look === "grad" || h.look === "outline") ? "none" : h.look, col = h.color === "key" ? "var(--kc, #ffd447)" : h.color || "#ffffff";
-  const accent = (!h.color || h.color === "#ffffff") && look !== "none" && look !== "stroke" ? "var(--kc, #ffd447)" : col, w0 = Math.max(1, h.text.length) * K[2] * (h.kind === "glass" ? .46 : 1) * 10 * h.size / 100 + (h.kind === "glass" ? .11 * h.size : 0);
+  const accent = (!h.color || h.color === "#ffffff" || h.color === "key") && look !== "none" && look !== "stroke" ? "var(--kc, #ffd447)" : col, w0 = Math.max(1, h.text.length) * K[2] * (h.kind === "glass" ? .46 : 1) * 10 * h.size / 100 + (h.kind === "glass" ? .11 * h.size : 0);
   const fit = Math.min(1, .76 / w0), fs = 10 * h.size * fit;
   h.w = Math.min(.8, w0 * fit); h.hh = fs * (h.kind === "glass" ? 1.3 : 1.15) / 177.78;
   h.fs = +fs.toFixed(2);   // font size sits on the wrapper: the look's own "font:" shorthand would reset it
   return `color:${look === "glow" ? "#ffffff" : col};--c:${accent};${h.kind === "ikut" ? hlIkut() : K[1]}${HLL[look][1]}`;
 }
+/* p15: highlight inside the caption. Same CSS goes to the render through edits.hlCap {word index: css}. */
+let CAPHL = {};
+function hlCapCss(h) {
+  const K = HLK[h.kind] || HLK.ikut, f = +((/([\d.]+)em\//.exec(K[1] || "") || [0, 1])[1]) || 1, css = hlStyle({ ...h, size: 1 });
+  return `display:inline-block;white-space:nowrap;${css}font-size:${((h.size || 1) * f).toFixed(3)}em;line-height:1.08;`;
+}
+function capHlMap() { const m = {}; (S.hlPlace === "big" ? [] : (HLS.length ? HLS : hlRuns())).forEach(h => { const c = hlCapCss(h); h.ids.forEach(i => { m[i] = c; }); }); return m; }
 function drawHL() {
   const lay = $("hllayer"); if (!lay) return;
+  if (S.hlPlace !== "big") { HLS = D && hasCap() ? hlRuns() : []; CAPHL = capHlMap(); lay.innerHTML = ""; grKey = ""; return; }
+  CAPHL = {};
   HLS = D && hasCap() ? hlRuns() : [];
   const st = $("stage").getBoundingClientRect(), fr = r => ({ l: (r.left - st.left) / st.width, r: (r.right - st.left) / st.width, t: (r.top - st.top) / st.height, b: (r.bottom - st.top) / st.height });
   const boxes = st.width ? [...$("stlayer").children].map(el => { const x = S.stickers[+el.dataset.st]; if (!x || x.k.startsWith("e-hook")) return null; return { t0: x.t, t1: x.t + x.d, f: x.k === "e-bigblur" ? { l: 0, r: 1, t: .3, b: .7 } : fr(FULLFX(x) ? drawnRect(el, st) : measured(el)) }; }).filter(Boolean) : [];
@@ -1660,6 +1743,7 @@ const hlInner = h => h.fx === "type" ? [...h.text].map((c, i) => `<span class="t
 function showHL() { document.querySelectorAll("#hllayer .hlw").forEach(el => { const h = HLS.find(q => q.id === +el.dataset.hl); if (!h) return; el.hidden = !((pos >= h.t && pos < h.t + h.d) || h.id === hlPeekId || (h.id === hlSel && !playing)); }); }
 /* show the change at once WITHOUT moving the playhead: the highlight on screen replays; if none is on screen, the nearest one shows for a moment */
 function hlPeek() {
+  if (S.hlPlace !== "big") return;
   if (!HLS.length || playing) return;
   const h = HLS.find(q => q.id === hlSel) || HLS.find(q => pos >= q.t && pos < q.t + q.d) || HLS.reduce((b, q) => !b || Math.abs(q.t - pos) < Math.abs(b.t - pos) ? q : b, null);
   hlPeekId = h.id; const el = document.querySelector(`#hllayer [data-hl="${h.id}"]`); if (el) { el.hidden = true; void el.offsetWidth; el.hidden = false; }
@@ -1718,16 +1802,20 @@ function hlAutoPick() {   // one word every 4 s or more: the longest word of a p
   return n;
 }
 function hlPanel() {
+  const capM = S.hlPlace !== "big";
+  if (capM && KEYSET.has(wSel)) { const r = HLS.find(h => h.ids.includes(wSel)); if (r) hlSel = r.id; }
   const cur = HLS.find(h => h.id === hlSel), one = hlScope === "one" && cur, v = f => one ? cur[f] : ({ kind: S.hlKind || "ikut", look: S.hlLook || "none", fx: S.hlFx || "pop", color: S.hlColor || "" })[f];
   const sz = Math.round((one ? ((S.hlx[hlSel] || {}).size || 1) : (S.hlSize || 1)) * 100), smp = { text: cur ? cur.text : (HLS[0] ? HLS[0].text : "contoh"), kind: v("kind"), look: v("look"), fx: v("fx"), color: v("color"), size: 1 };
-  return `<div class="row"><span class="lab" style="font-size:14px">Word highlight (${HLS.length} perkataan besar dalam video)</span>
+  return `<div class="row"><span class="lab" style="font-size:14px">Word highlight (${HLS.length} ${capM ? "dalam caption" : "perkataan besar dalam video"})</span>
+    <span class="lab">Letak highlight</span><div class="chips">${chip("Dalam caption", capM, 'data-hplace="cap"')}${chip("Perkataan besar berasingan", !capM, 'data-hplace="big"')}</div>
+    ${capM ? `<span class="legend">Perkataan ungu kekal dalam caption, cuma tukar font dan gaya. Betulkan ejaan terus dalam senarai perkataan di atas. Untuk ubah satu perkataan sahaja: tekan perkataan ungu, kemudian "Yang dipilih sahaja".</span>` : ""}
     <div class="hlsmp" id="hlSmp"><div><div class="hli hx-${smp.fx}" style="${hlStyle(smp)}">${hlInner(smp)}</div></div></div>
-    <span class="lab">Guna pada</span><div class="chips">${chip("Semua highlight", !one, 'data-hscope="all"')}<button class="chip" aria-pressed="${!!one}" data-hscope="one" ${cur ? "" : "disabled"}>Yang dipilih sahaja${cur ? `: ${esc(cur.text.slice(0, 16))}` : ""}</button></div>
-    ${cur ? `<label class="lab" for="hlText">Teks highlight dipilih</label><input id="hlText" type="text" value="${esc(cur.text)}">
+    <span class="lab">Guna pada</span><div class="chips">${chip("Semua highlight", !one, 'data-hscope="all"')}<button class="chip" aria-pressed="${!!one}" data-hscope="one" ${cur || capM ? "" : "disabled"}>Yang dipilih sahaja${cur ? `: ${esc(cur.text.slice(0, 16))}` : ""}</button></div>
+    ${capM ? "" : cur ? `<label class="lab" for="hlText">Teks highlight dipilih</label><input id="hlText" type="text" value="${esc(cur.text)}">
       <div class="chips"><button class="chip" id="hlPosReset" ${cur.auto ? "disabled" : ""}>Kedudukan auto</button><button class="chip" id="hlDel">Buang highlight ni</button></div>` : `<span class="legend">Tekan perkataan besar atas video (atau blok ungu di timeline) untuk pilih satu, alih tempat dengan seret.</span>`}
-    <span class="lab">Gaya huruf</span><div class="chips">${Object.entries(HLK).map(([k, x]) => chip(x[0], v("kind") === k, `data-hkind="${k}"`)).join("")}</div>
+    <span class="lab">Gaya huruf</span><div class="chips">${Object.entries(HLK).filter(([k]) => !(capM && k === "glass")).map(([k, x]) => chip(x[0], v("kind") === k, `data-hkind="${k}"`)).join("")}</div>
     <span class="lab">Effect</span><div class="chips">${Object.entries(HLL).map(([k, x]) => chip(x[0], v("look") === k, `data-hlook="${k}"`)).join("")}</div>
-    <span class="lab">Gerak masuk</span><div class="chips">${Object.entries(HLM).map(([k, n]) => chip(n, v("fx") === k, `data-hmove="${k}"`)).join("")}</div>
+    ${capM ? "" : `<span class="lab">Gerak masuk</span><div class="chips">${Object.entries(HLM).map(([k, n]) => chip(n, v("fx") === k, `data-hmove="${k}"`)).join("")}</div>`}
     <span class="lab">Warna</span><div class="chips">${HLC.map(([c, nm]) => `<button class="chip" aria-pressed="${v("color") === c}" data-hcol="${c}">${c && c !== "key" ? `<i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${c};border:1px solid rgba(0,0,0,.2);margin-right:5px;vertical-align:-1px"></i>` : ""}${nm}</button>`).join("")}</div></div>
     <div class="row"><label class="lab" for="hlSizeR">Saiz highlight: <span id="hlSizeV">${sz}%</span></label><input id="hlSizeR" type="range" min="50" max="200" step="5" value="${sz}"></div>`;
 }
@@ -2169,6 +2257,7 @@ function checksHTML() {
   return `<div class="row"><span class="lab">Checks ${warn ? `(${warn} perlu dilihat)` : "(semua okay)"}</span><div class="pool">${c.map(x => `<div><span style="color:${x.ok ? (x.info ? "var(--muted)" : "var(--green)") : "var(--red)"}">${x.ok ? (x.info ? "•" : "✓") : "!"} <span style="color:var(--fg)">${esc(x.text)}</span></span>${x.go !== undefined && !x.ok ? `<button class="chip" data-go="${x.go.toFixed(2)}"${x.to && x.to.tab ? ` data-gtab="${x.to.tab}"` : ""}${x.to && x.to.st !== undefined ? ` data-gst="${x.to.st}"` : ""}${x.to && x.to.w !== undefined ? ` data-gw="${x.to.w}"` : ""}>Go</button>` : ""}</div>`).join("")}</div></div>`;
 }
 const FX_FAMILY = [
+  ["Trend", ["e-wheel", "e-receipt", "e-ticket", "e-pin", "e-slam"]],
   ["Text", ["e-gtype", "e-bigmix", "e-bigblur", "e-bigserif", "e-bigmark", "e-bigout", "e-bigsolid", "e-hwall", "e-pcut", "e-chip", "e-strip", "e-strike", "e-arrow"]],
   ["List", ["e-checkg", "e-check", "e-badges", "e-torn", "e-emboss", "e-marq", "e-note"]],
   ["Number", ["e-num", "e-tiles", "e-cal", "e-chart"]],
@@ -2272,7 +2361,7 @@ function drawPanel() {
     h = `<div class="row"><span class="lab">Tekan perkataan untuk pilih, tekan lagi untuk taip. Huruf BESAR jadi kuning. Tong sampah buang perkataan, VO ikut terpotong</span>
       <div class="words" id="words">${(() => { const sg = voSegs(); return S.words.map((w, i) => `<span class="w${w.cut ? " cut" : ""}${!w.cut && !inSegs((w.s + w.e) / 2, sg) ? " gone" : ""}${w.unsure && !w.fixed ? " unsure" : ""}${w.fixed ? " fixed" : ""}${i === wSel ? " pick" : ""}${KEYSET.has(i) ? " hlw" : w.hl === 0 ? " hloff" : ""}" data-w="${i}"${KEYSET.has(i) && (S.hlx || {})[i] && S.hlx[i].text && S.hlx[i].text.toLowerCase() !== showWord(w).toLowerCase() ? ` data-ht="${esc(S.hlx[i].text)}"` : ""} role="button" tabindex="0">${esc(w.t)}</span>`).join(" "); })()}</div>
       <div class="chips"><button class="chip" id="hlBtn" title="Jadikan perkataan dipilih word highlight, atau buang">★ Word highlight</button><button class="chip" id="hlAuto">Pilih auto</button><button class="chip" id="hlClear" ${KEYSET.size ? "" : "disabled"}>Buang semua highlight</button>${(() => { const nf = fillerList().length, np = isTalk() ? pauseList().length : 0; return (nf ? `<button class="chip" id="cutFill">Buang emm / aaa (${nf})</button>` : "") + (np ? `<button class="chip" id="cutSil">Buang jeda panjang (${np})</button>` : ""); })()}</div>
-      <span class="legend">Ungu = word highlight: HANYA perkataan ungu keluar sebagai perkataan besar dalam video (preview dan render sama). Tekan satu perkataan, kemudian ★ untuk jadikan atau buang. Perkataan ungu yang bersebelahan jadi satu highlight.</span>
+      <span class="legend">Ungu = word highlight (preview dan render sama). Lalai: perkataan ungu kekal dalam caption dengan font dan gaya sendiri. Tekan satu perkataan, kemudian ★ untuk jadikan atau buang. Perkataan ungu yang bersebelahan jadi satu highlight.</span>
       ${hlPanel()}
       <span class="legend" id="left">${leftText()}</span><div id="fixAll"></div></div>${bPanel("capStyle")}`;
   } else if (tab === "Sticker") {
@@ -2864,11 +2953,12 @@ document.addEventListener("click", e => {
     if (b.id === "hlBtn" && KEYSET.has(wSel)) { const h = HLS.find(q => q.ids.includes(wSel)); if (h) { hlSel = h.id; showHL(); hlPeek(); } }
     return toast(msg);
   }
+  if (d.hplace) { S.hlPlace = d.hplace; hlSel = -1; hlScope = "all"; touched(); refreshGroups(); drawHL(); planCaps(); grKey = ""; drawCaption(); drawPanel(); drawTimeline(); return toast(d.hplace === "big" ? "Highlight jadi perkataan besar berasingan" : "Highlight duduk dalam caption"); }
   if (d.hkind) return (hlSet("kind", d.hkind), drawPanel());
   if (d.hlook) return (hlSet("look", d.hlook), drawPanel());
   if (d.hmove) return (hlSet("fx", d.hmove), drawPanel());
   if (d.hcol !== undefined) return (hlSet("color", d.hcol), drawPanel());
-  if (d.hscope) { hlScope = d.hscope; return drawPanel(); }
+  if (d.hscope) { if (d.hscope === "one" && S.hlPlace !== "big") { const r = HLS.find(h => h.ids.includes(wSel)); if (!r) return toast("Tekan satu perkataan ungu dalam senarai dulu"); hlSel = r.id; } hlScope = d.hscope; const bx = $("words"), tp = bx ? bx.scrollTop : 0; drawPanel(); const nb = $("words"); if (nb) nb.scrollTop = tp; return; }
   if (b.id === "hlPosReset") { const o = (S.hlx || {})[hlSel]; if (o) { delete o.x; delete o.y; touched(); drawHL(); planCaps(); drawPanel(); } return; }
   if (b.id === "cutFill") return cutFillers();
   if (b.id === "cutSil") return cutPauses();
