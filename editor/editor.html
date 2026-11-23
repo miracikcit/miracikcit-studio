@@ -1091,7 +1091,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .ttln input[type=text] { flex: 1 1 auto; min-width: 0; font-size: 16px; padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(0,0,0,.15); }
 .ttln label { flex: 0 0 120px; font-size: 11px; display: flex; flex-direction: column; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=47309253b4">
+<link rel="stylesheet" href="../../ed-capcut.css?v=1417e62fce">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1195,9 +1195,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=47309253b4"></script>
-<script src="../../../js/runtime.js?v=47309253b4"></script>
-<script src="../../ed-boot.js?v=47309253b4"></script>
+<script src="../../../js/config.js?v=1417e62fce"></script>
+<script src="../../../js/runtime.js?v=1417e62fce"></script>
+<script src="../../ed-boot.js?v=1417e62fce"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -2103,14 +2103,19 @@ const HLT = [
 ];
 const hltOn = (h, t) => h && h.kind === t[1] && h.look === t[2] && (h.color || "") === t[3];
 function hlTabPanel() {
+  { const sx = S.stickers[stSel]; if (sx && sx.hl) { hlSel = +sx.hl.slice(1); hlScope = "one"; } }
   if (!HLS.length) return `<div class="row"><span class="lab" style="font-size:14px">Word highlight</span><div class="note">Belum ada perkataan highlight. Dalam tab Caption, tekan satu perkataan kemudian ★ Jadi highlight, atau tekan Pilih auto di bawah.</div><div class="chips"><button class="chip" id="hlAuto">Pilih auto</button><button class="chip" data-gotab="Caption">Ke tab Caption</button></div></div>`;
   const strip = (id, h, txt) => `<div class="hltstrip">${HLT.map((t, n) => { const sm = { text: txt.slice(0, 12), kind: t[1], look: t[2], fx: "fade", color: t[3], size: 1 }; return `<button class="hlpk hlt" aria-pressed="${hltOn(h, t)}" data-hlt="${n}" data-hlid="${id}"><span class="hlpv"><span style="${hlStyle(sm)};font-size:${Math.min(26, 150 / Math.max(3, sm.text.length * (HLK[t[1]][2] || .5)))}px">${esc(sm.text)}</span></span><small>${esc(t[0])}</small></button>`; }).join("")}</div>`;
-  const allH = { kind: S.hlKind || "ikut", look: S.hlLook || "none", color: S.hlColor || "" };
-  return `<div class="row"><span class="lab" style="font-size:14px">Word highlight (${HLS.length})</span>
+  const allH = { kind: S.hlKind || "ikut", look: S.hlLook || "none", color: S.hlColor || "" }, cur = HLS.find(q => q.id === hlSel);
+  const top = cur ? `<div class="row ttop" id="ttTop"><span class="lab" style="font-size:15px">Perkataan dipilih: <b>${esc(cur.text)}</b></span>
+      <span class="legend">Pilih template tajuk di bawah. Setiap perkataan jadi satu baris. Ubah baris dalam kotak (pisah baris dengan /).</span>
+      ${cur.tt ? ttEditor(cur) : ""}<div class="grid">${ttCards(cur)}</div>${cur.tt ? `<div class="chips"><button class="chip" data-ttoff="${cur.id}">Balik ke highlight satu baris</button></div>` : ""}</div>`
+    : `<div class="row ttop"><span class="lab" style="font-size:15px">Template tajuk untuk highlight</span><div class="note">Tekan perkataan highlight atas video, blok ungu di timeline, atau butang "Template tajuk" pada baris perkataan di bawah.</div></div>`;
+  return `${top}<div class="row"><span class="lab" style="font-size:14px">Word highlight (${HLS.length})</span>
     <span class="legend">Setiap perkataan ada baris sendiri. Tekan template dalam baris tu, perkataan tu terus berubah. Baris "Semua" ubah semua sekali.</span>
     <div class="chips"><button class="chip" id="hlAuto">Pilih auto</button><button class="chip" data-gotab="Caption">+ Pilih perkataan (Caption)</button></div></div>
     <div class="hlrow all"><div class="hlrh"><b>Semua highlight</b></div>${strip("all", allH, HLS[0].text)}</div>
-    ${HLS.map(h => `<div class="hlrow${h.id === hlSel ? " sel" : ""}" data-hlrow="${h.id}"><div class="hlrh"><button class="chip hlgo" data-hlgo="${h.id}" aria-label="Main dari sini">▶ ${fmt(h.t)}</button><b>${esc(h.text)}</b><span class="sp"></span><button class="chip" data-hledit="${h.id}">Ubah lagi</button></div>${ttStrip(h)}${h.tt ? ttEditor(h) : `<span class="hlsub">Gaya highlight satu baris</span>${strip(h.id, h, h.text)}`}</div>`).join("")}
+    ${HLS.map(h => `<div class="hlrow${h.id === hlSel ? " sel" : ""}" data-hlrow="${h.id}"><div class="hlrh"><button class="chip hlgo" data-hlgo="${h.id}" aria-label="Main dari sini">▶ ${fmt(h.t)}</button><b>${esc(h.text)}</b><span class="sp"></span><button class="chip" data-ttpick="${h.id}">Template tajuk</button></div>${h.tt ? `<span class="hlsub">Guna template tajuk ${esc((HOOKS.find(q => "e-hook" + q[0] === (ttOf(h.id) || {}).k) || [0, ""])[1])}</span>` : strip(h.id, h, h.text)}</div>`).join("")}
     <div class="row" id="hlMore"><span class="lab" style="font-size:14px">Ubah lagi ${hlScope === "one" && HLS.find(q => q.id === hlSel) ? "(perkataan dipilih)" : "(semua)"}</span></div>${hlPanel()}`;
 }
 /* p22 (2026-11-23, Mira): highlight guna template tajuk sebenar (H1–Hf): 3 baris (atas kecil / perkataan besar / bawah),
@@ -2127,10 +2132,20 @@ function ttStrip(h) {
   const x0 = ttOf(h.id), smp = x0 || { a: "", text: h.text, b: "" };
   return `<span class="hlsub">Template tajuk (boleh 3 baris)</span><div class="hltstrip ttstrip">${HOOKS.map(([n, nm]) => `<button class="hlpk ttk" aria-pressed="${!!x0 && x0.k === "e-hook" + n}" data-ttk="${n}" data-hlid="${h.id}"><span class="mini hk"><div>${effectHTML({ a: smp.a || "", text: smp.text || h.text, b: smp.b || "", items: [""], k: "e-hook" + n, al: "", ol: 0, fx: "" }, photoUrl)}</div></span><small>${esc(nm)}</small></button>`).join("")}</div>`;
 }
+function ttCards(h) {
+  const x0 = ttOf(h.id), smp = x0 || ttSplit(h.text);
+  return HOOKS.map(([n, nm, ds]) => `<div class="opt"><button class="mini hk" aria-pressed="${!!x0 && x0.k === "e-hook" + n}" data-ttk="${n}" data-hlid="${h.id}" aria-label="Guna ${esc(nm)}"><div>${effectHTML({ a: smp.a || "", text: smp.text || "", b: smp.b || "", items: [""], k: "e-hook" + n, al: "", ol: 0, fx: "" }, photoUrl)}</div></button><h3>${esc(nm)}</h3><p>${esc(ds)}</p></div>`).join("");
+}
+function ttSplit(t) {   // satu perkataan satu baris: 1 = besar; 2 = atas + besar; 3+ = atas + besar + bawah
+  const w = String(t || "").split("/").length > 1 ? t.split("/").map(q => q.trim()).filter(Boolean) : String(t || "").trim().split(/\s+/).filter(Boolean);
+  if (w.length <= 1) return { a: "", text: w[0] || "", b: "" };
+  if (w.length === 2) return { a: w[0], text: w[1], b: "" };
+  return { a: w[0], text: w[1], b: w.slice(2).join(" ") };
+}
 function ttEditor(h) {
   const x = ttOf(h.id); if (!x) return ""; const z = x.hz || {}, id = h.id;
   const ln = (k, f, lab, ph) => `<div class="ttln"><input type="text" data-ttf="${f}" data-tti="${id}" value="${esc(x[f] || "")}" placeholder="${ph}" aria-label="${lab}"><label>Saiz <b id="ttv_${k}_${id}">${z[k] || 100}%</b><input type="range" min="40" max="220" step="10" data-ttf="z${k}" data-tti="${id}" value="${z[k] || 100}"></label></div>`;
-  return `<div class="ttbox"><span class="hlsub">Baris tulisan (kosongkan kalau tak perlu)</span>${ln("a", "a", "Baris atas", "baris atas (kecil)")}${ln("b", "text", "Baris besar", "perkataan besar")}${ln("c", "b", "Baris bawah", "baris bawah (kecil)")}
+  return `<div class="ttbox"><label class="lab">Tulisan (pisah baris dengan /)</label><input type="text" data-ttf="all" data-tti="${id}" value="${esc([x.a, x.text, x.b].filter(Boolean).join(" / "))}" style="font-size:16px;padding:9px 11px;border-radius:10px;border:1px solid rgba(0,0,0,.15)"><span class="hlsub">Setiap baris + saiz baris tu</span>${ln("a", "a", "Baris atas", "baris atas (kecil)")}${ln("b", "text", "Baris besar", "perkataan besar")}${ln("c", "b", "Baris bawah", "baris bawah (kecil)")}
     <label class="lab">Saiz semua: <b id="ttv_s_${id}">${Math.round((x.s || .19) / .19 * 100)}%</b></label><input type="range" min="50" max="160" step="2" data-ttf="s" data-tti="${id}" value="${Math.round((x.s || .19) / .19 * 100)}">
     <label class="lab">Naik / turun: <b id="ttv_y_${id}">${+x.ty || 0}</b></label><input type="range" min="-600" max="600" step="10" data-ttf="ty" data-tti="${id}" value="${+x.ty || 0}">
     <label class="lab">Tempoh: <b id="ttv_d_${id}">${x.d.toFixed(1)} s</b></label><input type="range" min="5" max="60" step="1" data-ttf="d" data-tti="${id}" value="${Math.round(x.d * 10)}">
@@ -2139,16 +2154,17 @@ function ttEditor(h) {
 function ttApply(n, id) {
   const h = HLS.find(q => q.id === id); if (!h) return;
   snapshot(); let x = ttOf(id);
-  if (!x) { x = { k: "e-hook" + n, hl: "w" + id, t: h.t, d: +Math.max(1.6, h.d).toFixed(2), x: .5, y: .5, s: .19, a: "", text: h.text, b: "", items: [""], ty: 0, fx: "pop", hz: {} }; S.stickers.push(x); }
+  if (!x) { x = { k: "e-hook" + n, hl: "w" + id, t: h.t, d: +Math.max(1.6, h.d).toFixed(2), x: .5, y: .5, s: .19, ...ttSplit(h.text), items: [""], ty: 0, fx: "pop", hz: {} }; S.stickers.push(x); }
   else x.k = "e-hook" + n;
   x.tn = ttTn(x); S.hlx = S.hlx || {}; S.hlx[id] = { ...(S.hlx[id] || {}), tt: 1 }; hlSel = id; hlScope = "one";
-  touched(); drawHL(); planCaps(); grKey = ""; drawCaption(); drawStickers(); drawTimeline(); ttShow(x); drawPanel();
+  touched(); drawHL(); planCaps(); grKey = ""; drawCaption(); drawStickers(); drawTimeline(); ttShow(x); drawPanel(); setTimeout(() => { const el = $("ttTop"); if (el) el.scrollIntoView({ block: "start" }); }, 60);
 }
 function ttOff(id) { snapshot(); S.stickers = S.stickers.filter(x => x.hl !== "w" + id); if (S.hlx && S.hlx[id]) delete S.hlx[id].tt; touched(); drawHL(); planCaps(); grKey = ""; drawCaption(); drawStickers(); drawTimeline(); drawPanel(); }
 function ttShow(x) { if (playing || !x) return; if (pos < x.t || pos >= x.t + x.d - .05) seek(x.t + Math.min(x.d - .1, 1.2)); }
 function ttInput(el) {
   const x = ttOf(+el.dataset.tti), f = el.dataset.ttf; if (!x) return; const v = el.value, id = el.dataset.tti;
-  if (f === "a" || f === "text" || f === "b") x[f] = v;
+  if (f === "all") { Object.assign(x, ttSplit(v.includes("/") ? v : v.replace(/\s+/g, " / "))); document.querySelectorAll(`[data-tti="${id}"]`).forEach(q => { const g = q.dataset.ttf; if (g === "a" || g === "text" || g === "b") q.value = x[g] || ""; }); }
+  else if (f === "a" || f === "text" || f === "b") x[f] = v;
   else if (/^z[abc]$/.test(f)) { x.hz = { ...(x.hz || {}), [f[1]]: +v }; x.tn = ttTn(x); $(`ttv_${f[1]}_${id}`).textContent = v + "%"; }
   else if (f === "s") { x.s = +(.19 * v / 100).toFixed(4); $(`ttv_s_${id}`).textContent = v + "%"; }
   else if (f === "ty") { x.ty = +v; $(`ttv_y_${id}`).textContent = v; }
@@ -3340,6 +3356,7 @@ document.addEventListener("click", e => {
   if (d.hmove) return (hlSet("fx", d.hmove), drawPanel());
   if (d.ttk !== undefined) return ttApply(d.ttk, +d.hlid);   /* p22 */
   if (d.ttoff !== undefined) return ttOff(+d.ttoff);
+  if (d.ttpick !== undefined) { hlSel = +d.ttpick; hlScope = "one"; drawPanel(); return setTimeout(() => { const el = $("ttTop"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60); }
   if (d.hlt !== undefined) return hlApplyT(+d.hlt, d.hlid);   /* p21 */
   if (d.hlgo !== undefined) { const h = HLS.find(q => q.id === +d.hlgo); if (!h) return; hlSel = h.id; hlScope = "one"; if (playing) stop(); seek(h.t); document.querySelectorAll("#panel .hlrow").forEach(r => r.classList.toggle("sel", +r.dataset.hlrow === h.id)); return $("play").click(); }
   if (d.hledit !== undefined) { hlSel = +d.hledit; hlScope = "one"; const sc = $("panel").scrollTop; drawPanel(); $("panel").scrollTop = sc; setTimeout(() => { const el = $("hlMore"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 40); hlPeek(); return; }
