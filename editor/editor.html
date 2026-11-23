@@ -404,6 +404,39 @@
 .e-stamp .sp span { display: block; font: 400 16cqw/.95 "League Gothic", sans-serif; text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; }
 .e-stamp .sp em { display: block; font: 800 3.6cqw/1.2 "Plus Jakarta Sans", sans-serif; font-style: normal; text-transform: uppercase; letter-spacing: .12em; }
 
+/* p17: title styles from Mira's inspiration board; --ty = slider offset */
+.e-hook .st { translate: 0 var(--ty, 0); }
+.h7 .a { font: 300 9.4cqw/1 "Poppins", sans-serif; letter-spacing: -.02em; color: #fff; }
+.h7 .b { font: 800 13.6cqw/.95 "Poppins", sans-serif; letter-spacing: -.045em; color: #fff; }
+.h7 .c { font: 300 8.6cqw/1.05 "Poppins", sans-serif; color: #fff; margin-top: .6cqw; }
+.h7 .st::before, .h7 .st::after { content: "✦"; position: absolute; color: #fff; font: 400 7cqw/1 sans-serif; }
+.h7 .st::before { right: 2cqw; top: -6cqw; } .h7 .st::after { left: 3cqw; bottom: -5cqw; font-size: 4.6cqw; }
+.h8 .a { font: 400 6.4cqw/1 "Patrick Hand SC", cursive; letter-spacing: .14em; color: #fff; }
+.h8 .b { font: 700 15cqw/.9 "Fredoka", sans-serif; color: #fff; -webkit-text-stroke: .7cqw #2a2522; paint-order: stroke fill; text-shadow: 0 1.2cqw 0 #2a2522; margin-top: 1cqw; }
+.h8 .c { display: inline-block; font: 700 6.2cqw/1 "Caveat", cursive; color: #fff; background: rgba(205,180,242,.85); padding: .4cqw 2cqw; margin-top: 2cqw; border-radius: 1cqw; transform: rotate(-2deg); }
+.h8 .st::before { content: "★"; position: absolute; left: 4cqw; top: 2cqw; color: var(--kc, #ffd447); font: 400 10cqw/1 sans-serif; transform: rotate(-12deg); }
+.h9 .a { font: italic 400 10cqw/1 "Instrument Serif", serif; color: #fff; }
+.h9 .b { font: 800 13cqw/.92 "Poppins", sans-serif; letter-spacing: -.05em; color: #f6a8d8; }
+.h9 .c { font: 800 11.5cqw/.95 "Poppins", sans-serif; letter-spacing: -.05em; color: #f7e27c; }
+.ha .st { text-align: left; }
+.ha .a { font: 400 15cqw/.92 "Anton", sans-serif; color: #d9a72f; text-transform: uppercase; }
+.ha .b { font: 400 6.6cqw/1.05 "Libre Caslon Text", serif; color: #fff6e4; text-align: right; margin: 1cqw 0; }
+.ha .c { font: 400 15cqw/.92 "Anton", sans-serif; color: #fff; text-transform: uppercase; text-align: right; }
+.hb .st { background: #f7f2e6; padding: 6cqw 5cqw; box-shadow: 0 1.4cqw 3cqw rgba(0,0,0,.35); text-shadow: none; transform: rotate(-1deg); }
+.hb .a, .hb .b, .hb .c { font: 400 6.6cqw/1.35 "Courier Prime", monospace; letter-spacing: .3em; text-transform: uppercase; color: #b8322a; }
+.hb .b { font-size: 8cqw; }
+.hc .a, .hc .c { font: 300 6.4cqw/1.4 "Josefin Sans", sans-serif; letter-spacing: .32em; text-transform: uppercase; color: #fff; }
+.hc .b { font: 300 9.6cqw/1.25 "Josefin Sans", sans-serif; letter-spacing: .26em; text-transform: uppercase; color: #fff; }
+.hd .st { text-align: left; }
+.hd .a { font: 800 22cqw/.88 "Poppins", sans-serif; letter-spacing: -.06em; color: #fbf3a6; }
+.hd .b { font: italic 400 20cqw/.9 "Instrument Serif", serif; color: #fbf3a6; }
+.hd .c { font: 500 5.2cqw/1.2 "Poppins", sans-serif; color: #fff; margin-top: 3cqw; }
+.he .a, .he .b, .he .c { font: 700 17cqw/.9 "Fredoka", sans-serif; letter-spacing: -.02em; }
+.he .a { color: #a9c6ff; } .he .b { color: #f7e27c; } .he .c { color: #f6a8d8; }
+.hf .a { font: 800 14cqw/1 "Poppins", sans-serif; letter-spacing: -.04em; color: #fff; }
+.hf .b { font: 400 21cqw/.6 "Mrs Saint Delafield", cursive; color: #fff; margin: -5cqw 0 0 26cqw; text-align: left; }
+.hf .c { font: 400 8.4cqw/1.1 "Libre Caslon Text", serif; color: #fff; margin-top: 3cqw; }
+
 /* Layout: desktop keeps video + panel on top, timeline below. On a phone: video and tabs stay stuck at the top, timeline comes right under the video, panel last. The Caption tab keeps its panel above the timeline. Look follows Cikcit Studio: warm light theme by the owner's choice. */
 :root {
   --bg: #faf7f4; --panel: #ffffff; --panel2: #f3eeea; --line: #ece5df;
@@ -957,7 +990,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .e-stamp .sp { animation: stampIn .26s cubic-bezier(.55,.06,.68,.19) both, hxShake .36s linear .26s; }
 @keyframes stampIn { from { opacity: 0; transform: scale(2.6) rotate(-14deg); } to { opacity: 1; transform: scale(1) rotate(-8deg); } }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=6280778494">
+<link rel="stylesheet" href="../../ed-capcut.css?v=dcbd0032f1">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1060,9 +1093,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=6280778494"></script>
-<script src="../../../js/runtime.js?v=6280778494"></script>
-<script src="../../ed-boot.js?v=6280778494"></script>
+<script src="../../../js/config.js?v=dcbd0032f1"></script>
+<script src="../../../js/runtime.js?v=dcbd0032f1"></script>
+<script src="../../ed-boot.js?v=dcbd0032f1"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -1366,7 +1399,7 @@ function effectHTML(x, url) {
   }
   if (x.k.startsWith("e-hook")) {   // hooks H1-H4 (2026-11-08), same layout as the v7 build; items[0] = product-name pill
     const n = x.k.slice(-1), pill = (x.items || [])[0] || "";
-    return `<div class="e-hook h${n}${x.al ? " al-" + x.al : ""}${x.ol ? " ol" : ""}${x.fx && x.fx !== "pop" ? " hf-" + x.fx : ""}"><div class="hs"></div><div class="st"><span class="eu a">${esc(x.a || "")}</span><span class="eu b" style="--d:.35s">${esc(x.text || "")}</span><span class="eu c" style="--d:.9s">${esc(x.b || "")}</span>${pill ? `<span class="eu" style="--d:1.3s"><span class="pl">${esc(pill)}</span></span>` : ""}</div></div>`;
+    return `<div class="e-hook h${n}${x.al ? " al-" + x.al : ""}${x.ol ? " ol" : ""}${x.fx && x.fx !== "pop" ? " hf-" + x.fx : ""}" style="--ty:${((+x.ty || 0) / 10.8).toFixed(2)}cqw"><div class="hs"></div><div class="st"><span class="eu a">${esc(x.a || "")}</span><span class="eu b" style="--d:.35s">${esc(x.text || "")}</span><span class="eu c" style="--d:.9s">${esc(x.b || "")}</span>${pill ? `<span class="eu" style="--d:1.3s"><span class="pl">${esc(pill)}</span></span>` : ""}</div></div>`;
   }
   if (x.k.startsWith("e-usp")) {   // USP scenes from her editor references (2026-11-08): full frame, close-up photo behind
     const pu = i => url((x.photos || [])[i] || ((D.photos || [])[i] || {}).id), it = x.items || [], key = t => esc(t).replace(/([A-Z][A-Z0-9&;]+)/g, "<em>$1</em>");
@@ -1639,7 +1672,10 @@ function hookHTML() {
   }).join("");
 }
 const hookFx = () => S.stickers.find(x => x.k.startsWith("e-hook"));
-const HOOKS = [[1, "H1 Serif + skrip", "Serif besar, tulisan tangan kecil."], [2, "H2 Sans + italic", "Sans tebal, serif italic besar."], [3, "H3 Marker + skrip", "Marker besar, satu perkataan skrip."], [4, "H4 Satu perkataan", "Satu perkataan skrip sangat besar."], [5, "H5 Kaca", "Dalam panel kaca, serif italic."], [6, "H6 Skrip + serif", "Skrip atas, serif besar, marker bawah."]];
+const HOOKS = [[1, "H1 Serif + skrip", "Serif besar, tulisan tangan kecil."], [2, "H2 Sans + italic", "Sans tebal, serif italic besar."], [3, "H3 Marker + skrip", "Marker besar, satu perkataan skrip."], [4, "H4 Satu perkataan", "Satu perkataan skrip sangat besar."], [5, "H5 Kaca", "Dalam panel kaca, serif italic."], [6, "H6 Skrip + serif", "Skrip atas, serif besar, marker bawah."],
+  /* p17: inspiration board Mira */ [7, "H7 Nipis + tebal", "Sans nipis atas, tebal besar, nipis bawah, bintang."], [8, "H8 Bold + tangan", "Tulisan tangan kecil, bold bulat berbayang."], [9, "H9 Pastel stack", "Serif italic, bold pastel pink + kuning."],
+  ["a", "Ha Majalah", "Huruf tinggi mustard, serif kecil, putih besar."], ["b", "Hb Typewriter kertas", "Typewriter merah atas kertas."], ["c", "Hc Huruf jarang", "Huruf besar nipis, jarak lebar."],
+  ["d", "Hd Kuning pucat", "Bold kuning pucat besar, serif italic, sari kata kecil."], ["e", "He Pastel warna-warni", "Setiap baris warna pastel lain."], ["f", "Hf Bold + tandatangan", "Bold, tulisan tandatangan bertindih, serif nipis."]];
 const HOOK_FX = [["pop", "Pop"], ["rise", "Naik"], ["slam", "Slam"], ["blur", "Blur in"], ["slide", "Slide"]];
 /* replay the title on the video right after any Title button */
 function hookDemo() {
@@ -1654,6 +1690,7 @@ function hookDemo() {
 function drawHook() {
   const h = $("hook"), f = optOf("font", S.style.font);
   h.className = `hook${S.style.titlePos === "left" ? "" : " tp-" + S.style.titlePos}${f.up ? " tup" : ""}${S.style.titleOutline ? " tout" : ""}`;
+  h.style.translate = `0 ${((+S.style.titleY || 0) / 10.8).toFixed(2)}cqw`;   /* p17 slider */
   const st = $("stage"); st.style.setProperty("--ku", f.ku || "none"); st.style.setProperty("--kst", f.kst ? ".28cqw" : "0");
   if (f.fit) { const keys = S.hook.trim().split(/\s+/).filter(w => w.length > 1 && w === w.toUpperCase()), most = Math.max(1, ...keys.map(w => w.length)); st.style.setProperty("--kz", Math.min(f.kz || 1, 840 / (most * f.fit) / 132).toFixed(3)); }
   h.dataset.fx = S.style.titleFx; h.innerHTML = hookHTML();
@@ -2234,6 +2271,7 @@ function bPanel(only) {
         <label class="lab" for="hookDur">Tempoh tajuk: <span id="hookDurV">${hx.d.toFixed(1)} s</span></label><input id="hookDur" type="range" min="15" max="60" step="1" value="${Math.round(hx.d * 10)}"><span class="legend">Caption mula sebaik sahaja tajuk hilang.</span></div>`
       : `<div class="row"><label class="lab" for="hookIn">Tajuk (huruf BESAR jadi warna kunci)</label><input id="hookIn" type="text" value="${esc(S.hook)}"></div>`}
       <div class="row"><span class="lab">Kedudukan tajuk</span><div class="chips">${chip("Atas", posOf === "top", 'data-tp="top"')}${chip("Tengah", posOf === "mid", 'data-tp="mid"')}${chip("Bawah", posOf === "bot", 'data-tp="bot"')}${chip("Kiri", posOf === "left", 'data-tp="left"')}${chip("Kanan", posOf === "right", 'data-tp="right"')}</div></div>
+      ${(() => { const ty = hx ? (+hx.ty || 0) : (+st.titleY || 0); return `<div class="row"><label class="lab" for="titleYR">Naik / turun tajuk: <span id="titleYV">${ty > 0 ? "+" : ""}${ty}</span></label><input id="titleYR" type="range" min="-400" max="400" step="10" value="${ty}"><span class="legend">Kiri = naik, kanan = turun. Tekan dua kali untuk balik ke 0.</span></div>`; })()}
       <div class="row"><span class="lab">Huruf</span><div class="chips">${chip("Filled", !out, 'data-tout="0"')}${chip("Outline", out, 'data-tout="1"')}</div></div>
       <div class="row"><span class="lab">Gaya tajuk</span><div class="grid">${hkList.map(hkCard).join("")}</div>
       ${hx ? "" : `<span class="legend">Enam gaya di atas ialah tajuk gaya editor (tiga baris + nama produk). Di bawah ni gaya tajuk biasa.</span><div class="grid">${ts.map(o => { const up = o.ku === "uppercase" ? keyW.toUpperCase() : o.ku === "capitalize" ? keyW[0].toUpperCase() + keyW.slice(1) : keyW; return card("font", o, `<div style="color:#fff"><span style="font:${o.hs} ${o.hw} ${(11 * (o.hz || 1)).toFixed(1)}cqw ${q(o.hf)}">${esc(plain)}</span><br><span style="font:${o.ks} ${o.kw} ${Math.min(19, 86 / (up.length * (o.fit || .55))).toFixed(1)}cqw ${q(o.kf)};color:${optOf("pal", o.pal || st.pal).k};${o.kst ? "-webkit-text-stroke:.5cqw currentColor" : ""}">${esc(up)}</span></div>`, st.font === o.id); }).join("")}</div>`}</div>
@@ -2749,7 +2787,7 @@ let moreFonts = false;
 function loadMoreFonts() {
   if (moreFonts) return; moreFonts = true;
   const l = document.createElement("link"); l.rel = "stylesheet";
-  l.href = "https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Nunito:wght@800&family=Caveat:wght@500;700&family=League+Gothic&family=Londrina+Solid&family=Gloock&family=Reenie+Beanie&family=Courier+Prime&family=Plus+Jakarta+Sans:wght@800&family=Permanent+Marker&family=Allura&family=Patrick+Hand+SC&family=Libre+Caslon+Text:ital@0;1&family=Beth+Ellen&display=swap";
+  l.href = "https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;800&family=Fredoka:wght@700&family=Anton&family=Josefin+Sans:wght@300&family=Mrs+Saint+Delafield&family=Montserrat:wght@900&family=Nunito:wght@800&family=Caveat:wght@500;700&family=League+Gothic&family=Londrina+Solid&family=Gloock&family=Reenie+Beanie&family=Courier+Prime&family=Plus+Jakarta+Sans:wght@800&family=Permanent+Marker&family=Allura&family=Patrick+Hand+SC&family=Libre+Caslon+Text:ital@0;1&family=Beth+Ellen&display=swap";
   document.head.appendChild(l);
 }
 let roomAsked = false;
@@ -3107,6 +3145,7 @@ document.addEventListener("input", e => {
   if (id === "hookPill") { const hx = hookFx(); if (hx) { hx.items = [e.target.value]; drawStickers(); touched(); } return; }
   if (id === "hookSize") { const hx = hookFx(); if (hx) { hx.s = +(.19 * e.target.value / 100).toFixed(4); $("hookSizeV").textContent = e.target.value + "%"; if (!playing && (pos < hx.t || pos >= hx.t + hx.d - .05)) seek(hx.t + Math.min(hx.d - .1, 2.2)); drawStickers(); touched(); } return; }
   if (id === "hookDur") { const hx = hookFx(); if (hx) { hx.d = +e.target.value / 10; $("hookDurV").textContent = hx.d.toFixed(1) + " s"; touched(); refreshGroups(); drawTimeline(); drawStageStatic(); } return; }
+  if (id === "titleYR") { const v = +e.target.value, hx = hookFx(); if (hx) hx.ty = v; else S.style.titleY = v; $("titleYV").textContent = (v > 0 ? "+" : "") + v; touched(); drawStageStatic(); if (typeof hookDemo === "function" && !playing) hookDemo(); return; }
   if (id === "hlSizeR") { const v = +e.target.value / 100, one = hlScope === "one" && HLS.some(h => h.id === hlSel); S.hlx = S.hlx || {}; if (one) S.hlx[hlSel] = { ...(S.hlx[hlSel] || {}), size: v }; else S.hlSize = v; $("hlSizeV").textContent = e.target.value + "%"; touched(); drawHL(); planCaps(); grKey = ""; drawCaption(); if (!HLS.some(h => h.id === hlPeekId || (pos >= h.t && pos < h.t + h.d) || h.id === hlSel)) hlPeek(); return; }
   if (id === "hlText") { const h = HLS.find(q => q.id === hlSel); if (h) { S.hlx = S.hlx || {}; S.hlx[h.id] = { ...(S.hlx[h.id] || {}), text: e.target.value }; touched(); drawHL(); } return; }
   if (id === "capGap") { S.capGap = +e.target.value / 100; $("capGapV").textContent = e.target.value + "%"; $("stage").style.setProperty("--cg", S.capGap); if (!playing && $("cap").hidden) capDemo(); return touched(); }
