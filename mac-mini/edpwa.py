@@ -48,6 +48,14 @@ def sha(path):
     return h.hexdigest()[:16]
 
 
+def main_folders():
+    root = os.path.expanduser("~/Desktop/WORK 2026/CLAUDE EDITS")
+    try:
+        return sorted((f for f in os.listdir(root) if re.match(r"\d+\.", f) and os.path.isdir(os.path.join(root, f))), key=lambda f: int(re.match(r"\d+", f).group()))
+    except Exception:
+        return []
+
+
 def vid_of(d):
     """id pendek dari laluan: '<no folder utama>-<projek>[-<subfolder>]', cth 26-mm-mellow"""
     parts = os.path.abspath(d).split(os.sep)
@@ -119,6 +127,7 @@ def main():
             if os.path.isfile(c):
                 proj = c; break
     cur.update({"title": title, "dir": d, "files": files, "updated": now, "n": len(files), "status": "sedia"})
+    cur["folders"] = main_folders()   # p23: dropdown "Transfer" fail asal dalam tab Siap
     if proj:
         cur["project"] = os.path.abspath(proj)
     cur.pop("msg", None)

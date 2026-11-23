@@ -1090,8 +1090,23 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .ttln { display: flex; gap: 8px; align-items: center; }
 .ttln input[type=text] { flex: 1 1 auto; min-width: 0; font-size: 16px; padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(0,0,0,.15); }
 .ttln label { flex: 0 0 120px; font-size: 11px; display: flex; flex-direction: column; }
+
+/* p23 render */
+.rinfo { margin: 8px 0 4px; padding-left: 18px; font-size: 13px; line-height: 1.45; }
+.rinfo li { margin: 2px 0; }
+.srcto { font-size: 16px; padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(0,0,0,.15); background: #fff; max-width: 160px; }
+.finprompt { width: 100%; font: 12px/1.4 ui-monospace, monospace; padding: 8px; border-radius: 10px; border: 1px solid rgba(0,0,0,.15); background: #fff; resize: vertical; }
+.finbar { margin: 10px 0 6px; padding: 10px 12px; border-radius: 14px; background: #fff; border: 1px solid rgba(0,0,0,.08); }
+.finbar .fbt { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+.finbar .fbg { height: 10px; border-radius: 6px; background: #eee5da; overflow: hidden; }
+.finbar .fbg i { display: block; height: 100%; background: linear-gradient(90deg, #b39066, #d9b48a); border-radius: 6px; transition: width .6s; }
+.finbar.run .fbg i { background-size: 30px 30px; background-image: linear-gradient(45deg, rgba(255,255,255,.25) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.25) 50%, rgba(255,255,255,.25) 75%, transparent 75%), linear-gradient(90deg, #b39066, #d9b48a); animation: finmv 1s linear infinite; }
+@keyframes finmv { to { background-position: 30px 0, 0 0; } }
+.finbar small { display: block; font-size: 12px; opacity: .75; margin-top: 6px; }
+.finbar .fchat { display: inline-block; margin-top: 8px; padding: 8px 14px; border-radius: 999px; background: #1d1b1a; color: #fff; text-decoration: none; font-weight: 700; font-size: 14px; }
+#upload[disabled] { opacity: .45; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=35082e9ab7">
+<link rel="stylesheet" href="../../ed-capcut.css?v=c5090fcbae">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1195,9 +1210,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=35082e9ab7"></script>
-<script src="../../../js/runtime.js?v=35082e9ab7"></script>
-<script src="../../ed-boot.js?v=35082e9ab7"></script>
+<script src="../../../js/config.js?v=c5090fcbae"></script>
+<script src="../../../js/runtime.js?v=c5090fcbae"></script>
+<script src="../../ed-boot.js?v=c5090fcbae"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -2793,18 +2808,29 @@ function drawPanel() {
       <div id="renderStatus">${lastStatus}</div>
       <div class="row"><span class="lab">Sheet tab</span><div class="chips">${chip("Product", S.final.tab === "product", 'data-fp="tab" data-v="product"')}${chip("Non product", S.final.tab === "non", 'data-fp="tab" data-v="non"')}</div>
       ${S.final.tab === "product" ? `<label class="lab" for="prodName">Nama produk (perkataan pertama ikut nama video)</label><input id="prodName" type="text" value="${esc(S.final.product || "")}" placeholder="${esc(D.title.replace(/^Edit\s+/, "").toUpperCase())}">` : ""}</div>
-      <div class="row"><span class="lab">Fail asal</span><div class="chips">${chip("Delete", S.final.src === "buang", 'data-fp="src" data-v="buang"' + (canDeleteSrc() ? "" : " disabled"))}${chip("Keep", S.final.src === "simpan", 'data-fp="src" data-v="simpan"')}</div></div>
+      <div class="row"><span class="lab">Fail asal</span><div class="chips">${chip("Delete", S.final.src === "buang", 'data-fp="src" data-v="buang"' + (canDeleteSrc() ? "" : " disabled"))}${chip("Keep", S.final.src === "simpan", 'data-fp="src" data-v="simpan"')}${window.ED_SEND ? chip("Transfer", /^pindah/.test(S.final.src || ""), 'data-fp="src" data-v="pindah"') : ""}</div>${window.ED_SEND && /^pindah/.test(S.final.src || "") ? `<label class="lab" for="srcTo">Pindah ke folder no.</label><select id="srcTo" class="srcto"><option value="">Pilih no. folder</option>${((window.ED_MAN || {}).folders || []).map(f => { const no = (/^(\d+)/.exec(f) || [0, f])[1]; return `<option value="${esc(f)}"${S.final.srcTo === f ? " selected" : ""}>${esc(no)}</option>`; }).join("")}</select>` : ""}</div>
       <div class="row"><span class="lab">Fail product listing</span><div class="chips">${chip("Delete", S.final.list === "buang", 'data-fp="list" data-v="buang"' + (canDeleteSrc() ? "" : " disabled"))}${chip("Keep", S.final.list === "simpan", 'data-fp="list" data-v="simpan"')}</div><span class="legend">${canDeleteSrc() ? "Buang bermaksud masuk Trash Mac selepas final siap, dan boleh dipulihkan." : D.series && +D.series.part < +D.series.total ? `Video ni bahagian ${D.series.part} daripada ${D.series.total}. Fail asal dan product listing hanya boleh dibuang masa render final video terakhir.` : "Delete hanya untuk render final."}</span></div>
       <button class="chip up" id="upload">${SER() ? (S.final.render === "draft" ? `RENDER ALL · draf ${esc(String(SER().total))} video` : `RENDER ALL · ${esc(String(SER().total))} video`) : (S.final.render === "draft" ? "UPLOAD · render draf" : "UPLOAD · render final")}</button>
       ${tokRing(S.final.render === "draft" && window.ED_SEND ? 0 : SER() ? 250000 : 150000)}
-      <span class="legend">Tekan butang, kemudian tekan Send pada kotak Claude app (app tanya setiap kali, untuk keselamatan; page tak boleh matikan). Atau taip terus dalam chat: \"${SER() ? "RENDER ALL" : "UPLOAD"}\". Mac kena hidup untuk render.</span>` : ""}
+      ${window.ED_SEND ? `<div id="finBox"></div>${renderInfo()}` : `<span class="legend">Tekan butang, kemudian tekan Send pada kotak Claude app (app tanya setiap kali, untuk keselamatan; page tak boleh matikan). Atau taip terus dalam chat: \"${SER() ? "RENDER ALL" : "UPLOAD"}\". Mac kena hidup untuk render.</span>`}` : ""}
       <div class="note" id="upMsg" hidden></div>
-      <div class="row"><button class="chip" data-sz="1" aria-pressed="${safeOn}">Show safe zone</button></div>
-      <div class="row"><button class="chip" id="copyEd">Copy choices</button><span class="legend">Guna hanya kalau page tak dapat simpan.</span></div>`;
+      ${window.ED_SEND ? (isLastPart() ? `<div class="row"><span class="lab">Kalau butang render tak jalan</span><span class="legend">Salin prompt ni dan tampal dalam chat Claude baru di Mac (folder CLAUDE EDITS).</span><textarea id="finPrompt" class="finprompt" readonly rows="5">${esc(window.ED_PROMPT ? window.ED_PROMPT(upPayload()) : "")}</textarea><button class="chip" id="finCopy">Salin prompt</button></div>` : "")
+        : `<div class="row"><button class="chip" data-sz="1" aria-pressed="${safeOn}">Show safe zone</button></div>
+      <div class="row"><button class="chip" id="copyEd">Copy choices</button><span class="legend">Guna hanya kalau page tak dapat simpan.</span></div>`}`;
   }
   if (SB_OF[tab]) h = sbTabs() + h;
   $("panel").innerHTML = h; document.querySelectorAll('#panel input[type="range"]').forEach(rangeFill);
+  if (tab === "Siap" && window.ED_FIN) window.ED_FIN();   /* p23: status render (PWA) */
 }
+/* p23 (2026-11-23, Mira): senarai ringkas apa butang render buat */
+function renderInfo() {
+  const f = S.final, dr = f.render === "draft", n = SER() ? SER().total : 1;
+  const L = dr ? ["Mac mini render draf kecil 540×960, terus tanpa Claude (0 token)", "Link draf keluar di sini dan dalam tab Editor Studio", "Sheet dan fail asal tak diusik"]
+    : [`Render ${n > 1 ? "kesemua " + n + " video" : "video ni"} 1080×1920 dari edit yang kau simpan`, "Simpan ke 00. TO POST FINAL", `Tambah baris + caption dalam Sheet (${f.tab === "product" ? "PRODUCTS" : f.tab === "non" ? "NON PRODUCT" : "pilih tab di atas"})`, "Tanda siap dalam Studio",
+      f.src === "buang" ? "Fail asal ke Trash Mac (boleh pulih)" : /^pindah/.test(f.src || "") ? `Fail asal dipindah ke folder ${esc(((/^(\d+)/.exec(f.srcTo || "") || [0, "?"])[1]))}` : "Fail asal disimpan", f.list === "buang" ? "Fail product listing ke Trash" : "Fail product listing disimpan", "Buang fail sementara, link chat Claude keluar di sini"];
+  return `<ul class="rinfo">${L.map(x => `<li>${x}</li>`).join("")}</ul>`;
+}
+function upPayload() { const f = S.final, ser = SER(); return { title: D.title, total: ser ? +ser.total : 1, multi: !!ser, render: f.render === "draft" ? "draft" : "final", failAsal: f.src, srcTo: f.srcTo || "", productListing: f.list, sheet: f.tab, product: f.product || "" }; }
 
 /* ---------- timeline ---------- */
 function drawTimeline() {
@@ -3106,13 +3132,14 @@ function upload(btn) {
   const f = S.final;
   const draft = f.render === "draft";
   if (!f.tab && !draft) { upMsg("Pilih Sheet tab dulu: Product atau Non product."); return; }
+  if (!draft && /^pindah/.test(f.src || "") && !f.srcTo) { upMsg("Pilih no. folder untuk pindah fail asal dulu."); return; }
   const text = draft ? `UPLOAD ${D.title}: render draf 540×960, hantar link page. Jangan sentuh Sheet atau fail asal.` : `UPLOAD ${D.title}: render final, fail asal ${f.src}, product listing ${f.list}, sheet ${f.tab === "product" ? "PRODUCTS" : "NON PRODUCT"}${f.tab === "product" && f.product ? `, produk ${f.product}` : ""}.`;
   const ser = SER();
   if (ser) {   // one press renders every part of the product (each part's own saved edits)
-    const all = { label: `RENDER ALL ${D.title.replace(/\s*\d+\s*·.*$/, "")} (${ser.total} video)`, action: "render-all", total: +ser.total, editors: ser.editors || [], combined: !!ser.combined, docs: ser.combined ? PARTS.parts.map((p, i) => "edits/p" + (i + 1)) : [], render: draft ? "draft" : "final", failAsal: f.src, productListing: f.list, sheet: f.tab, product: f.product || "" };
-    return sendUp(btn, all, `RENDER ALL ${ser.total} video${ser.combined ? " (satu editor, edit setiap video dalam edits/p1 hingga p" + ser.total + ")" : ""}: render ${draft ? "draf" : "final"} setiap part dari edit masing-masing, fail asal ${f.src}, product listing ${f.list}, sheet ${f.tab === "product" ? "PRODUCTS" : "NON PRODUCT"}.`);
+    const all = { label: `RENDER ALL ${D.title.replace(/\s*\d+\s*·.*$/, "")} (${ser.total} video)`, action: "render-all", total: +ser.total, editors: ser.editors || [], combined: !!ser.combined, docs: ser.combined ? PARTS.parts.map((p, i) => "edits/p" + (i + 1)) : [], render: draft ? "draft" : "final", failAsal: f.src, srcTo: f.srcTo || "", productListing: f.list, sheet: f.tab, product: f.product || "" };
+    return sendUp(btn, all, `RENDER ALL ${ser.total} video${ser.combined ? " (satu editor, edit setiap video dalam edits/p1 hingga p" + ser.total + ")" : ""}: render ${draft ? "draf" : "final"} setiap part dari edit masing-masing, fail asal ${f.src}${f.srcTo ? " ke " + f.srcTo : ""}, product listing ${f.list}, sheet ${f.tab === "product" ? "PRODUCTS" : "NON PRODUCT"}.`);
   }
-  const payload = { label: `UPLOAD ${D.title}`, action: "upload", video: D.title, render: draft ? "draft" : "final", failAsal: f.src, productListing: f.list, sheet: f.tab, product: f.product || "" };
+  const payload = { label: `UPLOAD ${D.title}`, action: "upload", video: D.title, render: draft ? "draft" : "final", failAsal: f.src, srcTo: f.srcTo || "", productListing: f.list, sheet: f.tab, product: f.product || "" };
   return sendUp(btn, payload, text);
 }
 function sendUp(btn, payload, text) {
@@ -3408,7 +3435,8 @@ document.addEventListener("click", e => {
   if (d.hks) { const hx = hookFx(); if (hx) { snapshot(); const v = vSkin(d.hks); hx.k = "e-hook" + vBase(d.hks); if (v.sk) hx.sk = v.sk; else delete hx.sk; if (v.tn) hx.tn = v.tn; else delete hx.tn; touched(); drawPanel(); return hookDemo(); } }
   if (d.readd !== undefined) { snapshot(); const list = d.readd === "all" ? origMissing().map(m => m.i) : [+d.readd]; list.forEach(readdOrig); clearPick(); touched(); draw(); return toast(list.length > 1 ? `${list.length} effects ditambah balik` : "Effect ditambah balik"); }
   if (d.fp) { if (d.v === "buang" && (d.fp === "src" || d.fp === "list") && !canDeleteSrc()) return toast("Hanya masa render final video terakhir"); S.final[d.fp] = d.v; if (d.fp === "render" && !canDeleteSrc()) { S.final.src = "simpan"; S.final.list = "simpan"; } touched(); return drawPanel(); }
-  if (b.id === "upload") return upload(b);
+  if (b.id === "upload") { if (b.disabled || b.dataset.busy) return; return upload(b); }
+  if (b.id === "finCopy") { const t = $("finPrompt"); if (!t) return; t.select(); (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject()).then(() => toast("Prompt disalin"), () => { document.execCommand("copy"); toast("Prompt disalin"); }); return; }
   if (d.etk) { const y = S.stickers[stSel]; if (y) { snapshot(); convertFx(y, d.etk); touched(); draw(); if (y.k.startsWith("e-endc")) seek(y.t + 1.2); toast(`Tukar ke ${fxDef(d.etk)[1]}`); } return; }
   if (d.ec) { const y = S.stickers[stSel]; if (y) { y.c = d.ec === "key" ? "key" : ""; touched(); drawPanel(); drawStickers(); } return; }
   if (d.popadd !== undefined) { snapshot(); if (addPopup(+d.popadd)) { clearPick(); stSel = S.stickers.length - 1; touched(); draw(); seek(S.stickers[stSel].t + .05); toast("Pop-up ditambah"); } return; }
@@ -3446,6 +3474,7 @@ document.addEventListener("click", e => {
 document.addEventListener("dblclick", e => { const el = e.target; if (!el.dataset || !el.dataset.gr) return; el.value = 0; el.dispatchEvent(new Event("input", { bubbles: true })); });
 document.addEventListener("input", e => {
   if (e.target.dataset && e.target.dataset.ttf) return ttInput(e.target);   /* p22 */
+  if (e.target.id === "srcTo") { S.final.srcTo = e.target.value; touched(); return drawPanel(); }   /* p23 */
   const id = e.target.id;
   if (id === "zoom") { pps = ppsFromZ(+e.target.value); return drawTimeline(); }
   if (id === "ov") { S.origVol = +e.target.value / 100; const v = $("ovV"); if (v) v.textContent = e.target.value + "%"; setVideoMute(); return touched(); }   /* kuat bunyi asal (render: origVol) */

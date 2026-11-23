@@ -1001,6 +1001,9 @@ def run_ed_send(inp, sheet, cfg):
             f"FINAL PWA (mod jimat token, arahan Mira 23 Nov). Ikut langkah di bawah SAHAJA. Ini pengecualian kepada arahan WAJIB baca PERATURAN-EDIT.md: "
             "JANGAN baca PERATURAN-EDIT.md, STYLE-REFERENCE, storyboard, nota atau footage. JANGAN tengok frame / gambar: tiada semak watermark, safe zone, opening atau ending. "
             "Fail sementara dalam scratchpad sesi. Jangan tanya kecuali butang tak beri jawapan yang perlu.\n"
+            f"BAR PROGRESS (wajib, satu baris pendek, jangan cetak output): selepas setiap langkah jalankan python3 ~/MiracikcitTranscribe/studio.py merge 'edpwa/{vid}' '{{\"finPct\":N,\"finStep\":\"<apa sedang dibuat>\"}}'. "
+            "N: lepas langkah 1 = 15; semasa render part k daripada T = 15 + 55*k/T; lepas 3 = 75; lepas 4 = 88; lepas 6 = 95. "
+            f"Kalau gagal dan berhenti: python3 ~/MiracikcitTranscribe/studio.py merge 'edpwa/{vid}' '{{\"finStatus\":\"error\",\"finStep\":\"<sebab ringkas>\"}}'.\n"
             f"Arahan butang: {str(inp.get('text') or '')[:600]}\n"
             f"1. Edit: python3 ~/MiracikcitTranscribe/studio.py get '{edits if not multi else 'edx/' + vid + '~edits~pN'}' > edits.json"
             f"{' (setiap part N = 1..' + str(pay.get('total') or '') + ')' if multi else ''}. Kalau hasilnya ada _c, gabung medan s dari ~c0, ~c1 ... ikut turutan. "
@@ -1013,9 +1016,11 @@ def run_ed_send(inp, sheet, cfg):
             "Caption: ayat hook santai dengan emoji, ayat kedua, baris kosong, baris terakhir #Produk #Kategori #shopeemy #shopeeaffiliatesmy #shopeelagimurah @shopee_my @shopeeaffiliates_my "
             "(bukan produk: 2 hashtag sahaja). Ikut peraturan TikTok Shop.\n"
             f"5. Studio: python3 ~/MiracikcitTranscribe/studio.py merge 'edpwa/{vid}' '{{\"final\":\"siap\"}}' dan python3 ~/MiracikcitTranscribe/studio.py scan.\n"
-            "6. Raw footage JANGAN dibuang. Folder 28: selepas semua part final, curl -X POST localhost:8787/api/scan -d '{\"path\":\"28. EDIT + VO/<projek>\"}'. "
+            + (f"6. Fail asal: PINDAH folder projek (yang ada footage asal) dengan mv ke '~/Desktop/WORK 2026/CLAUDE EDITS/{os.path.basename(str(pay.get('srcTo') or ''))}/' (jangan tindih folder sama nama; tambah ' 2'). Jangan buang apa-apa. "
+               if str(pay.get("failAsal") or "").startswith("pindah") and pay.get("srcTo") else "6. Raw footage JANGAN dibuang. ") + "Folder 28: selepas semua part final, curl -X POST localhost:8787/api/scan -d '{\"path\":\"28. EDIT + VO/<projek>\"}'. "
             "Storyboard artifact projek: padam bila semua video projek dah final.\n"
-            "7. Kemas: build dan fail sementara ke Trash. Laporan 2-3 baris: fail final + baris Sheet.")
+            "7. Kemas: build dan fail sementara ke Trash. Laporan 2-3 baris: fail final + baris Sheet. "
+            f"Akhir sekali: python3 ~/MiracikcitTranscribe/studio.py merge 'edpwa/{vid}' '{{\"finPct\":100,\"finStatus\":\"siap\",\"finStep\":\"<nama fail final>\"}}'.")
     else:
       prompt = (str(inp.get("text") or "")[:3000] +
               f"\n\n(Dari Editor PWA Studio, bukan artifact. Edit Mira disimpan dalam Studio: python3 ~/MiracikcitTranscribe/studio.py get '{edits}'"
@@ -1026,15 +1031,53 @@ def run_ed_send(inp, sheet, cfg):
     os.makedirs(d, exist_ok=True)
     title = (str(inp.get("title") or vid))[:50] + " · Siap"
     cmdf = os.path.join(d, "edsend-" + vid[:40] + ".command")
+    logf = os.path.join(d, "edsend-" + vid[:40] + ".log")
+    if os.path.exists(logf):
+        os.remove(logf)
     with open(cmdf, "w", encoding="utf-8") as fh:
         fh.write("#!/bin/zsh -l\n# Dibuat oleh butang Siap dalam Editor PWA Studio\n"
                  f"cd {q(main)} || exit 1\n"
-                 f"exec {q(cli)} --model {EDIT_MODEL} --effort {effort} -n {q(title)} --remote-control {q(title)} {q(prompt)}\n")
+                 f"exec /usr/bin/script -q {q(logf)} {q(cli)} --model {EDIT_MODEL} --effort {effort} -n {q(title)} --remote-control {q(title)} {q(prompt)}\n")
     os.chmod(cmdf, 0o755)
+    fin = effort == "low"   # final: bar % dan link chat dalam editor (p23)
+    if fin:
+        _fin(sheet, vid, finAt=int(time.time() * 1000), finPct=5, finStep="Sesi Claude sedang dibuka di Mac mini…", finStatus="proses", finChat="")
     r = subprocess.run(["/usr/bin/open", "-a", "Terminal", cmdf], capture_output=True, text=True, timeout=30)
     if r.returncode != 0:
+        if fin:
+            _fin(sheet, vid, finStatus="error", finStep="Tak dapat buka Terminal di Mac mini")
         raise RuntimeError("Tak dapat buka Terminal: " + (r.stderr or "")[-200:])
+    if fin:
+        threading.Thread(target=_watch_fin, args=(sheet, vid, logf), daemon=True).start()
     return {"opened": True, "folder": os.path.basename(main)}
+
+
+def _fin(sheet, vid, **kw):
+    try:
+        cur = sheet.call("dget", path="edpwa/" + vid).get("doc") or {}
+        cur.update(kw)
+        sheet.call("dset", path="edpwa/" + vid, data=cur)
+    except Exception as e:
+        log.warning("Tak dapat kemas kini status final %s: %s", vid, e)
+
+
+def _watch_fin(sheet, vid, logf, limit=900):
+    """Sesi final: ambil link chat Remote Control dari skrin, simpan finChat (butang Buka chat dalam editor)."""
+    end = time.time() + limit
+    while time.time() < end:
+        time.sleep(4)
+        try:
+            raw = _ANSI.sub("", open(logf, encoding="utf-8", errors="ignore").read()[-200000:])
+        except Exception:
+            continue
+        m = re.search(r"https://claude\.ai/code/[A-Za-z0-9_\-]+(?:\?[A-Za-z0-9_=&\-]+)?", raw)
+        if m:
+            cur = (sheet.call("dget", path="edpwa/" + vid).get("doc") or {})
+            kw = {"finChat": m.group(0)}
+            if (cur.get("finPct") or 0) < 8:
+                kw.update(finPct=8, finStep="Sesi Claude jalan, mula baca edit…")
+            _fin(sheet, vid, **kw)
+            return
 
 
 def run_ed_new(inp, sheet, cfg):

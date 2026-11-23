@@ -97,7 +97,7 @@
 
   /* ---- Siap: Draf = Mac mini render terus (0 token); Final / Render All = sesi Claude di Mac mini ---- */
   const dview = id => 'https://drive.google.com/file/d/' + encodeURIComponent(id) + '/view';
-  let draftT = 0;
+  let draftT = 0, DRB = 0;   // DRB: draf sedang dirender (butang dikunci)
   async function watchDraft(upMsg, t0) {
     clearTimeout(draftT);
     try {
@@ -105,27 +105,60 @@
       const d = ((j.docs || []).find(x => x.p === 'edpwa/' + VID) || {}).d;
       const dr = d && d.draft;
       if (dr && dr.at >= t0 - 5000) {
-        if (dr.status === 'sedia') { upMsg('Draf siap (' + (dr.mb || '?') + ' MB). '); const m = document.getElementById('upMsg'); if (m) m.insertAdjacentHTML('beforeend', `<a href="${dview(dr.id)}" target="_blank" rel="noopener"><b>▶ Tonton draf</b></a>`); return; }
-        if (dr.status === 'error') { upMsg('Draf gagal: ' + (dr.msg || 'ralat') + '. Pilihan kau dah disimpan; tekan Render sekali lagi atau pilih Final supaya Claude bantu.'); return; }
+        if (dr.status === 'sedia') { DRB = 0; finDraw(); upMsg('Draf siap (' + (dr.mb || '?') + ' MB). '); const m = document.getElementById('upMsg'); if (m) m.insertAdjacentHTML('beforeend', `<a href="${dview(dr.id)}" target="_blank" rel="noopener"><b>▶ Tonton draf</b></a>`); return; }
+        if (dr.status === 'error') { DRB = 0; finDraw(); upMsg('Draf gagal: ' + (dr.msg || 'ralat') + '. Pilihan kau dah disimpan; tekan Render sekali lagi atau pilih Final supaya Claude bantu.'); return; }
       }
     } catch (e) {}
     draftT = setTimeout(() => watchDraft(upMsg, t0), 15000);
   }
+  /* p23 (2026-11-23, Mira): render final = satu tekan sahaja, bar % ikut langkah sesi Claude (finPct/finStep dalam edpwa/<id>),
+     butang link chat bila sesi keluar. Status kekal walaupun page ditutup dan dibuka semula. */
+  let FIN = null, finT = 0;
+  const FIN_STALE = 90 * 60e3;
+  const finRun = () => FIN && FIN.finStatus === 'proses' && Date.now() - (FIN.finAt || 0) < FIN_STALE;
+  function finDraw() {
+    const box = document.getElementById('finBox'), up = document.getElementById('upload');
+    if (up) { const run = finRun() || (DRB && Date.now() - DRB < 20 * 60e3); up.disabled = run; if (run) up.dataset.busy = '1'; else delete up.dataset.busy; }
+    if (!box) return;
+    if (!FIN || !FIN.finAt) { box.innerHTML = ''; return; }
+    const pct = Math.max(0, Math.min(100, +FIN.finPct || 0)), st = FIN.finStatus, ok = st === 'siap', bad = st === 'error' || (!ok && !finRun());
+    const head = ok ? '✅ Render siap' : bad ? '⚠️ Render terhenti' : '⏳ Sedang render…';
+    const chat = FIN.finChat ? `<a class="fchat" href="${FIN.finChat}" target="_blank" rel="noopener">💬 Buka chat Claude</a>` : '';
+    box.innerHTML = `<div class="finbar${!ok && !bad ? ' run' : ''}"><div class="fbt"><span>${head}</span><span>${pct}%</span></div><div class="fbg"><i style="width:${Math.max(3, pct)}%"></i></div><small>${(FIN.finStep || '').replace(/[<>&]/g, '')}${bad && st !== 'error' ? ' (tiada berita lebih 90 minit; semak chat Claude atau tekan render semula)' : ''}</small>${chat}</div>`;
+  }
+  async function finRead() {
+    try { const j = await studioCall('pull', { since: (FIN && FIN.finAt ? FIN.finAt : Date.now() - FIN_STALE) - 60e3 }); const d = ((j.docs || []).find(x => x.p === 'edpwa/' + VID) || {}).d; if (d && d.finAt && (!FIN || d.finAt >= FIN.finAt - 120e3)) FIN = { ...(FIN || {}), ...d, finAt: Math.max(d.finAt, (FIN || {}).finAt || 0) }; } catch (e) {}
+  }
+  async function finWatch() { clearTimeout(finT); await finRead(); finDraw(); if (finRun()) finT = setTimeout(finWatch, 6000); }
+  window.ED_FIN = () => { finDraw(); if (!FIN) { FIN = {}; readDoc('edpwa/' + VID).then(d => { if (d && d.finAt && Date.now() - d.finAt < FIN_STALE * 4) { FIN = d; finDraw(); if (finRun()) finWatch(); } }).catch(() => {}); } };
+  window.ED_PROMPT = p => {
+    if (!p || p.render === 'draft') return 'Draf tak perlukan Claude. Tekan butang render sekali lagi.';
+    const multi = p.multi, src = p.failAsal === 'buang' ? 'fail asal ke Trash' : /^pindah/.test(p.failAsal || '') ? 'pindah folder footage asal projek ke "' + (p.srcTo || '?') + '"' : 'fail asal disimpan';
+    return `FINAL PWA (mod jimat token) untuk ${p.title} (id editor ${VID}${multi ? ', ' + p.total + ' video' : ''}). Jangan baca PERATURAN-EDIT.md, jangan tengok frame.
+1. python3 ~/MiracikcitTranscribe/studio.py get 'edx/${VID}~edits~${multi ? 'pN' : 'current'}' > edits.json${multi ? ' (N = 1..' + p.total + ')' : ''}; project = medan project dalam studio.py get 'edpwa/${VID}'.
+2. python3 ~/.claude/assets/reel-page-template/render_draft.py <project> edits.json <build dalam scratchpad> --final <Produk>_N.mp4
+3. Salin mp4 ke 00. TO POST FINAL.
+4. Sheet CONTENT 2026 tab ${p.sheet === 'product' ? 'PRODUCTS' : 'NON PRODUCT'}${p.product ? ' (produk ' + p.product + ')' : ''}: satu baris + caption setiap video.
+5. python3 ~/MiracikcitTranscribe/studio.py merge 'edpwa/${VID}' '{"final":"siap"}' dan studio.py scan.
+6. ${src}; product listing ${p.productListing === 'buang' ? 'ke Trash' : 'disimpan'}. Fail sementara ke Trash. Laporan 2-3 baris.`;
+  };
   window.ED_SEND = async (btn, payload, text, upMsg) => {
+    if (finRun() || (DRB && Date.now() - DRB < 20 * 60e3)) { upMsg('Render sedang berjalan. Tunggu siap dulu.'); return; }
     upMsg('Menyimpan pilihan terakhir…');
     try {
       try { await (0, eval)('dbDoc && dbDoc.set(docBody())'); } catch (e) {}   // pastikan edit terbaru dah sampai ke Sheet
       const draft = payload && payload.action === 'upload' && payload.render === 'draft' && (window.ED_MAN || {}).project;
       if (draft) {
         const t0 = Date.now();
-        await studioCall('job_add', { type: 'ed_draft', input: { vid: VID } });
+        await studioCall('job_add', { type: 'ed_draft', input: { vid: VID } }); DRB = Date.now(); finDraw();
         upMsg('Mac mini sedang render draf 540×960 (2–6 minit). Kau boleh tutup page ni; draf juga keluar dalam tab Editor Studio.');
         watchDraft(upMsg, t0);
         return;
       }
+      FIN = { finAt: Date.now(), finPct: 2, finStep: 'Menghantar ke Mac mini…', finStatus: 'proses', finChat: '' }; finDraw();
       await studioCall('job_add', { type: 'ed_send', input: { vid: VID, title: (window.ED_MAN || {}).title || '', dir: (window.ED_MAN || {}).dir || '', text, payload } });
-      upMsg('Arahan dah sampai ke Mac mini. Sesi Claude akan dibuka di sana untuk render final, tengok chat Claude kau.');
-    } catch (e) { upMsg('Tak dapat hantar (' + ((e && (e.message || e.code)) || 'ralat') + '). Pilihan kau dah disimpan, cuba lagi.'); }
+      FIN.finPct = 4; FIN.finStep = 'Arahan sampai. Mac mini sedang buka sesi Claude…'; finDraw(); upMsg(''); finWatch();
+    } catch (e) { FIN = null; finDraw(); upMsg('Tak dapat hantar (' + ((e && (e.message || e.code)) || 'ralat') + '). Pilihan kau dah disimpan, cuba lagi.'); }
   };
 })();
 
