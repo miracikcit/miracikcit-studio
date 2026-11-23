@@ -366,6 +366,44 @@
 .e-slam .lb { background: var(--kc, #ffd447); color: #1d1b1a; font: 800 3.6cqw/1 "Plus Jakarta Sans", sans-serif; padding: 1.3cqw 3cqw; border-radius: 99px; transform: rotate(-2deg); }
 .e-slam .sl { display: block; font: 400 21cqw/.86 "League Gothic", sans-serif; text-transform: uppercase; color: #fff; -webkit-text-stroke: .5cqw #1d1b1a; paint-order: stroke fill; text-shadow: 1.2cqw 1.4cqw 0 #1d1b1a; white-space: nowrap; letter-spacing: .01em; }
 
+/* p16: review effects, solid surfaces */
+.e-stars { display: flex; flex-direction: column; align-items: center; gap: 1.4cqw; white-space: nowrap; }
+.e-stars .lb { background: #1d1b1a; color: #fff; font: 800 3.5cqw/1 "Plus Jakarta Sans", sans-serif; padding: 1.4cqw 3cqw; border-radius: 99px; }
+.e-stars .sr { display: flex; gap: 1.2cqw; }
+.e-stars .s { position: relative; width: 11cqw; height: 11cqw; display: block; }
+.e-stars .s i { position: absolute; left: 0; top: 0; height: 100%; overflow: hidden; display: block; }
+.e-stars .s i svg { width: 11cqw; height: 11cqw; display: block; }
+.e-stars .o { width: 100%; } .e-stars .o svg path { fill: rgba(255,255,255,.92); stroke: #1d1b1a; stroke-width: 1.4; }
+.e-stars .f svg path { fill: var(--kc, #ffd447); stroke: #1d1b1a; stroke-width: 1.4; }
+.e-stars .sc { font: 900 16cqw/1 "Montserrat", sans-serif; color: #fff; letter-spacing: -.03em; -webkit-text-stroke: .5cqw #1d1b1a; paint-order: stroke fill; text-shadow: 0 1cqw 0 #1d1b1a; }
+.e-stars .nt { background: #fff; color: #1d1b1a; font: 800 3.6cqw/1 "Plus Jakarta Sans", sans-serif; font-style: normal; padding: 1.5cqw 3.2cqw; border-radius: 99px; box-shadow: 0 .6cqw 0 #1d1b1a; }
+.e-ring { position: relative; width: 40cqw; height: 40cqw; }
+.e-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); filter: drop-shadow(0 1cqw 1.6cqw rgba(0,0,0,.35)); }
+.e-ring circle { fill: none; stroke-width: 8; } .e-ring .bg { fill: #1d1b1a; stroke: rgba(255,255,255,.25); }
+.e-ring .fg { stroke: var(--kc, #ffd447); stroke-linecap: round; stroke-dasharray: 289.03; stroke-dashoffset: var(--off); }
+.e-ring .in { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; }
+.e-ring .in b { font: 900 11cqw/1 "Montserrat", sans-serif; letter-spacing: -.03em; }
+.e-ring .in em { font: 800 3.2cqw/1.2 "Plus Jakarta Sans", sans-serif; font-style: normal; opacity: .8; margin-top: .8cqw; }
+.e-poll { width: 64cqw; background: #fff; color: #1d1b1a; border-radius: 3.4cqw; padding: 3.6cqw 3.6cqw 2.6cqw; box-shadow: 0 1.2cqw 3.2cqw rgba(0,0,0,.35); }
+.e-poll h5 { margin: 0 0 2.6cqw; text-align: center; font: 900 5.4cqw/1.1 "Montserrat", sans-serif; }
+.e-poll .op { position: relative; height: 9.4cqw; border-radius: 99px; background: #eceae4; margin-bottom: 1.6cqw; overflow: hidden; display: flex; align-items: center; justify-content: space-between; padding: 0 3.4cqw; font: 800 4cqw/1 "Plus Jakarta Sans", sans-serif; }
+.e-poll .op u { position: absolute; left: 0; top: 0; bottom: 0; background: #cfcac0; border-radius: 99px; }
+.e-poll .op.k u { background: var(--kc, #ffd447); }
+.e-poll .op span, .e-poll .op b { position: relative; }
+.e-save { display: inline-flex; align-items: center; gap: 2.2cqw; background: #1d1b1a; color: #fff; padding: 2.2cqw 4.4cqw 2.2cqw 2.4cqw; border-radius: 99px; font: 800 4.2cqw/1 "Plus Jakarta Sans", sans-serif; white-space: nowrap; box-shadow: 0 1cqw 2.6cqw rgba(0,0,0,.35); }
+.e-save i { width: 8.4cqw; height: 8.4cqw; border-radius: 50%; background: var(--kc, #ffd447); display: flex; align-items: center; justify-content: center; }
+.e-save i svg { width: 4.6cqw; height: 4.6cqw; } .e-save i svg path { fill: #1d1b1a; }
+.e-tag { display: flex; justify-content: center; padding-top: 6cqw; position: relative; }
+.e-tag::before { content: ""; position: absolute; top: 0; left: 50%; width: .5cqw; height: 7cqw; background: #1d1b1a; }
+.e-tag .tg { position: relative; background: var(--kc, #ffd447); color: #1d1b1a; padding: 6.6cqw 5.4cqw 3.6cqw; border-radius: 2cqw; text-align: center; white-space: nowrap; box-shadow: 0 1.2cqw 2.6cqw rgba(0,0,0,.35); clip-path: polygon(50% 0, 100% 16%, 100% 100%, 0 100%, 0 16%); }
+.e-tag .hl { position: absolute; top: 2.6cqw; left: 50%; width: 2.4cqw; height: 2.4cqw; margin-left: -1.2cqw; border-radius: 50%; background: #1d1b1a; }
+.e-tag b { display: block; font: 900 12cqw/1 "Montserrat", sans-serif; letter-spacing: -.03em; }
+.e-tag em { display: block; font: 800 3.6cqw/1.2 "Plus Jakarta Sans", sans-serif; font-style: normal; margin-top: .6cqw; }
+.e-stamp { display: flex; justify-content: center; }
+.e-stamp .sp { transform: rotate(-8deg); border: 1.2cqw solid #d6334f; border-radius: 2cqw; padding: 2cqw 5cqw; color: #d6334f; text-align: center; background: rgba(255,255,255,.9); box-shadow: inset 0 0 0 .6cqw #fff, inset 0 0 0 1cqw #d6334f; }
+.e-stamp .sp span { display: block; font: 400 16cqw/.95 "League Gothic", sans-serif; text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; }
+.e-stamp .sp em { display: block; font: 800 3.6cqw/1.2 "Plus Jakarta Sans", sans-serif; font-style: normal; text-transform: uppercase; letter-spacing: .12em; }
+
 /* Layout: desktop keeps video + panel on top, timeline below. On a phone: video and tabs stay stuck at the top, timeline comes right under the video, panel last. The Caption tab keeps its panel above the timeline. Look follows Cikcit Studio: warm light theme by the owner's choice. */
 :root {
   --bg: #faf7f4; --panel: #ffffff; --panel2: #f3eeea; --line: #ece5df;
@@ -906,8 +944,20 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 @keyframes pinRip { from { transform: scale(.2); opacity: .9; } to { transform: scale(2.4); opacity: 0; } }
 .e-slam .sl { animation: slamIn .22s cubic-bezier(.55,.06,.68,.19) both, hxShake .42s linear .22s; }
 @keyframes slamIn { from { opacity: 0; scale: 2.2; } to { opacity: 1; scale: 1; } }
+
+/* p16: review effects motion (render uses GSAP, same timing) */
+.e-ring .fg { animation: ringFill 1.2s cubic-bezier(.22,1,.36,1) .2s both; }
+@keyframes ringFill { from { stroke-dashoffset: 289.03; } to { stroke-dashoffset: var(--off); } }
+.e-poll .op u { animation: pollFill .9s cubic-bezier(.22,1,.36,1) .35s both; transform-origin: 0 50%; }
+@keyframes pollFill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.e-save i { animation: saveBob .5s cubic-bezier(.34,1.56,.64,1) .3s both; }
+@keyframes saveBob { 0% { transform: scale(.4) rotate(-20deg); } 100% { transform: scale(1) rotate(0); } }
+.e-tag .tg { animation: tagSwing 1.4s cubic-bezier(.3,1.6,.5,1) both; transform-origin: 50% 0; }
+@keyframes tagSwing { 0% { opacity: 0; transform: rotate(-38deg); } 20% { opacity: 1; } 45% { transform: rotate(16deg); } 70% { transform: rotate(-7deg); } 100% { opacity: 1; transform: rotate(0); } }
+.e-stamp .sp { animation: stampIn .26s cubic-bezier(.55,.06,.68,.19) both, hxShake .36s linear .26s; }
+@keyframes stampIn { from { opacity: 0; transform: scale(2.6) rotate(-14deg); } to { opacity: 1; transform: scale(1) rotate(-8deg); } }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=531884ac2f">
+<link rel="stylesheet" href="../../ed-capcut.css?v=6280778494">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1010,9 +1060,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=531884ac2f"></script>
-<script src="../../../js/runtime.js?v=531884ac2f"></script>
-<script src="../../ed-boot.js?v=531884ac2f"></script>
+<script src="../../../js/config.js?v=6280778494"></script>
+<script src="../../../js/runtime.js?v=6280778494"></script>
+<script src="../../ed-boot.js?v=6280778494"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -1157,6 +1207,7 @@ function fxUnits(text, fx, base, n0 = 0) {
 const TXT_OLD = [["t-hl", "Teks skrip", "", { text: "Sejuk!" }], ["t-hls", "Teks serif", "", { text: "lembut" }], ["t-hlm", "Teks marker", "", { text: "BEST!" }]];
 const TXT_KINDS = [["t-glass", "Butang kaca", "Kotak kaca, contohnya Tengok beg bawah.", { text: "Tengok beg bawah" }]];
 const FX_KINDS = [
+  ["Review", [["e-stars", "Bintang rating", "5 bintang terisi ikut skor, nombor besar, nota bawah.", { a: "4/5", text: "rating Mira", b: "datang lagi? YES" }], ["e-ring", "Cincin skor", "Cincin terisi ikut skor, nombor di tengah.", { a: "8/10", text: "rating" }], ["e-poll", "Poll TikTok", "Soalan dengan bar undi, macam sticker poll.", { text: "Worth it tak?", items: ["Worth it|82", "Tak|18"] }], ["e-save", "Butang SAVE", "Ikon bookmark + ajak save video.", { text: "SAVE untuk trip nanti" }], ["e-tag", "Tanda harga", "Tag harga tergantung dan berayun.", { a: "RM20", text: "tiket" }], ["e-stamp", "Cop review", "Cop besar dihentak, macam stamp.", { text: "WORTH IT", a: "rating 4/5" }]]],
   ["Trend", [["e-wheel", "Kaunter nombor", "Nombor bergolek macam mesin kira, label atas, pill jumlah bawah.", { a: "RM238", text: "bilik SkyWorlds", b: "jumlah RM238" }], ["e-receipt", "Resit jumlah", "Resit kertas: baris masuk satu-satu, TOTAL bergolek.", { a: "Bajet trip", items: ["Bilik|RM238", "Tiket|RM140"], b: "RM378" }], ["e-ticket", "Tiket koyak", "Tiket berwarna, stub terkoyak.", { a: "RM70", text: "beli 1 FREE 1", b: "TIKET" }], ["e-pin", "Pin lokasi", "Pin jatuh dengan riak, nama tempat.", { a: "Awana", text: "bukan di puncak" }], ["e-slam", "Tajuk slam", "Tajuk besar hentak masuk dan bergegar.", { a: "", text: "WORTH IT!" }]]],
   ["Text", [...TXT_KINDS, ["e-gtype", "Glass type", "Tulisan besar dalam panel kaca. Huruf BESAR jadi italic.", { a: "kenapa aku suka", text: "dua-dua KACA" }], ["e-arrow", "Arrow note", "Nota tangan dengan anak panah.", { text: "cuba yang ni" }], ["e-strike", "Crossed word", "Perkataan kena potong.", { text: "kos renovation" }]]],
   ["Photos", [["e-polg", "Frame kaca", "Satu gambar, frame lut sinar macam kaca.", { text: "", ph: 1 }], ["e-polt", "Frame nipis", "Satu gambar, frame putih nipis.", { text: "", ph: 1 }], ["e-fbreak", "Frame break", "Gambar terkeluar dari frame kaca.", { text: "", ph: 1 }], ["e-wipe", "Before / after", "Garis sapu dari sebelum ke selepas.", { a: "sebelum", b: "selepas", ph: 2 }], ["e-phone", "Phone mock-up", "Gambar dalam telefon.", { ph: 1 }], ["e-pola", "Polaroid", "Satu gambar senget.", { text: "sebelum", ph: 1 }], ["e-stack", "Stack of three", "Tiga gambar bertindan.", { ph: 3 }], ["e-fan", "Photo fan", "Tiga gambar macam kipas.", { ph: 3 }], ["e-cardrow", "Video cards", "Tiga kad video berbingkai.", { ph: 3 }]]],
@@ -1175,6 +1226,8 @@ let fxCat = "Text", fxListOpen = false;
 document.addEventListener("toggle", e => { if (e.target && e.target.id === "fxList") { fxListOpen = e.target.open; const sm = e.target.querySelector("summary"); if (sm) sm.textContent = sm.textContent.replace(/tekan untuk (tutup|buka)/, "tekan untuk " + (fxListOpen ? "tutup" : "buka")); } }, true);
 /* field labels of the newer effects: text, a, b, items */
 const FXL = {
+  "e-stars": { a: "Skor, contoh 4/5 atau 3.5/5", text: "Label atas", b: "Nota bawah (boleh kosong)" }, "e-ring": { a: "Skor, contoh 8/10", text: "Label bawah nombor" },
+  "e-poll": { text: "Soalan", items: "Satu baris setiap pilihan: Pilihan|undi" }, "e-save": { text: "Ayat ajak save" }, "e-tag": { a: "Harga", text: "Ayat kecil" }, "e-stamp": { text: "Tulisan cop", a: "Baris kecil bawah (boleh kosong)" },
   "e-wheel": { a: "Nombor (digit bergolek)", text: "Label atas", b: "Pill bawah (boleh kosong)" }, "e-receipt": { a: "Tajuk resit", items: "Satu baris setiap item: Nama|Harga", b: "Total" },
   "e-ticket": { a: "Nombor besar", text: "Ayat kecil atas", b: "Tulisan stub" }, "e-pin": { a: "Nama tempat", text: "Ayat kecil" }, "e-slam": { a: "Label kecil atas (boleh kosong)", text: "Tajuk" },
   "e-uspg": { text: "Ayat besar serif", a: "Baris kecil atas", items: "Tiga chip kaca, satu baris setiap chip" }, "e-usph": { text: "Tajuk", a: "Ayat kecil bawah tajuk", items: "Tulisan bawah dua frame, satu baris setiap frame" },
@@ -1185,6 +1238,21 @@ const FXL = {
   "e-gtype": { a: "Label kecil atas", text: "Text (huruf BESAR jadi italic)" }, "e-chart": { a: "Tajuk", items: "Satu baris setiap bar: Label|nombor" }, "e-wipe": { a: "Label sebelum", b: "Label selepas" },
   "e-checkg": { a: "Tajuk" }, "e-fbreak": { text: "Tulisan bawah gambar" }, "e-pcut": { text: "Text (huruf BESAR jadi warna kunci)" }, "e-dboil": { text: "Tulisan bawah bulatan (boleh kosong)" }
 };
+/* p16: review effects (stars, score ring, poll, save, price tag, stamp). Same markup in render_draft.py fx4_html() */
+const STAR_SVG = '<svg viewBox="0 0 24 24"><path d="M12 1.8l3.1 6.6 7.2.9-5.3 5 1.4 7.1L12 17.9l-6.4 3.5 1.4-7.1-5.3-5 7.2-.9z"/></svg>', BOOK_SVG = '<svg viewBox="0 0 24 24"><path d="M6 2.5h12a1 1 0 0 1 1 1v18l-7-4.6-7 4.6v-18a1 1 0 0 1 1-1z"/></svg>';
+const scoreOf = t => { const m = /([\d.,]+)\s*(?:\/\s*([\d.,]+))?/.exec(String(t || "")) || []; const v = parseFloat((m[1] || "0").replace(",", ".")) || 0, mx = parseFloat((m[2] || "").replace(",", ".")) || (v > 5 ? 10 : 5); return { v, mx, p: Math.max(0, Math.min(1, v / mx)) }; };
+function fx4(x) {
+  const it = x.items || [], part = (t, n) => ((t || "").split("|").concat(["", ""]))[n].trim();
+  switch (x.k) {
+    case "e-stars": { const sc = scoreOf(x.a), n5 = sc.p * 5; return `<div class="e-stars">${x.text ? `<span class="eu lb" style="--d:0s">${esc(x.text)}</span>` : ""}<div class="sr">${[0, 1, 2, 3, 4].map(i => `<span class="eu s" style="--d:${(.15 + i * .12).toFixed(2)}s"><i class="o">${STAR_SVG}</i><i class="f" style="width:${(Math.max(0, Math.min(1, n5 - i)) * 100).toFixed(0)}%">${STAR_SVG}</i></span>`).join("")}</div><b class="eu sc" style="--d:.8s">${esc(x.a || "")}</b>${x.b ? `<em class="eu nt" style="--d:1s">${esc(x.b)}</em>` : ""}</div>`; }
+    case "e-ring": { const sc = scoreOf(x.a), C = 289.03; return `<div class="e-ring eu" style="--d:0s"><svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="46"/><circle class="fg" cx="50" cy="50" r="46" style="--off:${(C * (1 - sc.p)).toFixed(2)}" data-off="${(C * (1 - sc.p)).toFixed(2)}"/></svg><div class="in"><b>${esc(x.a || "")}</b>${x.text ? `<em>${esc(x.text)}</em>` : ""}</div></div>`; }
+    case "e-poll": { const rows = it.slice(0, 3), tot = rows.reduce((a, t) => a + (parseFloat(part(t, 1)) || 0), 0) || 1; return `<div class="e-poll eu" style="--d:0s"><h5>${esc(x.text || "")}</h5>${rows.map((t, i) => { const v = parseFloat(part(t, 1)) || 0, pc = Math.round(v / tot * 100); return `<div class="op${i === 0 ? " k" : ""}"><u style="width:${pc}%"></u><span>${esc(part(t, 0))}</span><b>${pc}%</b></div>`; }).join("")}</div>`; }
+    case "e-save": return `<div class="e-save eu" style="--d:0s"><i>${BOOK_SVG}</i><span>${esc(x.text || "")}</span></div>`;
+    case "e-tag": return `<div class="e-tag"><div class="tg"><i class="hl"></i><b>${esc(x.a || "")}</b>${x.text ? `<em>${esc(x.text)}</em>` : ""}</div></div>`;
+    case "e-stamp": return `<div class="e-stamp"><div class="sp"><span>${esc(x.text || "")}</span>${x.a ? `<em>${esc(x.a)}</em>` : ""}</div></div>`;
+  }
+  return null;
+}
 /* p15: trend effects (HyperFrames registry: number-wheel, apple-money-count, headline-slam). Same markup in render_draft.py fx3_html() */
 const wheelDigits = v => { let n = 0; return [...String(v || "")].map(c => { if (!/\d/.test(c)) return `<span class="nd">${esc(c)}</span>`; const st = 10 + +c, yp = (-st / (st + 1) * 100).toFixed(3), h = `<span class="dg"><span class="strip" style="--yp:${yp};--n:${n}">${Array.from({ length: st + 1 }, (_, i) => `<i>${i % 10}</i>`).join("")}</span></span>`; n++; return h; }).join(""); };
 function fx3(x) {
@@ -1233,7 +1301,7 @@ const ok = key => !PREFS.no.includes(key), liked = key => PREFS.like.includes(ke
 function savePrefs() { clearTimeout(prefsT); prefsT = setTimeout(() => { if (db) db.doc("prefs/style").set({ like: PREFS.like, no: PREFS.no, names: PREFS.names, need: prefsNeed(), at: new Date().toISOString() }).catch(() => {}); }, 600); }
 const SKINS = [["serif", "serif italic"], ["script", "skrip"], ["marker", "marker"], ["gothic", "gothic"], ["bold", "bold"], ["mono", "mesin taip"]], TONES = [["glass", "kaca"], ["", ""], ["cream", "krim"], ["dark", "gelap"]];
 const KTAG = { "t-glass": "bold glass", "e-gtype": "bold glass", "e-arrow": "script", "e-strike": "mono cream", "e-polg": "glass script", "e-polt": "script", "e-fbreak": "glass script", "e-wipe": "glass bold", "e-pola": "script", "e-uspa": "serif", "e-uspg": "serif glass", "e-usph": "serif glass", "e-uspm": "marker", "e-uspb4": "serif cream",
-  "e-endc": "script cream", "e-endc2": "serif glass", "e-endc3": "script glass", "e-endc4": "marker", "e-wheel": "bold", "e-receipt": "mono", "e-ticket": "bold", "e-pin": "bold", "e-slam": "bold", "e-chip": "bold", "e-badges": "bold", "e-marq": "mono", "e-emboss": "mono", "e-dboil": "script", "e-checkg": "bold glass", "e-check": "bold", "e-chart": "serif glass", "e-price": "mono cream", "e-num": "serif", "e-cal": "serif",
+  "e-endc": "script cream", "e-endc2": "serif glass", "e-endc3": "script glass", "e-endc4": "marker", "e-stars": "bold", "e-ring": "bold", "e-poll": "bold", "e-save": "bold", "e-tag": "bold", "e-stamp": "bold", "e-wheel": "bold", "e-receipt": "mono", "e-ticket": "bold", "e-pin": "bold", "e-slam": "bold", "e-chip": "bold", "e-badges": "bold", "e-marq": "mono", "e-emboss": "mono", "e-dboil": "script", "e-checkg": "bold glass", "e-check": "bold", "e-chart": "serif glass", "e-price": "mono cream", "e-num": "serif", "e-cal": "serif",
   "e-pcut": "serif cream", "e-torn": "script cream", "e-strip": "mono cream", "e-note": "script cream", "e-hwall": "gothic", "e-cover": "serif", "e-bigmix": "bold serif", "e-bigblur": "bold serif", "e-bigserif": "serif", "e-bigmark": "marker", "e-hook1": "serif script", "e-hook2": "bold serif", "e-hook3": "marker script", "e-hook4": "script", "e-hook5": "serif glass", "e-hook6": "script serif" };
 function taste() { const c = {}; PREFS.like.forEach(key => { const id = key.slice(key.indexOf(":") + 1), v = vSkin(id); [...(KTAG[vBase(id)] || "").split(" "), v.sk, v.tn].filter(Boolean).forEach(t => { c[t] = (c[t] || 0) + 1; }); }); const by = L => L.slice().sort((a, b) => (c[b[0]] || 0) - (c[a[0]] || 0)); return { sk: by(SKINS), tn: by(TONES) }; }
 function fillCat(pre, list) {   // list rows: [id, name, text, options]; returns what the category shows, never fewer than six while a base is left
@@ -1288,6 +1356,7 @@ function paraHTML(x) {   // 2026-11-09 static block: no .eu, so nothing animates
   return `<div class="e-para"><div class="ps"></div><div class="pz pa">${esc(x.a || "")}</div><div class="pz pt">${kk(x.text || "")}</div><div class="pz pb">${kk(x.b || "")}</div>${pill ? `<div class="pz pp"><span>${esc(pill)}</span></div>` : ""}</div>`;
 }
 function effectHTML(x, url) {
+  { const z = fx4(x); if (z != null) return z; }
   { const z = fx3(x); if (z != null) return z; }
   { const z = fx2(x, url); if (z != null) return z; }
   if (x.k === "e-para") return paraHTML(x);
@@ -2257,6 +2326,7 @@ function checksHTML() {
   return `<div class="row"><span class="lab">Checks ${warn ? `(${warn} perlu dilihat)` : "(semua okay)"}</span><div class="pool">${c.map(x => `<div><span style="color:${x.ok ? (x.info ? "var(--muted)" : "var(--green)") : "var(--red)"}">${x.ok ? (x.info ? "•" : "✓") : "!"} <span style="color:var(--fg)">${esc(x.text)}</span></span>${x.go !== undefined && !x.ok ? `<button class="chip" data-go="${x.go.toFixed(2)}"${x.to && x.to.tab ? ` data-gtab="${x.to.tab}"` : ""}${x.to && x.to.st !== undefined ? ` data-gst="${x.to.st}"` : ""}${x.to && x.to.w !== undefined ? ` data-gw="${x.to.w}"` : ""}>Go</button>` : ""}</div>`).join("")}</div></div>`;
 }
 const FX_FAMILY = [
+  ["Review", ["e-stars", "e-ring", "e-poll", "e-save", "e-tag", "e-stamp"]],
   ["Trend", ["e-wheel", "e-receipt", "e-ticket", "e-pin", "e-slam"]],
   ["Text", ["e-gtype", "e-bigmix", "e-bigblur", "e-bigserif", "e-bigmark", "e-bigout", "e-bigsolid", "e-hwall", "e-pcut", "e-chip", "e-strip", "e-strike", "e-arrow"]],
   ["List", ["e-checkg", "e-check", "e-badges", "e-torn", "e-emboss", "e-marq", "e-note"]],
