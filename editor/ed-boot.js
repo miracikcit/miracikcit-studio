@@ -130,7 +130,22 @@
     try { const j = await studioCall('pull', { since: (FIN && FIN.finAt ? FIN.finAt : Date.now() - FIN_STALE) - 60e3 }); const d = ((j.docs || []).find(x => x.p === 'edpwa/' + VID) || {}).d; if (d && d.finAt && (!FIN || d.finAt >= FIN.finAt - 120e3)) FIN = { ...(FIN || {}), ...d, finAt: Math.max(d.finAt, (FIN || {}).finAt || 0) }; } catch (e) {}
   }
   async function finWatch() { clearTimeout(finT); await finRead(); finDraw(); if (finRun()) finT = setTimeout(finWatch, 6000); }
-  window.ED_FIN = () => { finDraw(); if (!FIN) { FIN = {}; readDoc('edpwa/' + VID).then(d => { if (d && d.finAt && Date.now() - d.finAt < FIN_STALE * 4) { FIN = d; finDraw(); if (finRun()) finWatch(); } }).catch(() => {}); } };
+  /* 2026-11-23 (Mira): jenis render ikut Shoot list. Item Shoot yang ada attachment (sample / produk / brand / bayaran) = Jobs, lain = Creative. */
+  let KIND = undefined;
+  const nk = x => String(x || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  async function kindOf() {
+    if (KIND !== undefined) return KIND;
+    KIND = null;
+    try {
+      const docs = await new Promise(res => { let done = 0; base.collection('items').onSnapshot(s => { if (!done) { done = 1; res(s.docs.map(d => d.data())); } }); setTimeout(() => { if (!done) { done = 1; res([]); } }, 4000); });
+      const man = window.ED_MAN || {}, dir = String(man.dir || ''), keys = [man.title, dir.split('/').slice(-3).join(' '), (dir.match(/CLAUDE EDITS\/[^/]+\/([^/]+)/) || [])[1]].map(nk).filter(k => k.length >= 4);
+      const it = docs.find(d => { const t = nk(d.title); return t.length >= 4 && keys.some(k => k.includes(t.slice(0, 10)) || t.includes(k.slice(0, 10))); });
+      if (it) KIND = (it.kind ? it.kind === 'job' : !!(it.sample || it.productId || it.brand || it.paid)) ? 'product' : 'non';
+    } catch (e) {}
+    return KIND;
+  }
+  window.ED_KIND = () => KIND;
+  window.ED_FIN = () => { kindOf().then(k => { try { if (k && (0, eval)('!S.final.tab')) { (0, eval)(`S.final.tab = '${k}'; touched(); drawPanel();`); } } catch (e) {} }); finDraw(); if (!FIN) { FIN = {}; readDoc('edpwa/' + VID).then(d => { if (d && d.finAt && Date.now() - d.finAt < FIN_STALE * 4) { FIN = d; finDraw(); if (finRun()) finWatch(); } }).catch(() => {}); } };
   window.ED_PROMPT = p => {
     if (!p || p.render === 'draft') return 'Draf tak perlukan Claude. Tekan butang render sekali lagi.';
     const multi = p.multi, src = p.failAsal === 'buang' ? 'fail asal ke Trash' : /^pindah/.test(p.failAsal || '') ? 'pindah folder footage asal projek ke "' + (p.srcTo || '?') + '"' : 'fail asal disimpan';

@@ -1106,7 +1106,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .finbar .fchat { display: inline-block; margin-top: 8px; padding: 8px 14px; border-radius: 999px; background: #1d1b1a; color: #fff; text-decoration: none; font-weight: 700; font-size: 14px; }
 #upload[disabled] { opacity: .45; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=24b685a67c">
+<link rel="stylesheet" href="../../ed-capcut.css?v=f7425d909e">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1210,9 +1210,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=24b685a67c"></script>
-<script src="../../../js/runtime.js?v=24b685a67c"></script>
-<script src="../../ed-boot.js?v=24b685a67c"></script>
+<script src="../../../js/config.js?v=f7425d909e"></script>
+<script src="../../../js/runtime.js?v=f7425d909e"></script>
+<script src="../../ed-boot.js?v=f7425d909e"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -2806,7 +2806,7 @@ function drawPanel() {
       ${isLastPart() ? `<div class="row"><span class="lab">Render</span><div class="chips">${chip("Draft 540×960", S.final.render === "draft", 'data-fp="render" data-v="draft"')}${chip("Final 1080×1920", S.final.render !== "draft", 'data-fp="render" data-v="final"')}</div></div>
       <div class="note">${S.final.render === "draft" ? (window.ED_SEND ? "Draf: Mac mini render video kecil 540×960 terus (tanpa Claude). Link draf keluar di sini dan dalam tab Editor Studio. Sheet dan fail asal tak diusik." : "Draf: video kecil 540×960 untuk semak potongan. Claude hantar link page supaya kau boleh tengok di phone. Sheet dan fail asal tak diusik.") : (SER() ? `RENDER ALL render <b>final 1080×1920</b> untuk kesemua ${esc(String(SER().total))} part (dari edit yang disimpan dalam setiap editor) dan simpan ke 00. TO POST FINAL. Sheet dan Studio dikemaskini sekali selepas semua siap.` : "UPLOAD terus render <b>final 1080×1920</b> dan simpan ke 00. TO POST FINAL. Semak video dalam editor dulu.")}</div>
       <div id="renderStatus">${lastStatus}</div>
-      <div class="row"><span class="lab">Jenis video</span><div class="chips">${chip("Jobs", S.final.tab === "product", 'data-fp="tab" data-v="product"')}${chip("Creative", S.final.tab === "non", 'data-fp="tab" data-v="non"')}</div><span class="legend">Jobs masuk Sheet PRODUCTS, Creative masuk NON PRODUCT. Kedua-dua keluar di To Publish dan Published.</span>
+      <div class="row"><span class="lab">Jenis video</span><div class="chips">${chip("Jobs", S.final.tab === "product", 'data-fp="tab" data-v="product"')}${chip("Creative", S.final.tab === "non", 'data-fp="tab" data-v="non"')}</div><span class="legend">Jobs masuk Sheet PRODUCTS, Creative masuk NON PRODUCT. Kedua-dua keluar di To Publish dan Published.${window.ED_KIND && window.ED_KIND() ? " <b>Dipilih ikut Shoot list (" + (window.ED_KIND() === "product" ? "Jobs" : "Creative") + ").</b>" : ""}</span>
       ${S.final.tab === "product" ? `<label class="lab" for="prodName">Nama produk (perkataan pertama ikut nama video)</label><input id="prodName" type="text" value="${esc(S.final.product || "")}" placeholder="${esc(D.title.replace(/^Edit\s+/, "").toUpperCase())}">` : ""}</div>
       <div class="row"><span class="lab">Fail asal</span><div class="chips">${chip("Delete", S.final.src === "buang", 'data-fp="src" data-v="buang"' + (canDeleteSrc() ? "" : " disabled"))}${chip("Keep", S.final.src === "simpan", 'data-fp="src" data-v="simpan"')}${window.ED_SEND ? chip("Transfer", /^pindah/.test(S.final.src || ""), 'data-fp="src" data-v="pindah"') : ""}</div>${window.ED_SEND && /^pindah/.test(S.final.src || "") ? `<label class="lab" for="srcTo">Pindah ke folder no.</label><select id="srcTo" class="srcto"><option value="">Pilih no. folder</option>${((window.ED_MAN || {}).folders || []).map(f => { const no = (/^(\d+)/.exec(f) || [0, f])[1]; return `<option value="${esc(f)}"${S.final.srcTo === f ? " selected" : ""}>${esc(no)}</option>`; }).join("")}</select>` : ""}</div>
       <div class="row"><span class="lab">Fail product listing</span><div class="chips">${chip("Delete", S.final.list === "buang", 'data-fp="list" data-v="buang"' + (canDeleteSrc() ? "" : " disabled"))}${chip("Keep", S.final.list === "simpan", 'data-fp="list" data-v="simpan"')}</div><span class="legend">${canDeleteSrc() ? "Buang bermaksud masuk Trash Mac selepas final siap, dan boleh dipulihkan." : D.series && +D.series.part < +D.series.total ? `Video ni bahagian ${D.series.part} daripada ${D.series.total}. Fail asal dan product listing hanya boleh dibuang masa render final video terakhir.` : "Delete hanya untuk render final."}</span></div>

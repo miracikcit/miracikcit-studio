@@ -40,7 +40,7 @@ function dlBtn(f,done,id,act){
   if(q&&q.file)return `<button class="btn sm solid tab" data-act="dlSave" ${a}>${IC.dl}Simpan video</button>`;
   if(q)return `<button class="btn sm" disabled ${a}>Memuat ${q.pct||0}%</button>`;
   const drv='https://drive.google.com/file/d/'+encodeURIComponent(f.drive)+'/view';
-  return `<a class="btn sm ${done?'':'solid tab'}" href="${esc(drv)}" target="_blank" rel="noopener" data-drv="1" ${a}>${done?IC.check+'Downloaded':IC.ext+'Buka di Drive'}</a>
+  return `<a class="btn sm ${done?'':'solid tab'}" href="${esc(dlUrl(f.drive))}" target="_blank" rel="noopener" data-drv="1" ${a}>${done?IC.check+'Downloaded':IC.dl+'Download'}</a><a class="btn sm" href="${esc(drv)}" target="_blank" rel="noopener" style="min-height:26px;padding:3px 10px;font-size:9px">${IC.ext}Drive</a>
     <button class="btn sm" style="min-height:26px;padding:3px 10px;font-size:9px" data-act="dlGo" ${a.replace('data-dlid','data-dlx')}>${IC.dl}Muat dalam app</button>`}
 /* Buka di Drive: link biasa (app Google Drive terbuka sendiri). Tanda Downloaded tanpa halang link. */
 document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('a[data-drv]');if(el)setTimeout(()=>dlMark(el),300)});
@@ -82,7 +82,7 @@ async function sheetAcc(tab,row,i,val){const t=SH[tab],raw=sheetRaw[tab];if(!raw
 function fileRow(f,g){if(!g)return null;const vm=f.name.match(/_(\d+)(?:_|\.)/);return g.rows.find(r=>r.vid&&vm&&String(r.vid)===vm[1])||(g.rows.length===1?g.rows[0]:null)}
 function newName(f,g){if(f.hook)return noEmoji(f.hook);const r=fileRow(f,g);const hook=r&&noEmoji(String(r.caption||'').split('\n')[0]).trim();return hook||f.name.replace(/\.(mp4|mov|m4v)$/i,'').replace(/_FINAL$/i,'').replace(/[_-]+/g,' ')}
 function upState(f){const u=S.sync.finalsup||{};const fresh=Date.now()-(u.at||0)<15*60e3;
-  if(f.drive)return {t:'Sedia download',c:'var(--ok)'};
+  if(f.drive)return {t:'Stored in GDrive',c:'var(--ok)'};
   if(fresh&&u.name===f.name)return {t:'Sedang upload ke Drive',c:'var(--warn)',pct:u.pct||0};
   if(Date.now()-(f.mtime||0)<120e3)return {t:'Baru siap render, tunggu sekejap',c:'var(--warn)',spin:1};
   return {t:fresh&&(u.queue||[]).includes(f.name)?'Dalam giliran upload':'Tunggu upload ke Drive',c:'var(--muted)',spin:1}}
@@ -90,5 +90,6 @@ function freshStrip(fr){if(!fr.length)return '';
   return `<div class="card glass" style="margin-bottom:14px;box-shadow:0 0 0 1.5px var(--ok) inset"><p class="eyebrow" style="margin:0">New videos · ${fr.length}</p>
    ${fr.map(({f,g})=>{const st=upState(f),r=fileRow(f,g);return `<div class="rowh" style="align-items:flex-start;gap:8px;margin-top:10px"><div style="min-width:0;flex:1"><strong>${esc(newName(f,g))}</strong><span class="meta" style="display:block">${esc(g?g.name+(r&&r.vid?' · VID '+r.vid:''):'Belum ada dalam Sheet')} · ${fmtD(f.mtime)}</span>
      ${st.pct!=null?`<div class="stbar" style="--c:${st.c}"><div class="stt"><span>${st.t}</span><span>${st.pct}%</span></div><div class="stg"><i style="width:${Math.max(3,st.pct)}%"></i></div></div>`:`<span class="pill" style="--pc:${st.c};margin-top:5px">${st.spin?'<i class="spin"></i>':''}${st.t}</span>`}</div>
-     ${g?`<button class="btn sm solid tab" data-act="toCard" data-x="rg-${g.tab}-${g.start}">Lihat${IC.next}</button>`:''}</div>`}).join('')}</div>`}
-A.toCard=el=>{const c=document.getElementById(el.dataset.x);if(c)c.scrollIntoView({behavior:'smooth',block:'start'})};
+     <div class="btns" style="margin-top:6px">${f.drive?dlBtn(f,false,'nv-'+f.name,'dlNv'):''}</div></div>
+     ${g&&sheetView()&&sheetView().ready.some(x=>x.group===g)?`<button class="btn sm solid tab" data-act="toCard" data-x="rg-${g.tab}-${g.start}">Lihat${IC.next}</button>`:''}</div>`}).join('')}</div>`}
+A.toCard=el=>{const c=document.getElementById(el.dataset.x);if(c){c.scrollIntoView({behavior:'smooth',block:'start'});c.animate&&c.animate([{boxShadow:'0 0 0 3px var(--ok) inset'},{boxShadow:'none'}],{duration:1600})}else toast('Video ni dah settled, tengok di tab Published')};

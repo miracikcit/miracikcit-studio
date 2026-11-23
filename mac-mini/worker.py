@@ -706,6 +706,47 @@ def _footage_tick(sheet):
     threading.Thread(target=run, daemon=True).start()
 
 
+_edsync = {"since": 0, "docs": {}, "t": 0}
+
+
+def editor_autosync(sheet, files):
+    """Tab Editor sync sendiri (2026-11-23, Mira): projek yang video finalnya dah ada dalam 00. TO POST FINAL ditanda Siap
+    (editor/<id> status + final, edpwa/<id> final). Baca doc berubah sahaja (pull since), setiap 5 minit bersama scan."""
+    j = sheet.call("pull", since=_edsync["since"])
+    for x in j.get("docs", []):
+        _edsync["since"] = max(_edsync["since"], x.get("u") or 0)
+        pth = x.get("p") or ""
+        if pth.startswith(("editor/", "edpwa/")):
+            if x.get("d"):
+                _edsync["docs"][pth] = x["d"]
+            else:
+                _edsync["docs"].pop(pth, None)
+    nk = lambda t: re.sub(r"[^a-z0-9]", "", str(t).lower())
+    def hit(name, after):
+        k = nk(name)
+        if len(k) < 4:
+            return None
+        for f in files:
+            t = nk(re.split(r"[_]+", f["name"])[0])
+            if len(t) >= 4 and (k.startswith(t) or t.startswith(k[:max(4, len(t))])) and f["mtime"] >= after:
+                return f["name"]
+        return None
+    for pth, d in list(_edsync["docs"].items()):
+        if pth.startswith("editor/") and d.get("folder") and not d.get("final") and not re.search(r"siap", str(d.get("status") or ""), re.I):
+            fn = hit(str(d["folder"]).split("/")[-1], (d.get("sessionAt") or d.get("created") or 0) - 3600000)
+            if fn:
+                d = dict(d, status="Siap", final=fn, updated=int(time.time() * 1000))
+                sheet.call("dset", path=pth, data=d); _edsync["docs"][pth] = d
+                log.info("Tab Editor: %s siap (%s)", pth, fn)
+        elif pth.startswith("edpwa/") and d.get("files") and d.get("final") != "siap" and d.get("finStatus") != "proses":
+            proj = (re.search(r"CLAUDE EDITS/[^/]+/([^/]+)", str(d.get("dir") or "")) or [None, ""])[1]
+            fn = hit(proj, (d.get("created") or 0))
+            if fn and (d.get("finAt") or d.get("draft")):
+                d = dict(d, final="siap")
+                sheet.call("dset", path=pth, data=d); _edsync["docs"][pth] = d
+                log.info("Tab Editor: %s final (%s)", pth, fn)
+
+
 def push_scan(sheet, force=False):
     if not force and time.time() - _scan_last["t"] < 300:
         return None
@@ -722,6 +763,10 @@ def push_scan(sheet, force=False):
             sheet.call("dset", path=path, data=doc)
             _scan_last["sig"][path] = sig
     _scan_last["full"] = time.time()
+    try:
+        editor_autosync(sheet, docs.get("sync/topost", {}).get("files", []))
+    except Exception:
+        log.exception("Auto sync tab Editor gagal")
     _footage_tick(sheet)
     return {"topost": len(docs.get("sync/topost", {}).get("files", [])),
             "toedit": sum(len(s["items"]) for s in docs.get("sync/toedit", {}).get("stages", []))}
