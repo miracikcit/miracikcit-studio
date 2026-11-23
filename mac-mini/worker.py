@@ -1354,6 +1354,9 @@ def studio_jobs(sheet, cfg):
                 outp = run_ed_new(inp, sheet, cfg)
             elif j["type"] == "ed_draft":
                 outp = run_ed_draft(inp, sheet, cfg)
+            elif j["type"] == "ed_foot":   # footage dari folder lain untuk Editor PWA (0 token)
+                import edfoot
+                outp = edfoot.run(inp, sheet, cfg, sys.modules[__name__])
             elif j["type"] == "ed_send":
                 outp = run_ed_send(inp, sheet, cfg)
             elif j["type"] == "edit_now":

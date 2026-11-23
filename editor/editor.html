@@ -2,7 +2,7 @@
 <html lang="ms">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Editor</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;600;700&family=Outfit:wght@600;800&family=Playfair+Display:ital,wght@1,500&display=swap">
@@ -1004,8 +1004,26 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .swc small { font-size: 10px; opacity: .7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .swbox { border: 2px solid var(--kc, #ffd447); border-radius: 14px; padding: 10px; }
 .hlcols input[type=color] { -webkit-appearance: none; appearance: none; }
+/* p21: tab Highlight, satu baris setiap perkataan */
+.hlrow { border: 1px solid var(--line, #e5ded5); border-radius: 14px; padding: 8px; margin: 8px 0; background: var(--panel, #fff); }
+.hlrow.sel { border-color: var(--kc, #ffd447); box-shadow: 0 0 0 2px var(--kc, #ffd447) inset; }
+.hlrow.all { background: var(--brownsoft, #f3e9dc); }
+.hlrh { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.hlrh b { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.hlrh .sp { flex: 1; }
+.hlrh .chip { padding: 4px 10px; font-size: 12px; }
+.hltstrip { display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 4px; scrollbar-width: none; }
+.hltstrip::-webkit-scrollbar { display: none; }
+.hltstrip .hlt { flex: 0 0 96px; scroll-snap-align: start; }
+/* p21: folder lain */
+.fbgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; max-height: 340px; overflow: auto; margin: 6px 0; }
+.fbit { display: flex; flex-direction: column; gap: 2px; padding: 3px; border-radius: 10px; border: 1px solid var(--line, #ddd); background: var(--panel, #fff); font: inherit; cursor: pointer; min-width: 0; }
+.fbit .swi { display: block; aspect-ratio: 9/16; border-radius: 7px; background-color: #222; background-repeat: no-repeat; }
+.fbit small { font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fbit[aria-pressed="true"] { outline: 3px solid var(--kc, #ffd447); }
+.fbbox .chips { flex-wrap: wrap; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=8d28ec8160">
+<link rel="stylesheet" href="../../ed-capcut.css?v=8cf8939335">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1109,9 +1127,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=8d28ec8160"></script>
-<script src="../../../js/runtime.js?v=8d28ec8160"></script>
-<script src="../../ed-boot.js?v=8d28ec8160"></script>
+<script src="../../../js/config.js?v=8cf8939335"></script>
+<script src="../../../js/runtime.js?v=8cf8939335"></script>
+<script src="../../ed-boot.js?v=8cf8939335"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -1644,7 +1662,7 @@ function swapPanel() {
   const card = (k, cc, lab, sub) => { const u = swapThumb(cc, cc.in ?? cc.srcMin); return `<button class="swc" ${k}><span class="swi"${u ? ` style="background-image:url(${u})"` : ""}></span><b>${esc(lab)}</b><small>${esc(sub)}</small></button>`; };
   const L = swapCands(), others = S.clips.map((x, j) => [x, j]).filter(([, j]) => j !== sel);
   return `<div class="row swbox" id="swapBox"><span class="lab" style="font-size:14px">⇄ Tukar ${esc(c.name || "klip")} (${(c.out - c.in).toFixed(1)} s)</span>
-    <span class="lab">Ganti dengan klip lain (panjang kekal sama)</span>${L.length ? `<div class="swgrid">${L.map((q, n) => card(`data-swap="${n}"`, q.c, q.c.name || "Klip", (q.c.srcMax - q.c.srcMin).toFixed(1) + " s" + (q.src === "bin" ? " · simpanan" : ""))).join("")}</div>` : `<span class="legend">Tiada klip ganti dalam projek ni. Semua klip dah dipakai; minta shot baru dari ＋ Footage › Shot bank.</span>`}
+    <span class="lab">Ganti dengan klip lain (panjang kekal sama)</span>${L.length ? `<div class="swgrid">${L.map((q, n) => card(`data-swap="${n}"`, q.c, q.c.name || "Klip", (q.c.srcMax - q.c.srcMin).toFixed(1) + " s" + (q.src === "bin" ? " · simpanan" : ""))).join("")}</div>` : `<span class="legend">Tiada klip ganti dalam projek ni lagi. Ambil dari folder lain:</span>`}${fbBox()}
     <span class="lab">Atau tukar tempat dengan klip dalam video</span><div class="swgrid">${others.map(([x, j]) => card(`data-swpos="${j}"`, x, x.name || "Klip " + (j + 1), `#${j + 1} · ${(x.out - x.in).toFixed(1)} s`)).join("")}</div>
     <button class="chip" id="swapClose">Tutup</button></div>`;
 }
@@ -1657,6 +1675,38 @@ function doSwap(n) {
   S.clips[sel] = nw; S.bin.unshift({ ...old });
   touched(); swapOpen = false; toast(`${old.name || "Klip"} ditukar dengan ${nw.name || "klip"}${nw.out - nw.in < len - .05 ? " (klip ganti lebih pendek)" : ""}. Klip lama masuk Klip simpanan`); draw();
 }
+/* p21 (2026-11-23, Mira): ambil footage dari folder lain dalam folder utama. Mac mini (job ed_foot, 0 token) senaraikan folder +
+   gambar kecil, kemudian sambung video dipilih di hujung proxy; editor muat semula dan klip baru ada dalam Klip simpanan / ⇄ Tukar. */
+let FB = { open: false, path: "", st: "", dirs: [], items: [], sheet: "", cols: 6, pick: new Set(), main: "", msg: "", after: "" }, fbT = 0;
+function fbBox() {
+  if (!window.ED_FOOT) return `<span class="legend">Ambil footage dari folder lain hanya dalam Editor Studio.</span>`;
+  if (!FB.open) return `<button class="chip" id="fbOpen">📁 Ambil dari folder lain</button>`;
+  const crumbs = ["", ...FB.path.split("/").filter(Boolean)].map((x, i, a) => `<button class="chip" data-fbgo="${esc(a.slice(1, i + 1).join("/"))}">${esc(i ? x : (FB.main || "Folder utama"))}</button>`).join(" › ");
+  const busy = FB.st === "proses" ? `<div class="note">Mac mini sedang ${FB.after ? "potong dan sambung video (1–4 minit)… editor akan muat semula sendiri" : "buka folder"}…</div>` : FB.st === "error" ? `<div class="note warn">${esc(FB.msg || "Gagal")}. Cuba lagi.</div>` : "";
+  const grid = FB.items.length ? `<div class="fbgrid">${FB.items.map((x, i) => { const cx = i % FB.cols, cy = Math.floor(i / FB.cols), rows = Math.ceil(FB.items.length / FB.cols), on = FB.pick.has(x.f);
+      return `<button class="fbit" data-fbpick="${esc(x.f)}" aria-pressed="${on}"><span class="swi" style="background-image:url(${FB.sheet});background-size:${FB.cols * 100}% ${rows * 100}%;background-position:${FB.cols > 1 ? cx / (FB.cols - 1) * 100 : 0}% ${rows > 1 ? cy / (rows - 1) * 100 : 0}%"></span><small>${esc(x.name.slice(0, 18))} · ${x.d}s</small></button>`; }).join("")}</div>` : (FB.st === "sedia" ? `<span class="legend">Tiada video dalam folder ni.</span>` : "");
+  return `<div class="row fbbox"><span class="lab">📁 Folder lain</span><div class="chips">${crumbs}</div>${busy}
+    ${FB.dirs.length ? `<div class="chips">${FB.dirs.map(d => `<button class="chip" data-fbgo="${esc((FB.path ? FB.path + "/" : "") + d)}">📁 ${esc(d)}</button>`).join("")}</div>` : ""}${grid}
+    ${FB.items.length ? `<div class="chips"><button class="chip" id="fbAdd" ${FB.pick.size && FB.st !== "proses" ? "" : "disabled"}>Tambah ${FB.pick.size || ""} video ke projek</button><button class="chip" id="fbClose">Tutup</button></div><span class="legend">Setiap video masuk sampai 15 s. Selepas muat semula, klip ada dalam Klip simpanan dan ⇄ Tukar.</span>` : `<button class="chip" id="fbClose">Tutup</button>`}</div>`;
+}
+async function fbJob(input) {
+  FB.st = "proses"; FB.msg = ""; drawPanel();
+  const t0 = Date.now();
+  try { await window.ED_FOOT.job(input); } catch (e) { FB.st = "error"; FB.msg = "Tak dapat hantar ke Mac mini"; return drawPanel(); }
+  clearTimeout(fbT);
+  const poll = async () => {
+    let d = null; try { d = await window.ED_FOOT.poll(t0); } catch (e) {}
+    if (d && d.at >= t0 - 2000 && d.status !== "proses") {
+      if (d.status === "error") { FB.st = "error"; FB.msg = d.msg; FB.after = ""; return drawPanel(); }
+      if (d.mode === "add") { toast(`${(d.added || []).length} video ditambah. Muat semula editor…`); try { clearTimeout(saveTimer); flush(); } catch (e) {} return setTimeout(() => location.reload(), 1500); }
+      try { await window.ED_FOOT.refresh(t0); } catch (e) {}
+      Object.assign(FB, { st: "sedia", path: d.path || "", dirs: d.dirs || [], items: d.items || [], sheet: d.sheet || "", cols: d.cols || 6, main: d.main || FB.main, pick: new Set() });
+      return drawPanel();
+    }
+    fbT = setTimeout(poll, 4000);
+  };
+  fbT = setTimeout(poll, 3000);
+}
 function footPanel() {
   const bin = S.bin.map((c, i) => `<div><span>${esc(c.name || "Klip")} · ${(c.out - c.in).toFixed(1)} s</span><button class="chip" data-bin="${i}">Masuk</button></div>`).join("");
   const B = D.bank, used = new Set([...S.clips, ...S.bin].map(c => c.file));
@@ -1666,6 +1716,7 @@ function footPanel() {
     <button class="chip" id="footSend"${footPick.size ? "" : " disabled"}>Minta Mac proses (${footPick.size})</button>` : `<span class="legend">Shot bank tiada untuk projek ni.</span>`;
   return `<details class="fold" id="footBox"${footOpen ? " open" : ""}><summary class="lab">＋ Tambah footage</summary>
     <div class="row"><span class="lab">Klip simpanan (${S.bin.length})</span>${bin ? `<div class="pool">${bin}</div>` : `<span class="legend">Tiada. Klip yang kau Delete dan shot yang Mac dah proses masuk sini.</span>`}</div>
+    <div class="row">${fbBox()}</div>
     <div class="row"><span class="lab">Shot bank (pilih, kemudian minta)</span>${req}${grid}</div></details>`;
 }
 async function footSend() {
@@ -1964,6 +2015,38 @@ function hlAutoPick() {   // one word every 4 s or more: the longest word of a p
   const flush = () => { let b = null; run.forEach(q => { const c = clean(S.words[q.i].t).toLowerCase(); if (c.length >= 5 && !NOKEY.includes(c) && (!b || c.length > clean(S.words[b.i].t).length)) b = q; }); if (b && b.es - last >= 4 && b.es >= HOOK_END) { S.words[b.i].hl = 1; last = b.es; n++; } run = []; };
   L.forEach((q, j) => { run.push(q); const nx = L[j + 1]; if (run.length >= 4 || /[.,?!]$/.test(S.words[q.i].t) || !nx || nx.es - q.ee >= .4) flush(); });
   return n;
+}
+/* p21 (2026-11-23, Mira): tab Highlight sendiri. Satu baris untuk setiap perkataan highlight, setiap baris ada jalur template
+   (tekan = terus ubah perkataan tu sahaja), baris "Semua" ubah semua. Template = font + gaya + warna + gerak sekali. */
+const HLT = [
+  ["Ikut caption", "ikut", "none", "", "pop"], ["Kotak kuning", "bold", "box", "key", "pop"], ["Marker pink", "marker", "under", "#f6a8d8", "slide"], ["Sticker putih", "mont", "sticker", "", "pop"],
+  ["Glow biru", "wall", "glow", "#a9c6ff", "zoom"], ["Gradient pink", "poppins", "grad", "#f6a8d8", "zoom"], ["Bayang 3D", "fredoka", "pop3d", "#fdf4a0", "pop"], ["Outline", "anton", "outline", "#ffffff", "slide"],
+  ["Stroke tebal", "mont", "stroke", "#fdf4a0", "shake"], ["Skrip tangan", "script", "none", "", "fade"], ["Serif cover", "cover", "none", "", "fade"], ["Glass", "glass", "none", "", "zoom"],
+  ["Headline wall", "wall", "none", "key", "pop"], ["Kotak mint", "nunito", "box", "#bfe8e3", "pop"], ["Typewriter", "courier", "none", "", "type"], ["Tandatangan", "delafield", "none", "", "fade"],
+  ...Object.keys(HLK).filter(k => /^t/.test(k)).map(k => [HLK[k][0], k, "none", "", "pop"])
+];
+const hltOn = (h, t) => h && h.kind === t[1] && h.look === t[2] && (h.color || "") === t[3];
+function hlTabPanel() {
+  if (!HLS.length) return `<div class="row"><span class="lab" style="font-size:14px">Word highlight</span><div class="note">Belum ada perkataan highlight. Dalam tab Caption, tekan satu perkataan kemudian ★ Jadi highlight, atau tekan Pilih auto di bawah.</div><div class="chips"><button class="chip" id="hlAuto">Pilih auto</button><button class="chip" data-gotab="Caption">Ke tab Caption</button></div></div>`;
+  const strip = (id, h, txt) => `<div class="hltstrip">${HLT.map((t, n) => { const sm = { text: txt.slice(0, 12), kind: t[1], look: t[2], fx: "fade", color: t[3], size: 1 }; return `<button class="hlpk hlt" aria-pressed="${hltOn(h, t)}" data-hlt="${n}" data-hlid="${id}"><span class="hlpv"><span style="${hlStyle(sm)};font-size:${Math.min(26, 150 / Math.max(3, sm.text.length * (HLK[t[1]][2] || .5)))}px">${esc(sm.text)}</span></span><small>${esc(t[0])}</small></button>`; }).join("")}</div>`;
+  const allH = { kind: S.hlKind || "ikut", look: S.hlLook || "none", color: S.hlColor || "" };
+  return `<div class="row"><span class="lab" style="font-size:14px">Word highlight (${HLS.length})</span>
+    <span class="legend">Setiap perkataan ada baris sendiri. Tekan template dalam baris tu, perkataan tu terus berubah. Baris "Semua" ubah semua sekali.</span>
+    <div class="chips"><button class="chip" id="hlAuto">Pilih auto</button><button class="chip" data-gotab="Caption">+ Pilih perkataan (Caption)</button></div></div>
+    <div class="hlrow all"><div class="hlrh"><b>Semua highlight</b></div>${strip("all", allH, HLS[0].text)}</div>
+    ${HLS.map(h => `<div class="hlrow${h.id === hlSel ? " sel" : ""}" data-hlrow="${h.id}"><div class="hlrh"><button class="chip hlgo" data-hlgo="${h.id}" aria-label="Main dari sini">▶ ${fmt(h.t)}</button><b>${esc(h.text)}</b><span class="sp"></span><button class="chip" data-hledit="${h.id}">Ubah lagi</button></div>${strip(h.id, h, h.text)}</div>`).join("")}
+    <div class="row" id="hlMore"><span class="lab" style="font-size:14px">Ubah lagi ${hlScope === "one" && HLS.find(q => q.id === hlSel) ? "(perkataan dipilih)" : "(semua)"}</span></div>${hlPanel()}`;
+}
+function hlApplyT(n, id) {
+  const t = HLT[n]; if (!t) return;
+  const v = { kind: t[1], look: t[2], color: t[3], fx: t[4] };
+  S.hlx = S.hlx || {};
+  if (id === "all") { S.hlKind = v.kind; S.hlLook = v.look; S.hlColor = v.color; S.hlFx = v.fx; Object.values(S.hlx).forEach(o => { delete o.kind; delete o.look; delete o.color; delete o.fx; }); hlScope = "all"; }
+  else { const k = +id; S.hlx[k] = { ...(S.hlx[k] || {}), ...v }; hlSel = k; hlScope = "one"; }
+  touched(); drawHL(); planCaps(); grKey = ""; drawCaption(); drawTimeline(); hlPeek();
+  /* tanda pilihan tanpa lukis semula panel (jalur kekal di tempat dia) */
+  document.querySelectorAll("#panel [data-hlt]").forEach(x => { const hid = x.dataset.hlid, hh = hid === "all" ? { kind: S.hlKind, look: S.hlLook, color: S.hlColor || "" } : HLS.find(q => q.id === +hid); x.setAttribute("aria-pressed", hltOn(hh, HLT[+x.dataset.hlt])); });
+  document.querySelectorAll("#panel .hlrow").forEach(r => r.classList.toggle("sel", +r.dataset.hlrow === hlSel && id !== "all"));
 }
 function hlPanel() {
   const capM = S.hlPlace !== "big";
@@ -2276,12 +2359,12 @@ function stop() { $("stage").classList.remove("anim"); playing = false; $("mv").
 
 /* ---------- panels ---------- */
 const lastVideo = () => !PARTS || PARTS.parts.length < 2 || PART === PARTS.parts.length - 1;
-const TABS = () => ["Potong", "Title", ...(hasCap() ? ["Caption"] : []), "Effects", "Sticker", "Bunyi", "Warna", "Style Board", ...(lastVideo() ? ["Siap"] : [])];   // Render only on the last video (user 2026-11-13)
+const TABS = () => ["Potong", "Title", ...(hasCap() ? ["Caption", "Highlight"] : []), "Effects", "Sticker", "Bunyi", "Warna", "Style Board", ...(lastVideo() ? ["Siap"] : [])];   // Render only on the last video (user 2026-11-13)
 /* 2026-11-10: Title, Sticker and Sounds ("Bunyi", icon) are main tabs; Style Board keeps the look options only. */
 const SB_OF = {}, TAB_OF = {};
 const tabOf = x => x && x.k.startsWith("e-hook") ? "Title" : inFx(x) ? "Effects" : "Sticker";   // hook is edited in Title, never in Effects
 const sbTabs = () => `<div class="btabs">${BT.map(([k, n]) => `<button class="btab" aria-selected="${k === bTab}" data-bt="${k}">${n}</button>`).join("")}</div>`;
-const TAB_IC = { Potong: ["i-split", "Cut"], Title: ["i-title", "Title"], Caption: ["i-cc", "Caption"], Effects: ["i-fx", "Effects"], Sticker: ["i-star", "Stickers"], Bunyi: ["i-note", "Sounds", 1], Warna: ["i-adjust", "Adjust", 1], "Style Board": ["i-palette", "Style", 1], Siap: ["i-up", "RENDER"] };
+const TAB_IC = { Potong: ["i-split", "Cut"], Title: ["i-title", "Title"], Caption: ["i-cc", "Caption"], Highlight: ["i-hl", "Highlight"], Effects: ["i-fx", "Effects"], Sticker: ["i-star", "Stickers"], Bunyi: ["i-note", "Sounds", 1], Warna: ["i-adjust", "Adjust", 1], "Style Board": ["i-palette", "Style", 1], Siap: ["i-up", "RENDER"] };
 function drawTabs() { $("tabs").innerHTML = TABS().map(t => { const ic = TAB_IC[t]; return `<button class="tab${ic[2] ? " ictab" : ""}" role="tab" aria-selected="${t === tab}" data-tab="${t}" aria-label="${ic[1]}" title="${ic[1]}"><svg class="ic"><use href="#${ic[0]}"/></svg><span class="tlab">${ic[1]}</span></button>`; }).join(""); }
 function unsureLeft() { return S.words.filter(w => w.unsure && !w.fixed).length; }
 function leftText() { const n = unsureLeft(); return n ? `${n} perkataan bertitik perlu disemak` : "Tiada perkataan bertitik lagi"; }
@@ -2530,8 +2613,10 @@ function drawPanel() {
       <div class="words" id="words">${(() => { const sg = voSegs(); return S.words.map((w, i) => `<span class="w${w.cut ? " cut" : ""}${!w.cut && !inSegs((w.s + w.e) / 2, sg) ? " gone" : ""}${w.unsure && !w.fixed ? " unsure" : ""}${w.fixed ? " fixed" : ""}${i === wSel ? " pick" : ""}${KEYSET.has(i) ? " hlw" : w.hl === 0 ? " hloff" : ""}" data-w="${i}"${KEYSET.has(i) && (S.hlx || {})[i] && S.hlx[i].text && S.hlx[i].text.toLowerCase() !== showWord(w).toLowerCase() ? ` data-ht="${esc(S.hlx[i].text)}"` : ""} role="button" tabindex="0">${esc(w.t)}</span>`).join(" "); })()}</div>
       <div class="chips"><button class="chip" id="hlBtn" title="Jadikan perkataan dipilih word highlight, atau buang">★ Word highlight</button><button class="chip" id="hlAuto">Pilih auto</button><button class="chip" id="hlClear" ${KEYSET.size ? "" : "disabled"}>Buang semua highlight</button>${(() => { const nf = fillerList().length, np = isTalk() ? pauseList().length : 0; return (nf ? `<button class="chip" id="cutFill">Buang emm / aaa (${nf})</button>` : "") + (np ? `<button class="chip" id="cutSil">Buang jeda panjang (${np})</button>` : ""); })()}</div>
       <span class="legend">Ungu = word highlight (preview dan render sama). Lalai: perkataan ungu kekal dalam caption dengan font dan gaya sendiri. Tekan satu perkataan, kemudian ★ untuk jadikan atau buang. Perkataan ungu yang bersebelahan jadi satu highlight.</span>
-      ${hlPanel()}
+      <div class="chips"><button class="chip" data-gotab="Highlight">✨ Design word highlight: tab Highlight</button></div>
       <span class="legend" id="left">${leftText()}</span><div id="fixAll"></div></div>${bPanel("capStyle")}`;
+  } else if (tab === "Highlight") {
+    h = hlTabPanel();
   } else if (tab === "Sticker") {
     const x = S.stickers[stSel] && !inFx(S.stickers[stSel]) ? S.stickers[stSel] : null, mine = S.stickers.map((y, i) => [y, i]).filter(([y]) => !inFx(y));
     h = `<div class="row"><span class="lab">Pilih gambar sticker (masuk pada garis hitam)</span><div class="lib">${(D.stickerLib || []).map(l => `<button data-stadd="${esc(l.k)}" aria-label="Tambah ${esc(l.n)}" title="${esc(l.n)}"><svg viewBox="0 0 200 200"><g ${STROKE}>${l.svg}</g></svg></button>`).join("")}</div></div>
@@ -2604,7 +2689,7 @@ function drawTimeline() {
   $("rinner").innerHTML = `<div class="ruler" id="ruler">${ticks.join("")}</div><div class="rph" id="rph"></div>`;
   $("inner").innerHTML = `<div class="vrow" id="vrow">${video}</div>${rows.join("")}${over}<div class="ph" id="ph"></div>`; { const ri = $("rinner"); if (ri) ri.style.width = $("inner").scrollWidth + "px"; }
   { /* the row that belongs to the open tab sticks under the ruler (user 2026-11-12) */
-    const ST = { Title: [["hookTrack", "Tajuk", "i-title"]], Caption: [["capTrack", "Caption", "i-cc"], ["hlTrack", "Highlight", "i-hl"]], Effects: [["fxTrack", "Effects", "i-fx"], ["zmTrack", "Zoom", "i-zoom"]], Sticker: [["stTrack", "Sticker", "i-star"]], Bunyi: [["sfxTrack", "Bunyi", "i-note"]], Warna: [["vrow", "Video", "i-film"]] }[tab] || [];
+    const ST = { Title: [["hookTrack", "Tajuk", "i-title"]], Caption: [["capTrack", "Caption", "i-cc"], ["hlTrack", "Highlight", "i-hl"]], Highlight: [["hlTrack", "Highlight", "i-hl"]], Effects: [["fxTrack", "Effects", "i-fx"], ["zmTrack", "Zoom", "i-zoom"]], Sticker: [["stTrack", "Sticker", "i-star"]], Bunyi: [["sfxTrack", "Bunyi", "i-note"]], Warna: [["vrow", "Video", "i-film"]] }[tab] || [];
     const rl = document.querySelector("#rbar > span"); let labs = "";
     ST.forEach(([id, name, ic]) => { const el = $(id); if (!el) return; $("rinner").appendChild(el); el.classList.add("fxsticky"); const lab = document.querySelector(`#labels [title="${name}"]`); if (lab) lab.hidden = true; labs += `<span class="rlab${id === "vrow" ? " lv" : ""}"><svg class="ic"><use href="#${ic}"/></svg></span>`; });
     if (rl) rl.innerHTML = labs; }
@@ -2712,7 +2797,7 @@ function draw() {
   placeTabs(); applySH(); placeBars(); $("main").classList.toggle("compact", !rowsAll); $("rowsBtn").setAttribute("aria-pressed", rowsAll);
   if (tab === "Siap" && !canDeleteSrc()) { S.final.src = "simpan"; S.final.list = "simpan"; }
   if (tab === "Siap") { askRoom(); setTimeout(pollStatus, 300); }
-  if (tab === "Sticker" || tab === "Effects" || tab === "Style Board" || tab === "Title" || tab === "Caption" || S.stickers.length || S.style.font !== "campur" || S.style.capStyle !== "biasa") loadMoreFonts();
+  if (tab === "Sticker" || tab === "Effects" || tab === "Style Board" || tab === "Title" || tab === "Caption" || tab === "Highlight" || S.stickers.length || S.style.font !== "campur" || S.style.capStyle !== "biasa") loadMoreFonts();
   $("main").classList.remove("capt"); $("main").classList.toggle("stick", tab !== "Potong"); wireRuler(); requestAnimationFrame(() => { stickTops(); document.querySelectorAll('input[type="range"]').forEach(rangeFill); { const ri = $("rinner"), inn = $("inner"); if (ri && inn) ri.style.width = inn.scrollWidth + "px"; } }); drawTabs(); refreshGroups(); drawPanel(); drawTimeline(); drawStageStatic(); setVideoMute(); }
 
 /* ---------- actions ---------- */
@@ -2820,6 +2905,7 @@ function cutWord(i) {
 function del() {
   if (hlSel >= 0 && HLS.some(h => h.id === hlSel)) { const b = $("hlDel"); if (b) return b.click(); }
   if (tab === "Caption" && wSel >= 0 && S.words[wSel]) return cutWord(wSel);
+  if (tab === "Highlight" && HLS.some(h => h.id === hlSel)) { const b = document.createElement("button"); b.id = "hlDel"; b.hidden = true; $("panel").appendChild(b); b.click(); b.remove(); return; }   /* p21: tong sampah buang highlight dipilih */
   if (stSel >= 0) { snapshot(); S.stickers.splice(stSel, 1); stSel = -1; touched(); return draw(); }
   if (sfxSel >= 0) { snapshot(); S.sfx.splice(sfxSel, 1); sfxSel = -1; touched(); return draw(); }
   if (zmSel >= 0) { snapshot(); S.zooms.splice(zmSel, 1); zmSel = -1; touched(); return draw(); }
@@ -2958,7 +3044,7 @@ document.addEventListener("pointerdown", e => {
   const s = t.closest(".blk.sfx");
   if (s) { const i = +s.dataset.s; if (sfxSel !== i) { clearPick(); sfxSel = i; document.querySelectorAll(".blk.sfx.sel").forEach(x => x.classList.remove("sel")); s.classList.add("sel"); } startDrag({ k: "sfx", i, x: e.clientX, t: S.sfx[i].t, el: s }); e.preventDefault(); return; }
   const hw = t.closest(".hlw");
-  if (hw) { const id = +hw.dataset.hl, h = HLS.find(q => q.id === id); if (!h) return; if (hlSel !== id) { clearPick(); hlSel = id; hlScope = "one"; if (hasCap() && tab !== "Caption") { tab = "Caption"; drawTabs(); } drawPanel(); drawTimeline(); document.querySelectorAll("#hllayer .hlw").forEach(x => x.classList.toggle("sel", x === hw)); }
+  if (hw) { const id = +hw.dataset.hl, h = HLS.find(q => q.id === id); if (!h) return; if (hlSel !== id) { clearPick(); hlSel = id; hlScope = "one"; if (hasCap() && tab !== "Highlight") { tab = "Highlight"; drawTabs(); } drawPanel(); drawTimeline(); document.querySelectorAll("#hllayer .hlw").forEach(x => x.classList.toggle("sel", x === hw)); }
     startDrag({ k: "hlpos", id, el: hw, ox: e.clientX, oy: e.clientY, x0: h.x, y0: h.y }); e.preventDefault(); return; }
   const st = t.closest(".stk");
   if (st) {
@@ -3031,7 +3117,7 @@ document.addEventListener("click", e => {
   const vBlk = e.target.closest(".blk.part");
   if (vBlk) { clearPick(); voSel = +vBlk.dataset.v; if (tab === "Sticker" || tab === "Effects" || tab === "Style Board" || tab === "Title" || tab === "Siap") tab = "Potong"; if (playing) stop(); return draw(); }
   const hBlk = e.target.closest(".blk.hlb");
-  if (hBlk) { const h = HLS.find(q => q.id === +hBlk.dataset.hb); if (!h) return; clearPick(); hlSel = h.id; hlScope = "one"; if (playing) stop(); if (hasCap()) tab = "Caption"; if (pos < h.t || pos >= h.t + h.d) seek(h.t + .05); return draw(); }
+  if (hBlk) { const h = HLS.find(q => q.id === +hBlk.dataset.hb); if (!h) return; clearPick(); hlSel = h.id; hlScope = "one"; if (playing) stop(); if (hasCap()) tab = "Highlight"; if (pos < h.t || pos >= h.t + h.d) seek(h.t + .05); return draw(); }
   const sBlk = e.target.closest(".blk.stb");
   if (sBlk) { clearPick(); stSel = +sBlk.dataset.sb; const x = S.stickers[stSel]; tab = tabOf(x); if (playing) stop(); if (pos < x.t || pos >= x.t + x.d) seek(x.t); return draw(); }
   if (e.target.closest(".blk.zm")) { fxCat = "Zoom"; if (tab !== "Effects") { tab = "Effects"; draw(); } else { drawTimeline(); drawPanel(); } return; }
@@ -3075,7 +3161,12 @@ document.addEventListener("click", e => {
   if (b.id === "toStart") { if (playing) stop(); clearPick(); sel = 0; seek(0); $("tscroll").scrollLeft = 0; drawTimeline(); drawStickers(); if (tab === "Potong" || tab === "Effects" || tab === "Sticker") drawPanel(); return; }
   if (b.id === "nextFx") return nextEffect();
   if (b.id === "split") return split();
-  if (b.id === "swapClip") { if (!S.clips[sel]) return toast("Tekan satu klip dalam timeline dulu"); tab = "Potong"; swapOpen = !swapOpen || b.closest(".transport") !== null; if (typeof drawTabs === "function") drawTabs(); drawPanel(); setTimeout(() => { const el = $("swapBox"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60); return; }   /* p20 */
+  if (b.id === "swapClip") { if (!S.clips[sel]) return toast("Tekan satu klip dalam timeline dulu"); tab = "Potong"; swapOpen = !swapOpen || b.closest(".transport") !== null; if (typeof drawTabs === "function") drawTabs(); drawPanel(); setTimeout(() => { const el = $("swapBox"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 220); return; }   /* p20 */
+  if (b.id === "fbOpen") { FB.open = true; return fbJob({ vid: window.ED_VID, mode: "list", path: FB.path }); }   /* p21 */
+  if (b.id === "fbClose") { FB.open = false; return drawPanel(); }
+  if (b.id === "fbAdd") { if (!FB.pick.size) return; FB.after = "add"; const base = PARTS ? (PARTS.parts[PART].base || "") : ""; return fbJob({ vid: window.ED_VID, mode: "add", base, files: [...FB.pick] }); }
+  if (d.fbgo !== undefined) { FB.after = ""; return fbJob({ vid: window.ED_VID, mode: "list", path: d.fbgo }); }
+  if (d.fbpick !== undefined) { FB.pick.has(d.fbpick) ? FB.pick.delete(d.fbpick) : FB.pick.add(d.fbpick); b.setAttribute("aria-pressed", FB.pick.has(d.fbpick)); const a = $("fbAdd"); if (a) { a.disabled = !FB.pick.size; a.textContent = `Tambah ${FB.pick.size || ""} video ke projek`; } return; }
   if (b.id === "swapClose") { swapOpen = false; return drawPanel(); }
   if (b.id === "addFoot") { tab = "Potong"; footOpen = true; if (typeof drawTabs === "function") drawTabs(); drawPanel(); setTimeout(() => { const el = $("footBox"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60); return; }
   if (d.bpick !== undefined) { const k = d.bpick; footPick.has(k) ? footPick.delete(k) : footPick.add(k); return drawPanel(); }
@@ -3129,6 +3220,10 @@ document.addEventListener("click", e => {
   if (d.hkind) return (hlSet("kind", d.hkind), drawPanel());
   if (d.hlook) return (hlSet("look", d.hlook), drawPanel());
   if (d.hmove) return (hlSet("fx", d.hmove), drawPanel());
+  if (d.hlt !== undefined) return hlApplyT(+d.hlt, d.hlid);   /* p21 */
+  if (d.hlgo !== undefined) { const h = HLS.find(q => q.id === +d.hlgo); if (!h) return; hlSel = h.id; hlScope = "one"; if (playing) stop(); seek(h.t); document.querySelectorAll("#panel .hlrow").forEach(r => r.classList.toggle("sel", +r.dataset.hlrow === h.id)); return $("play").click(); }
+  if (d.hledit !== undefined) { hlSel = +d.hledit; hlScope = "one"; const sc = $("panel").scrollTop; drawPanel(); $("panel").scrollTop = sc; setTimeout(() => { const el = $("hlMore"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 40); hlPeek(); return; }
+  if (d.gotab) { tab = d.gotab; if (typeof drawTabs === "function") drawTabs(); drawPanel(); drawTimeline(); return; }
   if (d.hcol !== undefined) return (hlSet("color", d.hcol), drawPanel());
   if (d.hscope) { if (d.hscope === "one" && S.hlPlace !== "big") { const r = HLS.find(h => h.ids.includes(wSel)); if (!r) return toast("Tekan satu perkataan ungu dalam senarai dulu"); hlSel = r.id; } hlScope = d.hscope; const bx = $("words"), tp = bx ? bx.scrollTop : 0; drawPanel(); const nb = $("words"); if (nb) nb.scrollTop = tp; return; }
   if (b.id === "hlPosReset") { const o = (S.hlx || {})[hlSel]; if (o) { delete o.x; delete o.y; touched(); drawHL(); planCaps(); drawPanel(); } return; }

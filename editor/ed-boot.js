@@ -84,6 +84,12 @@
     if (man.title) document.title = man.title + ' · Editor';
     await toSW(man);
   });
+  /* 23 Nov: footage dari folder lain (job ed_foot di Mac mini, 0 token) */
+  window.ED_FOOT = {
+    job: input => studioCall('job_add', { type: 'ed_foot', input }),
+    poll: async since => { const j = await studioCall('pull', { since: since - 1 }); return ((j.docs || []).find(x => x.p === 'edfoot/' + VID) || {}).d || null; },
+    refresh: async since => { const j = await studioCall('pull', { since: (since || Date.now()) - 1 }); const d = ((j.docs || []).find(x => x.p === 'edpwa/' + VID) || {}).d; const man = d && d.files ? d : await manifest(); window.ED_MAN = man; await toSW(LOCAL ? await manifest() : man); }
+  };
   window.ED_FAIL = e => {
     const b = document.getElementById('boot');
     if (b) { b.hidden = false; b.innerHTML = 'Editor tak dapat dibuka: ' + String((e && e.message) || e) + '<br><a href="../../../#editor">Balik ke Studio</a>'; }
@@ -136,7 +142,7 @@
   const goTab = n => { const t = document.querySelector(`#tabs [data-tab="${n}"]`); if (t) { t.click(); return true; } return false; };
   const G = n => { try { return (0, eval)(n); } catch (e) { return undefined; } };   // pembolehubah enjin (let di skrip editor)
   /* setiap tab tunjuk trek timeline yang berkaitan sahaja (sentiasa nampak di atas panel) */
-  const ROWS = { Title: /^(Video|Tajuk)$/, Caption: /^(Video|Caption|Highlight)$/, Effects: /^(Video|Effects|Zoom)$/, Sticker: /^(Video|Sticker)$/,
+  const ROWS = { Title: /^(Video|Tajuk)$/, Caption: /^(Video|Caption|Highlight)$/, Highlight: /^(Video|Highlight)$/, Effects: /^(Video|Effects|Zoom)$/, Sticker: /^(Video|Sticker)$/,
     Bunyi: /^(Video|Bunyi|Suara|Suara asal|VO|Muzik|Music|BGM)/i, Warna: /^Video$/, 'Style Board': /^(Video|Tajuk|Caption)$/ };
   function rows() {
     const t = curTab(), re = ROWS[t], ok = n => !re || re.test(n || '');
@@ -151,17 +157,25 @@
     });
     H.classList.toggle('ednotl', t === 'Siap');
   }
+  /* 23 Nov (Mira): tab Cut, pembaris + trek video melekat di atas (dalam .rbar); trek lain + panel naik turun bersama (#edlow) */
+  function pinVideo() {
+    if (curTab() !== 'Potong') return;
+    const v = $('vrow'), ri = $('rinner'); if (!v || !ri || v.parentNode === ri) return;
+    ri.appendChild(v); v.classList.add('fxsticky');
+    const rl = document.querySelector('#rbar > span'); if (rl) rl.innerHTML = '<span class="rlab lv"><svg class="ic"><use href="#i-film"/></svg></span>';
+    const lab = document.querySelector('#labels [title="Video"]'); if (lab) lab.hidden = true;
+  }
   function sync() {
     const t = curTab();
     H.classList.toggle('edsheet', !!t && t !== 'Potong');
     [...H.classList].filter(c => c.startsWith('edtab-')).forEach(c => H.classList.remove(c)); if (t) H.classList.add('edtab-' + t.replace(/\s+/g, ''));
-    rows();
+    rows(); pinVideo();
     const l = $('ccTab'); if (l) l.textContent = (document.querySelector('#tabs [aria-selected="true"] .tl, #tabs [aria-selected="true"]') || {}).textContent || t;
   }
   /* playhead tetap di tengah: #inner dan #rinner ada margin 50% (CSS), jadi scrollLeft = masa × pps.
      Enjin juga cuba scroll timeline semasa main (drawHead) — tulisan tu diabaikan supaya tak bergegar; hanya ed-boot yang scroll.
      Semasa main, kedudukan dilicinkan setiap frame (pos enjin bergerak berperingkat). */
-  let touchAt = 0, seekT = 0, pinch = null, own = false, disp = 0, lastT = 0;
+  let touchSc = null, touchAt = 0, seekT = 0, pinch = null, own = false, disp = 0, lastT = 0;
   const SL = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollLeft');
   function lock(sc) {
     if (sc.dataset.lk) return; sc.dataset.lk = '1';
@@ -190,10 +204,10 @@
     if (rb && !$('edph2')) rb.insertAdjacentHTML('beforeend', '<div class="edph" id="edph2" aria-hidden="true"></div>');
     [tsc, rsc].forEach(sc => {
       lock(sc);
-      const mark = () => { touchAt = Date.now(); };
+      const mark = () => { touchAt = Date.now(); touchSc = sc; };
       ['touchstart', 'touchmove', 'pointerdown', 'wheel'].forEach(ev => sc.addEventListener(ev, mark, { passive: true }));
       sc.addEventListener('scroll', () => {
-        if (Date.now() - touchAt > 900 || sc !== scroller()) return;   // scroll oleh program, bukan jari
+        if (Date.now() - touchAt > 900 || sc !== touchSc) return;   // scroll oleh program, bukan jari
         touchAt = Date.now();
         const other = sc === tsc ? rsc : tsc; setSL(other, SL.get.call(sc));
         if (G('playing')) { try { (0, eval)('stop()'); } catch (e) {} }
@@ -240,7 +254,9 @@
     if (tc) { new MutationObserver(tcs).observe(tc, { childList: true, characterData: true, subtree: true }); tcs(); }
     if (pi) new MutationObserver(() => { $('ccPlayIc').setAttribute('href', pi.getAttribute('href')); }).observe(pi, { attributes: true });
     new MutationObserver(sync).observe($('tabs'), { attributes: true, childList: true, subtree: true, attributeFilter: ['aria-selected'] });
-    const inn = $('inner'); if (inn) new MutationObserver(rows).observe(inn, { childList: true });
+    const inn = $('inner'); if (inn) new MutationObserver(() => { rows(); pinVideo(); }).observe(inn, { childList: true });
+    const ed = document.querySelector('.ed'), pnl = $('panel');
+    if (ed && pnl && !$('edlow')) { const low = document.createElement('div'); low.id = 'edlow'; low.className = 'edlow'; ed.parentNode.insertBefore(low, ed); low.append(ed, pnl); }
     sync(); timeline();
     return true;
   }

@@ -81,7 +81,7 @@ html.pwa body { padding-block: 0 28px; }
   html.pwa.edsheet .ed { height: 0 !important; max-height: 0 !important; padding: 0 !important; margin: 0 !important; border: 0 !important; overflow: hidden !important; visibility: hidden; }
   html.pwa .rbar { position: relative; }
   html.pwa #rscroll { touch-action: pan-x; overscroll-behavior-x: contain; }
-  html.pwa:not(.edsheet) #edph2 { display: none; }
+
   html.pwa.edsheet .rbar { order: 3; } html.pwa.edsheet .ed { order: 4; } html.pwa.edsheet .edshd { order: 5; } html.pwa.edsheet .controls { order: 6; }
   html.pwa .edhide { display: none !important; }
   html.pwa.ednotl .rbar, html.pwa.ednotl .ed { display: none !important; }
@@ -122,5 +122,22 @@ html.pwa body { padding-block: 0 28px; }
   html.pwa.edtab-Effects #panel .grid .optb { gap: 4px; flex-wrap: wrap; }
 }
 
+/* 23 Nov (Mira): skrin tetap di phone. iOS zoom bila taip dalam kotak < 16px dan bila tekan dua kali: kotak 16px, tiada double-tap zoom
+   (viewport maximum-scale=1 dalam build_editor.py; cubit timeline kekal sebab ed-boot urus sendiri) */
+html.pwa input[type=text], html.pwa input:not([type]), html.pwa input[type=search], html.pwa input[type=number], html.pwa textarea, html.pwa select,
+html.pwa [contenteditable] { font-size: 16px !important; }
+html.pwa, html.pwa body, html.pwa button, html.pwa .chip, html.pwa .w { touch-action: manipulation; }
+html.pwa #tscroll, html.pwa #rscroll { touch-action: pan-x; }
+
 /* 23 Nov (Mira): tab Caption tanpa trek caption / highlight; tinggal pembaris untuk scrub */
 html.pwa.edtab-Caption .rbar .rlab, html.pwa.edtab-Caption .rbar .track { display: none !important; }
+
+/* 23 Nov (Mira): tab Cut, biru (VO, pembaris, video) melekat; merah (trek lain + panel) satu skrol */
+@media (max-width: 680px) {
+  html.pwa .edlow { order: 5; flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; }
+  html.pwa .edlow .ed { max-height: none !important; overflow-y: visible !important; flex: none; }
+  html.pwa .edlow .controls { flex: none !important; overflow: visible !important; min-height: auto; }
+  html.pwa.edsheet .edlow { order: 6; }
+  html.pwa .rbar .vrow.fxsticky { margin-top: 2px; }
+}
+@media (max-width: 680px) { html.pwa.edtab-Highlight:not(.edbig) { --sh: 30vh !important; } }
