@@ -39,11 +39,19 @@ def ftype(rel):
     return "other"
 
 
+def _finals():
+    """Nama fail final (00. TO POST FINAL), huruf kecil tanpa simbol: subfolder yang namanya ada di sini dah siap / published."""
+    try:
+        return [re.sub(r"[^a-z0-9]", "", f.lower()) for f in os.listdir(os.path.join(BASE, "00. TO POST FINAL")) if not f.startswith(".")]
+    except Exception:
+        return []
+
+
 def _targets(key):
     """(Folder hasil edit Claude seperti draft / editor / render / build dilangkau.) Folder yang perlu di-pre-cut untuk satu projek: projek itu sendiri (kalau ada video terus) dan setiap
     subfolder yang ada video (cth GENTING/04 Sky Avenue). Folder kabur / duplicate dilangkau."""
     root = os.path.join(BASE, key)
-    out = []
+    out, fins = [], _finals()
     try:
         names = sorted(os.listdir(root))
     except Exception:
@@ -52,6 +60,9 @@ def _targets(key):
         out.append(key)
     for n in names:
         sub = os.path.join(root, n)
+        nk = re.sub(r"[^a-z0-9]", "", n.lower())
+        if len(nk) >= 5 and any(nk in f for f in fins):   # video subfolder ni dah final (cth GENTING/Versi Bajet)
+            continue
         if n.startswith(".") or not os.path.isdir(sub) or re.search(r"kabur|duplicate|draft|draf\b|editor|render|final|export|output|storyboard|^sb$|transcript|sheet|proxy|cache|^page$|build", n, re.I):
             continue
         try:
