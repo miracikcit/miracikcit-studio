@@ -437,6 +437,63 @@
 .hf .b { font: 400 21cqw/.6 "Mrs Saint Delafield", cursive; color: #fff; margin: -5cqw 0 0 26cqw; text-align: left; }
 .hf .c { font: 400 8.4cqw/1.1 "Libre Caslon Text", serif; color: #fff; margin-top: 3cqw; }
 
+/* p22 (2026-11-23): tajuk sebagai word highlight. Kelas dari tn (hlw = tanpa bayang gelap; za/zb/zc-<peratus> = saiz baris atas / besar / bawah). Editor dan render guna fail sama. */
+.tn-hlw .e-hook .hs, .hlw .e-hook .hs { display: none; }
+.za-40 .e-hook .a { zoom: 0.40; }
+.za-50 .e-hook .a { zoom: 0.50; }
+.za-60 .e-hook .a { zoom: 0.60; }
+.za-70 .e-hook .a { zoom: 0.70; }
+.za-80 .e-hook .a { zoom: 0.80; }
+.za-90 .e-hook .a { zoom: 0.90; }
+.za-110 .e-hook .a { zoom: 1.10; }
+.za-120 .e-hook .a { zoom: 1.20; }
+.za-130 .e-hook .a { zoom: 1.30; }
+.za-140 .e-hook .a { zoom: 1.40; }
+.za-150 .e-hook .a { zoom: 1.50; }
+.za-160 .e-hook .a { zoom: 1.60; }
+.za-170 .e-hook .a { zoom: 1.70; }
+.za-180 .e-hook .a { zoom: 1.80; }
+.za-190 .e-hook .a { zoom: 1.90; }
+.za-200 .e-hook .a { zoom: 2.00; }
+.za-210 .e-hook .a { zoom: 2.10; }
+.za-220 .e-hook .a { zoom: 2.20; }
+.zb-40 .e-hook .b { zoom: 0.40; }
+.zb-50 .e-hook .b { zoom: 0.50; }
+.zb-60 .e-hook .b { zoom: 0.60; }
+.zb-70 .e-hook .b { zoom: 0.70; }
+.zb-80 .e-hook .b { zoom: 0.80; }
+.zb-90 .e-hook .b { zoom: 0.90; }
+.zb-110 .e-hook .b { zoom: 1.10; }
+.zb-120 .e-hook .b { zoom: 1.20; }
+.zb-130 .e-hook .b { zoom: 1.30; }
+.zb-140 .e-hook .b { zoom: 1.40; }
+.zb-150 .e-hook .b { zoom: 1.50; }
+.zb-160 .e-hook .b { zoom: 1.60; }
+.zb-170 .e-hook .b { zoom: 1.70; }
+.zb-180 .e-hook .b { zoom: 1.80; }
+.zb-190 .e-hook .b { zoom: 1.90; }
+.zb-200 .e-hook .b { zoom: 2.00; }
+.zb-210 .e-hook .b { zoom: 2.10; }
+.zb-220 .e-hook .b { zoom: 2.20; }
+.zc-40 .e-hook .c { zoom: 0.40; }
+.zc-50 .e-hook .c { zoom: 0.50; }
+.zc-60 .e-hook .c { zoom: 0.60; }
+.zc-70 .e-hook .c { zoom: 0.70; }
+.zc-80 .e-hook .c { zoom: 0.80; }
+.zc-90 .e-hook .c { zoom: 0.90; }
+.zc-110 .e-hook .c { zoom: 1.10; }
+.zc-120 .e-hook .c { zoom: 1.20; }
+.zc-130 .e-hook .c { zoom: 1.30; }
+.zc-140 .e-hook .c { zoom: 1.40; }
+.zc-150 .e-hook .c { zoom: 1.50; }
+.zc-160 .e-hook .c { zoom: 1.60; }
+.zc-170 .e-hook .c { zoom: 1.70; }
+.zc-180 .e-hook .c { zoom: 1.80; }
+.zc-190 .e-hook .c { zoom: 1.90; }
+.zc-200 .e-hook .c { zoom: 2.00; }
+.zc-210 .e-hook .c { zoom: 2.10; }
+.zc-220 .e-hook .c { zoom: 2.20; }
+
 /* Layout: desktop keeps video + panel on top, timeline below. On a phone: video and tabs stay stuck at the top, timeline comes right under the video, panel last. The Caption tab keeps its panel above the timeline. Look follows Cikcit Studio: warm light theme by the owner's choice. */
 :root {
   --bg: #faf7f4; --panel: #ffffff; --panel2: #f3eeea; --line: #ece5df;
@@ -1022,8 +1079,19 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .fbit small { font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fbit[aria-pressed="true"] { outline: 3px solid var(--kc, #ffd447); }
 .fbbox .chips { flex-wrap: wrap; }
+
+/* p22 highlight template tajuk */
+.hlsub { display: block; font-size: 11px; opacity: .7; margin: 6px 0 3px; }
+.ttstrip .ttk { flex: 0 0 72px; padding: 0; background: none; border: 0; }
+.ttstrip .ttk .mini { aspect-ratio: 9 / 16; border-radius: 10px; }
+.ttstrip .ttk[aria-pressed="true"] .mini { border-color: #a46cf0; }
+.ttstrip .ttk small { display: block; font-size: 10px; line-height: 1.15; margin-top: 3px; white-space: normal; }
+.ttbox { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.ttln { display: flex; gap: 8px; align-items: center; }
+.ttln input[type=text] { flex: 1 1 auto; min-width: 0; font-size: 16px; padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(0,0,0,.15); }
+.ttln label { flex: 0 0 120px; font-size: 11px; display: flex; flex-direction: column; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=8cf8939335">
+<link rel="stylesheet" href="../../ed-capcut.css?v=47309253b4">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1127,9 +1195,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=8cf8939335"></script>
-<script src="../../../js/runtime.js?v=8cf8939335"></script>
-<script src="../../ed-boot.js?v=8cf8939335"></script>
+<script src="../../../js/config.js?v=47309253b4"></script>
+<script src="../../../js/runtime.js?v=47309253b4"></script>
+<script src="../../ed-boot.js?v=47309253b4"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -1607,7 +1675,7 @@ function setSaved(txt, cls) { const s = $("saved"); s.textContent = txt; s.class
 function docBody() {
   const fixes = {}, cuts = [], hl = {};
   S.words.forEach((w, i) => { if (w.t !== D.words[i].t) fixes[i] = w.t; if (w.cut) cuts.push(i); if (w.hl === 0 || w.hl === 1) hl[i] = w.hl; });
-  return { v: 1, clips: S.clips, bin: S.bin, hook: S.hook, fixes, cuts, globalMute: S.globalMute, origVol: S.origVol ?? 1, sfx: S.sfx, zooms: S.zooms, music: S.music, vo: S.vo, stickers: S.stickers, capMode: S.capMode, capSize: S.capSize, capGap: S.capGap, capPos: S.capPos, capChest: S.capPos === "dada", capAuto: S.capPos === "auto" ? CAPPLAN : null, hl, hlStyle: "color", hlFont: "", hlColor: S.hlColor, hlMode: S.hlMode || "", hlFix: S.hlFix || 0, hlKind: S.hlKind, hlLook: S.hlLook, hlFx: S.hlFx, hlSize: S.hlSize, hlx: S.hlx || {}, hlPlace: S.hlPlace || "big", hlv: 2, hlY: S.hlY ?? null, hlCap: S.hlPlace === "big" ? null : capHlMap(), hlItems: (S.hlPlace === "big" ? HLS : []).map(h => ({ t: h.t, d: h.d, x: +h.x.toFixed(4), y: +h.y.toFixed(4), text: h.text, css: h.css, fs: h.fs, fx: h.fx })), overlay: S.overlay, hookEnd: HOOK_END, style: S.style, final: S.final, brandKit: S.brandKit || null, popDone: S.popDone, at: new Date().toISOString() };
+  return { v: 1, clips: S.clips, bin: S.bin, hook: S.hook, fixes, cuts, globalMute: S.globalMute, origVol: S.origVol ?? 1, sfx: S.sfx, zooms: S.zooms, music: S.music, vo: S.vo, stickers: S.stickers, capMode: S.capMode, capSize: S.capSize, capGap: S.capGap, capPos: S.capPos, capChest: S.capPos === "dada", capAuto: S.capPos === "auto" ? CAPPLAN : null, hl, hlStyle: "color", hlFont: "", hlColor: S.hlColor, hlMode: S.hlMode || "", hlFix: S.hlFix || 0, hlKind: S.hlKind, hlLook: S.hlLook, hlFx: S.hlFx, hlSize: S.hlSize, hlx: S.hlx || {}, hlPlace: S.hlPlace || "big", hlv: 2, hlY: S.hlY ?? null, hlCap: S.hlPlace === "big" ? null : capHlMap(), hlItems: (S.hlPlace === "big" ? HLS : []).filter(h => !h.tt).map(h => ({ t: h.t, d: h.d, x: +h.x.toFixed(4), y: +h.y.toFixed(4), text: h.text, css: h.css, fs: h.fs, fx: h.fx })), overlay: S.overlay, hookEnd: HOOK_END, style: S.style, final: S.final, brandKit: S.brandKit || null, popDone: S.popDone, at: new Date().toISOString() };
 }
 /* talking-head: each sticker/effect remembers the spot in her speech (s.src = offsets[file] + source second).
    When clips change, it moves with that spot; when only stickers change, src follows the new place. */
@@ -1687,7 +1755,15 @@ function fbBox() {
       return `<button class="fbit" data-fbpick="${esc(x.f)}" aria-pressed="${on}"><span class="swi" style="background-image:url(${FB.sheet});background-size:${FB.cols * 100}% ${rows * 100}%;background-position:${FB.cols > 1 ? cx / (FB.cols - 1) * 100 : 0}% ${rows > 1 ? cy / (rows - 1) * 100 : 0}%"></span><small>${esc(x.name.slice(0, 18))} · ${x.d}s</small></button>`; }).join("")}</div>` : (FB.st === "sedia" ? `<span class="legend">Tiada video dalam folder ni.</span>` : "");
   return `<div class="row fbbox"><span class="lab">📁 Folder lain</span><div class="chips">${crumbs}</div>${busy}
     ${FB.dirs.length ? `<div class="chips">${FB.dirs.map(d => `<button class="chip" data-fbgo="${esc((FB.path ? FB.path + "/" : "") + d)}">📁 ${esc(d)}</button>`).join("")}</div>` : ""}${grid}
-    ${FB.items.length ? `<div class="chips"><button class="chip" id="fbAdd" ${FB.pick.size && FB.st !== "proses" ? "" : "disabled"}>Tambah ${FB.pick.size || ""} video ke projek</button><button class="chip" id="fbClose">Tutup</button></div><span class="legend">Setiap video masuk sampai 15 s. Selepas muat semula, klip ada dalam Klip simpanan dan ⇄ Tukar.</span>` : `<button class="chip" id="fbClose">Tutup</button>`}</div>`;
+    ${FB.items.length ? `<div class="chips"><button class="chip" id="fbAdd" ${FB.pick.size && FB.st !== "proses" ? "" : "disabled"}>Tambah ${FB.pick.size || ""} video ke projek</button><button class="chip" id="fbClose">Tutup</button></div><span class="legend">${swapOpen && S.clips[sel] ? "Pilih SATU video: lepas Mac mini siap (1–4 minit), editor muat semula dan video tu terus ganti klip ni." : "Setiap video masuk sampai 15 s. Selepas muat semula, klip ada dalam Klip simpanan dan ⇄ Tukar."}</span>` : `<button class="chip" id="fbClose">Tutup</button>`}</div>`;
+}
+/* p22: dari ⇄ Tukar, video folder lain terus ganti klip dipilih selepas editor muat semula */
+function swapAfter() {
+  let o = null; try { o = JSON.parse(localStorage.getItem("edSwapAfter") || "null"); localStorage.removeItem("edSwapAfter"); } catch (e) {}
+  if (!o || o.v !== window.ED_VID || o.part !== PART || Date.now() - o.at > 15 * 60e3) return;
+  const i = S.clips.findIndex(c => c.id === o.clip), n = swapCands().findIndex(q => q.c.id === o.nid);
+  if (i < 0 || n < 0) return toast("Video baru ada dalam ⇄ Tukar. Pilih klip, kemudian tekan video tu");
+  tab = "Potong"; sel = i; if (typeof drawTabs === "function") drawTabs(); doSwap(n);
 }
 async function fbJob(input) {
   FB.st = "proses"; FB.msg = ""; drawPanel();
@@ -1698,7 +1774,7 @@ async function fbJob(input) {
     let d = null; try { d = await window.ED_FOOT.poll(t0); } catch (e) {}
     if (d && d.at >= t0 - 2000 && d.status !== "proses") {
       if (d.status === "error") { FB.st = "error"; FB.msg = d.msg; FB.after = ""; return drawPanel(); }
-      if (d.mode === "add") { toast(`${(d.added || []).length} video ditambah. Muat semula editor…`); try { clearTimeout(saveTimer); flush(); } catch (e) {} return setTimeout(() => location.reload(), 1500); }
+      if (d.mode === "add") { if (FB.swapFor && (d.ids || []).length) try { localStorage.setItem("edSwapAfter", JSON.stringify({ v: window.ED_VID, part: PART, clip: FB.swapFor, nid: d.ids[0], at: Date.now() })); } catch (e) {} toast(`${(d.added || []).length} video ditambah. Muat semula editor…`); try { clearTimeout(saveTimer); flush(); } catch (e) {} return setTimeout(() => location.reload(), 1500); }
       try { await window.ED_FOOT.refresh(t0); } catch (e) {}
       Object.assign(FB, { st: "sedia", path: d.path || "", dirs: d.dirs || [], items: d.items || [], sheet: d.sheet || "", cols: d.cols || 6, main: d.main || FB.main, pick: new Set() });
       return drawPanel();
@@ -1751,7 +1827,7 @@ function applyDoc(saved) {
 /* The title stays only until its own sentence ends, so the next sentence gets a caption. Same rule as hook_timing in render_draft.py. */
 function calcHookEnd() {
   if (!D) return 4.35;
-  { const hx = S.stickers.find(x => x.k.startsWith("e-hook")); if (hx) return +(hx.t + hx.d).toFixed(3); }   // user 2026-11-12: caption starts as soon as the hook title is gone
+  { const hx = S.stickers.find(x => x.k.startsWith("e-hook") && !x.hl); if (hx) return +(hx.t + hx.d).toFixed(3); }   // user 2026-11-12: caption starts as soon as the hook title is gone
   if (!hasCap()) return 4.35;
   const sg = voSegs(), WL = isTalk() ? (D.words || []).filter(w => inSegs((w.s + w.e) / 2, sg)).map(w => ({ ...w, s: voToEdit(w.s, sg), e: voToEdit(w.e, sg) })).sort((x, y) => x.s - y.s) : D.words || [];
   for (const w of WL) { if (w.s > 4.35) break; if (/[.?!]$/.test(w.t)) return Math.min(4.35, Math.max(2.2, w.e + .3)); }
@@ -1765,7 +1841,7 @@ function hookHTML() {
     return key ? `<b>${inner}</b>` : `<span>${inner}</span>`;
   }).join("");
 }
-const hookFx = () => S.stickers.find(x => x.k.startsWith("e-hook"));
+const hookFx = () => S.stickers.find(x => x.k.startsWith("e-hook") && !x.hl);
 const HOOKS = [[1, "H1 Serif + skrip", "Serif besar, tulisan tangan kecil."], [2, "H2 Sans + italic", "Sans tebal, serif italic besar."], [3, "H3 Marker + skrip", "Marker besar, satu perkataan skrip."], [4, "H4 Satu perkataan", "Satu perkataan skrip sangat besar."], [5, "H5 Kaca", "Dalam panel kaca, serif italic."], [6, "H6 Skrip + serif", "Skrip atas, serif besar, marker bawah."],
   /* p17: inspiration board Mira */ [7, "H7 Nipis + tebal", "Sans nipis atas, tebal besar, nipis bawah, bintang."], [8, "H8 Bold + tangan", "Tulisan tangan kecil, bold bulat berbayang."], [9, "H9 Pastel stack", "Serif italic, bold pastel pink + kuning."],
   ["a", "Ha Majalah", "Huruf tinggi mustard, serif kecil, putih besar."], ["b", "Hb Typewriter kertas", "Typewriter merah atas kertas."], ["c", "Hc Huruf jarang", "Huruf besar nipis, jarak lebar."],
@@ -1913,7 +1989,7 @@ function hlRuns() {
     const o = X[r.id] || {}, t = Math.max(HOOK_END, r.es + (o.dt ?? -.05)), nx = all[n + 1];
     let d = o.d ?? Math.max(1.2, r.ee - r.es + .7); if (nx) d = Math.min(d, Math.max(.5, nx.es + ((X[nx.id] || {}).dt ?? -.05) - t - .02)); d = Math.max(.3, Math.min(d, end - t));
     return { id: r.id, ids: r.ids, t: +t.toFixed(3), d: +d.toFixed(3), text: o.text || r.ids.map(i => showWord(S.words[i])).join(" "), kind: HLK[o.kind] ? o.kind : (HLK[S.hlKind] ? S.hlKind : "ikut"), look: HLL[o.look] ? o.look : (HLL[S.hlLook] ? S.hlLook : "none"),
-      fx: HLM[o.fx] ? o.fx : (HLM[S.hlFx] ? S.hlFx : "pop"), size: (o.size || 1) * (S.hlSize || 1), color: o.color ?? (S.hlColor || ""), x: o.x ?? (o.y == null && S.hlY != null ? .5 : undefined), y: o.y ?? (S.hlY ?? undefined) };
+      fx: HLM[o.fx] ? o.fx : (HLM[S.hlFx] ? S.hlFx : "pop"), size: (o.size || 1) * (S.hlSize || 1), color: o.color ?? (S.hlColor || ""), x: o.x ?? (o.y == null && S.hlY != null ? .5 : undefined), y: o.y ?? (S.hlY ?? undefined), tt: !!o.tt };
   });
 }
 function hlIkut() {   /* p14 */
@@ -1934,10 +2010,10 @@ function hlCapCss(h) {
   const K = HLK[h.kind] || HLK.ikut, f = +((/([\d.]+)em\//.exec(K[1] || "") || [0, 1])[1]) || 1, css = hlStyle({ ...h, size: 1 });
   return `display:inline-block;white-space:nowrap;${css}font-size:${((h.size || 1) * f).toFixed(3)}em;line-height:1.08;`;
 }
-function capHlMap() { const m = {}; (S.hlPlace === "big" ? [] : (HLS.length ? HLS : hlRuns())).forEach(h => { const c = hlCapCss(h); h.ids.forEach(i => { m[i] = c; }); }); return m; }
+function capHlMap() { const m = {}; (S.hlPlace === "big" ? [] : (HLS.length ? HLS : hlRuns())).filter(h => !h.tt).forEach(h => { const c = hlCapCss(h); h.ids.forEach(i => { m[i] = c; }); }); return m; }
 function drawHL() {
   const lay = $("hllayer"); if (!lay) return;
-  if (S.hlPlace !== "big") { HLS = D && hasCap() ? hlRuns() : []; CAPHL = capHlMap(); lay.innerHTML = ""; grKey = ""; return; }
+  if (S.hlPlace !== "big") { HLS = D && hasCap() ? hlRuns() : []; hlTtSync(); CAPHL = capHlMap(); lay.innerHTML = ""; grKey = ""; return; }
   CAPHL = {};
   HLS = D && hasCap() ? hlRuns() : [];
   const st = $("stage").getBoundingClientRect(), fr = r => ({ l: (r.left - st.left) / st.width, r: (r.right - st.left) / st.width, t: (r.top - st.top) / st.height, b: (r.bottom - st.top) / st.height });
@@ -1951,7 +2027,7 @@ function drawHL() {
     }
     h.box = { l: h.x - h.w / 2, r: h.x + h.w / 2, t: h.y - h.hh / 2, b: h.y + h.hh / 2 };
   });
-  lay.innerHTML = HLS.map(h => `<div class="hlw${h.id === hlSel ? " sel" : ""}" data-hl="${h.id}" style="left:${(h.x * 100).toFixed(2)}%;top:${(h.y * 100).toFixed(2)}%;font-size:${h.fs}cqw" hidden><div class="hli hx-${h.fx}" style="${h.css}">${hlInner(h)}</div></div>`).join("");
+  hlTtSync(); lay.innerHTML = HLS.filter(h => !h.tt).map(h => `<div class="hlw${h.id === hlSel ? " sel" : ""}" data-hl="${h.id}" style="left:${(h.x * 100).toFixed(2)}%;top:${(h.y * 100).toFixed(2)}%;font-size:${h.fs}cqw" hidden><div class="hli hx-${h.fx}" style="${h.css}">${hlInner(h)}</div></div>`).join("");
   showHL();
 }
 const hlInner = h => h.fx === "type" ? [...h.text].map((c, i) => `<span class="tc" style="--d:${(i * .045).toFixed(3)}s">${c === " " ? "&nbsp;" : esc(c)}</span>`).join("") : esc(h.text);
@@ -2034,8 +2110,50 @@ function hlTabPanel() {
     <span class="legend">Setiap perkataan ada baris sendiri. Tekan template dalam baris tu, perkataan tu terus berubah. Baris "Semua" ubah semua sekali.</span>
     <div class="chips"><button class="chip" id="hlAuto">Pilih auto</button><button class="chip" data-gotab="Caption">+ Pilih perkataan (Caption)</button></div></div>
     <div class="hlrow all"><div class="hlrh"><b>Semua highlight</b></div>${strip("all", allH, HLS[0].text)}</div>
-    ${HLS.map(h => `<div class="hlrow${h.id === hlSel ? " sel" : ""}" data-hlrow="${h.id}"><div class="hlrh"><button class="chip hlgo" data-hlgo="${h.id}" aria-label="Main dari sini">▶ ${fmt(h.t)}</button><b>${esc(h.text)}</b><span class="sp"></span><button class="chip" data-hledit="${h.id}">Ubah lagi</button></div>${strip(h.id, h, h.text)}</div>`).join("")}
+    ${HLS.map(h => `<div class="hlrow${h.id === hlSel ? " sel" : ""}" data-hlrow="${h.id}"><div class="hlrh"><button class="chip hlgo" data-hlgo="${h.id}" aria-label="Main dari sini">▶ ${fmt(h.t)}</button><b>${esc(h.text)}</b><span class="sp"></span><button class="chip" data-hledit="${h.id}">Ubah lagi</button></div>${ttStrip(h)}${h.tt ? ttEditor(h) : `<span class="hlsub">Gaya highlight satu baris</span>${strip(h.id, h, h.text)}`}</div>`).join("")}
     <div class="row" id="hlMore"><span class="lab" style="font-size:14px">Ubah lagi ${hlScope === "one" && HLS.find(q => q.id === hlSel) ? "(perkataan dipilih)" : "(semua)"}</span></div>${hlPanel()}`;
+}
+/* p22 (2026-11-23, Mira): highlight guna template tajuk sebenar (H1–Hf): 3 baris (atas kecil / perkataan besar / bawah),
+   saiz setiap baris. Disimpan sebagai sticker e-hook dengan hl:"w<id>", jadi render lukis sama macam tajuk (tiada ubah render_draft.py).
+   Saiz baris = kelas za-/zb-/zc-<peratus> dalam tn (effects.css), .hs gelap dibuang dengan hlw. */
+const ttOf = id => S.stickers.find(x => x.hl === "w" + id);
+const ttTn = x => { const z = x.hz || {}; return ["hlw", ...["a", "b", "c"].map(k => z[k] && z[k] !== 100 ? `z${k}-${z[k]}` : "")].filter(Boolean).join(" "); };
+function hlTtSync() {   // sticker ikut masa perkataan; buang bila perkataan tak lagi highlight
+  if (!D || !hasCap() || !HLS.length) return;
+  let ch = 0; S.stickers = S.stickers.filter(x => { if (!x.hl) return true; const h = HLS.find(q => "w" + q.id === x.hl && q.tt); if (!h) { ch = 1; return false; } if (Math.abs(x.t - h.t) > .01) { x.t = h.t; ch = 1; } return true; });
+  if (ch && typeof drawStickers === "function") setTimeout(drawStickers, 0);
+}
+function ttStrip(h) {
+  const x0 = ttOf(h.id), smp = x0 || { a: "", text: h.text, b: "" };
+  return `<span class="hlsub">Template tajuk (boleh 3 baris)</span><div class="hltstrip ttstrip">${HOOKS.map(([n, nm]) => `<button class="hlpk ttk" aria-pressed="${!!x0 && x0.k === "e-hook" + n}" data-ttk="${n}" data-hlid="${h.id}"><span class="mini hk"><div>${effectHTML({ a: smp.a || "", text: smp.text || h.text, b: smp.b || "", items: [""], k: "e-hook" + n, al: "", ol: 0, fx: "" }, photoUrl)}</div></span><small>${esc(nm)}</small></button>`).join("")}</div>`;
+}
+function ttEditor(h) {
+  const x = ttOf(h.id); if (!x) return ""; const z = x.hz || {}, id = h.id;
+  const ln = (k, f, lab, ph) => `<div class="ttln"><input type="text" data-ttf="${f}" data-tti="${id}" value="${esc(x[f] || "")}" placeholder="${ph}" aria-label="${lab}"><label>Saiz <b id="ttv_${k}_${id}">${z[k] || 100}%</b><input type="range" min="40" max="220" step="10" data-ttf="z${k}" data-tti="${id}" value="${z[k] || 100}"></label></div>`;
+  return `<div class="ttbox"><span class="hlsub">Baris tulisan (kosongkan kalau tak perlu)</span>${ln("a", "a", "Baris atas", "baris atas (kecil)")}${ln("b", "text", "Baris besar", "perkataan besar")}${ln("c", "b", "Baris bawah", "baris bawah (kecil)")}
+    <label class="lab">Saiz semua: <b id="ttv_s_${id}">${Math.round((x.s || .19) / .19 * 100)}%</b></label><input type="range" min="50" max="160" step="2" data-ttf="s" data-tti="${id}" value="${Math.round((x.s || .19) / .19 * 100)}">
+    <label class="lab">Naik / turun: <b id="ttv_y_${id}">${+x.ty || 0}</b></label><input type="range" min="-600" max="600" step="10" data-ttf="ty" data-tti="${id}" value="${+x.ty || 0}">
+    <label class="lab">Tempoh: <b id="ttv_d_${id}">${x.d.toFixed(1)} s</b></label><input type="range" min="5" max="60" step="1" data-ttf="d" data-tti="${id}" value="${Math.round(x.d * 10)}">
+    <div class="chips"><button class="chip" data-ttoff="${id}">Balik ke highlight satu baris</button></div></div>`;
+}
+function ttApply(n, id) {
+  const h = HLS.find(q => q.id === id); if (!h) return;
+  snapshot(); let x = ttOf(id);
+  if (!x) { x = { k: "e-hook" + n, hl: "w" + id, t: h.t, d: +Math.max(1.6, h.d).toFixed(2), x: .5, y: .5, s: .19, a: "", text: h.text, b: "", items: [""], ty: 0, fx: "pop", hz: {} }; S.stickers.push(x); }
+  else x.k = "e-hook" + n;
+  x.tn = ttTn(x); S.hlx = S.hlx || {}; S.hlx[id] = { ...(S.hlx[id] || {}), tt: 1 }; hlSel = id; hlScope = "one";
+  touched(); drawHL(); planCaps(); grKey = ""; drawCaption(); drawStickers(); drawTimeline(); ttShow(x); drawPanel();
+}
+function ttOff(id) { snapshot(); S.stickers = S.stickers.filter(x => x.hl !== "w" + id); if (S.hlx && S.hlx[id]) delete S.hlx[id].tt; touched(); drawHL(); planCaps(); grKey = ""; drawCaption(); drawStickers(); drawTimeline(); drawPanel(); }
+function ttShow(x) { if (playing || !x) return; if (pos < x.t || pos >= x.t + x.d - .05) seek(x.t + Math.min(x.d - .1, 1.2)); }
+function ttInput(el) {
+  const x = ttOf(+el.dataset.tti), f = el.dataset.ttf; if (!x) return; const v = el.value, id = el.dataset.tti;
+  if (f === "a" || f === "text" || f === "b") x[f] = v;
+  else if (/^z[abc]$/.test(f)) { x.hz = { ...(x.hz || {}), [f[1]]: +v }; x.tn = ttTn(x); $(`ttv_${f[1]}_${id}`).textContent = v + "%"; }
+  else if (f === "s") { x.s = +(.19 * v / 100).toFixed(4); $(`ttv_s_${id}`).textContent = v + "%"; }
+  else if (f === "ty") { x.ty = +v; $(`ttv_y_${id}`).textContent = v; }
+  else if (f === "d") { x.d = +v / 10; $(`ttv_d_${id}`).textContent = x.d.toFixed(1) + " s"; }
+  touched(); ttShow(x); drawStickers();
 }
 function hlApplyT(n, id) {
   const t = HLT[n]; if (!t) return;
@@ -2362,7 +2480,7 @@ const lastVideo = () => !PARTS || PARTS.parts.length < 2 || PART === PARTS.parts
 const TABS = () => ["Potong", "Title", ...(hasCap() ? ["Caption", "Highlight"] : []), "Effects", "Sticker", "Bunyi", "Warna", "Style Board", ...(lastVideo() ? ["Siap"] : [])];   // Render only on the last video (user 2026-11-13)
 /* 2026-11-10: Title, Sticker and Sounds ("Bunyi", icon) are main tabs; Style Board keeps the look options only. */
 const SB_OF = {}, TAB_OF = {};
-const tabOf = x => x && x.k.startsWith("e-hook") ? "Title" : inFx(x) ? "Effects" : "Sticker";   // hook is edited in Title, never in Effects
+const tabOf = x => x && x.hl ? "Highlight" : x && x.k.startsWith("e-hook") ? "Title" : inFx(x) ? "Effects" : "Sticker";   // hook is edited in Title, never in Effects
 const sbTabs = () => `<div class="btabs">${BT.map(([k, n]) => `<button class="btab" aria-selected="${k === bTab}" data-bt="${k}">${n}</button>`).join("")}</div>`;
 const TAB_IC = { Potong: ["i-split", "Cut"], Title: ["i-title", "Title"], Caption: ["i-cc", "Caption"], Highlight: ["i-hl", "Highlight"], Effects: ["i-fx", "Effects"], Sticker: ["i-star", "Stickers"], Bunyi: ["i-note", "Sounds", 1], Warna: ["i-adjust", "Adjust", 1], "Style Board": ["i-palette", "Style", 1], Siap: ["i-up", "RENDER"] };
 function drawTabs() { $("tabs").innerHTML = TABS().map(t => { const ic = TAB_IC[t]; return `<button class="tab${ic[2] ? " ictab" : ""}" role="tab" aria-selected="${t === tab}" data-tab="${t}" aria-label="${ic[1]}" title="${ic[1]}"><svg class="ic"><use href="#${ic[0]}"/></svg><span class="tlab">${ic[1]}</span></button>`; }).join(""); }
@@ -2475,7 +2593,7 @@ function runChecks() {
     add(S.capSize >= .85, S.capSize >= .85 ? "Saiz caption boleh dibaca" : "Caption terlalu kecil untuk telefon", S.capSize >= .85 ? undefined : (GR[0] ? GR[0].start + .05 : 0), { tab: "Caption" });
   }
   const words = S.hook.trim().split(/\s+/).filter(Boolean);
-  const hookFx = !S.hook.trim() && S.stickers.some(x => x.k.startsWith("e-hook"));   // the hook is an H1-H4 effect, the editor title stays empty on purpose
+  const hookFx = !S.hook.trim() && S.stickers.some(x => x.k.startsWith("e-hook") && !x.hl);   // the hook is an H1-H4 effect, the editor title stays empty on purpose
   if (hookFx) add(true, "Tajuk guna effect hook (H1–H4)", 0, { tab: "Title" });
   else add(words.some(w => w.length > 1 && w === w.toUpperCase()), words.some(w => w.length > 1 && w === w.toUpperCase()) ? "Tajuk ada kata kunci berwarna" : "Tajuk tiada kata kunci. Tulis satu perkataan dengan huruf BESAR", 0, { tab: "Title" });
   const hk = frac(measured($("hook"))), hkSafe = safe(hk); add(hkSafe, hkSafe ? "Tajuk dalam safe zone" : "Tajuk keluar safe zone", 0, { tab: "Title" });
@@ -2671,7 +2789,7 @@ function drawTimeline() {
   }).join("");
   const E = endT(), bl = (t, d, cls, txt, extra = "") => `<div class="blk ${cls}" ${extra} style="left:${t * pps}px;width:${Math.max(d * pps, 3)}px">${txt}</div>`;
   const rows = [];
-  const hxI = S.stickers.findIndex(x => x.k.startsWith("e-hook"));
+  const hxI = S.stickers.findIndex(x => x.k.startsWith("e-hook") && !x.hl);
   const stBlock = (x, i) => { const on = i === stSel, l = isFxS(x) ? fxDef(x.k)[1] : x.k.startsWith("t-") ? (x.text || "teks") : (libOf(x.k) || {}).n || x.k; return bl(x.t, x.d, "stb" + (isFxS(x) || x.k.startsWith("t-") ? " efb" : "") + (on ? " sel" : ""), (on ? `<span class="vh l" data-sh="l">‹</span><span class="vh r" data-sh="r">›</span>` : "") + `<span style="padding:0 ${on ? 18 : 0}px">${esc(l)}</span>`, `data-sb="${i}"`); };
   rows.push(`<div class="track" id="hookTrack">${hxI >= 0 ? stBlock(S.stickers[hxI], hxI) : bl(0, Math.min(HOOK_END, E), "title", "hook")}</div>`);
   if (hasCap()) rows.push(`<div class="track" id="capTrack">${GR.map(g => bl(g.start, g.end - g.start, "", "")).join("")}</div>`);
@@ -3164,7 +3282,7 @@ document.addEventListener("click", e => {
   if (b.id === "swapClip") { if (!S.clips[sel]) return toast("Tekan satu klip dalam timeline dulu"); tab = "Potong"; swapOpen = !swapOpen || b.closest(".transport") !== null; if (typeof drawTabs === "function") drawTabs(); drawPanel(); setTimeout(() => { const el = $("swapBox"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 220); return; }   /* p20 */
   if (b.id === "fbOpen") { FB.open = true; return fbJob({ vid: window.ED_VID, mode: "list", path: FB.path }); }   /* p21 */
   if (b.id === "fbClose") { FB.open = false; return drawPanel(); }
-  if (b.id === "fbAdd") { if (!FB.pick.size) return; FB.after = "add"; const base = PARTS ? (PARTS.parts[PART].base || "") : ""; return fbJob({ vid: window.ED_VID, mode: "add", base, files: [...FB.pick] }); }
+  if (b.id === "fbAdd") { if (!FB.pick.size) return; FB.after = "add"; FB.swapFor = swapOpen && S.clips[sel] && FB.pick.size === 1 ? S.clips[sel].id : ""; const base = PARTS ? (PARTS.parts[PART].base || "") : ""; return fbJob({ vid: window.ED_VID, mode: "add", base, files: [...FB.pick] }); }
   if (d.fbgo !== undefined) { FB.after = ""; return fbJob({ vid: window.ED_VID, mode: "list", path: d.fbgo }); }
   if (d.fbpick !== undefined) { FB.pick.has(d.fbpick) ? FB.pick.delete(d.fbpick) : FB.pick.add(d.fbpick); b.setAttribute("aria-pressed", FB.pick.has(d.fbpick)); const a = $("fbAdd"); if (a) { a.disabled = !FB.pick.size; a.textContent = `Tambah ${FB.pick.size || ""} video ke projek`; } return; }
   if (b.id === "swapClose") { swapOpen = false; return drawPanel(); }
@@ -3220,6 +3338,8 @@ document.addEventListener("click", e => {
   if (d.hkind) return (hlSet("kind", d.hkind), drawPanel());
   if (d.hlook) return (hlSet("look", d.hlook), drawPanel());
   if (d.hmove) return (hlSet("fx", d.hmove), drawPanel());
+  if (d.ttk !== undefined) return ttApply(d.ttk, +d.hlid);   /* p22 */
+  if (d.ttoff !== undefined) return ttOff(+d.ttoff);
   if (d.hlt !== undefined) return hlApplyT(+d.hlt, d.hlid);   /* p21 */
   if (d.hlgo !== undefined) { const h = HLS.find(q => q.id === +d.hlgo); if (!h) return; hlSel = h.id; hlScope = "one"; if (playing) stop(); seek(h.t); document.querySelectorAll("#panel .hlrow").forEach(r => r.classList.toggle("sel", +r.dataset.hlrow === h.id)); return $("play").click(); }
   if (d.hledit !== undefined) { hlSel = +d.hledit; hlScope = "one"; const sc = $("panel").scrollTop; drawPanel(); $("panel").scrollTop = sc; setTimeout(() => { const el = $("hlMore"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 40); hlPeek(); return; }
@@ -3293,6 +3413,7 @@ document.addEventListener("click", e => {
 });
 document.addEventListener("dblclick", e => { const el = e.target; if (!el.dataset || !el.dataset.gr) return; el.value = 0; el.dispatchEvent(new Event("input", { bubbles: true })); });
 document.addEventListener("input", e => {
+  if (e.target.dataset && e.target.dataset.ttf) return ttInput(e.target);   /* p22 */
   const id = e.target.id;
   if (id === "zoom") { pps = ppsFromZ(+e.target.value); return drawTimeline(); }
   if (id === "ov") { S.origVol = +e.target.value / 100; const v = $("ovV"); if (v) v.textContent = e.target.value + "%"; setVideoMute(); return touched(); }   /* kuat bunyi asal (render: origVol) */
@@ -3447,7 +3568,7 @@ async function boot() {
     sel = 0; if (isTalk()) { clipSig = null; syncStickers(); } HOOK_END = calcHookEnd(); WT = null; const moved = hlMigrate() | hlRematch();
     if (!prefsOn) { prefsOn = true; const p0 = D.prefs || {}; PREFS = { like: [...new Set([...(p0.like || []), ...PREFS.like])], no: [...new Set([...(p0.no || []), ...PREFS.no])], names: { ...(p0.names || {}), ...PREFS.names } }; }
     { let add = 0; (S.style.more || []).forEach(k => { if (ok(k) && !liked(k)) { PREFS.like.push(k); PREFS.names[k] = keyName(k); add++; } }); if (add) savePrefs(); }
-    drawParts(); draw(); seek(0); setSaved(txt, cls); loaded = true; mark("shown"); if (moved && dbDoc) touched();
+    drawParts(); draw(); seek(0); setSaved(txt, cls); loaded = true; mark("shown"); setTimeout(swapAfter, 400); if (moved && dbDoc) touched();
   };
   const timer = setTimeout(() => { gaveUp = true; open("Tak boleh sambung ke simpanan. Muat semula page sebelum edit.", "err"); }, 20000);
   try {

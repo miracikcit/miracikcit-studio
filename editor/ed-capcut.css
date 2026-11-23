@@ -141,3 +141,12 @@ html.pwa.edtab-Caption .rbar .rlab, html.pwa.edtab-Caption .rbar .track { displa
   html.pwa .rbar .vrow.fxsticky { margin-top: 2px; }
 }
 @media (max-width: 680px) { html.pwa.edtab-Highlight:not(.edbig) { --sh: 30vh !important; } }
+
+/* p22: butang ⇄ Tukar nampak dalam bar butang (tab Cut sahaja); butang asal enjin di hujung bar disorok */
+html.pwa .transport #swapClip { display: none !important; }
+html.pwa .transport .ccswap { font-size: 18px; font-weight: 700; }
+html.pwa:not(.edtab-Potong):not(.edtab-Cut) .transport .ccswap { display: none !important; }
+html.pwa.edtab-Potong .transport, html.pwa.edtab-Cut .transport { gap: 3px; padding-left: 6px; padding-right: 6px; }
+html.pwa.edtab-Potong .transport .cc, html.pwa.edtab-Cut .transport .cc { width: 32px; min-width: 32px; padding-left: 0 !important; padding-right: 0 !important; justify-content: center; }
+html.pwa.edtab-Potong .transport .ccplay, html.pwa.edtab-Cut .transport .ccplay { width: 38px; min-width: 38px; }
+html.pwa.edtab-Potong .transport .cctc, html.pwa.edtab-Cut .transport .cctc { min-width: 44px; font-size: 11px; }

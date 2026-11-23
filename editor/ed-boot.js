@@ -241,6 +241,7 @@
       <button type="button" class="chip cc" data-p="undo" aria-label="Undo">${ic('i-undo')}</button>
       <button type="button" class="chip cc cckey" data-p="split" aria-label="Belah klip">${ic('i-split')}</button>
       <button type="button" class="chip cc cckey" data-p="del" aria-label="Buang">${ic('i-del')}</button>
+      <button type="button" class="chip cc ccswap" data-p="swapClip" aria-label="Tukar klip dipilih">⇄</button>
       <span class="ccsep" aria-hidden="true"></span>`);
     tr.insertAdjacentHTML('beforeend', `<button type="button" class="chip cc cctool" data-p="resetAll" aria-label="Reset ke editing asal">${ic('i-reset')}</button>`);
     const st = $('stage'); if (st) st.insertAdjacentHTML('beforeend', `<button type="button" class="ccbig" id="ccBig" aria-label="Besarkan video" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg></button>`);
