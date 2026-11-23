@@ -11,6 +11,8 @@ const thUi=()=>ui.th||(ui.th={imgs:[],sel:0,points:'',tone:'Auto',thread:false,r
 const thStyle=()=>(S.settings&&S.settings.thStyle)||{};
 const thPosts=()=>S.threads.slice().sort((a,b)=>(b.created||0)-(a.created||0));
 const thFinal=p=>String(p.final||'').trim();
+/* Mod jimat: 1 versi, 3-5 contoh, tiada beza draf, tiada tips. Bergantung pada ringkasan gaya (Belajar gaya). */
+const thLite=()=>!!(S.settings&&S.settings.thLite);
 
 /* ---------- gambar: edit dengan canvas ---------- */
 function thFilter(e){const b=100+e.b,c=100+e.c,s=100+e.s;return `brightness(${b}%) contrast(${c}%) saturate(${s}%)`+(e.w>0?` sepia(${e.w*0.9}%)`:'')+(e.w<0?` hue-rotate(${e.w*0.8}deg)`:'')}
@@ -64,7 +66,8 @@ function thTextBox(){const t=thUi();const st=thStyle();
     <span class="num" style="display:block;margin:4px 0 6px">Nada</span>
     <div class="btns" style="gap:6px">${TH_TONE.map(a=>`<button class="btn sm ${t.tone===a?'solid tab':''}" data-act="thTone" data-x="${a}" aria-pressed="${t.tone===a}">${a}</button>`).join('')}</div>
     <div style="margin-top:10px">${chk(t.thread,'thThread','','Pecah jadi thread bersiri (lebih 500 aksara)')}</div>
-    <div class="btns" style="margin-top:14px"><button class="btn ${t.points.trim()?'solid tab':''}" data-act="thGen"${t.busy?' disabled':''}>${t.busy?'Sedang tulis...':IC.ideas+'Tulis 3 versi'}</button>${tok(TOK.threads,'3 versi ayat')}</div>
+    <div class="btns" style="margin-top:14px"><button class="btn ${t.points.trim()?'solid tab':''}" data-act="thGen"${t.busy?' disabled':''}>${t.busy?'Sedang tulis...':IC.ideas+(thLite()?'Tulis 1 versi':'Tulis 3 versi')}</button>${tok(thLite()?TOK.threadsLite:TOK.threads,thLite()?'1 versi, mod jimat':'3 versi ayat')}</div>
+    <div style="margin-top:10px">${chk(thLite(),'thLite','','Mod jimat token (1 versi, tiada cadangan)')}</div>
     <p class="meta" style="margin:10px 0 0">${t.busy?ldr('Claude sedang tulis'):`Belajar dari ${thPosts().filter(thFinal).length} posting kau${st.notes&&st.notes.length?' + nota gaya':''}.`}</p></div>`}
 function thResBox(){const t=thUi();if(!t.res)return '';const v=t.res.versions[t.pick];if(!v)return '';const txt=t.edit[t.pick]??v.text;const parts=thParts(txt);
   return `<div class="rowh" style="align-items:center;margin-top:20px"><p class="eyebrow" style="margin:0">Versi ${t.pick+1}${v.angle?' · '+esc(v.angle):''}</p><div class="btns" style="gap:6px">${t.res.versions.map((x,i)=>`<button class="btn sm ${i===t.pick?'solid tab':''}" data-act="thPickV" data-x="${i}">${i+1}</button>`).join('')}</div></div>
@@ -79,6 +82,7 @@ const thCountTxt=parts=>parts.length>1?parts.map((p,i)=>`Post ${i+1}: ${p.length
 document.addEventListener('input',e=>{const el=e.target;if(!el.dataset)return;const t=ui.th;if(!t)return;
   if(el.dataset.thf)t[el.dataset.thf]=el.value;
   else if(el.dataset.thedit!=null){t.edit[+el.dataset.thedit]=el.value;const c=$('#thCount');if(c)c.textContent=thCountTxt(thParts(el.value))}});
+A.thLite=()=>{saveSettings({thLite:!thLite()});render(true)};
 A.thTone=el=>{thUi().tone=el.dataset.x;render(true)};
 A.thThread=()=>{const t=thUi();t.thread=!t.thread;render(true)};
 A.thPickV=el=>{thUi().pick=+el.dataset.x;render(true)};
@@ -97,18 +101,18 @@ function thLearn(){const t=thUi();if(!t.res)return;const v=t.res.versions[t.pick
   const n=thPosts().filter(thFinal).length,last=thStyle().learnedAt||0;
   if(n>=5&&thPosts().filter(x=>thFinal(x)&&(x.updated||0)>last).length>=5&&!t.nudged){t.nudged=true;setTimeout(()=>toast('Dah 5 posting baru. Tekan "Belajar gaya" di bawah'),2600)}}
 
-function thPrompt(again){const t=thUi();const st=thStyle();const ex=thPosts().filter(thFinal).slice(0,12);
-  const edits=thPosts().filter(p=>p.edited&&p.draft).slice(0,4);
+function thPrompt(again){const t=thUi();const st=thStyle();const L=thLite();const ex=thPosts().filter(thFinal).slice(0,L?(st.summary?3:5):12);
+  const edits=L?[]:thPosts().filter(p=>p.edited&&p.draft).slice(0,4);const nv=L?1:3;
   return `Kau penulis posting Threads untuk Mira (@miracikcit), content creator Malaysia (lifestyle, produk, vlog, keluarga).
-Tulis 3 versi posting Threads dari point Mira di bawah. MESTI bunyi macam Mira tulis sendiri, bukan macam AI.
+Tulis ${nv} versi posting Threads dari point Mira di bawah. MESTI bunyi macam Mira tulis sendiri, bukan macam AI.
 ${st.summary?'\nGAYA MIRA (dipelajari):\n'+st.summary+'\n':''}${st.notes&&st.notes.length?'Peraturan gaya:\n- '+st.notes.join('\n- ')+'\n':''}${ex.length?'\nCONTOH POSTING SEBENAR MIRA (ikut cara ayat, panjang, emoji, huruf besar kecil, bahasa rojak):\n'+ex.map((p,i)=>`[${i+1}] ${p.final}`).join('\n\n')+'\n':''}${edits.length?'\nBEZA DRAF AI vs VERSI MIRA (belajar apa dia ubah):\n'+edits.map(p=>`DRAF: ${p.draft}\nMIRA: ${p.final}`).join('\n\n')+'\n':''}
 POINT MIRA:
 ${t.points.trim()}
-${thUi().imgs.length?`\nPosting ni ada ${thUi().imgs.length} gambar.\n`:''}Nada: ${t.tone==='Auto'?'ikut point, 3 versi dengan sudut berbeza':t.tone}
+${thUi().imgs.length?`\nPosting ni ada ${thUi().imgs.length} gambar.\n`:''}Nada: ${t.tone==='Auto'?(nv>1?'ikut point, 3 versi dengan sudut berbeza':'ikut point'):t.tone}
 ${t.thread?'Pecahkan setiap versi jadi thread bersiri 2 hingga 5 post. Asingkan setiap post dengan baris "---". Setiap post bawah 500 aksara, post pertama hook paling kuat.':'Satu post sahaja, bawah 500 aksara.'}
-Peraturan: hook di baris pertama (berhenti scroll), ayat pendek, perenggan pendek, tiada hashtag berlambak (maksimum 1, atau tiada), jangan reka fakta yang tiada dalam point, tiada harga melainkan Mira tulis.${again?'\nIni permintaan tulis semula: beri 3 versi yang lain dari sebelum ni. ('+Date.now()+')':''}
-tips: 2 hingga 3 cadangan ringkas untuk naikkan engagement post ni (cth. soalan penutup, masa post, gambar mana dulu).
-Balas JSON sahaja: {"versions":[{"angle":"..","text":".."},{"angle":"..","text":".."},{"angle":"..","text":".."}],"tips":[".."]}`}
+Peraturan: hook di baris pertama (berhenti scroll), ayat pendek, perenggan pendek, tiada hashtag berlambak (maksimum 1, atau tiada), jangan reka fakta yang tiada dalam point, tiada harga melainkan Mira tulis.${again?'\nIni permintaan tulis semula: beri versi yang lain dari sebelum ni. ('+Date.now()+')':''}
+${L?'Balas JSON sahaja: {"versions":[{"angle":"..","text":".."}]}':`tips: 2 hingga 3 cadangan ringkas untuk naikkan engagement post ni (cth. soalan penutup, masa post, gambar mana dulu).
+Balas JSON sahaja: {"versions":[{"angle":"..","text":".."},{"angle":"..","text":".."},{"angle":"..","text":".."}],"tips":[".."]}`}`}
 A.thGen=async el=>{const t=thUi();if(!t.points.trim()){toast('Tulis point dulu');const n=$('#thPts');if(n)n.focus();return}
   if(!SAMPLE){toast('Generate tak tersedia sekarang');return}
   if(t.rec){t.rec=false;DICT&&DICT.stop().catch(()=>{})}
@@ -131,11 +135,11 @@ A.thPasteOld=()=>modal(`<h2>Tampal posting lama</h2><p class="meta">Tampal posti
   <textarea class="inp" id="thOld" rows="10" style="margin:10px 0"></textarea><div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="thOldOk">Simpan</button></div>`,TAB.threads.c);
 A.thOldOk=()=>{const v=(($('#thOld')||{}).value||'');const ps=v.split(/\n\s*-{3,}\s*\n|\n\s*\n\s*\n/).map(s=>s.trim()).filter(s=>s.length>=15);
   if(!ps.length){toast('Tiada posting');return}ps.forEach(p=>save('threads',{final:p,source:'lama',edited:false},true));closeModal();render(true);toast(ps.length+' posting disimpan sebagai contoh')};
-A.thStudy=async()=>{const t=thUi();const ps=thPosts().filter(thFinal).slice(0,30);if(ps.length<3||!SAMPLE)return;const st=thStyle();
+A.thStudy=async()=>{const t=thUi();const ps=thPosts().filter(thFinal).slice(0,20);if(ps.length<3||!SAMPLE)return;const st=thStyle();
   const prompt=`Analisis cara Mira (@miracikcit, content creator Malaysia) menulis posting Threads dari contoh sebenar di bawah.
 ${st.summary?'Ringkasan gaya sebelum ni (kemaskini, jangan buang yang masih betul):\n'+st.summary+'\n':''}
 CONTOH (terbaru dulu):
-${ps.map((p,i)=>`[${i+1}]${p.edited&&p.draft?' (draf AI: '+p.draft.slice(0,300)+')\n VERSI MIRA:':''} ${p.final}`).join('\n\n')}
+${ps.map((p,i)=>`[${i+1}]${p.edited&&p.draft?' (draf AI: '+p.draft.slice(0,160)+')\n VERSI MIRA:':''} ${p.final}`).join('\n\n')}
 
 Balas JSON sahaja:
 {"summary":"2-3 ayat gaya Mira (bahasa, panjang, nada, emoji, cara buka dan tutup)",
