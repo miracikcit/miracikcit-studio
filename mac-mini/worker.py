@@ -991,7 +991,33 @@ def run_ed_send(inp, sheet, cfg):
     if not cli:
         raise RuntimeError("Claude Code tak dijumpai dalam Mac mini.")
     edits = "edx/%s~edits~current" % vid
-    prompt = (str(inp.get("text") or "")[:3000] +
+    pay = inp.get("payload") or {}
+    effort = EDIT_EFFORT
+    if pay.get("action") in ("upload", "render-all") and pay.get("render") != "draft":
+        # FINAL mod jimat token (Mira 2026-11-23): senarai lengkap dalam prompt, tiada baca peraturan penuh, tiada semak frame
+        effort = "low"
+        multi = pay.get("action") == "render-all"
+        prompt = (
+            f"FINAL PWA (mod jimat token, arahan Mira 23 Nov). Ikut langkah di bawah SAHAJA. Ini pengecualian kepada arahan WAJIB baca PERATURAN-EDIT.md: "
+            "JANGAN baca PERATURAN-EDIT.md, STYLE-REFERENCE, storyboard, nota atau footage. JANGAN tengok frame / gambar: tiada semak watermark, safe zone, opening atau ending. "
+            "Fail sementara dalam scratchpad sesi. Jangan tanya kecuali butang tak beri jawapan yang perlu.\n"
+            f"Arahan butang: {str(inp.get('text') or '')[:600]}\n"
+            f"1. Edit: python3 ~/MiracikcitTranscribe/studio.py get '{edits if not multi else 'edx/' + vid + '~edits~pN'}' > edits.json"
+            f"{' (setiap part N = 1..' + str(pay.get('total') or '') + ')' if multi else ''}. Kalau hasilnya ada _c, gabung medan s dari ~c0, ~c1 ... ikut turutan. "
+            f"Project: medan project dalam studio.py get 'edpwa/{vid}'.\n"
+            "2. Render: python3 ~/.claude/assets/reel-page-template/render_draft.py <project> edits.json <build dalam scratchpad> --final <Nama>.mp4 "
+            "(nama mula dengan perkataan pertama nama produk, cth PintuKabinet_1.mp4). Satu demi satu kalau banyak part.\n"
+            "3. Salin setiap mp4 dari <build>/**/renders/ ke '~/Desktop/WORK 2026/CLAUDE EDITS/00. TO POST FINAL/'.\n"
+            "4. Sheet CONTENT 2026 (sekali untuk semua part): PRODUCTS = baca baris produk dulu, tambah satu baris setiap video (E VID, F caption), kemas kini D TOTAL VID, "
+            "produk baru salin format baris lama (checkbox FALSE, Q templat TT:/IG:/FB:/SV:). NON PRODUCT = B nama, C caption. "
+            "Caption: ayat hook santai dengan emoji, ayat kedua, baris kosong, baris terakhir #Produk #Kategori #shopeemy #shopeeaffiliatesmy #shopeelagimurah @shopee_my @shopeeaffiliates_my "
+            "(bukan produk: 2 hashtag sahaja). Ikut peraturan TikTok Shop.\n"
+            f"5. Studio: python3 ~/MiracikcitTranscribe/studio.py merge 'edpwa/{vid}' '{{\"final\":\"siap\"}}' dan python3 ~/MiracikcitTranscribe/studio.py scan.\n"
+            "6. Raw footage JANGAN dibuang. Folder 28: selepas semua part final, curl -X POST localhost:8787/api/scan -d '{\"path\":\"28. EDIT + VO/<projek>\"}'. "
+            "Storyboard artifact projek: padam bila semua video projek dah final.\n"
+            "7. Kemas: build dan fail sementara ke Trash. Laporan 2-3 baris: fail final + baris Sheet.")
+    else:
+      prompt = (str(inp.get("text") or "")[:3000] +
               f"\n\n(Dari Editor PWA Studio, bukan artifact. Edit Mira disimpan dalam Studio: python3 ~/MiracikcitTranscribe/studio.py get '{edits}'"
               f" (untuk projek berbilang part: edx/{vid}~edits~p1, p2, ...; prefs: edx/{vid}~prefs~style). Kalau doc ada _c, sambung edx/...~c0, ~c1 ... ikut turutan (medan s)."
               f" Folder page editor: {pdir}. Data butang: {json.dumps(inp.get('payload') or {}, ensure_ascii=False)[:1500]})")
@@ -1003,7 +1029,7 @@ def run_ed_send(inp, sheet, cfg):
     with open(cmdf, "w", encoding="utf-8") as fh:
         fh.write("#!/bin/zsh -l\n# Dibuat oleh butang Siap dalam Editor PWA Studio\n"
                  f"cd {q(main)} || exit 1\n"
-                 f"exec {q(cli)} --model {EDIT_MODEL} --effort {EDIT_EFFORT} -n {q(title)} --remote-control {q(title)} {q(prompt)}\n")
+                 f"exec {q(cli)} --model {EDIT_MODEL} --effort {effort} -n {q(title)} --remote-control {q(title)} {q(prompt)}\n")
     os.chmod(cmdf, 0o755)
     r = subprocess.run(["/usr/bin/open", "-a", "Terminal", cmdf], capture_output=True, text=True, timeout=30)
     if r.returncode != 0:
