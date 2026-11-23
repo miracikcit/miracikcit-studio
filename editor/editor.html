@@ -990,7 +990,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .e-stamp .sp { animation: stampIn .26s cubic-bezier(.55,.06,.68,.19) both, hxShake .36s linear .26s; }
 @keyframes stampIn { from { opacity: 0; transform: scale(2.6) rotate(-14deg); } to { opacity: 1; transform: scale(1) rotate(-8deg); } }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=dcbd0032f1">
+<link rel="stylesheet" href="../../ed-capcut.css?v=295acf6046">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1093,9 +1093,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=dcbd0032f1"></script>
-<script src="../../../js/runtime.js?v=dcbd0032f1"></script>
-<script src="../../ed-boot.js?v=dcbd0032f1"></script>
+<script src="../../../js/config.js?v=295acf6046"></script>
+<script src="../../../js/runtime.js?v=295acf6046"></script>
+<script src="../../ed-boot.js?v=295acf6046"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -1325,7 +1325,7 @@ function fx2(x, url) {
   return null;
 }
 const vBase = id => String(id).split("~")[0], vSkin = id => { const [s, t] = (String(id).split("~")[1] || "").split("."); return { sk: s || "", tn: t || "" }; };
-const fxDef = k => FX_KINDS.flatMap(g => g[1]).find(x => x[0] === vBase(k));
+const fxDef = k => FX_KINDS.flatMap(g => g[1]).find(x => x[0] === vBase(k)) || (/^e-hook/.test(vBase(k)) ? [vBase(k), (HOOKS.find(h => "e-hook" + h[0] === vBase(k)) || [0, "Tajuk"])[1], "", { a: "", text: "", b: "", items: [""] }] : undefined);   /* p18 */
 /* ✅ / ❌ under every design (2026-11-13). Kept in the page's store (prefs/style) for every video of this editor, and Claude copies it to
    style-preferences.json + STYLE-REFERENCE.md so the next project starts from it. ❌ takes a design out; a category never shows fewer than
    six: the gaps are filled with new variants built from what she likes (font family + surface of the ✅ designs). */
@@ -2263,7 +2263,7 @@ function bPanel(only) {
     const hx = hookFx(), ts = ["viral", "retro", "scriptt", "bigb", "italic", "campur"].map(id => optOf("font", id));
     const posOf = hx ? (hx.al === "l" ? "left" : hx.al === "r" ? "right" : (hx.y ?? .5) < .34 ? "top" : (hx.y ?? .5) > .6 ? "bot" : "mid") : st.titlePos, out = hx ? !!hx.ol : st.titleOutline;
     const smp = hx || { a: plain, text: keyW, b: "", items: [""] };
-    const hkList = fillCat("hook:", HOOKS.map(h => ["e-hook" + h[0], h[1], h[2], {}])).map(r => [r[0].replace("e-hook", ""), r[1], r[2], r[4]]);
+    const hkList = fillCat("hook:", HOOKS.map(h => [String(h[0]), h[1], h[2], {}])).map(r => [r[0], r[1], r[2], r[4]]);
     const hkCard = ([n, nm, ds, isNew]) => { const b = vBase(n), v = vSkin(n), on = !!hx && hx.k === "e-hook" + b && (hx.sk || "") === v.sk && (hx.tn || "") === v.tn; return `<div class="opt"><button class="mini hk${skCls(n)}" aria-pressed="${on}" ${hx ? `data-hks="${n}"` : `data-hadd="e-hook${b}"`} aria-label="Guna ${nm}"><div>${effectHTML({ ...smp, k: "e-hook" + b, al: "", ol: 0, fx: "" }, photoUrl)}</div></button>${isNew ? `<span class="newtag">baru</span>` : ""}<h3>${nm}</h3><p>${ds}</p>${lk("hook:" + n)}</div>`; };
     main = `${hx ? `<div class="row"><label class="lab" for="hookIn">Teks tajuk (pisahkan baris dengan /)</label><input id="hookIn" type="text" value="${esc([hx.a || "", hx.text || "", hx.b || ""].join(" / "))}">
         <label class="lab" for="hookPill">Nama produk</label><input id="hookPill" type="text" value="${esc((hx.items || [])[0] || "")}">
