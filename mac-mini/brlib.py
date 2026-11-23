@@ -61,9 +61,28 @@ def counts(job):
     moms = [m for m in meta.get("moments", []) if not m.get("junk") and not m.get("aroll")]
     reps = [m for m in moms if m.get("rep") is not False]
     left = sum(1 for m in reps if m["id"] not in dec)
-    keep = [k for k, v in dec.items() if v.get("action") == "keep"]
-    final = sum(1 for k in keep if ex.get(k) and ex[k].get("pv") == dec[k].get("pv") and all(os.path.exists(p) for p in ex[k].get("paths", [])))
-    return {"moments": len(reps), "left": left, "kept": len(keep), "final": final}
+    mm = {m["id"]: m for m in meta.get("moments", [])}
+    keep = [k for k, v in dec.items() if v.get("action") == "keep" and k in mm]
+    isfin = lambda k: bool(ex.get(k) and ex[k].get("pv") == dec[k].get("pv") and all(os.path.exists(p) for p in ex[k].get("paths", [])))
+    # kumpul klip serupa sama macam Picker (vKept): grp sama, atau video sama + potongan bertindih. Picker Final wakil sahaja.
+    par = {k: k for k in keep}
+
+    def fd(x):
+        while par[x] != x:
+            par[x] = par[par[x]]; x = par[x]
+        return x
+    rng = lambda d: d["parts"] if d.get("parts") and len(d["parts"]) > 1 else [[d.get("start", 0), d.get("end", 0)]]
+    for i, a in enumerate(keep):
+        for b in keep[i + 1:]:
+            A, B = mm[a], mm[b]
+            ov = A.get("vkey") and A.get("vkey") == B.get("vkey") and any(x[0] < y[1] and y[0] < x[1] for x in rng(dec[a]) for y in rng(dec[b]))
+            if ov or (A.get("grp") and A.get("grp") == B.get("grp")):
+                par[fd(a)] = fd(b)
+    groups = {}
+    for k in keep:
+        groups.setdefault(fd(k), []).append(k)
+    final = sum(1 for g in groups.values() if any(isfin(k) for k in g))
+    return {"moments": len(reps), "left": left, "kept": len(groups), "final": final}
 
 
 def refresh_broll(sheet):
@@ -89,6 +108,8 @@ def refresh_broll(sheet):
                                "video": x["raw"].split("/")[-1], "thumb": x.get("drive"), "prev": x.get("drive"),
                                "backup": x.get("drive")} for x in mine],
                        backedUp=all(x.get("drive") for x in mine), lib=os.path.dirname(mine[0]["path"]) if mine else "")
+            if len(json.dumps(doc["clips"])) > 40000:   # terlalu besar untuk satu sel; klip Final dah ada dalam brlib/<tempat>
+                doc["clips"] = []
             with footage._lock:
                 s2 = footage._st(); s2["broll"][key]["status"] = "stok"; footage._save_st(s2)
             log.info("B-roll %s: semua klip Final, status stok", key)
@@ -108,7 +129,21 @@ def publish_library(sheet):
                   "mac": os.path.exists(c["path"]) and not c["path"].startswith("/Volumes/"), "disk": c.get("disk"),
                   "size": (c.get("sig") or [0])[0], "final": c.get("final")}
                  for c in sorted(cl, key=lambda c: c.get("nn", 0))]
-        _put(sheet, "brlib/" + slug(place), {"place": place, "clips": clips, "driveFolder": dfold.get(place)})
+        # satu sel Sheet maks ~49k aksara: pecah klip ikut saiz (Studio gabung balik ikut place, store.js brMerge)
+        pages, cur = [], []
+        for c in clips:
+            if cur and len(json.dumps(cur + [c])) > 40000:
+                pages.append(cur); cur = []
+            cur.append(c)
+        pages.append(cur)
+        base = "brlib/" + slug(place)
+        _put(sheet, base, {"place": place, "clips": pages[0], "driveFolder": dfold.get(place), "parts": len(pages)})
+        for i, pg in enumerate(pages[1:], 2):
+            _put(sheet, f"{base}--p{i}", {"place": place, "part": i, "clips": pg})
+        old_n = _st.setdefault("pages", {}).get(base, 1)
+        for i in range(len(pages) + 1, old_n + 1):
+            sheet.call("dset", path=f"{base}--p{i}", data=None); _st["sig"].pop(f"{base}--p{i}", None)
+        _st["pages"][base] = len(pages)
 
 
 def job_brtag(inp, sheet):
