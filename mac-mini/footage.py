@@ -19,7 +19,7 @@ STATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "footage_state.
 FFMPEG = shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg"
 VID = (".mov", ".mp4", ".m4v")
 IMG = (".jpg", ".jpeg", ".png", ".heic")
-AUTO_TYPES = {"vlog", "product"}    # vlog: semua footage B-roll untuk VO; product: suara dari video bercakap + B-roll / close-up
+AUTO_TYPES = {"vlog"}    # 2026-11-23 Mira: B-roll HANYA untuk folder VLOG / VO (footage layer atas VO). Folder produk / bercakap (21 dll) tiada B-roll.
 START_MS = 1795165200000             # 2026-11-20: auto pre-cut hanya folder baru selepas ni; folder lama guna butang Pre-cut dalam Studio
 _lock = threading.Lock()
 _busy = set()
@@ -405,6 +405,8 @@ def job_broll_start(inp, sheet, up):
     """Butang Pre-cut dalam Studio (folder lama, atau buat semula)."""
     key = str(inp.get("key") or "")
     stage, _, name = key.partition("/")
+    if ftype(stage) not in AUTO_TYPES:
+        raise RuntimeError("B-roll hanya untuk folder VLOG / VO")
     if not br_up():
         raise RuntimeError("B-Roll Picker tak jalan dalam Mac mini")
     proj = "/".join(key.split("/")[:2])
@@ -432,6 +434,8 @@ def job_broll_start(inp, sheet, up):
 def job_broll_start_main(inp, sheet, up):
     """Butang Pre-cut satu folder utama (cth 21. EDIT SHOP): semua projek dan subfolder yang belum."""
     stage = str(inp.get("stage") or "")
+    if ftype(stage) not in AUTO_TYPES:
+        raise RuntimeError("B-roll hanya untuk folder VLOG / VO")
     if not br_up():
         raise RuntimeError("B-Roll Picker tak jalan dalam Mac mini")
     te = sheet.call("dget", path="sync/toedit").get("doc") or {}

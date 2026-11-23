@@ -91,7 +91,7 @@ A.brSwClose=()=>{brSw=null;closeModal();render(true)};
 const BR_SKIP=/^(25|27|42)/;
 function brProjects(){const P={};const add=(key,stage,name)=>P[key]||(P[key]={key,stage,name,subs:[]});
   const tg=((S.sync.brfolders||{}).p)||{};
-  toEditFolders().filter(f=>!BR_SKIP.test(f.stage)).forEach(f=>{const p=add(f.key,f.stage,f.name);(tg[f.key]||(!S.sync.brfolders&&f.clips?[[f.key,'']]:[])).forEach(([rel,sub])=>p.subs.push({rel,sub}))});
+  toEditFolders().filter(f=>BR_VO.test(f.stage)).forEach(f=>{const p=add(f.key,f.stage,f.name);(tg[f.key]||(!S.sync.brfolders&&f.clips?[[f.key,'']]:[])).forEach(([rel,sub])=>p.subs.push({rel,sub}))});
   S.broll.forEach(b=>{const k=b.project||String(b.key||'').split('/').slice(0,2).join('/');const p=add(k,b.stage||k.split('/')[0],k.split('/')[1]||k);
     if(!p.subs.some(s=>s.rel===b.key))p.subs.push({rel:b.key,sub:b.key===k?'':String(b.key).split('/').pop()})});
   return Object.values(P).filter(p=>p.subs.length).map(p=>{p.subs.forEach(s=>{s.b=S.broll.find(b=>b.key===s.rel)||null;const b=s.b;

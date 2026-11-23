@@ -19,7 +19,7 @@ A.ftSeg=el=>{ui.ftSeg=el.dataset.x;render(true)};
 function ftSemakView(){const c=brCfg();
   const brs=S.broll.filter(b=>brPending(b)||b.status==='error').sort((a,b)=>(b.updated||0)-(a.updated||0));
   const best=S.footage.filter(f=>f.status==='semak'||f.status==='backup').sort((a,b)=>(b.updated||0)-(a.updated||0));
-  const todo=toEditFolders().filter(f=>!brsFor(f.key).length&&f.clips&&!/^(25|27)/.test(f.stage));
+  const todo=toEditFolders().filter(f=>!brsFor(f.key).length&&f.clips&&BR_VO.test(f.stage));
   const bestCard=f=>{const drop=(ui.ftDrop&&ui.ftDrop[f.id])||new Set(f.drop||[]);const busy=f.status==='backup'||(ui.ftBusy&&ui.ftBusy[f.id]);
     return `<div class="card glass"><div class="rowh" style="align-items:flex-start"><div style="flex:1;min-width:0"><h3>${esc(f.name)}</h3><div class="meta"><span class="kchip paid">KLIP TERBAIK</span> ${esc(f.folder||'')}</div></div><span class="pill" style="--pc:var(--warn)">${(f.files||[]).length} klip</span></div>
      <p class="meta" style="margin:8px 0 0">Cadangan Claude lepas final. Tekan gambar untuk buang / simpan, ▶ untuk tengok preview.</p>
