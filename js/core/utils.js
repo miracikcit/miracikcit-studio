@@ -28,7 +28,7 @@ function deadline(start,days){if(!start)return null;const left=Math.ceil((start+
 const trk=(d,title)=>d?`<div class="trk" style="--sc:${d.color}"><div class="t"><span>${title}</span><span>${d.label}</span></div><div class="bar"><i style="width:${d.pct}%"></i></div></div>`:`<div class="trk"><div class="t"><span>${title}</span><span>Tarikh mula tiada</span></div><div class="bar"><i style="width:0"></i></div></div>`;
 
 /* Penanda token (2026-11-23): bulatan kecil gaya loader, isi ikut anggaran token Claude yang butang tu guna. 0 = percuma. */
-const TOK={idea:3000,caption:4000,jobparse:8000,nota:30000,gaya:12000,autolabel:3000,edit:250000,edsend:150000};
+const TOK={idea:3000,caption:4000,jobparse:8000,nota:30000,gaya:12000,autolabel:3000,edit:250000,edsend:150000,threads:6000,thstyle:10000};
 function tok(n,note){if(!n)return `<span class="tokn free" title="Tiada token Claude"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/></svg>0 token</span>`;
   const f=Math.max(.08,Math.min(1,Math.log10(n)/Math.log10(500000))),c=2*Math.PI*6,col=n<10000?'var(--ok)':n<100000?'var(--warn)':'var(--bad)';
   const t=n>=1000?'~'+Math.round(n/1000)+'k':'~'+n;
