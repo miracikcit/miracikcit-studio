@@ -1468,6 +1468,16 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .optb { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .newtag { font: 700 10px var(--display); color: #5a3fb0; background: #e3dcfa; border-radius: 99px; padding: 2px 8px; align-self: flex-start; }
 .pwrap { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+/* Fasa 4 (24 Nov 2026): Adjust dibahagi tiga (Preset / Slider warna / Makeup), kad look makeup, butang banding atas video */
+.gseg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 3px; border-radius: 12px; background: rgba(0,0,0,.07); }
+.gseg button { height: 34px; padding: 0; border: 0; border-radius: 10px; background: none; color: inherit; opacity: .55; display: grid; place-items: center; cursor: pointer; }
+.gseg button .ic { width: 20px; height: 20px; }
+.gseg button[aria-pressed="true"] { background: rgba(255,255,255,.8); opacity: 1; }
+.preset i.mkth { position: relative; overflow: hidden; aspect-ratio: 1 / .78; background: radial-gradient(circle at 20% 52%, var(--b) 0, transparent 26%), radial-gradient(circle at 80% 52%, var(--b) 0, transparent 26%), #e6b999; }
+.preset i.mkth::after { content: ""; position: absolute; left: 31%; right: 31%; bottom: 14%; height: 20%; border-radius: 50% 50% 60% 60% / 45% 45% 75% 75%; background: var(--l); }
+.mkcmp { position: absolute; left: 8px; top: 8px; z-index: 40; width: 40px; height: 40px; padding: 0; border-radius: 50%; border: 1px solid rgba(255,255,255,.28); background: rgba(10,10,14,.55); color: #fff; display: grid; place-items: center; cursor: pointer; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: none; }
+.mkcmp[hidden] { display: none; }
+.mkcmp[aria-pressed="true"] { background: #58c7d6; border-color: #58c7d6; color: #06262b; }
 .pwrap .preset, .pwrap .zcard { width: 100%; }
 /* confirm box + undo bar */
 .modal { position: fixed; inset: 0; z-index: 90; background: rgba(29,27,26,.38); display: flex; align-items: center; justify-content: center; padding: 20px; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
@@ -1681,13 +1691,16 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .spticks button[aria-pressed="true"] { color: #3fd0c0; }
 #spBtn { display: inline-grid; place-items: center; } #spBtn .ic { width: 16px; height: 16px; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=a5116ee36b">
+<link rel="stylesheet" href="../../ed-capcut.css?v=90d6eb5912">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
   <symbol id="i-ffwd" viewBox="0 0 24 24"><path d="M9 6l8 6-8 6z" fill="currentColor"/><path d="M6 5v14"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor"/></symbol>
   <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+  <symbol id="i-preset" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></symbol>
+  <symbol id="i-face" viewBox="0 0 24 24"><path d="M5 10a7 7 0 0 1 14 0v2c0 5-3 9-7 9s-7-4-7-9z"/><path d="M9 11h.01M15 11h.01M9.5 15.5c1.5 1.2 3.5 1.2 5 0"/></symbol>
+  <symbol id="i-cmp" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="3"/><path d="M12 3v18"/><path d="M15 9.5 17.5 12 15 14.5"/></symbol>
   <symbol id="i-speed" viewBox="0 0 24 24"><path d="M4 17a8 8 0 1 1 16 0M12 17l4-7"/></symbol>
   <symbol id="i-trans" viewBox="0 0 24 24"><path d="M4 6v12l8-6zM20 6v12l-8-6z"/></symbol>
   <symbol id="i-split" viewBox="0 0 24 24"><path d="M12 3v18M4 8l5 4-5 4M20 8l-5 4 5 4"/></symbol>
@@ -1732,6 +1745,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
           <video id="mvb" playsinline muted preload="auto" style="opacity:0" aria-hidden="true"></video>
           <video id="mv" playsinline preload="auto"></video>
           <canvas id="gc" class="gc" hidden></canvas>
+          <button id="mkCmp" class="mkcmp" aria-label="Tekan lama: tengok tanpa makeup" aria-pressed="false" hidden><svg class="ic"><use href="#i-cmp"/></svg></button>
           <div id="ovl"></div>
           <div class="safe t" hidden></div><div class="safe b" hidden></div><div class="safe l" hidden></div><div class="safe r" hidden></div>
           <div class="stlayer" id="stlayer"></div>
@@ -1788,9 +1802,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=a5116ee36b"></script>
-<script src="../../../js/runtime.js?v=a5116ee36b"></script>
-<script src="../../ed-boot.js?v=a5116ee36b"></script>
+<script src="../../../js/config.js?v=90d6eb5912"></script>
+<script src="../../../js/runtime.js?v=90d6eb5912"></script>
+<script src="../../ed-boot.js?v=90d6eb5912"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -2982,10 +2996,19 @@ function glInit() {
   const sh = (t, src) => { const o = gl.createShader(t); gl.shaderSource(o, src); gl.compileShader(o); return o; };
   const vs = sh(gl.VERTEX_SHADER, "attribute vec2 p;varying vec2 uv;uniform vec4 cr;void main(){uv=cr.xy+vec2(p.x*.5+.5,.5-p.y*.5)*cr.zw;gl_Position=vec4(p,0.,1.);}");
   const fs = sh(gl.FRAGMENT_SHADER, `precision highp float;varying vec2 uv;uniform sampler2D tx;uniform mat3 M;uniform vec4 C;uniform float SH;uniform vec2 px;
+uniform sampler2D mkT;uniform vec4 mkR;uniform float mkA;uniform float mkSg;uniform vec2 mkD;uniform vec3 mkRef;
 float cl(float v){return clamp(v,0.,1.);}
 float cur(float x){x=cl(x+C.x*.15);x=cl((x-.5)*(1.+C.y*.5)+.5);float k=C.z;x=cl(x+k*(.5*x*(1.-x)*(1.-x)-.25*x*x*(1.-x)));return cl(x+C.w*.12*pow(1.-x,4.));}
 vec3 g(vec2 q){vec3 c=clamp(M*texture2D(tx,q).rgb,0.,1.);return vec3(cur(c.r),cur(c.g),cur(c.b));}
-void main(){vec3 c=g(uv);if(SH>0.){vec3 n=g(uv+vec2(px.x,0.))+g(uv-vec2(px.x,0.))+g(uv+vec2(0.,px.y))+g(uv-vec2(0.,px.y));c=clamp(c*(1.+4.*SH)-n*SH,0.,1.);}gl_FragColor=vec4(c,1.);}`);
+void main(){vec3 c=g(uv);if(SH>0.){vec3 n=g(uv+vec2(px.x,0.))+g(uv-vec2(px.x,0.))+g(uv+vec2(0.,px.y))+g(uv-vec2(0.,px.y));c=clamp(c*(1.+4.*SH)-n*SH,0.,1.);}
+if(mkA>0.){vec2 q=(uv-mkR.xy)/mkR.zw;if(q.x>0.&&q.x<1.&&q.y>0.&&q.y<1.){float m=texture2D(mkT,q).r;if(m>.004){
+vec3 r0=texture2D(tx,uv).rgb;float Y=dot(r0,vec3(.299,.587,.114));vec2 d=vec2((r0.r-Y)*.713+.5,(r0.b-Y)*.564+.5)-mkRef.yz;
+m*=exp(-dot(d,d)/.00603)*clamp((Y-mkRef.x*.35)/(mkRef.x*.25+.001),0.,1.);
+vec3 c0=g(uv),s=vec3(0.);float w=0.;
+for(int i=-3;i<=3;i++){for(int j=-3;j<=3;j++){vec3 k=g(uv+vec2(float(i),float(j))*mkD);vec3 e=abs(k-c0);float t=e.r+e.g+e.b;float ww=exp(-t*t/mkSg);s+=k*ww;w+=ww;}}
+vec3 fine=c0-(c0*.4+.15*(g(uv+vec2(px.x,0.))+g(uv-vec2(px.x,0.))+g(uv+vec2(0.,px.y))+g(uv-vec2(0.,px.y))));
+c=clamp(c+((s/w-c0)+fine*.38)*m*mkA,0.,1.);}}}
+gl_FragColor=vec4(c,1.);}`);
   const pr = gl.createProgram(); gl.attachShader(pr, vs); gl.attachShader(pr, fs); gl.linkProgram(pr);
   if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) return (GL = false);
   gl.useProgram(pr);
@@ -2994,7 +3017,10 @@ void main(){vec3 c=g(uv);if(SH>0.){vec3 n=g(uv+vec2(px.x,0.))+g(uv-vec2(px.x,0.)
   const tx = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tx);
   [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]].forEach(([k, v]) => gl.texParameteri(gl.TEXTURE_2D, k, v));
   const U = n => gl.getUniformLocation(pr, n);
-  return (GL = { gl, cv, M: U("M"), C: U("C"), SH: U("SH"), px: U("px"), cr: U("cr") });
+  const mkTex = gl.createTexture(); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, mkTex);   /* topeng kulit (makeup), unit 1 */
+  [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]].forEach(([k, v]) => gl.texParameteri(gl.TEXTURE_2D, k, v));
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4)); gl.activeTexture(gl.TEXTURE0); gl.uniform1i(U("tx"), 0); gl.uniform1i(U("mkT"), 1);
+  return (GL = { gl, cv, M: U("M"), C: U("C"), SH: U("SH"), px: U("px"), cr: U("cr"), mkTex, mkR: U("mkR"), mkA: U("mkA"), mkSg: U("mkSg"), mkD: U("mkD"), mkRef: U("mkRef") });
 }
 let glDirty = 6, glGood = 0;
 ["seeked", "loadeddata", "canplay", "timeupdate"].forEach(ev => document.addEventListener(ev, e => { if (e.target && e.target.tagName === "VIDEO") glDirty = Math.max(glDirty, 4); }, true));
@@ -3017,6 +3043,16 @@ function glDraw() {
   gl.uniform4f(G.C, g.br / 100, g.ct / 100, g.bl / 100, g.b / 100);
   gl.uniform1f(G.SH, g.sh / 100 * .6);
   gl.uniform2f(G.px, 1 / v.videoWidth, 1 / v.videoHeight);
+  let ma = 0; const mm = mkOf(S.clips[curIdx]);   /* makeup: hanya frame pegun yang titik mukanya dah dicari (mkScan) */
+  if (mm && MK.pts && !MK.hide && !playing && !dr && MK.src === v.currentSrc && Math.abs(v.currentTime - MK.at) < .03) {
+    const sm = (mkParams(mm).sm || 0) / 100;
+    if (sm > 0) {
+      if (MK.up) { gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, G.mkTex); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, MK.mask); gl.activeTexture(gl.TEXTURE0); MK.up = false; }
+      const st = .028 * MK.fw / 3, sc = (30 + 34 * sm) / 255; ma = Math.min(1, sm * 1.15);
+      gl.uniform4f(G.mkR, MK.roi[0], MK.roi[1], MK.roi[2], MK.roi[3]); gl.uniform2f(G.mkD, st, st * v.videoWidth / v.videoHeight); gl.uniform1f(G.mkSg, 2 * sc * sc); gl.uniform3f(G.mkRef, MK.ref[0], MK.ref[1], MK.ref[2]);
+    }
+  }
+  gl.uniform1f(G.mkA, ma);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   cv.style.transform = v.style.transform; cv.style.transformOrigin = v.style.transformOrigin; glGood = performance.now();
 }
@@ -3057,10 +3093,11 @@ const presetOf = g => presetK(g)[0];
 function drawPresetState() { const c = S.clips[sel], id = presetOf(gradeOf(c)); document.querySelectorAll("#panel .preset").forEach(b => b.setAttribute("aria-pressed", b.dataset.gp === id)); }
 function glFail() { glOn = false; GL = false; $("gc").hidden = true; lastGrade = ""; applyGrade(S.clips[curIdx]); }
 function applyGrade(c) {
-  const g = gradeOf(c), key = GK.map(k => g[k]).join("|"); if (key === lastGrade) return; lastGrade = key;
+  const g = gradeOf(c), mk = mkOf(c), key = GK.map(k => g[k]).join("|") + (mk ? "|" + mk.l + mk.k : ""); if (key === lastGrade) return; lastGrade = key;
   const v = $("mv"), cv = $("gc");
   glDirty = 6;
-  if (!gradeOn(g)) { v.style.filter = ""; glOn = false; cv.hidden = true; return; }
+  if (mk) mkQueue();
+  if (!gradeOn(g) && !(mk && window.MK_BASE && glInit())) { v.style.filter = ""; glOn = false; cv.hidden = true; return; }
   if (glInit()) { glG = g; v.style.filter = cssGrade(g); cv.hidden = false; if (!glOn) { glOn = true; requestAnimationFrame(glDraw); } return; }
   const M = gradeMatrix(g); $("grM").setAttribute("values", M.map(r => r.map(x => x.toFixed(4)).join(" ") + " 0 0").join(" ") + " 0 0 0 1 0");
   const curve = g.br || g.ct || g.bl || g.b, tv = curve ? blackCurve(g).map(x => x.toFixed(4)).join(" ") : "";
@@ -3068,6 +3105,72 @@ function applyGrade(c) {
   const a = g.sh / 100 * .6; $("grS").setAttribute("kernelMatrix", `0 ${-a} 0 ${-a} ${1 + 4 * a} ${-a} 0 ${-a} 0`);
   v.style.filter = "url(#grF)";
 }
+
+/* ===== Fasa 4 (24 Nov 2026, Mira lulus lakaran): makeup muka =====
+   Klip simpan c.mk = { l: "soft|merah|glam", k: 20-150 }. Solekan sebenar dibuat masa render (makeup.py, render_draft.py p26).
+   Di sini hanya PRATONTON pada frame pegun: bila video berhenti, MediaPipe Face Landmarker cari 478 titik muka, topeng kulit dilukis
+   pada kanvas kecil dan shader warna (glInit) licinkan kulit dalam topeng itu. Masa video main, tiada makeup (jimat bateri).
+   MK_LOOKS, senarai titik dan formula MESTI sama dengan LOOKS / smooth_skin dalam makeup.py. Kesan dibina satu-satu: setakat ini "sm" (smooth kulit).
+   Enjin MediaPipe hanya ada dalam Studio PWA (ed-boot.js beri window.MK_BASE); dalam artifact, look boleh dipilih tapi tiada pratonton. */
+const MK_LOOKS = { soft: { n: "Soft", lip: "#cf6f72", blush: "#eda293", v: { sm: 55 } }, merah: { n: "Merah", lip: "#c2303c", blush: "#ee9a86", v: { sm: 65 } }, glam: { n: "Glam", lip: "#a81f33", blush: "#e58a8f", v: { sm: 75 } } };
+const MK_OVAL = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109];
+const MK_HOLES = [[[263, 249, 390, 373, 374, 380, 381, 382, 362, 398, 384, 385, 386, 387, 388, 466], 1.5], [[33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246], 1.5],
+  [[300, 293, 334, 296, 336, 285, 295, 282, 283, 276], 1.25], [[70, 63, 105, 66, 107, 55, 65, 52, 53, 46], 1.25], [[61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185], 1.12]];
+const MK_CHEEKS = [50, 280, 205, 425, 118, 347, 101, 330];
+const MK = { lib: null, n: 0, tm: 0, pts: null, at: -1, src: "", up: false, hide: false, roi: [0, 0, 1, 1], ref: [.6, .55, .45], fw: .3 };
+let grSeg = "preset";
+const mkOf = c => { const m = c && c.mk; return m && MK_LOOKS[m.l] ? m : null; };
+function mkParams(m) { const L = MK_LOOKS[m.l].v, k = (m.k || 100) / 100, o = {}; for (const n in L) o[n] = Math.min(100, L[n] * k); return o; }
+function mkLoad() {
+  if (MK.lib) return MK.lib;
+  if (!window.MK_BASE) return Promise.reject(new Error("tiada enjin"));
+  MK.lib = (async () => {
+    const m = await import(MK_BASE + "vision_bundle.mjs"), fs = await m.FilesetResolver.forVisionTasks(MK_BASE + "wasm");
+    return m.FaceLandmarker.createFromOptions(fs, { baseOptions: { modelAssetPath: MK_BASE + "face_landmarker.task", delegate: "CPU" }, runningMode: "IMAGE", numFaces: 1 });
+  })();
+  MK.lib.catch(() => { MK.lib = null; });
+  return MK.lib;
+}
+function mkQueue() { clearTimeout(MK.tm); if (playing || !window.MK_BASE || !mkOf(S.clips[curIdx])) return; MK.tm = setTimeout(mkScan, 140); }
+async function mkScan() {
+  const v = $("mv"), n = ++MK.n; if (playing || v.readyState < 2 || v.seeking || !v.videoWidth) return;
+  let lm; try { if (!MK.ready && !MK.told) { MK.told = 1; toast("Memuat makeup…"); } lm = await mkLoad(); MK.ready = 1; } catch (e) { if (!MK.bad) { MK.bad = 1; toast("Makeup tak dapat dimuat"); } return; }
+  if (n !== MK.n || playing || v.seeking) return;
+  const W = Math.min(720, v.videoWidth), H = Math.round(W * v.videoHeight / v.videoWidth), cv = MK.cv || (MK.cv = document.createElement("canvas")); cv.width = W; cv.height = H;
+  const cx = cv.getContext("2d", { willReadFrequently: true }), at = v.currentTime, src = v.currentSrc; cx.drawImage(v, 0, 0, W, H);
+  let P = null; try { const r = lm.detect(cv); P = r.faceLandmarks && r.faceLandmarks[0]; } catch (e) {}
+  if (!P) { MK.pts = null; glDirty = 6; if (tab === "Warna" && grSeg === "mk") toast("Tiada muka pada frame ni"); return; }
+  const X = i => P[i].x, Y = i => P[i].y, xs = MK_OVAL.map(X), ys = MK_OVAL.map(Y), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const fw = Math.max(.01, x1 - x0), pd = fw * .12, pdy = pd * W / H, rx = Math.max(0, x0 - pd), ry = Math.max(0, y0 - pdy), rw = Math.min(1, x1 + pd) - rx, rh = Math.min(1, y1 + pdy) - ry;
+  const mc = MK.mask || (MK.mask = document.createElement("canvas")), N = 128; mc.width = mc.height = N; const g2 = mc.getContext("2d");
+  g2.fillStyle = "#000"; g2.fillRect(0, 0, N, N);
+  const poly = (idx, col, grow) => { let a = 0, b = 0; idx.forEach(i => { a += X(i); b += Y(i); }); a /= idx.length; b /= idx.length; g2.beginPath();
+    idx.forEach((i, j) => { const px = (a + (X(i) - a) * grow - rx) / rw * N, py = (b + (Y(i) - b) * grow - ry) / rh * N; j ? g2.lineTo(px, py) : g2.moveTo(px, py); }); g2.closePath(); g2.fillStyle = col; g2.fill(); };
+  poly(MK_OVAL, "#fff", .97); MK_HOLES.forEach(([idx, grow]) => poly(idx, "#000", grow));
+  const rr = Math.max(2, Math.round(fw * W * .02)), cy = [], cr = [], cb = [];   /* warna kulit pipi: tapis bingkai cermin mata, tudung, rambut */
+  try { MK_CHEEKS.forEach(i => { const px = Math.round(X(i) * W), py = Math.round(Y(i) * H); if (px - rr < 0 || py - rr < 0 || px + rr > W || py + rr > H) return;
+    const d = cx.getImageData(px - rr, py - rr, rr * 2, rr * 2).data; for (let q = 0; q < d.length; q += 4) { const R = d[q] / 255, G = d[q + 1] / 255, B = d[q + 2] / 255, yy = .299 * R + .587 * G + .114 * B; cy.push(yy); cr.push((R - yy) * .713 + .5); cb.push((B - yy) * .564 + .5); } }); } catch (e) { MK.pts = null; return; }
+  const med = a => { a.sort((p, q) => p - q); return a.length ? a[a.length >> 1] : .5; };
+  MK.ref = [med(cy), med(cr), med(cb)]; MK.roi = [rx, ry, rw, rh]; MK.fw = fw; MK.pts = P; MK.at = at; MK.src = src; MK.up = true; glDirty = 6;
+}
+["seeked", "loadeddata", "pause"].forEach(ev => document.addEventListener(ev, e => { if (e.target && e.target.id === "mv") mkQueue(); }, true));
+function gsegHTML() { return `<div class="gseg" role="group" aria-label="Bahagian Adjust">${[["preset", "Preset", "preset"], ["slider", "Slider warna", "adjust"], ["mk", "Makeup", "face"]].map(([id, n, ic]) => `<button data-gseg="${id}" aria-pressed="${grSeg === id}" aria-label="${n}" title="${n}"><svg class="ic"><use href="#i-${ic}"/></svg></button>`).join("")}</div>`; }
+function mkPanel(c) {
+  const m = mkOf(c), k = (m && m.k) || 100;
+  return `<div class="row"><div class="presets mkl">${Object.entries(MK_LOOKS).map(([id, L]) => `<div class="pwrap"><button class="preset" data-mk="${id}" aria-pressed="${!!m && m.l === id}"><i class="mkth" style="--l:${L.lip};--b:${L.blush}"></i>${L.n}</button></div>`).join("")}</div></div>
+      ${m ? `<div class="row"><label class="lab" for="mkK">Kekuatan look: <span id="mkKv">${k}%</span></label><input id="mkK" type="range" min="20" max="150" step="5" value="${k}" style="--fill:${((k - 20) / 130 * 100).toFixed(1)}%"></div>
+      <div class="chips"><button class="chip" id="mkAll">Apply to all</button></div>` : ""}${window.MK_BASE ? "" : `<span class="legend">Pratonton makeup hanya dalam app Studio. Video yang dirender tetap bersolek.</span>`}`;
+}
+document.addEventListener("input", e => {
+  if (e.target.id !== "mkK") return;
+  const c = S.clips[sel], m = mkOf(c); if (!m) return;
+  m.k = +e.target.value; $("mkKv").textContent = m.k + "%"; e.target.style.setProperty("--fill", ((m.k - 20) / 130 * 100).toFixed(1) + "%");
+  if (curIdx !== sel && !playing) seek(startOf(sel) + .05); lastGrade = ""; setVideoMute(); touched();
+});
+{ const b = $("mkCmp"), set = on => { if (MK.hide === on) return; MK.hide = on; b.setAttribute("aria-pressed", on); glDirty = 6; };   /* tekan lama = tengok tanpa makeup */
+  b.addEventListener("pointerdown", e => { e.preventDefault(); e.stopPropagation(); try { b.setPointerCapture(e.pointerId); } catch (x) {} set(true); });
+  ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => b.addEventListener(ev, e => { e.stopPropagation(); set(false); }));
+  ["click", "contextmenu"].forEach(ev => b.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); })); }
 function seek(p) {
   pos = Math.max(0, Math.min(p, endT())); lastPos = pos;   // up to the end of the 2 s end card
   const l = locate(Math.min(pos, total() - .04)); curIdx = l.i;
@@ -3408,6 +3511,7 @@ function soundHTML() {
 }
 function drawPanel() {
   let h = "";
+  { const mc = $("mkCmp"); if (mc) mc.hidden = !(tab === "Warna" && grSeg === "mk" && mkOf(S.clips[sel])); }
   if (tab === "Potong" && jnSel > 0 && S.clips[jnSel]) { h = jnPanel(); }   /* p24 */
   else if (tab === "Potong" && spOpen && S.clips[sel] && !isTalk()) { h = spPanel(); }   /* p25 */
   else if (tab === "Potong") {
@@ -3417,13 +3521,12 @@ function drawPanel() {
   } else if (tab === "Warna") {
     const c = S.clips[sel], g = gradeOf(c), cur = presetOf(g);
     h = c ? `<div class="row"><span class="lab">Klip dipilih: ${esc(c.name)}</span><span class="legend">Tekan klip lain dalam timeline untuk ubah klip tu.</span></div>
-      <div class="row"><span class="lab" style="font-size:14px">Preset warna</span><div class="presets">${GRADE_PRESETS.filter(p => p[0] === "none" || ok("preset:" + p[0]) || cur === p[0]).map(([id, n, p]) => `<div class="pwrap"><button class="preset" data-gp="${id}" aria-pressed="${cur === id}"><i style="filter:${cssGrade({ ...gradeOf(null), ...p }) || "none"}"></i>${n}</button>${id === "none" ? "" : lk("preset:" + id)}</div>`).join("")}</div>
+      ${gsegHTML()}${grSeg !== "preset" ? "" : `<div class="row"><span class="lab" style="font-size:14px">Preset warna</span><div class="presets">${GRADE_PRESETS.filter(p => p[0] === "none" || ok("preset:" + p[0]) || cur === p[0]).map(([id, n, p]) => `<div class="pwrap"><button class="preset" data-gp="${id}" aria-pressed="${cur === id}"><i style="filter:${cssGrade({ ...gradeOf(null), ...p }) || "none"}"></i>${n}</button>${id === "none" ? "" : lk("preset:" + id)}</div>`).join("")}</div>
       <span class="legend">Satu tekan tukar warna klip ni. Halus lagi dengan slider di bawah.</span></div>
       ${cur && cur !== "none" ? `<div class="row"><label class="lab" for="gpK">Kekuatan preset: <span id="gpKv">${presetK(gradeOf(c))[1]}%</span></label><input id="gpK" type="range" min="20" max="150" step="5" value="${presetK(gradeOf(c))[1]}" style="--fill:${((presetK(gradeOf(c))[1] - 20) / 130 * 100).toFixed(1)}%"></div>` : ""}
-      <div class="chips"><button class="chip" id="grAll">Apply to all</button><button class="chip" id="grReset">Reset warna klip</button></div>
-      <div class="row"><span class="lab" style="font-size:14px">Kesan filem (seluruh video)</span><div class="chips">${chip("Vignette", !!S.overlay.vig, 'data-ovl="vig"')}${chip("Light leak", !!S.overlay.leak, 'data-ovl="leak"')}${chip("Film grain", !!S.overlay.grain, 'data-ovl="grain"')}</div></div>
+      <div class="chips"><button class="chip" id="grAll">Apply to all</button><button class="chip" id="grReset">Reset warna klip</button></div>`}${grSeg !== "slider" ? "" : `<div class="row"><span class="lab" style="font-size:14px">Kesan filem (seluruh video)</span><div class="chips">${chip("Vignette", !!S.overlay.vig, 'data-ovl="vig"')}${chip("Light leak", !!S.overlay.leak, 'data-ovl="leak"')}${chip("Film grain", !!S.overlay.grain, 'data-ovl="grain"')}</div></div>
       ${[["Smart", GRADE_SMART], ["Customize", GRADE_CUSTOM]].map(([hd, L]) => `<div class="row"><span class="lab" style="font-size:14px">${hd}</span></div>` + L.map(([k, n, tip]) => `<div class="row"><label class="lab" for="gr_${k}" title="${esc(tip)}">${n}: <span id="grV_${k}">${g[k] > 0 ? "+" : ""}${g[k]}</span></label><input id="gr_${k}" data-gr="${k}" type="range" min="${k === "sh" ? 0 : -100}" max="100" step="1" value="${g[k]}" title="${esc(tip)}"></div>`).join("")).join("")}
-      <span class="legend">Tekan dua kali pada slider untuk balik ke 0. Warna dalam render final sama dengan preview ni. Sharpen dalam preview cuma anggaran.</span>` : `<div class="note">Tiada klip dipilih.</div>`;
+      <span class="legend">Tekan dua kali pada slider untuk balik ke 0. Warna dalam render final sama dengan preview ni. Sharpen dalam preview cuma anggaran.</span>`}${grSeg === "mk" ? mkPanel(c) : ""}` : `<div class="note">Tiada klip dipilih.</div>`;
   } else if (tab === "Caption") {
     const modeTip = { frasa: "2–4 perkataan", short: "1–2 perkataan, ringkas dan jelas", single: "Keluar perkataan satu-satu", line: "Sehingga 4 perkataan, dua baris" }[S.capMode];
     h = `<div class="row"><div id="fixSug" class="fixsug">${fixSugHTML()}</div>
@@ -4065,6 +4168,9 @@ document.addEventListener("click", e => {
   if (b.id === "mvR") return move(1);
   if (b.id === "undo") return undoStep(-1);
   if (b.id === "redo") return undoStep(1);
+  if (d.gseg) { grSeg = d.gseg; drawPanel(); if (grSeg === "mk") mkQueue(); return; }
+  if (d.mk) { const c = S.clips[sel]; if (c && MK_LOOKS[d.mk]) { snapshot(); if (mkOf(c) && c.mk.l === d.mk) delete c.mk; else c.mk = { l: d.mk, k: 100 }; if (curIdx !== sel && !playing) seek(startOf(sel) + .05); lastGrade = ""; setVideoMute(); gradeKick(); touched(); drawPanel(); mkQueue(); } return; }
+  if (b.id === "mkAll") { const c = S.clips[sel], m = mkOf(c); if (m) { snapshot(); S.clips.forEach(x => { x.mk = { ...m }; }); lastGrade = ""; setVideoMute(); touched(); toast("Makeup klip ni dipakai pada semua " + S.clips.length + " klip"); } return; }
   if (d.gp) { const c = S.clips[sel], p = (GRADE_PRESETS.find(x => x[0] === d.gp) || [])[2]; if (c && p) { snapshot(); if (d.gp === "none") delete c.grade; else c.grade = { ...gradeOf(null), ...p }; if (curIdx !== sel && !playing) seek(startOf(sel) + .05); lastGrade = ""; setVideoMute(); gradeKick(); touched(); drawPanel(); } return; }
   if (b.id === "grReset") { const c = S.clips[sel]; if (c) { snapshot(); delete c.grade; lastGrade = ""; setVideoMute(); touched(); drawPanel(); } return; }
   if (b.id === "grAll") { const c = S.clips[sel]; if (c) { snapshot(); const g = gradeOf(c); S.clips.forEach(x => { x.grade = { ...g }; }); lastGrade = ""; setVideoMute(); touched(); toast("Warna klip ni dipakai pada semua " + S.clips.length + " klip"); } return; }

@@ -1,5 +1,5 @@
 /* Simpan app dalam phone supaya boleh dibuka tanpa internet. Data sendiri disimpan oleh runtime.js. */
-const V = '2026.11.24-22';
+const V = '2026.11.24-23';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-180.png'];
 const SHELL = 'studio-' + V, SC = self.registration.scope, NET_MS = 3000;
 /* Fasa 1B: precache shell Studio + editor. Senarai fail dibaca dari HTML sendiri (index.html guna ?v=<versi>, editor.html guna ?v=<hash isi>),
@@ -200,6 +200,10 @@ self.addEventListener('fetch', e => {
     const vid = decodeURIComponent(em[1]), rest = decodeURIComponent(em[2]);
     if (rest === '' || rest === 'index.html') { const shell = SC + 'editor/editor.html'; e.respondWith(netFirst(e, new Request(shell, { cache: 'no-cache' }), shell, {})); }
     else e.respondWith(edMedia(e, vid, rest).catch(err => new Response(String(err && err.message || err), { status: 502 })));
+    return;
+  }
+  if (e.request.method === 'GET' && u.origin === location.origin && u.pathname.includes('/editor/mk/')) {   // Fasa 4: enjin makeup (18 MB): muat turun SEKALI, kekal merentas versi Studio
+    e.respondWith(caches.open('ed-mk1').then(async c => (await c.match(u.href)) || fetch(e.request).then(r => { if (r.ok) e.waitUntil(c.put(u.href, r.clone())); return r; })));
     return;
   }
   if (e.request.method !== 'GET' || u.hostname === 'script.google.com' || u.hostname.endsWith('googleusercontent.com') && u.pathname.startsWith('/macros')) return;

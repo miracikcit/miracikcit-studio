@@ -7,6 +7,7 @@
   const m = location.pathname.match(/\/editor\/v\/([^/]+)\//);
   const VID = m ? decodeURIComponent(m[1]) : '';
   window.ED_VID = VID;
+  window.MK_BASE = new URL('mk/', document.currentScript.src.split('?')[0]).href;   // Fasa 4: enjin MediaPipe + model muka untuk pratonton makeup (editor/mk/)
   try { sessionStorage.removeItem('ed404'); } catch (e) {}
   const LOCAL = location.hostname === 'localhost';
   const orig = claude.use.bind(claude);
