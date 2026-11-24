@@ -247,11 +247,11 @@
   /* playhead tetap di tengah: #inner dan #rinner ada margin 50% (CSS), jadi scrollLeft = masa × pps.
      Enjin juga cuba scroll timeline semasa main (drawHead) — tulisan tu diabaikan supaya tak bergegar; hanya ed-boot yang scroll.
      Semasa main, kedudukan dilicinkan setiap frame (pos enjin bergerak berperingkat). */
-  let touchSc = null, touchAt = 0, seekT = 0, pinch = null, own = false, disp = 0, lastT = 0, off = null, phDrag = null;   /* 24 Nov: off = jarak playhead dari kiri timeline (px); tak lagi tetap di tengah */
+  let lastSeek = 0, touchSc = null, touchAt = 0, seekT = 0, pinch = null, own = false, disp = 0, lastT = 0, off = null, phDrag = null;   /* 24 Nov: off = jarak playhead dari kiri timeline (px); tak lagi tetap di tengah */
   const SL = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollLeft');
   function lock(sc) {
     if (sc.dataset.lk) return; sc.dataset.lk = '1';
-    Object.defineProperty(sc, 'scrollLeft', { configurable: true, get() { return SL.get.call(this); }, set(v) { if (own || Date.now() - touchAt < 900) SL.set.call(this, v); } });
+    Object.defineProperty(sc, 'scrollLeft', { configurable: true, get() { return SL.get.call(this); }, set(v) { if (own) SL.set.call(this, v); } });
   }
   function setSL(sc, x) { own = true; SL.set.call(sc, x); own = false; }
   // tab Cut: timeline penuh (#tscroll). Tab lain: hanya trek tab tu di bawah pembaris (#rscroll), trek video disorok.
@@ -261,7 +261,7 @@
     const dt = lastT ? Math.min(0.1, (t - lastT) / 1000) : 0; lastT = t;
     if (sc && pps && pos != null) {
       if (playing) { disp += dt; if (Math.abs(disp - pos) > 0.15) disp = pos; } else disp = pos;
-      const cw = sc.clientWidth; if (off == null) off = cw / 2;
+      const cw = sc.clientWidth; off = cw / 2;   /* Fasa 2 (24 Nov, Mira): playhead ikut CapCut, tetap di tengah */
       if (playing && (off < 8 || off > cw - 8)) off = cw / 2;          // main semasa playhead di luar skrin: bawa balik ke tengah
       if (Date.now() - touchAt > 900 && !phDrag) {
         [$('tscroll'), $('rscroll')].forEach(el => { if (!el) return; const w = el.clientWidth || cw; const max = Math.max(0, el.scrollWidth - w);
@@ -293,7 +293,11 @@
         if (Date.now() - touchAt > 900 || sc !== touchSc) return;   // scroll oleh program, bukan jari
         touchAt = Date.now();
         const other = sc === tsc ? rsc : tsc; setSL(other, SL.get.call(sc));
-        const pps = G('pps'); if (pps) off = sc.clientWidth / 2 + disp * pps - SL.get.call(sc);   // seret timeline = lihat sahaja, masa kekal; playhead ikut kandungan
+        const pps = G('pps'); if (!pps) return;   /* Fasa 2: seret timeline = scrub video (playhead tetap di tengah) */
+        disp = Math.max(0, SL.get.call(sc) / pps);
+        if (G('playing')) { try { (0, eval)('stop()'); } catch (e2) {} }
+        const go = () => { lastSeek = Date.now(); try { window.__edSeek = disp; (0, eval)('seek(window.__edSeek); drawStickers && drawStickers();'); } catch (e2) {} };
+        clearTimeout(seekT); if (Date.now() - lastSeek > 70) go(); else seekT = setTimeout(go, 80);
       }, { passive: true });
       sc.addEventListener('touchstart', e => { if (e.touches.length === 2) { const z = $('zoom'); pinch = { d: Math.abs(e.touches[0].clientX - e.touches[1].clientX) || 1, z: +(z && z.value) || 25 }; } }, { passive: true });
       sc.addEventListener('touchmove', e => {
@@ -343,9 +347,49 @@
     tr.addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if (b) { e.stopPropagation(); click(b.dataset.p); } }, true);
     $('ccBig').addEventListener('pointerdown', e => e.stopPropagation());
     $('ccBig').onclick = e => { e.stopPropagation(); e.preventDefault(); const on = H.classList.toggle('edbig'); $('ccBig').setAttribute('aria-pressed', on); window.dispatchEvent(new Event('resize')); };
+    /* ===== Fasa 2 (24 Nov 2026, Mira lulus lakaran v2): tepi kanan (DONE, masa, simpan, besarkan, main), MORE, lompat ‹ ›, + footage ===== */
+    sc.insertAdjacentHTML('beforeend', `<div class="ccside" id="ccSide"><button type="button" class="ccdone" id="ccDone">DONE</button><span class="cctc2" id="ccTc2">0:00</span><span class="ccsv" id="ccSv" role="status"></span><span class="sp"></span></div>
+      <button type="button" class="ccmore" id="ccMore" aria-haspopup="true" aria-expanded="false">MORE</button>`);
+    $('ccSide').append($('ccBig'), $('ccPlay2'));
+    const toSiap = () => { if (!goTab('Siap') && window.toast) toast('Butang render ada pada video terakhir projek ni'); };
+    $('ccDone').onclick = toSiap;
+    { const sv = $('saved'), out = $('ccSv');
+      const svs = () => { out.textContent = (sv.textContent || '').replace('Semua perubahan disimpan', 'Disimpan'); out.className = 'ccsv' + (/\berr\b/.test(sv.className) ? ' err' : ''); };
+      if (sv) { new MutationObserver(svs).observe(sv, { childList: true, characterData: true, subtree: true, attributes: true }); svs(); } }
+    /* MORE = bar ikon satu baris di bawah edit bar (Mira 24 Nov: bukan menu tulisan) */
+    { const ic2 = n => `<svg class="ic" aria-hidden="true"><use href="#${n}"/></svg>`, sv = d => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+      const bt = (attr, label, icon) => `<button type="button" ${attr} aria-label="${label}" title="${label}">${icon}</button>`;
+      tr.insertAdjacentHTML('afterend', `<div class="ccmenu" id="ccMenu" hidden role="toolbar" aria-label="More">` +
+        bt('data-t="Sticker"', 'Stickers', ic2('i-star')) + bt('data-t="Bunyi"', 'Sounds', ic2('i-note')) + bt('data-t="Style Board"', 'Style Board', ic2('i-palette')) + bt('data-t="Siap"', 'Render', ic2('i-up')) +
+        `<i aria-hidden="true"></i>` +
+        bt('data-c="swapClip"', 'Tukar klip', sv('M4 8h14l-3-3M20 16H6l3 3')) + bt('data-c="muteClip"', 'Mute klip', ic2('i-sound')) + bt('data-c="mvL"', 'Alih klip ke kiri', ic2('i-left')) + bt('data-c="mvR"', 'Alih klip ke kanan', ic2('i-right')) +
+        bt('data-c="fBack"', 'Undur 1 frame', ic2('i-fback')) + bt('data-c="fFwd"', 'Maju 1 frame', ic2('i-ffwd')) + bt('data-c="resetAll"', 'Reset semua', ic2('i-reset')) +
+        `<i aria-hidden="true"></i>` + bt('data-x="1"', 'Keluar editor', sv('M6 6l12 12M18 6L6 18')) + `</div>`); }
+    { const menu = $('ccMenu'), more = $('ccMore');
+      const open = on => { menu.hidden = !on; more.setAttribute('aria-expanded', on); window.dispatchEvent(new Event('resize')); };
+      more.addEventListener('pointerdown', e => e.stopPropagation());
+      more.onclick = e => { e.stopPropagation(); open(menu.hidden); };
+      menu.onclick = e => { const b = e.target.closest('button'); if (!b) return; e.stopPropagation();
+        if (b.dataset.t) { open(false); if (b.dataset.t === 'Siap') toSiap(); else goTab(b.dataset.t); }
+        else if (b.dataset.c) click(b.dataset.c);          // alat klip: bar kekal terbuka (cth tekan frame berkali-kali)
+        else if (b.dataset.x) location.href = edApp ? '../../' : '../../../#editor'; };
+      const moreOn = () => more.classList.toggle('on', !menu.hidden || /^(Sticker|Bunyi|Style Board)$/.test(curTab()));
+      new MutationObserver(moreOn).observe($('tabs'), { attributes: true, childList: true, subtree: true, attributeFilter: ['aria-selected'] });
+      new MutationObserver(moreOn).observe(menu, { attributes: true, attributeFilter: ['hidden'] }); moreOn(); }
+    tr.insertAdjacentHTML('beforeend', `<span class="ccjump"><button type="button" id="ccPrev" aria-label="Lompat ke effect / highlight / sticker sebelum"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6"/></svg></button><button type="button" id="ccNext" aria-label="Lompat ke effect / highlight / sticker seterusnya"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6l6 6-6 6"/></svg></button></span>`);
+    { const jump = dir => {
+        const S = G('S'), pos = G('pos') || 0, t = curTab(), f = G('tabOf'); let xs = (S && S.stickers) || [];
+        if (f && /^(Title|Highlight|Effects|Sticker)$/.test(t)) xs = xs.filter(x => { try { return f(x) === t; } catch (e) { return false; } });
+        const ts = [...new Set(xs.map(x => +x.t).filter(v => v >= 0))].sort((a, b) => a - b);
+        const to = dir > 0 ? ts.find(v => v > pos + 0.05) : ts.slice().reverse().find(v => v < pos - 0.05);
+        if (to == null) { if (window.toast) toast(dir > 0 ? 'Tiada lagi selepas ni' : 'Tiada lagi sebelum ni'); return; }
+        window.__edSeek = to; try { (0, eval)('if (playing) stop(); seek(window.__edSeek); drawStickers && drawStickers();'); } catch (e) {} };
+      $('ccPrev').onclick = e => { e.stopPropagation(); jump(-1); }; $('ccNext').onclick = e => { e.stopPropagation(); jump(1); }; }
+    { const rb = $('rbar'); if (rb) { rb.insertAdjacentHTML('beforeend', '<button type="button" class="ccadd" id="ccAdd" aria-label="Tambah footage">+</button>');
+        $('ccAdd').addEventListener('pointerdown', e => e.stopPropagation()); $('ccAdd').onclick = e => { e.stopPropagation(); click('addFoot'); }; } }
     $('edSiap').onclick = () => { if (!goTab('Siap') && window.toast) toast('Butang render ada pada video terakhir projek ni'); };
     const tc = $('tc'), pi = $('playIc');
-    const tcs = () => { $('ccTc').textContent = (tc.textContent || '').replace(/\s*·\s*f\d+/, ''); };
+    const tcs = () => { const v = (tc.textContent || '').replace(/\s*·\s*f\d+/, ''); $('ccTc').textContent = v; const t2 = $('ccTc2'); if (t2) t2.textContent = v; };
     if (tc) { new MutationObserver(tcs).observe(tc, { childList: true, characterData: true, subtree: true }); tcs(); }
     if (pi) new MutationObserver(() => { $('ccPlayIc').setAttribute('href', pi.getAttribute('href')); const p2 = $('ccPlayIc2'); if (p2) p2.setAttribute('href', pi.getAttribute('href')); }).observe(pi, { attributes: true });
     new MutationObserver(sync).observe($('tabs'), { attributes: true, childList: true, subtree: true, attributeFilter: ['aria-selected'] });
