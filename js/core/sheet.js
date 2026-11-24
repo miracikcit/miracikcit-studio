@@ -1,6 +1,9 @@
 /* ---------- Google Sheet CONTENT 2026 ---------- */
 const SHEET_ID='1JryxaXeebnpFbAcZWGW_UkxUS7H7EkMBFgdE_14Y9Kw',GS='Google Sheets',PLAT4=['TT','IG','FB','SV'];
-const SH={PRODUCTS:{range:'PRODUCTS!A1:T400',q:'PRODUCTS',sched:6,posted:10,acc:14},NON:{range:"'NON PRODUCT'!A1:N300",q:"'NON PRODUCT'",sched:3,posted:7,acc:11}};
+const SH={PRODUCTS:{range:'PRODUCTS!A1:Z400',q:'PRODUCTS',sched:6,posted:10,acc:14,sc:20},NON:{range:"'NON PRODUCT'!A1:U300",q:"'NON PRODUCT'",sched:3,posted:7,acc:11,sc:15}};
+/* 24 Nov: lajur jadual posting (PRODUCTS U:Z, NON P:U): Tarikh, Masa, Akaun, Jenis, Produk, Status */
+const schOf=(r,c)=>({date:schDate(r[c]),time:String(r[c+1]||'').trim(),acc:String(r[c+2]||'').trim(),kind:String(r[c+3]||'').trim(),prod:String(r[c+4]||'').trim(),status:String(r[c+5]||'').trim()});
+function schDate(v){v=String(v||'').trim();let m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');return ''}
 const sheetRaw={PRODUCTS:null,NON:null};let sheetState='off',sheetErr=null,sheetAt=0;
 const isT=v=>v===true||String(v).toUpperCase()==='TRUE';
 function parseSheet(){
@@ -9,9 +12,9 @@ function parseSheet(){
   (sheetRaw.PRODUCTS||[]).forEach((r,i)=>{const rn=i+1;if(rn<5)return;r=r||[];
     if(String(r[3]||'').trim()!==''){seq++;const c=String(r[2]||'').trim();g={tab:'PRODUCTS',name:String(r[1]||'').trim(),no:String(r[0]||'').trim()||String(seq),shopee:isUrl(c)?c:'',tt:'',start:rn,rows:[],kind:String(r[17]||'').trim(),price:String(r[18]||'').trim()};groups.push(g)}
     else if(g){const c=String(r[2]||'').trim();if(isUrl(c)&&!g.tt)g.tt=c}
-    if(g&&String(r[4]||'').trim()!=='')g.rows.push({tab:'PRODUCTS',row:rn,vid:String(r[4]),caption:r[5]||'',sched:[6,7,8,9].map(c=>isT(r[c])),posted:[10,11,12,13].map(c=>isT(r[c])),acc:[String(r[14]||'').trim(),String(r[15]||'').trim()],sub:String(r[16]||''),group:g})});
+    if(g&&String(r[4]||'').trim()!=='')g.rows.push({tab:'PRODUCTS',row:rn,vid:String(r[4]),caption:r[5]||'',sched:[6,7,8,9].map(c=>isT(r[c])),posted:[10,11,12,13].map(c=>isT(r[c])),acc:[String(r[14]||'').trim(),String(r[15]||'').trim()],sub:String(r[16]||''),sch:schOf(r,20),group:g})});
   let nseq=0;(sheetRaw.NON||[]).forEach((r,i)=>{const rn=i+1;if(rn<5)return;r=r||[];const nm=String(r[1]||'').trim();if(!nm)return;nseq++;
-    const ng={tab:'NON',name:nm,rows:[],start:rn,no:String(r[0]||'').trim()||String(nseq)};ng.rows.push({tab:'NON',row:rn,vid:'',caption:r[2]||'',sched:[3,4,5,6].map(c=>isT(r[c])),posted:[7,8,9,10].map(c=>isT(r[c])),acc:[String(r[11]||'').trim(),String(r[12]||'').trim()],sub:String(r[13]||''),group:ng});groups.push(ng)});
+    const ng={tab:'NON',name:nm,rows:[],start:rn,no:String(r[0]||'').trim()||String(nseq)};ng.rows.push({tab:'NON',row:rn,vid:'',caption:r[2]||'',sched:[3,4,5,6].map(c=>isT(r[c])),posted:[7,8,9,10].map(c=>isT(r[c])),acc:[String(r[11]||'').trim(),String(r[12]||'').trim()],sub:String(r[13]||''),sch:schOf(r,15),group:ng});groups.push(ng)});
   return groups}
 const isPub=r=>r.sched.some(Boolean)?r.sched.every((sc,i)=>!sc||r.posted[i]):r.posted.every(Boolean);
 function matchFile(name,groups){const t=name.replace(/\.(mp4|mov|m4v)$/i,'').split(/[_-]+/);const t1=nrm(t[0]),t2=nrm(t[1]);
