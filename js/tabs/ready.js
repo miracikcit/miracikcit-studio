@@ -86,10 +86,12 @@ function upState(f){const u=S.sync.finalsup||{};const fresh=Date.now()-(u.at||0)
   if(fresh&&u.name===f.name)return {t:'Sedang upload ke Drive',c:'var(--warn)',pct:u.pct||0};
   if(Date.now()-(f.mtime||0)<120e3)return {t:'Baru siap render, tunggu sekejap',c:'var(--warn)',spin:1};
   return {t:fresh&&(u.queue||[]).includes(f.name)?'Dalam giliran upload':'Tunggu upload ke Drive',c:'var(--muted)',spin:1}}
-function freshStrip(fr){if(!fr.length)return '';
+/* 24 Nov (Mira): New videos jadi senarai ringkas: nama hook + Preview (Drive) + POST NOW (lompat ke kad posting di bawah). */
+function freshStrip(fr){if(!fr.length)return '';const sv=sheetView();
   return `<div class="card glass" style="margin-bottom:14px;box-shadow:0 0 0 1.5px var(--ok) inset"><p class="eyebrow" style="margin:0">New videos · ${fr.length}</p>
-   ${fr.map(({f,g})=>{const st=upState(f),r=fileRow(f,g);return `<div class="rowh" style="align-items:flex-start;gap:8px;margin-top:12px;flex-wrap:wrap"><div style="min-width:0;flex:1 1 0"><strong>${esc(newName(f,g))}</strong><span class="meta" style="display:block">${esc(g?g.name+(r&&r.vid?' · VID '+r.vid:''):'Belum ada dalam Sheet')} · ${fmtD(f.mtime)}</span>
-     ${st.pct!=null?`<div class="stbar" style="--c:${st.c}"><div class="stt"><span>${st.t}</span><span>${st.pct}%</span></div><div class="stg"><i style="width:${Math.max(3,st.pct)}%"></i></div></div>`:`<span class="pill" style="--pc:${st.c};margin-top:5px">${st.spin?'<i class="spin"></i>':''}${st.t}</span>`}</div>
-     ${g&&sheetView()&&sheetView().ready.some(x=>x.group===g)?`<button class="btn sm solid tab" data-act="toCard" data-x="rg-${g.tab}-${g.start}">Lihat${IC.next}</button>`:''}
-     ${f.drive?`<div class="btns" style="flex:1 0 100%;margin-top:2px">${dlBtn(f,false,'nv-'+f.name,'dlNv')}</div>`:''}</div>`}).join('')}</div>`}
+   ${fr.map(({f,g})=>{const st=upState(f),r=fileRow(f,g);const card=g&&sv&&sv.ready.some(x=>x.group===g);
+     const prev=f.drive?`<a class="btn sm" href="https://drive.google.com/file/d/${encodeURIComponent(f.drive)}/view" target="_blank" rel="noopener">${IC.ext}Preview</a>`:'';
+     const stat=f.drive?'':st.pct!=null?`<div class="stbar" style="--c:${st.c}"><div class="stt"><span>${st.t}</span><span>${st.pct}%</span></div><div class="stg"><i style="width:${Math.max(3,st.pct)}%"></i></div></div>`:`<span class="pill" style="--pc:${st.c};margin-top:5px">${st.spin?'<i class="spin"></i>':''}${st.t}</span>`;
+     return `<div class="rowh" style="align-items:center;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line,rgba(0,0,0,.08))"><div style="min-width:0;flex:1 1 0"><strong>${esc(newName(f,g))}</strong><span class="meta" style="display:block">${esc(g?g.name+(r&&r.vid?' · VID '+r.vid:''):'Belum ada dalam Sheet')} · ${fmtD(f.mtime)}</span>${stat}</div>
+       <div class="btns" style="flex:none;gap:6px;flex-wrap:nowrap">${prev}<button class="btn sm solid tab" data-act="toCard" data-x="${card?`rg-${g.tab}-${g.start}`:''}">POST NOW</button></div></div>`}).join('')}</div>`}
 A.toCard=el=>{const c=document.getElementById(el.dataset.x);if(c){c.scrollIntoView({behavior:'smooth',block:'start'});c.animate&&c.animate([{boxShadow:'0 0 0 3px var(--ok) inset'},{boxShadow:'none'}],{duration:1600})}else toast('Video ni dah settled, tengok di tab Published')};

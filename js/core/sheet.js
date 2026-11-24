@@ -27,7 +27,7 @@ function sheetView(){
 function rowStart(r,sv){const fs=sv.gf.get(r.group)||[];const m=fs.find(f=>new RegExp('_'+r.vid+'_').test(f.name));if(m&&m.mtime)return m.mtime;
   const rm=get('readymeta',rmKey(r));if(rm&&rm.start)return rm.start;return fs.length?Math.max(...fs.map(f=>f.mtime||0))||null:null}
 const rmKey=r=>nrm(r.group.name)+'-'+(r.vid||'0');
-const isSettled=r=>!!(get('readymeta',rmKey(r))||{}).settled;
+const isSettled=r=>!!(get('readymeta',rmKey(r))||{}).settled||isPub(r);   /* 24 Nov: video dah posted semua platform terus ke Published */
 function sheetErrText(c){return {needs_reauth:'Sambung semula Google Sheets dalam Settings, Connectors.',server_not_connected:'Tambah connector Google Sheets dalam Settings, Connectors.',approval_required:'App perlukan kebenaran kau untuk baca sheet.',not_in_manifest:'Akses Google Sheets ditutup untuk app ni.',selection_required:'Pilih akaun Google Sheets bila diminta.'}[c]||'Tak dapat baca sheet sekarang. Cuba lagi sekejap.'}
 async function initSheet(){
   try{MCP=await claude.use('mcp')}catch(e){MCP=null}
