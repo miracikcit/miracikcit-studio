@@ -166,3 +166,4 @@ html.pwa.edsheet .cczoom { display: none; }
   background: var(--fg); color: var(--bg); box-shadow: 0 3px 10px rgba(0,0,0,.25); }
 .ccplay2 .ic { width: 22px; height: 22px; }
 html.pwa.edbig .ccplay2 { right: 2px; }
+html.pwa.edtab-Highlight .edshd { display: none !important; }
