@@ -5,7 +5,7 @@
   const API = window.STUDIO_CONFIG.api;
   const LS = k => 'mstudio:' + k;
   const lsGet = (k, d) => { try { const v = localStorage.getItem(LS(k)); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
-  const lsSet = (k, v) => { try { localStorage.setItem(LS(k), JSON.stringify(v)); } catch (e) {} };
+  const lsSet = (k, v) => { try { localStorage.setItem(LS(k), JSON.stringify(v)); return true; } catch (e) { return false; } };
   let CODE = location.hostname === 'localhost' ? 'mac-mini-dev' : lsGet('code', '');   // localhost: devserver.py tambah kunci worker
   const err = (code, message) => Object.assign(new Error(message || code), { code });
 
@@ -26,7 +26,30 @@
   let since = lsGet('since', 0);
   let outbox = lsGet('outbox', []);          // [{p,d}]
   const colSubs = {}, docSubs = {};
-  const persist = () => { lsSet('cache', cache); lsSet('since', since); lsSet('outbox', outbox); };
+  /* 24 Nov 2026 (Fasa 1A): storan phone (localStorage ~5 MB) boleh penuh. Dulu kegagalan ditelan senyap: edit nampak disimpan tapi hilang.
+     Sekarang: outbox (edit belum dihantar) disimpan DULU. `since` hanya maju bila cache berjaya disimpan (kalau tak, device terlepas doc).
+     Kalau outbox sendiri tak muat: buang salinan offline (cache) supaya outbox muat; cache ditarik semula penuh dari Sheet bila app dibuka. */
+  let storeBad = '';
+  function storeWarn(level) {
+    if (level === storeBad) return; storeBad = level;
+    let el = document.getElementById('storepill');
+    if (!level) { if (el) el.remove(); return; }
+    if (!document.body) return;
+    if (!el) { el = document.createElement('div'); el.id = 'storepill'; el.setAttribute('role', 'alert');
+      el.style.cssText = 'position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top) + 8px);z-index:99999;padding:10px 14px;border-radius:14px;font:600 13px/1.35 system-ui,sans-serif;color:#fff;box-shadow:0 6px 20px rgba(0,0,0,.3)';
+      document.body.appendChild(el); }
+    el.style.background = level === 'err' ? '#c62828' : '#b26a00';
+    el.textContent = level === 'err' ? 'Storan phone penuh. Edit BELUM selamat: jangan tutup app, pastikan ada internet sampai tulisan ni hilang.'
+      : 'Storan phone hampir penuh. Edit selamat, tapi Studio perlukan internet bila dibuka semula.';
+  }
+  const persist = () => {
+    let o = lsSet('outbox', outbox);
+    if (o && lsSet('cache', cache)) { lsSet('since', since); storeWarn(''); return; }
+    try { localStorage.removeItem(LS('cache')); } catch (e) {}
+    lsSet('since', 0);                       // lancar seterusnya: tarik semua doc semula
+    if (!o) o = lsSet('outbox', outbox);
+    storeWarn(!o && outbox.length ? 'err' : 'warn');
+  };
   const colOf = p => p.split('/').slice(0, -1).join('/');
   function emitCol(col) {
     (colSubs[col] || []).forEach(cb => {
@@ -54,10 +77,11 @@
   async function flush() {
     if (flushing || !outbox.length) return; flushing = true;
     try {
+      await null;   // Fasa 1A: tunggu semua tulisan serentak (cth keping ~c0.. + kepala doc editor) masuk outbox, supaya dihantar dalam SATU panggilan
       while (outbox.length) {
-        const batch = outbox.slice(0, 20);
+        const batch = outbox.slice(0, 40);
         await call('put', { writes: batch });
-        outbox = outbox.slice(batch.length); persist();
+        outbox = outbox.filter(w => !batch.includes(w)); persist();   // buang HANYA yang dah dihantar (tulisan baru ke doc sama semasa menunggu kekal dalam giliran)
       }
     } finally { flushing = false; }
   }

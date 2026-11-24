@@ -15,20 +15,28 @@
   let base = null, pullOk = false;
 
   const once = path => new Promise(res => { let done = false; base.doc(path).onSnapshot(s => { if (done) return; done = true; res(s.exists ? s.data() : null); }); });
-  async function readDoc(path) {
+  async function readDoc(path, tries) {
     const d = await once(path);
     if (!d || !d._c) return d;
     const parts = [];
     for (let i = 0; i < d._c; i++) { const c = await once(path + '~c' + i); if (!c) throw err('chunk', 'bahagian simpanan hilang'); parts.push(c.s); }
-    return JSON.parse(parts.join(''));
+    try { return JSON.parse(parts.join('')); }
+    catch (e) {
+      /* Fasa 1A: keping tak sepadan (device lain sedang menyimpan separuh jalan). Tunggu sync seterusnya dan cuba lagi, jangan terus gagal. */
+      if ((tries || 0) >= 3) throw err('chunk', 'simpanan belum lengkap, cuba buka semula sekejap lagi');
+      await new Promise(r => setTimeout(r, 4000));
+      return readDoc(path, (tries || 0) + 1);
+    }
   }
   async function writeDoc(path, obj) {
     const s = JSON.stringify(obj);
     if (s.length <= 45000) return base.doc(path).set(obj);
     const n = Math.ceil(s.length / 44000), w = [];
+    /* Fasa 1A: semua keping DAN kepala doc masuk giliran serentak (tiada await di tengah), jadi runtime hantar dalam satu panggilan `put`
+       dan app yang ditutup separuh jalan tak tinggalkan keping tanpa kepala. Format ~c0.. kekal (worker Mac mini baca format ni). */
     for (let i = 0; i < n; i++) w.push(base.doc(path + '~c' + i).set({ s: s.slice(i * 44000, (i + 1) * 44000) }));
-    await Promise.all(w);
-    return base.doc(path).set({ _c: n, at: Date.now() });
+    w.push(base.doc(path).set({ _c: n, at: Date.now() }));
+    return Promise.all(w);
   }
 
   const dbReady = (async () => {

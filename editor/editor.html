@@ -1633,7 +1633,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .fixsug:empty { display: none; }
 .fixsug .chip.fixc { background: #fbd36b; border-color: #e6b94a; color: var(--fg); font-weight: 600; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=2ffc54722a">
+<link rel="stylesheet" href="../../ed-capcut.css?v=24712e4329">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1737,9 +1737,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=2ffc54722a"></script>
-<script src="../../../js/runtime.js?v=2ffc54722a"></script>
-<script src="../../ed-boot.js?v=2ffc54722a"></script>
+<script src="../../../js/config.js?v=24712e4329"></script>
+<script src="../../../js/runtime.js?v=24712e4329"></script>
+<script src="../../ed-boot.js?v=24712e4329"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -4122,7 +4122,20 @@ document.addEventListener("keydown", e => {
 });
 document.addEventListener("keyup", e => { if ((e.key === " " || e.code === "Space") && e.target.tagName === "BUTTON") e.preventDefault(); });
 document.addEventListener("click", afterTap);
-window.addEventListener("beforeunload", () => { if (dirty && dbDoc) flush(); });
+/* 24 Nov 2026 (Fasa 1A): simpan terus bila app disorok / ditutup. iPhone jarang jalankan beforeunload, dan flush() tunggu 0.8 s + semakan
+   device lain, jadi edit terakhir boleh hilang bila tukar app. flushNow() panggil set() serta-merta (dalam PWA ia masuk outbox phone secara segerak). */
+function flushNow() {
+  if (!loaded || !dbDoc || !dirty || saving) return;
+  clearTimeout(saveTimer);
+  try {
+    const body = docBody(); dirty = false; saving = true;
+    Promise.resolve(dbDoc.set(body)).then(() => { lastAt = body.at; saving = false; if (!dirty) setSaved("Semua perubahan disimpan"); },
+      () => { saving = false; dirty = true; setSaved("Gagal simpan. Perubahan belum selamat.", "err"); });
+  } catch (e) { saving = false; dirty = true; }
+}
+window.addEventListener("beforeunload", flushNow);
+window.addEventListener("pagehide", flushNow);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flushNow(); });
 
 /* ---------- boot ---------- */
 async function loadParts() { try { const r = await fetch("parts.json"); if (r.ok) { const j = await r.json(); if (j && j.parts && j.parts.length) return j; } } catch (e) {} return false; }
