@@ -17,6 +17,13 @@ const isPub=r=>r.sched.some(Boolean)?r.sched.every((sc,i)=>!sc||r.posted[i]):r.p
 function matchFile(name,groups){const t=name.replace(/\.(mp4|mov|m4v)$/i,'').split(/[_-]+/);const t1=nrm(t[0]),t2=nrm(t[1]);
   let c=groups.filter(g=>{const gn=nrm(g.name);return gn&&t1&&(gn.startsWith(t1)||t1.startsWith(gn))});
   if(c.length>1&&t2&&!/^\d+$/.test(t2)){const c2=c.filter(g=>nrm(g.name).includes(t2));if(c2.length)c=c2}
+  /* 24 Nov: ayat hook video (dari Mac) lawan nama kad Sheet: Genting_1 "Berapa BAJET sebenar naik Genting" -> "BERAPA BAJET TRIP GENTING" */
+  {const f=(((S.sync||{}).topost||{}).files||[]).find(x=>x.name===name);const hw=f&&f.hook?String(f.hook).toLowerCase().normalize('NFKD').replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(w=>w.length>=4):[];
+   if(hw.length){const sc=g=>{const n=' '+String(g.name).toLowerCase()+' ';return hw.filter(w=>n.includes(w)).reduce((t,w)=>t+(w.length>=6?2:1),0)};const pool=groups.filter(g=>sc(g)>=2||(sc(g)>=1&&c.includes(g)));
+     if(pool.length){const best=Math.max(...pool.map(sc));c=pool.filter(g=>sc(g)===best)}}}
+  /* 24 Nov: TanamPokok_2 -> "TANAM POKOK 2 ..." (nombor dalam nama fail); nama sama berulang (batch baru) -> kad yang belum settled, kalau tiada, yang terbaru */
+  if(c.length>1&&t2&&/^\d+$/.test(t2)){const c2=c.filter(g=>nrm(g.name).startsWith(t1+t2));if(c2.length)c=c2}
+  if(c.length>1){const open=c.filter(g=>g.rows.some(r=>!isSettled(r)));c=open.length?open:[c[c.length-1]]}
   return c.length?c[0]:null}
 function sheetView(){
   const groups=parseSheet();if(!groups)return null;

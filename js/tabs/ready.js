@@ -89,9 +89,20 @@ function upState(f){const u=S.sync.finalsup||{};const fresh=Date.now()-(u.at||0)
 /* 24 Nov (Mira): New videos jadi senarai ringkas: nama hook + Preview (Drive) + POST NOW (lompat ke kad posting di bawah). */
 function freshStrip(fr){if(!fr.length)return '';const sv=sheetView();
   return `<div class="card glass" style="margin-bottom:14px;box-shadow:0 0 0 1.5px var(--ok) inset"><p class="eyebrow" style="margin:0">New videos · ${fr.length}</p>
-   ${fr.map(({f,g})=>{const st=upState(f),r=fileRow(f,g);const card=g&&sv&&sv.ready.some(x=>x.group===g);
+   ${fr.map(({f,g})=>{const st=upState(f),r=fileRow(f,g);const card=g&&sv&&sv.ready.some(x=>x.group.tab===g.tab&&x.group.start===g.start);
      const prev=f.drive?`<a class="btn sm" href="https://drive.google.com/file/d/${encodeURIComponent(f.drive)}/view" target="_blank" rel="noopener">${IC.ext}Preview</a>`:'';
      const stat=f.drive?'':st.pct!=null?`<div class="stbar" style="--c:${st.c}"><div class="stt"><span>${st.t}</span><span>${st.pct}%</span></div><div class="stg"><i style="width:${Math.max(3,st.pct)}%"></i></div></div>`:`<span class="pill" style="--pc:${st.c};margin-top:5px">${st.spin?'<i class="spin"></i>':''}${st.t}</span>`;
      return `<div class="rowh" style="align-items:center;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line,rgba(0,0,0,.08))"><div style="min-width:0;flex:1 1 0"><strong>${esc(newName(f,g))}</strong><span class="meta" style="display:block">${esc(g?g.name+(r&&r.vid?' · VID '+r.vid:''):'Belum ada dalam Sheet')} · ${fmtD(f.mtime)}</span>${stat}</div>
-       <div class="btns" style="flex:none;gap:6px;flex-wrap:nowrap">${prev}<button class="btn sm solid tab" data-act="toCard" data-x="${card?`rg-${g.tab}-${g.start}`:''}">POST NOW</button></div></div>`}).join('')}</div>`}
-A.toCard=el=>{const c=document.getElementById(el.dataset.x);if(c){c.scrollIntoView({behavior:'smooth',block:'start'});c.animate&&c.animate([{boxShadow:'0 0 0 3px var(--ok) inset'},{boxShadow:'none'}],{duration:1600})}else toast('Video ni dah settled, tengok di tab Published')};
+       <div class="btns" style="flex:none;gap:6px;flex-wrap:nowrap">${prev}<button class="btn sm solid tab" data-act="toCard" data-x="${card?`rg-${g.tab}-${g.start}`:''}" data-f="${esc(f.name)}">POST NOW</button></div></div>`}).join('')}</div>`}
+/* 24 Nov (Mira): POST NOW tanpa kad (produk lama dah published / tiada dalam Sheet) = batch baru: baris baru dalam Sheet, kemudian lompat ke kad. */
+async function newBatch(fname){const files=((S.sync.topost||{}).files)||[];const f=files.find(x=>x.name===fname);if(!f)return;
+  const groups=parseSheet()||[];const g=matchFile(f.name,groups);const tab=g?g.tab:(/_(FINAL)?\.|^[A-Z][a-z]+_\d/.test(f.name)?'NON':'NON');const raw=sheetRaw[tab]||[];
+  let last=4;raw.forEach((r,i)=>{if(r&&String(r[1]||'').trim())last=i+1});const row=last+1;const nos=groups.filter(x=>x.tab===tab).map(x=>+x.no||0);const no=String(Math.max(0,...nos)+1);
+  const name=g?g.name:f.name.replace(/\.(mp4|mov|m4v)$/i,'').replace(/_FINAL$/i,'').replace(/[_-]+/g,' ').toUpperCase();const cap=f.hook||'';const F8=Array(8).fill('FALSE');
+  const vals=tab==='PRODUCTS'?[[no,name,g&&g.shopee||'','1','1',cap,...F8]]:[[no,name,cap,...F8]];const end=tab==='PRODUCTS'?'N':'K';
+  toast('Buat baris baru dalam Sheet (batch baru)');
+  try{await sheetWrite(`${SH[tab].q}!A${row}:${end}${row}`,vals);(raw[row-1]=vals[0].slice());raw.length=Math.max(raw.length,row);render(true);
+    setTimeout(()=>{const c=document.getElementById(`rg-${tab}-${row}`);if(c)c.scrollIntoView({behavior:'smooth',block:'start'});toast('Kad baru dibuat. Tulis caption dan post')},300)}
+  catch(e){toast(e&&e.code==='off'?'Sheet tak bersambung':'Tak dapat tulis ke Sheet')}}
+A.toCard=el=>{if(!el.dataset.x&&el.dataset.f){confirmBox('Video ni belum ada kad (produk lama dah published). Buat kad + baris baru dalam Sheet untuk batch baru?',()=>newBatch(el.dataset.f),'Ya, buat kad baru');return}
+const c=document.getElementById(el.dataset.x);if(c){c.scrollIntoView({behavior:'smooth',block:'start'});c.animate&&c.animate([{boxShadow:'0 0 0 3px var(--ok) inset'},{boxShadow:'none'}],{duration:1600})}else toast('Video ni dah settled, tengok di tab Published')};
