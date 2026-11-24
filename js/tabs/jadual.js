@@ -16,7 +16,7 @@ function jadualRows(){const groups=parseSheet();if(!groups)return null;const pla
 /* Baris atas setiap video dalam kad To Publish: akaun, jenis, tarikh·masa (tekan untuk ubah) */
 function schLine(k,v,late){if(v.status==='Excluded')return `<span class="pill">Post cepat · tak dikira kuota</span>`;
   const when=v.date?`${schDayLbl(v.date)} · ${timeLbl(v.time)}`:'Belum ada slot';
-  return `${schBadge(v.acc)}${v.kind?schKind(v.kind):''}<button type="button" class="pill schwhen${late?' late':''}" data-act="schEdit" data-id="${esc(k)}">${esc(when)}${v.status==='Tetap'?' · Tetap':''} ✎</button>`}
+  return `<button type="button" class="pill schwhen${late?' late':''}" data-act="schEdit" data-id="${esc(k)}">${esc(when)}${v.status==='Tetap'?' · Tetap':''} ✎</button>`}
 /* Atas To Publish: loader, amaran, pelan produksi (tertutup asal) */
 function schTop(plan){const groups=parseSheet()||[];const W=schedWarn(plan,groups);const today=ymd(new Date());const warn=[];
   const late=W.soon.filter(x=>x.date<=addDays(today,3));if(late.length)warn.push(`<b>${late.length} video</b> perlu di-schedule dalam 3 hari.`);

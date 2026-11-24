@@ -345,5 +345,5 @@ audio{width:100%;margin-top:8px}
 .prodrow{margin-top:10px;padding-top:8px;border-top:1px solid rgba(122,78,45,.15)}
 .prodrow.red b{color:#C0392B}
 .schstrip{display:grid;grid-template-columns:repeat(14,1fr);gap:3px;margin-top:10px}.schstrip i{height:14px;border-radius:4px;display:block}
-.schwhen.late{--pc:#C0392B}
-.schwhen{border:0;cursor:pointer;--pc:#D6C4B6;font:inherit;font-size:11px;letter-spacing:.06em}
+.schwhen{border:0;cursor:pointer;font:inherit;font-size:13px;font-weight:600;letter-spacing:.05em;background:#7A4E2D!important;color:#fff!important;padding:6px 12px}
+.schwhen.late{background:#C0392B!important}

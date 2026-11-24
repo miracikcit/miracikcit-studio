@@ -16,13 +16,13 @@ V.ready=()=>{const sv=sheetView();const items=appReady(sv);
     const sug=!g.shopee&&S.items.find(it=>it.shopee&&nrm(g.name).startsWith(nrm(it.title).slice(0,8)));
     const isNew=fresh.some(x=>x.g===g);
     return `<div class="card big glass" id="rg-${g.tab}-${g.start}"${isNew?' style="box-shadow:0 0 0 1.5px var(--ok) inset"':''}><div class="rowh"><div><h3 style="font-size:16px">${isNew?'<span class="pill" style="--pc:var(--ok);margin-right:6px">Baru</span>':''}${esc(g.name)}</h3><div class="meta">${g.tab==='PRODUCTS'?'No. '+esc(g.no)+' · ':''}${rows.length} video menunggu</div></div>
-     ${g.shopee?`<button class="btn solid shopee" data-act="copy" data-x="${esc(g.shopee)}">${IC.links}Link Shopee</button>`:''}</div>
+     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex:none">${g.shopee?`<button class="btn solid shopee" data-act="copy" data-x="${esc(g.shopee)}">${IC.links}Link Shopee</button>`:''}${chk(rows.every(({r})=>(get('readymeta',rmKey(r))||{}).settled),'settleG',rows.map(({r})=>rmKey(r)).join(','),'Settled')}</div></div>
     ${g.tab==='PRODUCTS'&&!g.shopee?`<div class="btns" style="margin-top:12px;flex-wrap:nowrap"><input class="inp" id="rs-${g.start}" data-lk="${g.start}|s" value="${esc(sug?sug.shopee:'')}" placeholder="Paste link Shopee di sini" inputmode="url"><button class="btn solid shopee" data-act="lkSave" data-id="${g.start}">Simpan</button></div>`:''}
     ${rows.map(({r,d})=>{const rm=get('readymeta',rmKey(r))||{};const done=isPub(r);const k=schKey(r);const v=plan.get(k)||{};const exc=v.status==='Excluded';const cp=capParts(r.caption);
       const late=!exc&&v.date&&v.status!=='Scheduled'&&!r.sched.some(Boolean)&&dayDiff(ymd(new Date()),v.date)<=3;return `<div class="vid">
-      <div class="rowh" style="align-items:center;gap:6px"><div class="schtags" style="margin:0">${schLine(k,v,late)}</div><div style="flex:none">${chk(exc,'schExc',k,'Excluded')}</div></div>
-      <div class="rowh" style="margin-top:8px"><div><div style="font-weight:500">${r.vid?'VID '+esc(r.vid)+' · ':''}${esc(noEmoji(String(r.caption).split('\n')[0]))}</div>${done?`<span class="pill" style="margin-top:6px">Semua dah posted, tick Settled</span>`:''}</div>
-       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">${dlBtn(rowFile(r,sv),rm.downloaded,rmKey(r),'dl')}${chk(rm.settled,'settle',rmKey(r),'Settled')}</div></div>
+      <div class="rowh" style="align-items:center;gap:6px">${schLine(k,v,late)}<div style="flex:none">${chk(exc,'schExc',k,'Excluded')}</div></div>
+      <div class="rowh" style="margin-top:8px;gap:8px"><div style="flex:1 1 0;min-width:0"><div style="font-weight:500">${r.vid?'VID '+esc(r.vid)+' · ':''}${esc(noEmoji(String(r.caption).split('\n')[0]))}</div>${done?`<span class="pill" style="margin-top:6px">Semua dah posted, tick Settled</span>`:''}</div>
+       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none">${exc||!v.acc?'':schBadge(v.acc)}${(()=>{const f=rowFile(r,sv);return f&&f.drive?dlBtn(f,rm.downloaded,rmKey(r),'dl'):''})()}</div></div>
       <div class="btns" style="margin-top:8px;gap:5px;flex-wrap:nowrap"><button class="btn sm solid fb" data-act="cap" data-x="${r.tab}|${r.row}|fb">${IC.copy}FB</button><button class="btn sm solid ig" data-act="cap" data-x="${r.tab}|${r.row}|ig">${IC.copy}IG</button><button class="btn sm solid tt" data-act="cap" data-x="${r.tab}|${r.row}|tt">${IC.copy}TikTok</button>${cp.tags?`<button class="btn sm" data-act="copy" data-x="${esc(cp.tags)}" style="padding-inline:10px">#Tag</button>`:''}</div>
       ${trk(d,'Publish dalam 1 minggu')}
       <div class="rowh" style="margin-top:8px;align-items:center"><span class="num" style="min-width:60px">Scheduled</span><div style="flex:none">${ticks(r,'sched')}</div></div>
@@ -74,6 +74,7 @@ A.settle=el=>{const id=el.dataset.id;const rm=get('readymeta',id)||{id};const on
   /* Platform yang dijadual tapi belum ditanda Posted: tanda Posted dalam Sheet */
   const r=(parseSheet()||[]).flatMap(g=>g.rows).find(x=>rmKey(x)===id);if(!r||!MCP)return;const t=SH[r.tab];
   r.sched.forEach((sc,i)=>{if(sc&&!r.posted[i])sheetTick(r.tab,r.row,'posted',i)})};
+A.settleG=el=>{const ids=el.dataset.id.split(',');const on=el.getAttribute('aria-pressed')!=='true';ids.forEach(id=>{const rm=get('readymeta',id)||{id};if(!!rm.settled!==on){const b=document.createElement('i');b.dataset.id=id;A.settle(b)}})};
 A.dlItem=el=>{const it=get('items',el.dataset.id);save('items',Object.assign({},it,{downloaded:!it.downloaded}))};
 A.itemPub=el=>moveItem(get('items',el.dataset.id),'published');
 A.filePub=el=>{const n=el.dataset.x;save('published',{name:n,title:n.replace(/\.(mp4|mov|m4v)$/i,'').replace(/_FINAL$/i,'').replace(/[_-]+/g,' '),date:ymd(new Date()),source:'file'});toast('Published')};
@@ -97,8 +98,8 @@ function freshStrip(fr){if(!fr.length)return '';const sv=sheetView();
    ${fr.map(({f,g})=>{const st=upState(f),r=fileRow(f,g);const card=g&&sv&&sv.ready.some(x=>x.group.tab===g.tab&&x.group.start===g.start);
      const prev=f.drive?`<a class="btn sm" href="https://drive.google.com/file/d/${encodeURIComponent(f.drive)}/view" target="_blank" rel="noopener">${IC.ext}Preview</a>`:'';
      const stat=f.drive?'':st.pct!=null?`<div class="stbar" style="--c:${st.c}"><div class="stt"><span>${st.t}</span><span>${st.pct}%</span></div><div class="stg"><i style="width:${Math.max(3,st.pct)}%"></i></div></div>`:`<span class="pill" style="--pc:${st.c};margin-top:5px">${st.spin?'<i class="spin"></i>':''}${st.t}</span>`;
-     return `<div class="rowh" style="align-items:center;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line,rgba(0,0,0,.08))"><div style="min-width:0;flex:1 1 0"><strong>${esc(newName(f,g))}</strong><span class="meta" style="display:block">${esc(g?g.name+(r&&r.vid?' · VID '+r.vid:''):'Belum ada dalam Sheet')} · ${fmtD(f.mtime)}</span>${stat}</div>
-       <div class="btns" style="flex:none;gap:6px;flex-wrap:nowrap">${prev}<button class="btn sm solid tab" data-act="toCard" data-x="${card?`rg-${g.tab}-${g.start}`:''}" data-f="${esc(f.name)}">POST NOW</button></div></div>`}).join('')}</div>`}
+     return `<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line,rgba(0,0,0,.08))"><div style="min-width:0"><strong>${esc(newName(f,g))}</strong><span class="meta" style="display:block">${esc(g?g.name+(r&&r.vid?' · VID '+r.vid:''):'Belum ada dalam Sheet')} · ${fmtD(f.mtime)}</span>${stat}</div>
+       <div class="btns" style="gap:6px;margin-top:8px">${prev}<button class="btn sm solid tab" data-act="toCard" data-x="${card?`rg-${g.tab}-${g.start}`:''}" data-f="${esc(f.name)}">POST NOW</button></div></div>`}).join('')}</div>`}
 /* 24 Nov (Mira): POST NOW tanpa kad (produk lama dah published / tiada dalam Sheet) = batch baru: baris baru dalam Sheet, kemudian lompat ke kad. */
 async function newBatch(fname){const files=((S.sync.topost||{}).files)||[];const f=files.find(x=>x.name===fname);if(!f)return;
   const groups=parseSheet()||[];const g=matchFile(f.name,groups);const tab=g?g.tab:(/_(FINAL)?\.|^[A-Z][a-z]+_\d/.test(f.name)?'NON':'NON');const raw=sheetRaw[tab]||[];
