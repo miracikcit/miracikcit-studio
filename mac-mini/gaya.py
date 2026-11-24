@@ -8,7 +8,7 @@ Mira tekan suka (status `simpan`, like 1) atau tak suka (like -1). Link post tek
 (kind `teks`). Video yang dimuat turun dibuang sebaik scan siap; thumbnail, sheet dan preview kecil sahaja disimpan
 dalam Drive FOOTAGE/GAYA/<id>.
 """
-import base64, html, json, logging, os, re, shutil, subprocess, tempfile, threading, time, urllib.request
+import base64, html, json, sys, logging, os, re, shutil, subprocess, tempfile, threading, time, urllib.request
 
 log = logging.getLogger("worker")
 HOME = os.path.dirname(os.path.abspath(__file__))
@@ -44,6 +44,8 @@ Tag sedia ada: {alltags}
 Resipi yang dah wujud (bandingkan; kalau hampir sama, isi "match"):
 {existing}
 
+Folder edit Mira (setiap satu ada gaya edit sendiri): {folders}
+
 Balas JSON sahaja:
 {{"name":"nama pendek 2 perkataan, campur Melayu + English boleh, senang ingat (cth Pop Kilat, Diari Tenang)",
  "summary":"satu ayat rupa keseluruhan",
@@ -59,7 +61,18 @@ Balas JSON sahaja:
  "beats":["susunan cerita ikut masa, 4-8 baris: apa peranan setiap bahagian (hook, masalah, bukti, payoff, CTA...)"],
  "effects":[{{"name":"nama effect pendek","at":"masa","look":"apa nampak","recipe":"cara bina semula: lapisan, masa, nilai (zoom %, blur px, flash ms, ease)"}}],
  "tagsSuggest":["0-3 tag yang sesuai, guna tag sedia ada kalau padan"],
- "match":null atau {{"id":"id resipi sedia ada","name":"nama","pct":0-100,"why":"apa yang sama"}}}}
+ "match":null atau {{"id":"id resipi sedia ada","name":"nama","pct":0-100,"why":"apa yang sama"}},
+ "guess":{{"kind":"tips | rupa | template (SATU: apa yang paling berbaloi diambil dari video ni)",
+          "say":"satu ayat pendek untuk Mira, mula dengan 'Video ni ...', cth 'Video ni orang ajar cara tulis hook.'"}},
+ "tips":[{{"g":"Hook | Editing | Caption | Cerita | Audio | CTA","t":"satu ayat arahan pendek yang boleh terus dipakai masa edit"}}],
+ "looks":[{{"type":"caption | tajuk | transition | effect","name":"nama 2 perkataan","d":"apa nampak, paling banyak 8 perkataan",
+           "at":"masa contoh","recipe":"cara bina semula: font percuma, saiz (% tinggi skrin), warna hex, latar / outline, posisi (% dari atas), animasi (jenis, ms, ease)"}}],
+ "template":null atau {{"slots":[{{"name":"nama bahagian pendek","a":saat mula,"b":saat tamat,"d":"apa isi: jenis shot, berapa shot, panjang shot, teks"}}],
+                       "need":[{{"n":bilangan,"what":"jenis shot yang Mira perlu ada, 2-3 perkataan"}}]}},
+ "folder":"nombor folder edit Mira yang paling sesuai untuk gaya ni (cth 21)"}}
+tips: HANYA kalau orang dalam video mengajar / berkongsi tips (isi dari transkrip), paling banyak 8; kalau tiada, [].
+looks: hanya rupa teks / transition / effect yang betul-betul tersendiri dan nampak dalam frame, paling banyak 4; kalau biasa sahaja, [].
+template: isi kalau susunan video jelas dan boleh diulang dengan footage lain (3-7 slot ikut masa); video orang bercakap mengajar biasanya null.
 SEMUA kunci wajib ada (termasuk "text"); setiap nilai selain beats / effects / tagsSuggest / match ialah satu string.
 Tulis gaya dan struktur sahaja; jangan salin ayat asal video (petik paling banyak 5 perkataan sebagai contoh).
 Effect: tulis hanya effect yang betul-betul nampak. Kalau tiada, [].
@@ -85,7 +98,11 @@ Balas JSON sahaja:
  "message":"mesej utama, satu atau dua ayat",
  "why":"kenapa post ni menarik: 2-4 sebab yang boleh ditiru",
  "beats":["susunan cerita, 3-7 baris: apa peranan setiap bahagian"],
- "tagsSuggest":["0-3 tag yang sesuai, guna tag sedia ada kalau padan"]}}
+ "tagsSuggest":["0-3 tag yang sesuai, guna tag sedia ada kalau padan"],
+ "guess":{{"kind":"tips","say":"satu ayat pendek untuk Mira, mula dengan 'Post ni ...'"}},
+ "tips":[{{"g":"Hook | Editing | Caption | Cerita | CTA","t":"satu ayat arahan pendek yang boleh terus dipakai, diambil dari isi atau cara tulis post ni"}}],
+ "folder":"nombor folder edit Mira yang paling sesuai (cth 25)"}}
+tips: paling banyak 8. Folder edit Mira: {folders}
 """
 
 
@@ -309,9 +326,10 @@ def _secs(s):
     return (int(m.group(1) or 0) * 60 + float(m.group(2))) if m else None
 
 
-def analyse(src, tmp, cfg, fx, worker):
+def analyse(src, tmp, cfg, fx, worker, prog=lambda p, m: None):
     info = _probe(src)
     dur = info["dur"] or 1
+    prog(35, "Analysing: kesan scene cut")
     cuts = _cuts(src)
     gaps = [b - a for a, b in zip([0] + [c[0] for c in cuts], [c[0] for c in cuts] + [dur])]
     data = {"panjang_s": dur, "saiz": f"{info['w']}x{info['h']}", "jumlah_cut": len(cuts),
@@ -320,6 +338,7 @@ def analyse(src, tmp, cfg, fx, worker):
             "masa_cut": [c[0] for c in cuts][:80]}
     trans, lang = "", ""
     if info["audio"]:
+        prog(42, "Analysing: transkrip")
         wav = worker.to_wav(src, tmp)
         lang, segs = worker.transcribe(wav, cfg)
         trans = "\n".join(f"[{s:.1f}] {t}" for s, _, t in segs)[:6000]
@@ -328,6 +347,7 @@ def analyse(src, tmp, cfg, fx, worker):
                      "ada_cakap": bool(segs), "transkrip": trans or "(tiada cakap)"})
     else:
         data["audio"] = "tiada"
+    prog(58, "Analysing: 1 frame sesaat")
     times = [round((i + 0.5) * dur / 12, 2) for i in range(12)]
     scan, _ = _sheet(src, times, os.path.join(tmp, "scan.jpg"), tmp, "s")
     thumb = _frame(src, min(1.0, dur / 2), os.path.join(tmp, "thumb.jpg"), 480)
@@ -336,7 +356,7 @@ def analyse(src, tmp, cfg, fx, worker):
           os.path.join(tmp, "sec_%03d.jpg")], 600)
     secs = sorted(f for f in os.listdir(tmp) if f.startswith("sec_"))
     data["frame_sesaat"] = len(secs)
-    texts, last = [], None
+    texts, last, enters = [], None, []
     for i, f in enumerate(secs):
         now = []
         for o in _ocr(os.path.join(tmp, f)):
@@ -344,6 +364,8 @@ def analyse(src, tmp, cfg, fx, worker):
         key = "|".join(x["teks"] for x in now)
         if now and key != last:                 # teks sama pada saat berturut tak diulang
             texts.extend(now)
+            if not enters or i - enters[-1] >= 3:
+                enters.append(i)                # saat teks baru muncul: untuk jalur animasi
         last = key
     data["teks_atas_skrin"] = texts[:80]
     n = min(len(secs), SHEET_S, int(dur) + 1)
@@ -373,7 +395,14 @@ def analyse(src, tmp, cfg, fx, worker):
         pv = _prev(src, a, b, os.path.join(tmp, f"fx{k}.mp4"))
         if path:
             strips.append({"a": round(a, 2), "b": round(b, 2), "mira": mine, "img": path, "mp4": pv})
-    return info, data, scan, strips, {"thumb": thumb, "sheets": sheets, "hook": hook}
+    # jalur teks masuk: 12 frame rapat (0.1 s) sebelum saat teks baru dikesan, supaya animasi teks nampak
+    tstrips = []
+    for k, i in enumerate(enters[:1] + enters[len(enters) // 2:len(enters) // 2 + 1] if len(enters) > 1 else enters[:1]):
+        a = max(0.0, i - 1.0)
+        path, _ = _sheet(src, [round(a + 0.1 * j, 2) for j in range(12)], os.path.join(tmp, f"teks{k}.jpg"), tmp, f"x{k}")
+        if path:
+            tstrips.append({"a": round(a, 1), "b": round(a + 1.1, 1), "img": path})
+    return info, data, scan, strips, {"thumb": thumb, "sheets": sheets, "hook": hook, "tstrips": tstrips}
 
 
 # ---------------------------------------------------------------- Claude
@@ -409,6 +438,8 @@ def _claude(cfg, worker, tmp, scan, strips, data, doc, existing, alltags, extra=
         files.append(f"- Jalur hook 0-3 s (12 frame rapat): {extra['hook']}")
     for sh in extra.get("sheets") or []:
         files.append(f"- 1 frame sesaat, saat {sh['a']}-{sh['b']} (masa tertulis di setiap frame): {sh['img']}")
+    for ts in extra.get("tstrips") or []:
+        files.append(f"- Jalur teks masuk {ts['a']}-{ts['b']} s (12 frame rapat, tengok animasi dan rupa teks): {ts['img']}")
     if scan and (not files or data.get("panjang_s", 0) > SHEET_S):
         files.append(f"- Scan sheet 12 frame sepanjang video: {scan}")
     files += [f"- Jalur effect {s['a']:.1f}-{s['b']:.1f} s ({'Mira tanda' if s['mira'] else 'cut paling kuat'}): {s['img']}"
@@ -416,8 +447,65 @@ def _claude(cfg, worker, tmp, scan, strips, data, doc, existing, alltags, extra=
     ex = "\n".join(f"- {g['id']}: {g.get('name')} [{', '.join(g.get('tags') or [])}] {(g.get('card') or {}).get('summary', '')}"
                    for g in existing) or "(belum ada)"
     prompt = PROMPT.format(files="\n".join(files), data=json.dumps(data, ensure_ascii=False), note=doc.get("note") or "-",
-                           tags=", ".join(doc.get("tags") or []) or "-", alltags=", ".join(alltags), existing=ex)
+                           tags=", ".join(doc.get("tags") or []) or "-", alltags=", ".join(alltags), existing=ex,
+                           folders=_folders(worker))
     return _ask(cfg, worker, tmp, prompt)
+
+
+def _folders(worker):
+    try:
+        return "; ".join(sorted(d for d in os.listdir(worker.STUDIO_BASE) if re.match(r"^(2[1-9]|3\d|4[0-2])\. ", d)))
+    except Exception:
+        return "-"
+
+
+def _extras(card, doc):
+    """Bahagian Copy Style: tekaan, tips, rupa, template, cadangan folder. Pilihan Mira yang sedia ada tak ditindih."""
+    def s(v, n=400):
+        return str(v or "").strip()[:n]
+    g = card.get("guess") if isinstance(card.get("guess"), dict) else {}
+    kind = s(g.get("kind"), 12).lower()
+    tips = [{"g": s(t.get("g"), 20) or "Editing", "t": s(t.get("t"), 220), "on": True}
+            for t in (card.get("tips") or []) if isinstance(t, dict) and s(t.get("t"))][:8]
+    looks = [{"type": s(l.get("type"), 12).lower() or "effect", "name": s(l.get("name"), 40) or "Rupa", "d": s(l.get("d"), 90),
+              "at": s(l.get("at"), 30), "recipe": s(l.get("recipe"), 900), "on": True}
+             for l in (card.get("looks") or []) if isinstance(l, dict)][:4]
+    tp = card.get("template") if isinstance(card.get("template"), dict) else None
+    tpl = None
+    if tp and tp.get("slots"):
+        def num(v):
+            try:
+                return round(float(v), 1)
+            except Exception:
+                return 0
+        tpl = {"slots": [{"name": s(x.get("name"), 40), "a": num(x.get("a")), "b": num(x.get("b")), "d": s(x.get("d"), 200)}
+                         for x in tp["slots"] if isinstance(x, dict)][:8],
+               "need": [{"n": int(num(x.get("n"))), "what": s(x.get("what"), 40)} for x in (tp.get("need") or []) if isinstance(x, dict)][:4]}
+    if kind not in ("tips", "rupa", "template") or not {"tips": tips, "rupa": looks, "template": tpl}[kind]:
+        kind = "tips" if tips else "template" if tpl else "rupa" if looks else "template"
+    m = re.search(r"\d{2}", s(card.get("folder"), 20))
+    out = {"guess": {"kind": kind, "say": s(g.get("say"), 200)}, "folderSug": m.group(0) if m else ""}
+    if not any(t.get("saved") for t in doc.get("tips") or []):
+        out["tips"] = tips
+    if not any(l.get("saved") for l in doc.get("looks") or []):
+        out["looks"] = looks
+    if not (doc.get("tpl") or {}).get("saved"):
+        out["tpl"] = tpl
+    return out
+
+
+CACHE = os.path.join(HOME, "gaya_cache")
+
+
+def _keep(gid, extra, scan):
+    """Simpan sheet kecil dalam Mac mini supaya sesi 'bina rupa' boleh tengok frame asal (dibuang bersama resipi)."""
+    d = os.path.join(CACHE, gid)
+    shutil.rmtree(d, ignore_errors=True)
+    os.makedirs(d, exist_ok=True)
+    for f in [extra.get("hook"), scan] + [x["img"] for x in (extra.get("sheets") or []) + (extra.get("tstrips") or [])]:
+        if f and os.path.exists(f):
+            shutil.copy(f, d)
+    return d
 
 
 def _card(card):
@@ -438,7 +526,8 @@ def _scan(sheet, cfg, up, worker, gid):
         doc = sheet.call("dget", path=path).get("doc") or {}
         if not doc.get("link"):
             raise RuntimeError("Link tiada")
-        _merge(sheet, path, {"status": "scan", "step": step, "msg": "Downloading", "err": ""})
+        _merge(sheet, path, {"status": "scan", "step": step, "msg": "Downloading", "err": "", "pct": 8})
+        prog = lambda p, m: _merge(sheet, path, {"pct": p, "msg": m})
         pull = sheet.call("pull", since=0).get("docs", [])
         existing = [dict(x["d"], id=x["p"].split("/", 1)[1]) for x in pull
                     if x["p"].startswith("gaya/") and x.get("d") and x["d"].get("status") == "simpan"]
@@ -448,23 +537,24 @@ def _scan(sheet, cfg, up, worker, gid):
             src, name, post = _fetch(sheet, doc["link"], tmp, worker.ytdlp_bin())
             step = "analyse"
             if post:                                 # post teks (Threads dsb.): teks sahaja
-                _merge(sheet, path, {"step": step, "msg": "Analysing: Claude tulis Resipi Style"})
+                _merge(sheet, path, {"step": step, "msg": "Analysing: Claude baca post", "pct": 60})
                 card, usage = _ask(cfg, worker, tmp, TEXT_PROMPT.format(link=doc["link"], text=post["text"],
-                                   note=doc.get("note") or "-", alltags=", ".join(alltags)), read=False)
+                                   note=doc.get("note") or "-", alltags=", ".join(alltags), folders=_folders(worker)), read=False)
                 fid = thumb_id = None
                 if post.get("thumb"):
                     fid = sheet.call("dpath", base="studio", path=["FOOTAGE", "GAYA", gid], share=True)["id"]
                     thumb_id = up(sheet, post["thumb"], fid)
                 c = _card(card)
                 tags = list(doc.get("tags") or []) or [t for t in (card.get("tagsSuggest") or []) if isinstance(t, str)][:3]
-                _merge(sheet, path, {"status": "semak", "step": "siap", "msg": "", "kind": "teks", "name": card.get("name") or "Resipi baru",
+                _merge(sheet, path, dict(_extras(card, doc), **{"status": "semak", "step": "siap", "msg": "", "pct": 100, "kind": "teks", "name": card.get("name") or "Resipi baru",
                                      "card": c, "tags": tags, "tagsSuggest": [], "match": None, "effects": [], "text": post["text"],
                                      "srcName": post.get("title") or "", "folder": fid, "thumb": thumb_id, "scan": None, "usage": usage,
-                                     "refs": [{"link": doc["link"], "note": doc.get("note") or "", "at": int(time.time() * 1000)}]})
+                                     "refs": [{"link": doc["link"], "note": doc.get("note") or "", "at": int(time.time() * 1000)}]}))
                 log.info("Resipi teks %s siap: %s (%s token)", gid, card.get("name"), usage)
+                _auto_edit(sheet, cfg, worker, gid)
                 return
-            _merge(sheet, path, {"step": step, "msg": "Analysing: transkrip, scene cut, 1 frame sesaat"})
-            info, data, scan, strips, extra = analyse(src, tmp, cfg, doc.get("fx"), worker)
+            _merge(sheet, path, {"step": step, "msg": "Analysing", "pct": 30})
+            info, data, scan, strips, extra = analyse(src, tmp, cfg, doc.get("fx"), worker, prog)
             try:
                 os.remove(src)                       # video rujukan tak disimpan
             except Exception:
@@ -474,9 +564,11 @@ def _scan(sheet, cfg, up, worker, gid):
                     sheet.call("dtrash", id=doc["upload"])
                 except Exception as e:
                     log.info("Trash upload gagal: %s", e)
-            _merge(sheet, path, {"msg": "Analysing: Claude tulis Resipi Style"})
+            _merge(sheet, path, {"msg": "Analysing: Claude tonton video", "pct": 72})
+            _keep(gid, extra, scan)
             card, usage = _claude(cfg, worker, tmp, scan, strips, data, doc, existing, alltags, extra)
             fid = sheet.call("dpath", base="studio", path=["FOOTAGE", "GAYA", gid], share=True)["id"]
+            prog(92, "Analysing: simpan gambar")
             scan_id = up(sheet, scan, fid) if scan else None
             thumb_id = up(sheet, extra["thumb"], fid) if extra.get("thumb") else None
             fx = []
@@ -494,12 +586,13 @@ def _scan(sheet, cfg, up, worker, gid):
         tags = list(doc.get("tags") or [])
         if not tags:                                 # borang baru tiada pilihan tag: guna cadangan Claude terus
             tags, sug = sug, []
-        _merge(sheet, path, {"status": "semak", "step": "siap", "msg": "", "kind": "video", "name": card.get("name") or "Resipi baru", "card": c,
+        _merge(sheet, path, dict(_extras(card, doc), **{"status": "semak", "step": "siap", "msg": "", "pct": 100, "kind": "video", "name": card.get("name") or "Resipi baru", "card": c,
                              "tags": tags, "tagsSuggest": sug, "thumb": thumb_id,
                              "match": card.get("match") or None, "effects": fx, "data": {k: v for k, v in data.items() if k != "transkrip"},
                              "info": info, "srcName": name, "folder": fid, "scan": scan_id, "usage": usage,
-                             "refs": [{"link": doc["link"], "note": doc.get("note") or "", "scan": scan_id, "at": int(time.time() * 1000)}]})
+                             "refs": [{"link": doc["link"], "note": doc.get("note") or "", "scan": scan_id, "at": int(time.time() * 1000)}]}))
         log.info("Gaya %s siap: %s (%s token)", gid, card.get("name"), usage)
+        _auto_edit(sheet, cfg, worker, gid)
     except Exception as e:
         log.exception("Gaya %s gagal", gid)
         try:
@@ -509,6 +602,88 @@ def _scan(sheet, cfg, up, worker, gid):
             pass
     finally:
         _running.discard(gid)
+
+
+def _auto_edit(sheet, cfg, worker, gid):
+    """Link ditampal dari skrin Edit Style: lepas siap analisis, terus buka sesi edit ikut video tu."""
+    try:
+        doc = sheet.call("dget", path="gaya/" + gid).get("doc") or {}
+        u = doc.get("useFor")
+        if not u:
+            return
+        looks = [f"{gid}:{i}" for i, _ in enumerate(doc.get("looks") or [])]
+        worker.run_edit_now({"stage": u.get("stage"), "name": u.get("name"), "key": u.get("key"),
+                             "style": {"tpl": gid, "looks": looks, "fresh": True}}, sheet, cfg)
+        _merge(sheet, "gaya/" + gid, {"useFor": None, "usedAuto": u.get("key")})
+    except Exception as e:
+        log.exception("Auto edit %s gagal", gid)
+        _merge(sheet, "gaya/" + gid, {"useFor": None, "autoErr": str(e)[:200]})
+
+
+def library(sheet, no):
+    """Semua yang Mira simpan untuk folder utama `no` (termasuk 'Semua folder' = '*')."""
+    docs = [dict(x["d"], id=x["p"].split("/", 1)[1]) for x in sheet.call("pull", since=0).get("docs", [])
+            if x["p"].startswith("gaya/") and x.get("d")]
+    mine = [g for g in docs if str(g.get("fold") or "") in (str(no), "*")]
+    tips = [{"g": t.get("g"), "t": t.get("t"), "from": g.get("name")} for g in mine for t in (g.get("tips") or []) if t.get("saved")]
+    return docs, mine, tips
+
+
+def brief(sheet, no, style):
+    """Arahan gaya untuk satu sesi edit: template (susunan), rupa (teks / effect), tips folder."""
+    docs, mine, tips = library(sheet, no)
+    by = {g["id"]: g for g in docs}
+    out = {"folder": str(no), "tips": tips,
+           "peraturan": "Tiru gaya dan susunan sahaja. JANGAN salin ayat, skrip, muzik, logo atau footage video rujukan. "
+                        "Watermark, 9:16, safe zone, end card dan opening / ending berbeza kekal ikut peraturan Mira."}
+    g = by.get(str((style or {}).get("tpl") or ""))
+    if g:
+        c = g.get("card") or {}
+        out["template"] = {"nama": g.get("name"), "slots": (g.get("tpl") or {}).get("slots") or c.get("beats"),
+                           "perlu": (g.get("tpl") or {}).get("need"), "hook": c.get("hook"), "rentak": c.get("cut"),
+                           "audio": c.get("audio"), "penutup": c.get("cta"), "panjang": c.get("length"), "mesej_asal": c.get("message")}
+    looks = []
+    for ref in (style or {}).get("looks") or []:
+        gid, _, i = str(ref).partition(":")
+        L = (by.get(gid) or {}).get("looks") or []
+        if i.isdigit() and int(i) < len(L):
+            l = L[int(i)]
+            looks.append({"nama": l.get("name"), "jenis": l.get("type"), "rupa": l.get("d"), "resipi": l.get("recipe"),
+                          "kod_siap": l.get("built") or None})
+    if looks:
+        out["rupa"] = looks
+    return out
+
+
+def job_look_build(inp, sheet, cfg, worker):
+    """Simpan rupa: buka sesi Claude di Mac mini untuk bina rupa tu + contoh 2 saat. Sesi tulis balik pct / sample."""
+    gid, idx = str(inp.get("id") or ""), [int(i) for i in (inp.get("i") or [])]
+    if not re.match(r"^[a-z0-9-]{4,40}$", gid) or not idx:
+        raise RuntimeError("rupa tak sah")
+    doc = sheet.call("dget", path="gaya/" + gid).get("doc") or {}
+    looks = doc.get("looks") or []
+    no = str(doc.get("fold") or doc.get("folderSug") or "21")
+    mains = [d for d in os.listdir(worker.STUDIO_BASE) if d.startswith((no if no != "*" else "21") + ". ")]
+    if not mains:
+        raise RuntimeError("Folder utama tak dijumpai: " + no)
+    for i in idx:
+        if i < len(looks):
+            looks[i].update({"saved": True, "st": "bina", "pct": 3, "err": ""})
+    _merge(sheet, "gaya/" + gid, {"looks": looks})
+    names = ", ".join(looks[i].get("name", "") for i in idx if i < len(looks))
+    cache = os.path.join(CACHE, gid)
+    me = os.path.join(HOME, "gaya.py")
+    prompt = (f"BINA RUPA dari Studio > Copy Style (bukan edit video). Resipi: python3 ~/MiracikcitTranscribe/studio.py get gaya/{gid}. "
+              f"Bina looks indeks {idx} ({names}) ikut medan recipe setiap satu; frame asal ada dalam {cache} (jalur teks*.jpg, hook.jpg, sec*.jpg). "
+              "Ikut bahagian 'Kali pertama effect dibina' dalam skill edit-reel: bina dalam HyperFrames, simpan kod ke ~/.claude/assets/effects/<slug>/, "
+              "render contoh 2 saat 540x960 dengan watermark atas satu klip neutral dari folder ni (teks contoh sendiri, JANGAN guna ayat / footage / logo asal). "
+              f"Untuk SETIAP rupa: kemas kini kemajuan dengan python3 {me} look {gid} <indeks> '{{\"pct\":40}}' (kemudian 70), "
+              f"muat naik contoh dengan python3 {me} sample {gid} <indeks> <fail.mp4> '<laluan kod>' (ini tanda siap). "
+              f"Kalau gagal: python3 {me} look {gid} <indeks> '{{\"st\":\"gagal\",\"err\":\"sebab pendek\"}}'. "
+              "JANGAN ubah editor, JANGAN deploy, JANGAN buat page artifact. Buang fail sementara ke Trash dan berhenti bila semua siap.")
+    worker.open_claude_session(os.path.join(worker.STUDIO_BASE, mains[0]), "Rupa · " + (doc.get("name") or gid), prompt,
+                               "rupa-" + gid, cfg)
+    return {"ok": True}
 
 
 def job_gaya_scan(inp, sheet, cfg, up, worker):
@@ -531,4 +706,34 @@ def job_gaya_del(inp, sheet):
     if folder and not inp.get("keepFiles"):
         sheet.call("dtrash", id=folder)
     sheet.call("dset", path="gaya/" + gid, data=None)
+    if re.match(r"^[a-z0-9-]{4,40}$", gid):
+        shutil.rmtree(os.path.join(CACHE, gid), ignore_errors=True)
     return {"ok": True}
+
+
+def _cli(argv):
+    """Dipanggil sesi Claude 'bina rupa': gaya.py look <gid> <i> '<json>' | gaya.py sample <gid> <i> <fail.mp4> [laluan kod]"""
+    sys.path.insert(0, HOME)
+    import worker
+    cfg = worker.load_cfg()
+    sheet = worker.Sheet(cfg)
+    gid, i = argv[1], int(argv[2])
+    doc = sheet.call("dget", path="gaya/" + gid).get("doc") or {}
+    looks = doc.get("looks") or []
+    if i >= len(looks):
+        sys.exit("indeks rupa tiada")
+    if argv[0] == "look":
+        looks[i].update(json.loads(argv[3]))
+    elif argv[0] == "sample":
+        fid = doc.get("folder") or sheet.call("dpath", base="studio", path=["FOOTAGE", "GAYA", gid], share=True)["id"]
+        looks[i].update({"sample": worker.drive_upload(sheet, argv[3], fid, name=f"rupa-{i}.mp4"), "st": "semak", "pct": 100,
+                         "built": argv[4] if len(argv) > 4 else looks[i].get("built")})
+        doc["folder"] = fid
+    else:
+        sys.exit("arahan tak dikenali")
+    _merge(sheet, "gaya/" + gid, {"looks": looks, "folder": doc.get("folder")})
+    print("OK")
+
+
+if __name__ == "__main__":
+    _cli(sys.argv[1:])

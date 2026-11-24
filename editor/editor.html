@@ -1691,7 +1691,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .spticks button[aria-pressed="true"] { color: #3fd0c0; }
 #spBtn { display: inline-grid; place-items: center; } #spBtn .ic { width: 16px; height: 16px; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=90d6eb5912">
+<link rel="stylesheet" href="../../ed-capcut.css?v=9057630d2f">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1802,9 +1802,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=90d6eb5912"></script>
-<script src="../../../js/runtime.js?v=90d6eb5912"></script>
-<script src="../../ed-boot.js?v=90d6eb5912"></script>
+<script src="../../../js/config.js?v=9057630d2f"></script>
+<script src="../../../js/runtime.js?v=9057630d2f"></script>
+<script src="../../ed-boot.js?v=9057630d2f"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -2996,18 +2996,20 @@ function glInit() {
   const sh = (t, src) => { const o = gl.createShader(t); gl.shaderSource(o, src); gl.compileShader(o); return o; };
   const vs = sh(gl.VERTEX_SHADER, "attribute vec2 p;varying vec2 uv;uniform vec4 cr;void main(){uv=cr.xy+vec2(p.x*.5+.5,.5-p.y*.5)*cr.zw;gl_Position=vec4(p,0.,1.);}");
   const fs = sh(gl.FRAGMENT_SHADER, `precision highp float;varying vec2 uv;uniform sampler2D tx;uniform mat3 M;uniform vec4 C;uniform float SH;uniform vec2 px;
-uniform sampler2D mkT;uniform vec4 mkR;uniform float mkA;uniform float mkSg;uniform vec2 mkD;uniform vec3 mkRef;
+uniform sampler2D mkT;uniform vec4 mkR;uniform float mkA;uniform float mkSg;uniform vec2 mkD;uniform vec3 mkRef;uniform vec4 mkL;uniform float mkLY;
 float cl(float v){return clamp(v,0.,1.);}
 float cur(float x){x=cl(x+C.x*.15);x=cl((x-.5)*(1.+C.y*.5)+.5);float k=C.z;x=cl(x+k*(.5*x*(1.-x)*(1.-x)-.25*x*x*(1.-x)));return cl(x+C.w*.12*pow(1.-x,4.));}
 vec3 g(vec2 q){vec3 c=clamp(M*texture2D(tx,q).rgb,0.,1.);return vec3(cur(c.r),cur(c.g),cur(c.b));}
 void main(){vec3 c=g(uv);if(SH>0.){vec3 n=g(uv+vec2(px.x,0.))+g(uv-vec2(px.x,0.))+g(uv+vec2(0.,px.y))+g(uv-vec2(0.,px.y));c=clamp(c*(1.+4.*SH)-n*SH,0.,1.);}
-if(mkA>0.){vec2 q=(uv-mkR.xy)/mkR.zw;if(q.x>0.&&q.x<1.&&q.y>0.&&q.y<1.){float m=texture2D(mkT,q).r;if(m>.004){
-vec3 r0=texture2D(tx,uv).rgb;float Y=dot(r0,vec3(.299,.587,.114));vec2 d=vec2((r0.r-Y)*.713+.5,(r0.b-Y)*.564+.5)-mkRef.yz;
+if(mkA>0.||mkL.a>0.){vec2 q=(uv-mkR.xy)/mkR.zw;if(q.x>0.&&q.x<1.&&q.y>0.&&q.y<1.){vec4 mq=texture2D(mkT,q);float m=mq.r;
+vec3 r0=texture2D(tx,uv).rgb;float Y=dot(r0,vec3(.299,.587,.114));float Cr=(r0.r-Y)*.713+.5;
+if(mkA>0.&&m>.004){vec2 d=vec2(Cr,(r0.b-Y)*.564+.5)-mkRef.yz;
 m*=exp(-dot(d,d)/.00603)*clamp((Y-mkRef.x*.35)/(mkRef.x*.25+.001),0.,1.);
 vec3 c0=g(uv),s=vec3(0.);float w=0.;
 for(int i=-3;i<=3;i++){for(int j=-3;j<=3;j++){vec3 k=g(uv+vec2(float(i),float(j))*mkD);vec3 e=abs(k-c0);float t=e.r+e.g+e.b;float ww=exp(-t*t/mkSg);s+=k*ww;w+=ww;}}
 vec3 fine=c0-(c0*.4+.15*(g(uv+vec2(px.x,0.))+g(uv-vec2(px.x,0.))+g(uv+vec2(0.,px.y))+g(uv-vec2(0.,px.y))));
-c=clamp(c+((s/w-c0)+fine*.38)*m*mkA,0.,1.);}}}
+c=clamp(c+((s/w-c0)+fine*.38)*m*mkA,0.,1.);}
+if(mkL.a>0.&&mq.g>.004){c=mix(c,clamp(mkL.rgb*clamp(Y/mkLY,.45,1.6),0.,1.),mq.g*smoothstep(mkRef.y-.0235,mkRef.y+.0078,Cr)*mkL.a);}}}
 gl_FragColor=vec4(c,1.);}`);
   const pr = gl.createProgram(); gl.attachShader(pr, vs); gl.attachShader(pr, fs); gl.linkProgram(pr);
   if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) return (GL = false);
@@ -3020,7 +3022,7 @@ gl_FragColor=vec4(c,1.);}`);
   const mkTex = gl.createTexture(); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, mkTex);   /* topeng kulit (makeup), unit 1 */
   [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]].forEach(([k, v]) => gl.texParameteri(gl.TEXTURE_2D, k, v));
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4)); gl.activeTexture(gl.TEXTURE0); gl.uniform1i(U("tx"), 0); gl.uniform1i(U("mkT"), 1);
-  return (GL = { gl, cv, M: U("M"), C: U("C"), SH: U("SH"), px: U("px"), cr: U("cr"), mkTex, mkR: U("mkR"), mkA: U("mkA"), mkSg: U("mkSg"), mkD: U("mkD"), mkRef: U("mkRef") });
+  return (GL = { gl, cv, M: U("M"), C: U("C"), SH: U("SH"), px: U("px"), cr: U("cr"), mkTex, mkR: U("mkR"), mkA: U("mkA"), mkSg: U("mkSg"), mkD: U("mkD"), mkRef: U("mkRef"), mkL: U("mkL"), mkLY: U("mkLY") });
 }
 let glDirty = 6, glGood = 0;
 ["seeked", "loadeddata", "canplay", "timeupdate"].forEach(ev => document.addEventListener(ev, e => { if (e.target && e.target.tagName === "VIDEO") glDirty = Math.max(glDirty, 4); }, true));
@@ -3043,15 +3045,18 @@ function glDraw() {
   gl.uniform4f(G.C, g.br / 100, g.ct / 100, g.bl / 100, g.b / 100);
   gl.uniform1f(G.SH, g.sh / 100 * .6);
   gl.uniform2f(G.px, 1 / v.videoWidth, 1 / v.videoHeight);
-  let ma = 0; const mm = mkOf(S.clips[curIdx]);   /* makeup: hanya frame pegun yang titik mukanya dah dicari (mkScan) */
+  let ma = 0, la = 0; const mm = mkOf(S.clips[curIdx]);   /* makeup: hanya frame pegun yang titik mukanya dah dicari (mkScan) */
   if (mm && MK.pts && !MK.hide && !playing && !dr && MK.src === v.currentSrc && Math.abs(v.currentTime - MK.at) < .03) {
-    const sm = (mkParams(mm).sm || 0) / 100;
-    if (sm > 0) {
+    const mp = mkParams(mm), sm = (mp.sm || 0) / 100, lp = Math.min(1, (mp.lp || 0) / 100);
+    if (sm > 0 || lp > 0) {
       if (MK.up) { gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, G.mkTex); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, MK.mask); gl.activeTexture(gl.TEXTURE0); MK.up = false; }
-      const st = .028 * MK.fw / 3, sc = (30 + 34 * sm) / 255; ma = Math.min(1, sm * 1.15);
+      const st = .028 * MK.fw / 3, sc = (30 + 34 * sm) / 255; ma = sm > 0 ? Math.min(1, sm * 1.15) : 0;
       gl.uniform4f(G.mkR, MK.roi[0], MK.roi[1], MK.roi[2], MK.roi[3]); gl.uniform2f(G.mkD, st, st * v.videoWidth / v.videoHeight); gl.uniform1f(G.mkSg, 2 * sc * sc); gl.uniform3f(G.mkRef, MK.ref[0], MK.ref[1], MK.ref[2]);
+      const hx = MK_LOOKS[mm.l].lip, ex = Math.min(1.3, Math.max(.5, MK.ref[0] * 255 / 170)), ch = i => parseInt(hx.slice(i, i + 2), 16) / 255 * ex;   /* warna ikut cahaya babak, sama dengan paint_lips */
+      la = lp; gl.uniform4f(G.mkL, ch(1), ch(3), ch(5), lp); gl.uniform1f(G.mkLY, MK.lipY);
     }
   }
+  if (!la) gl.uniform4f(G.mkL, 0, 0, 0, 0);
   gl.uniform1f(G.mkA, ma);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   cv.style.transform = v.style.transform; cv.style.transformOrigin = v.style.transformOrigin; glGood = performance.now();
@@ -3110,14 +3115,16 @@ function applyGrade(c) {
    Klip simpan c.mk = { l: "soft|merah|glam", k: 20-150 }. Solekan sebenar dibuat masa render (makeup.py, render_draft.py p26).
    Di sini hanya PRATONTON pada frame pegun: bila video berhenti, MediaPipe Face Landmarker cari 478 titik muka, topeng kulit dilukis
    pada kanvas kecil dan shader warna (glInit) licinkan kulit dalam topeng itu. Masa video main, tiada makeup (jimat bateri).
-   MK_LOOKS, senarai titik dan formula MESTI sama dengan LOOKS / smooth_skin dalam makeup.py. Kesan dibina satu-satu: setakat ini "sm" (smooth kulit).
+   MK_LOOKS, senarai titik dan formula MESTI sama dengan LOOKS / smooth_skin dalam makeup.py. Kesan dibina satu-satu: setakat ini "sm" (smooth kulit) dan "lp" (bibir, warna = lip).
    Enjin MediaPipe hanya ada dalam Studio PWA (ed-boot.js beri window.MK_BASE); dalam artifact, look boleh dipilih tapi tiada pratonton. */
-const MK_LOOKS = { soft: { n: "Soft", lip: "#cf6f72", blush: "#eda293", v: { sm: 55 } }, merah: { n: "Merah", lip: "#c2303c", blush: "#ee9a86", v: { sm: 65 } }, glam: { n: "Glam", lip: "#a81f33", blush: "#e58a8f", v: { sm: 75 } } };
+const MK_LOOKS = { soft: { n: "Soft", lip: "#cf6f72", blush: "#eda293", v: { sm: 55, lp: 50 } }, merah: { n: "Merah", lip: "#c2303c", blush: "#ee9a86", v: { sm: 65, lp: 85 } }, glam: { n: "Glam", lip: "#a81f33", blush: "#e58a8f", v: { sm: 75, lp: 95 } } };
 const MK_OVAL = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109];
 const MK_HOLES = [[[263, 249, 390, 373, 374, 380, 381, 382, 362, 398, 384, 385, 386, 387, 388, 466], 1.5], [[33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246], 1.5],
   [[300, 293, 334, 296, 336, 285, 295, 282, 283, 276], 1.25], [[70, 63, 105, 66, 107, 55, 65, 52, 53, 46], 1.25], [[61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185], 1.12]];
 const MK_CHEEKS = [50, 280, 205, 425, 118, 347, 101, 330];
-const MK = { lib: null, n: 0, tm: 0, pts: null, at: -1, src: "", up: false, hide: false, roi: [0, 0, 1, 1], ref: [.6, .55, .45], fw: .3 };
+const MK_LIPS = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185], MK_LIPS_IN = [78, 95, 88, 178, 87, 14, 317, 402, 318, 324, 308, 415, 310, 311, 312, 13, 82, 81, 80, 191];
+const MK_LIP_S = [[0, 13], [17, 14], [37, 82], [267, 312], [84, 87], [314, 317]];   /* tengah bibir: contoh kecerahan bibir */
+const MK = { lib: null, n: 0, tm: 0, pts: null, at: -1, src: "", up: false, hide: false, roi: [0, 0, 1, 1], ref: [.6, .55, .45], fw: .3, lipY: .4 };
 let grSeg = "preset";
 const mkOf = c => { const m = c && c.mk; return m && MK_LOOKS[m.l] ? m : null; };
 function mkParams(m) { const L = MK_LOOKS[m.l].v, k = (m.k || 100) / 100, o = {}; for (const n in L) o[n] = Math.min(100, L[n] * k); return o; }
@@ -3142,15 +3149,20 @@ async function mkScan() {
   if (!P) { MK.pts = null; glDirty = 6; if (tab === "Warna" && grSeg === "mk") toast("Tiada muka pada frame ni"); return; }
   const X = i => P[i].x, Y = i => P[i].y, xs = MK_OVAL.map(X), ys = MK_OVAL.map(Y), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
   const fw = Math.max(.01, x1 - x0), pd = fw * .12, pdy = pd * W / H, rx = Math.max(0, x0 - pd), ry = Math.max(0, y0 - pdy), rw = Math.min(1, x1 + pd) - rx, rh = Math.min(1, y1 + pdy) - ry;
-  const mc = MK.mask || (MK.mask = document.createElement("canvas")), N = 128; mc.width = mc.height = N; const g2 = mc.getContext("2d");
+  const mc = MK.mask || (MK.mask = document.createElement("canvas")), N = 256; mc.width = mc.height = N; const g2 = mc.getContext("2d");
   g2.fillStyle = "#000"; g2.fillRect(0, 0, N, N);
   const poly = (idx, col, grow) => { let a = 0, b = 0; idx.forEach(i => { a += X(i); b += Y(i); }); a /= idx.length; b /= idx.length; g2.beginPath();
     idx.forEach((i, j) => { const px = (a + (X(i) - a) * grow - rx) / rw * N, py = (b + (Y(i) - b) * grow - ry) / rh * N; j ? g2.lineTo(px, py) : g2.moveTo(px, py); }); g2.closePath(); g2.fillStyle = col; g2.fill(); };
-  poly(MK_OVAL, "#fff", .97); MK_HOLES.forEach(([idx, grow]) => poly(idx, "#000", grow));
+  poly(MK_OVAL, "#f00", .97); MK_HOLES.forEach(([idx, grow]) => poly(idx, "#000", grow));   /* merah = kulit */
+  g2.globalCompositeOperation = "lighter"; poly(MK_LIPS, "#0f0", 1); g2.globalCompositeOperation = "multiply"; poly(MK_LIPS_IN, "#f0f", 1); g2.globalCompositeOperation = "source-over";   /* hijau = bibir, tolak dalam mulut (gigi) */
   const rr = Math.max(2, Math.round(fw * W * .02)), cy = [], cr = [], cb = [];   /* warna kulit pipi: tapis bingkai cermin mata, tudung, rambut */
   try { MK_CHEEKS.forEach(i => { const px = Math.round(X(i) * W), py = Math.round(Y(i) * H); if (px - rr < 0 || py - rr < 0 || px + rr > W || py + rr > H) return;
     const d = cx.getImageData(px - rr, py - rr, rr * 2, rr * 2).data; for (let q = 0; q < d.length; q += 4) { const R = d[q] / 255, G = d[q + 1] / 255, B = d[q + 2] / 255, yy = .299 * R + .587 * G + .114 * B; cy.push(yy); cr.push((R - yy) * .713 + .5); cb.push((B - yy) * .564 + .5); } }); } catch (e) { MK.pts = null; return; }
   const med = a => { a.sort((p, q) => p - q); return a.length ? a[a.length >> 1] : .5; };
+  const rl = Math.max(1, Math.round(fw * W * .008)), ly = [];
+  try { MK_LIP_S.forEach(([a, b]) => { const px = Math.round((X(a) + X(b)) / 2 * W), py = Math.round((Y(a) + Y(b)) / 2 * H); if (px - rl < 0 || py - rl < 0 || px + rl >= W || py + rl >= H) return;
+    const d = cx.getImageData(px - rl, py - rl, rl * 2 + 1, rl * 2 + 1).data; for (let q = 0; q < d.length; q += 4) ly.push((.299 * d[q] + .587 * d[q + 1] + .114 * d[q + 2]) / 255); }); } catch (e) {}
+  MK.lipY = Math.max(.08, ly.length ? med(ly) : .4);
   MK.ref = [med(cy), med(cr), med(cb)]; MK.roi = [rx, ry, rw, rh]; MK.fw = fw; MK.pts = P; MK.at = at; MK.src = src; MK.up = true; glDirty = 6;
 }
 ["seeked", "loadeddata", "pause"].forEach(ev => document.addEventListener(ev, e => { if (e.target && e.target.id === "mv") mkQueue(); }, true));

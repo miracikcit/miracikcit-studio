@@ -24,7 +24,7 @@ V['to-edit']=()=>{const te=S.sync.toedit;const folders=toEditFolders();const fse
     ${edNote(r,e)}</div>`}).join('')||`<div class="empty">${te?'Tiada video tunggu edit.':'Belum sync. Tekan Sync folder di Home.'}</div>`}</div>`};
 /* Butang kad: belum mula = EDIT NOW; dah tekan = link terus ke chat Claude (Remote Control) atau status */
 function edBtns(r,e,busy,off){/* 23 Nov: EDIT NOW tak lagi tunggu semua B-roll disemak; Claude guna klip Final yang dah ada */
-  const now=`<button class="btn sm${e?'':' solid tab'} edgo" data-act="edNow" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}"${busy||off||!r.stage?' disabled':''}>${busy?'<i class="spin"></i>'+esc(busy):e?'Buka sesi baru':'▶ EDIT NOW'}</button>${tok(TOK.edit,'satu sesi edit Claude, ikut panjang video')}`;
+  const now=`<button class="btn sm${e?'':' solid tab'} edgo" data-act="esOpen" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}"${busy||off||!r.stage||esScan(r.key)?' disabled':''}>${esScan(r.key)?'<i class="spin"></i>Analysing '+Math.round(esScan(r.key).pct||0)+'%':busy?'<i class="spin"></i>'+esc(busy):e?'Buka sesi baru':'▶ EDIT NOW'}</button>${tok(TOK.edit,'satu sesi edit Claude, ikut panjang video')}`;
   if(!e)return now;const st=e.status||'';const stuck=/perlu|tiada link/i.test(st);
   const chat=isUrl(e.chat)?`<a class="btn sm solid tab" href="${esc(e.chat)}" target="_blank" rel="noopener">${IC.ext}Buka chat Claude</a>`:'';
   const page=isUrl(e.url)?`<a class="btn sm${chat?'':' solid tab'}" href="${esc(e.url)}" target="_blank" rel="noopener">${IC.ext}${/storyboard/i.test(st)?'Storyboard':'Editor'}</a>`:'';

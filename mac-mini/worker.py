@@ -1036,6 +1036,27 @@ def run_mkfolder(inp, sheet):
     return {"name": name}
 
 
+def open_claude_session(cwd, title, prompt, slug, cfg):
+    """Buka satu sesi Claude Code dalam Terminal Mac mini (Remote Control hidup) dengan prompt diberi."""
+    ensure_edit_settings(cwd)
+    cli = find_tool("claude", [cfg.get("claude_cli")])
+    if not cli:
+        raise RuntimeError("Claude Code tak dijumpai dalam Mac mini.")
+    q = lambda x: "'" + str(x).replace("'", "'\\''") + "'"
+    d = os.path.join(HOME, "edit-now")
+    os.makedirs(d, exist_ok=True)
+    slug = re.sub(r"[^A-Za-z0-9]+", "-", slug)[:60]
+    cmdf, logf = os.path.join(d, slug + ".command"), os.path.join(d, slug + ".log")
+    with open(cmdf, "w", encoding="utf-8") as fh:
+        fh.write("#!/bin/zsh -l\n# Dibuat oleh Miracikcit Studio\n" f"cd {q(cwd)} || exit 1\n"
+                 f"exec /usr/bin/script -q {q(logf)} {q(cli)} --model {EDIT_MODEL} --effort {EDIT_EFFORT} -n {q(title)} --remote-control {q(title)} {q(prompt)}\n")
+    os.chmod(cmdf, 0o755)
+    r = subprocess.run(["/usr/bin/open", "-a", "Terminal", cmdf], capture_output=True, text=True, timeout=30)
+    if r.returncode != 0:
+        raise RuntimeError("Tak dapat buka Terminal: " + (r.stderr or "")[-200:])
+    return logf
+
+
 def run_edit_now(inp, sheet, cfg):
     """Buka sesi Claude Code baru dalam Terminal Mac mini: folder utama, Opus 5.5 medium, Remote Control hidup,
     terus jalan /edit-reel <no>/<projek>. Mira kawal dari app Claude di phone."""
@@ -1049,20 +1070,27 @@ def run_edit_now(inp, sheet, cfg):
     key = os.path.basename(main) + "/" + name
     ed_id = "ed-f-" + re.sub(r"[^a-z0-9]+", "", key.lower())[:40]
     prompt = f"/edit-reel {no}/{name} (tracker Studio: editor/{ed_id})"
-    gid = str(inp.get("gaya") or "")
-    if gid:
-        import gaya
-    if gid:                                          # butang "Guna style ni" dalam Studio > Inspiration
-        if not re.match(r"^[a-z0-9-]{4,40}$", gid):
-            raise RuntimeError("id resipi tak sah")
-        g = sheet.call("dget", path="gaya/" + gid).get("doc") or {}
-        if not g.get("card"):
-            raise RuntimeError("Resipi tak dijumpai atau belum siap")
-        gname = re.sub(r"[^\w .&+-]", "", str(g.get("name") or "resipi"))[:40]
-        prompt = (f"/edit-reel {no}/{name} resipi {gid} \"{gname}\" (tracker Studio: editor/{ed_id}). GUNA STYLE NI: baca resipi dengan "
-                  f"python3 ~/MiracikcitTranscribe/studio.py get gaya/{gid} dan edit footage folder ni ikut Resipi Style tu. "
-                  "Tiru gaya dan susunan sahaja, JANGAN salin ayat, skrip, muzik atau footage video asal. "
-                  "Terus draf (tiada storyboard): draf masuk Editor PWA dalam Studio, tunggu Mira lulus, final ke 00. TO POST FINAL.")
+    style = inp.get("style") if isinstance(inp.get("style"), dict) else {}
+    if inp.get("gaya"):                              # butang lama "Guna style ni"
+        style = {"tpl": str(inp["gaya"]), "looks": []}
+    for ref in [style.get("tpl")] + list(style.get("looks") or []):
+        if ref and not re.match(r"^[a-z0-9-]{4,40}(:\d+)?$", str(ref)):
+            raise RuntimeError("id style tak sah")
+    gid, gname = str(style.get("tpl") or ""), ""
+    import gaya
+    br = gaya.brief(sheet, no, style)               # skrin Edit Style: template + rupa pilihan Mira + tips folder
+    if br.get("tips") or br.get("template") or br.get("rupa"):
+        br["updated"] = int(time.time() * 1000)
+        sheet.call("dset", path="editstyle/" + ed_id, data=br)
+        gname = re.sub(r"[^\w .&+-]", "", str((br.get("template") or {}).get("nama") or ""))[:40]
+        picked = bool(br.get("template") or br.get("rupa"))
+        prompt = (f"/edit-reel {no}/{name}" + (f" tiru \"{gname}\"" if gname else "") + f" (tracker Studio: editor/{ed_id}). "
+                  f"EDIT STYLE: baca python3 ~/MiracikcitTranscribe/studio.py get editstyle/{ed_id} dulu. "
+                  "template = susunan video yang mesti diikut, rupa = rupa teks / effect yang mesti dipakai (guna kod_siap kalau ada), "
+                  "tips = peraturan tambahan folder ni. Tiru gaya dan susunan sahaja, JANGAN salin ayat, skrip, muzik atau footage video asal."
+                  + (" Terus draf (tiada storyboard): draf masuk Editor PWA dalam Studio, tunggu Mira lulus, final ke 00. TO POST FINAL." if picked else ""))
+    else:
+        sheet.call("dset", path="editstyle/" + ed_id, data=None)
     q = lambda x: "'" + str(x).replace("'", "'\\''") + "'"
     d = os.path.join(HOME, "edit-now")
     os.makedirs(d, exist_ok=True)
@@ -1087,9 +1115,10 @@ def run_edit_now(inp, sheet, cfg):
     now = int(time.time() * 1000)
     cur = sheet.call("dget", path="editor/" + ed_id).get("doc") or {"created": now}
     cur.update({"name": name, "folder": key, "style": os.path.basename(main), "status": "Sesi dibuka", "updated": now, "sessionAt": now})
-    if gid:
-        cur.update({"style": "Resipi: " + gname, "gaya": gid})
-        gaya._merge(sheet, "gaya/" + gid, {"used": (g.get("used") or []) + [{"folder": key, "at": now}]})
+    if gid and gname:
+        cur.update({"style": "Tiru: " + gname, "gaya": gid})
+        g = sheet.call("dget", path="gaya/" + gid).get("doc") or {}
+        gaya._merge(sheet, "gaya/" + gid, {"used": (g.get("used") or [])[-9:] + [{"folder": key, "at": now}]})
     cur.pop("chat", None)
     sheet.call("dset", path="editor/" + ed_id, data=cur)
     threading.Thread(target=_watch_session, args=(sheet, ed_id, logf), daemon=True).start()
@@ -1512,6 +1541,9 @@ def studio_jobs(sheet, cfg):
             elif j["type"] == "gaya_scan":
                 import gaya
                 outp = gaya.job_gaya_scan(inp, sheet, cfg, drive_upload, sys.modules[__name__])
+            elif j["type"] == "look_build":
+                import gaya
+                outp = gaya.job_look_build(inp, sheet, cfg, sys.modules[__name__])
             elif j["type"] == "gaya_del":
                 import gaya
                 outp = gaya.job_gaya_del(inp, sheet)

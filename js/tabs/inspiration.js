@@ -1,6 +1,6 @@
 /* ---------- INSPIRATION ---------- */
 V.inspiration=()=>{const list=S.inspo.slice().sort((a,b)=>(b.created||0)-(a.created||0));const nr=S.gaya.filter(g=>g.status==='semak'||g.status==='simpan').length;
-  if((ui.inSeg||'resipi')==='resipi')return head(nr+' resipi style')+inSegs()+gyView();
+  if((ui.inSeg||'resipi')==='resipi')return gyView();
   return head(list.length+' rujukan design',`<button class="btn solid tab" data-act="inUp">${IC.up}Upload screenshot</button>`)+inSegs()+
   (list.length?`<div class="igrid glass">${list.map(i=>`<div class="icell${ui.inSel===i.id?' sel':''}"><button type="button" class="ipic" data-act="inPick" data-id="${i.id}" aria-label="${esc(i.title||'Rujukan')}">${i.asset?`<img src="${blobUrl(esc(i.asset))}" alt="${esc(i.title||'')}" loading="lazy">`:esc(i.title||'Nota')}</button>
     <span class="iact"><button type="button" class="btn icon sm" data-act="inOpen" data-id="${i.id}" aria-label="Buka">${IC.edit}</button><button type="button" class="btn icon sm solid bad" data-act="inDel" data-id="${i.id}" aria-label="Padam">${IC.trash}</button></span></div>`).join('')}</div>`:`<div class="empty">Upload screenshot rujukan di sini. Bila kau cakap "refer inspiration board aku", Claude rujuk board ni.</div>`)+
