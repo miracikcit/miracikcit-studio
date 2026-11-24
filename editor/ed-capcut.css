@@ -150,3 +150,19 @@ html.pwa.edtab-Potong .transport, html.pwa.edtab-Cut .transport { gap: 3px; padd
 html.pwa.edtab-Potong .transport .cc, html.pwa.edtab-Cut .transport .cc { width: 32px; min-width: 32px; padding-left: 0 !important; padding-right: 0 !important; justify-content: center; }
 html.pwa.edtab-Potong .transport .ccplay, html.pwa.edtab-Cut .transport .ccplay { width: 38px; min-width: 38px; }
 html.pwa.edtab-Potong .transport .cctc, html.pwa.edtab-Cut .transport .cctc { min-width: 44px; font-size: 11px; }
+
+/* 24 Nov: playhead boleh diseret (pemegang besar), zoom swipe kanan bar, butang main kedua tepi video */
+.edph { pointer-events: auto; touch-action: none; width: 26px; margin-left: -13px; background: none; cursor: ew-resize; }
+.edph::after { content: ""; position: absolute; top: 0; bottom: 0; left: 12px; width: 2px; background: var(--fg); }
+.edph::before { left: 7px; width: 14px; height: 16px; }
+.cczoom { position: sticky; right: 0; flex: 0 0 auto; margin-left: auto; z-index: 7; display: flex; align-items: center; justify-content: space-between; width: 84px; height: 40px; padding: 0 8px;
+  border-radius: 20px; background: var(--fg); color: var(--bg); font-size: 15px; touch-action: none; user-select: none; -webkit-user-select: none; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+.cczoom b { font-size: 14px; font-weight: 400; }
+.cczoom span { font-size: 16px; opacity: .7; }
+.cczoom i { position: absolute; left: 0; bottom: 0; height: 3px; background: #9fe3d2; }
+.cczoom.on { transform: scale(1.06); }
+html.pwa.edsheet .cczoom { display: none; }
+.ccplay2 { position: absolute; right: 6px; bottom: 22%; z-index: 5; display: grid; place-items: center; width: 52px; height: 52px; padding: 0; border: 0; border-radius: 50%;
+  background: var(--fg); color: var(--bg); box-shadow: 0 3px 10px rgba(0,0,0,.25); }
+.ccplay2 .ic { width: 22px; height: 22px; }
+html.pwa.edbig .ccplay2 { right: 2px; }

@@ -223,7 +223,7 @@
   /* playhead tetap di tengah: #inner dan #rinner ada margin 50% (CSS), jadi scrollLeft = masa × pps.
      Enjin juga cuba scroll timeline semasa main (drawHead) — tulisan tu diabaikan supaya tak bergegar; hanya ed-boot yang scroll.
      Semasa main, kedudukan dilicinkan setiap frame (pos enjin bergerak berperingkat). */
-  let touchSc = null, touchAt = 0, seekT = 0, pinch = null, own = false, disp = 0, lastT = 0;
+  let touchSc = null, touchAt = 0, seekT = 0, pinch = null, own = false, disp = 0, lastT = 0, off = null, phDrag = null;   /* 24 Nov: off = jarak playhead dari kiri timeline (px); tak lagi tetap di tengah */
   const SL = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollLeft');
   function lock(sc) {
     if (sc.dataset.lk) return; sc.dataset.lk = '1';
@@ -237,11 +237,14 @@
     const dt = lastT ? Math.min(0.1, (t - lastT) / 1000) : 0; lastT = t;
     if (sc && pps && pos != null) {
       if (playing) { disp += dt; if (Math.abs(disp - pos) > 0.15) disp = pos; } else disp = pos;
-      if (Date.now() - touchAt > 900) {
-        const x = disp * pps;
-        [$('tscroll'), $('rscroll')].forEach(el => { if (el && Math.abs(SL.get.call(el) - x) > 0.5) setSL(el, x); });
+      const cw = sc.clientWidth; if (off == null) off = cw / 2;
+      if (playing && (off < 8 || off > cw - 8)) off = cw / 2;          // main semasa playhead di luar skrin: bawa balik ke tengah
+      if (Date.now() - touchAt > 900 && !phDrag) {
+        [$('tscroll'), $('rscroll')].forEach(el => { if (!el) return; const w = el.clientWidth || cw; const max = Math.max(0, el.scrollWidth - w);
+          const x = Math.max(0, Math.min(max, disp * pps + w / 2 - off)); if (Math.abs(SL.get.call(el) - x) > 0.5) setSL(el, x); });
       }
-      [['edph', $('tscroll')], ['edph2', $('rscroll')]].forEach(([id, el]) => { const ph = $(id); if (ph && el) ph.style.left = (el.offsetLeft + el.clientWidth / 2) + 'px'; });
+      [['edph', $('tscroll')], ['edph2', $('rscroll')]].forEach(([id, el]) => { const ph = $(id); if (!ph || !el) return; const w = el.clientWidth;
+        const x = w / 2 + disp * pps - SL.get.call(el); ph.style.left = (el.offsetLeft + x) + 'px'; ph.style.visibility = x < -2 || x > w + 2 ? 'hidden' : ''; });
     }
     requestAnimationFrame(follow);
   }
@@ -250,6 +253,14 @@
     const ed = document.querySelector('.ed'), rb = document.querySelector('.rbar');
     if (ed && !$('edph')) ed.insertAdjacentHTML('beforeend', '<div class="edph" id="edph" aria-hidden="true"></div>');
     if (rb && !$('edph2')) rb.insertAdjacentHTML('beforeend', '<div class="edph" id="edph2" aria-hidden="true"></div>');
+    [$('edph'), $('edph2')].forEach(ph => { if (!ph) return; const sc = ph.id === 'edph' ? tsc : rsc;
+      const mv = e => { if (!phDrag) return; e.preventDefault(); const r = sc.getBoundingClientRect(); const pps = G('pps'); if (!pps) return;
+        off = Math.max(0, Math.min(r.width, e.clientX - r.left)); const t = Math.max(0, (SL.get.call(sc) + off - sc.clientWidth / 2) / pps); disp = t;
+        clearTimeout(seekT); seekT = setTimeout(() => { try { window.__edSeek = t; (0, eval)('seek(window.__edSeek); drawStickers && drawStickers();'); } catch (e2) {} }, 30); };
+      ph.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); phDrag = 1; ph.setPointerCapture(e.pointerId); if (G('playing')) { try { (0, eval)('stop()'); } catch (e2) {} } });
+      ph.addEventListener('pointermove', mv);
+      ['pointerup', 'pointercancel'].forEach(ev => ph.addEventListener(ev, () => { phDrag = null; }));
+    });
     [tsc, rsc].forEach(sc => {
       lock(sc);
       const mark = () => { touchAt = Date.now(); touchSc = sc; };
@@ -258,9 +269,7 @@
         if (Date.now() - touchAt > 900 || sc !== touchSc) return;   // scroll oleh program, bukan jari
         touchAt = Date.now();
         const other = sc === tsc ? rsc : tsc; setSL(other, SL.get.call(sc));
-        if (G('playing')) { try { (0, eval)('stop()'); } catch (e) {} }
-        clearTimeout(seekT);
-        seekT = setTimeout(() => { const pps = G('pps'); if (!pps) return; try { window.__edSeek = SL.get.call(sc) / pps; (0, eval)('seek(window.__edSeek); drawStickers && drawStickers();'); } catch (e) {} }, 140);   // seek bila jari berhenti
+        const pps = G('pps'); if (pps) off = sc.clientWidth / 2 + disp * pps - SL.get.call(sc);   // seret timeline = lihat sahaja, masa kekal; playhead ikut kandungan
       }, { passive: true });
       sc.addEventListener('touchstart', e => { if (e.touches.length === 2) { const z = $('zoom'); pinch = { d: Math.abs(e.touches[0].clientX - e.touches[1].clientX) || 1, z: +(z && z.value) || 25 }; } }, { passive: true });
       sc.addEventListener('touchmove', e => {
@@ -292,6 +301,18 @@
       <button type="button" class="chip cc ccswap" data-p="swapClip" aria-label="Tukar klip dipilih">⇄</button>
       <span class="ccsep" aria-hidden="true"></span>`);
     tr.insertAdjacentHTML('beforeend', `<button type="button" class="chip cc cctool" data-p="resetAll" aria-label="Reset ke editing asal">${ic('i-reset')}</button>`);
+    /* 24 Nov: zoom di hujung kanan bar (sentiasa nampak): swipe kanan = besar, kiri = kecil. Butang main kedua di tepi kanan video. */
+    tr.insertAdjacentHTML('beforeend', `<div class="cczoom" id="ccZoom" role="slider" aria-label="Zoom timeline, swipe kiri kanan"><span>−</span><b>🔍</b><span>+</span><i id="ccZv"></i></div>`);
+    sc.insertAdjacentHTML('beforeend', `<button type="button" class="ccplay2" id="ccPlay2" aria-label="Main / henti"><svg class="ic"><use id="ccPlayIc2" href="#i-play"/></svg></button>`);
+    $('ccPlay2').addEventListener('pointerdown', e => e.stopPropagation());
+    $('ccPlay2').onclick = e => { e.stopPropagation(); e.preventDefault(); click('play'); };
+    { const zb = $('ccZoom'); let z0 = null;
+      const zv = () => { const z = $('zoom'); const v = $('ccZv'); if (z && v) v.style.width = ((+z.value - +z.min) / ((+z.max - +z.min) || 1) * 100) + '%'; };
+      zb.addEventListener('pointerdown', e => { const z = $('zoom'); if (!z) return; e.preventDefault(); z0 = { x: e.clientX, v: +z.value }; zb.setPointerCapture(e.pointerId); zb.classList.add('on'); });
+      zb.addEventListener('pointermove', e => { const z = $('zoom'); if (!z0 || !z) return; const v = Math.max(+z.min, Math.min(+z.max, Math.round(z0.v + (e.clientX - z0.x) * 0.6)));
+        if (+z.value !== v) { z.value = v; z.dispatchEvent(new Event('input', { bubbles: true })); zv(); } });
+      ['pointerup', 'pointercancel'].forEach(ev => zb.addEventListener(ev, () => { z0 = null; zb.classList.remove('on'); }));
+      zv(); }
     const st = $('stage'); if (st) st.insertAdjacentHTML('beforeend', `<button type="button" class="ccbig" id="ccBig" aria-label="Besarkan video" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg></button>`);
     sc.insertAdjacentHTML('afterend', `<div class="edshd" id="edshd"><b id="ccTab"></b><span class="sp"></span></div>`);
     tr.addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if (b) { e.stopPropagation(); click(b.dataset.p); } }, true);
@@ -301,7 +322,7 @@
     const tc = $('tc'), pi = $('playIc');
     const tcs = () => { $('ccTc').textContent = (tc.textContent || '').replace(/\s*·\s*f\d+/, ''); };
     if (tc) { new MutationObserver(tcs).observe(tc, { childList: true, characterData: true, subtree: true }); tcs(); }
-    if (pi) new MutationObserver(() => { $('ccPlayIc').setAttribute('href', pi.getAttribute('href')); }).observe(pi, { attributes: true });
+    if (pi) new MutationObserver(() => { $('ccPlayIc').setAttribute('href', pi.getAttribute('href')); const p2 = $('ccPlayIc2'); if (p2) p2.setAttribute('href', pi.getAttribute('href')); }).observe(pi, { attributes: true });
     new MutationObserver(sync).observe($('tabs'), { attributes: true, childList: true, subtree: true, attributeFilter: ['aria-selected'] });
     const inn = $('inner'); if (inn) new MutationObserver(() => { rows(); pinVideo(); }).observe(inn, { childList: true });
     const ed = document.querySelector('.ed'), pnl = $('panel');
