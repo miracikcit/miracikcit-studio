@@ -40,8 +40,8 @@ function dlBtn(f,done,id,act){
   if(q&&q.file)return `<button class="btn sm solid tab" data-act="dlSave" ${a}>${IC.dl}Simpan video</button>`;
   if(q)return `<button class="btn sm" disabled ${a}>Memuat ${q.pct||0}%</button>`;
   const drv='https://drive.google.com/file/d/'+encodeURIComponent(f.drive)+'/view';
-  return `<a class="btn sm ${done?'':'solid tab'}" href="${esc(dlUrl(f.drive))}" target="_blank" rel="noopener" data-drv="1" ${a}>${done?IC.check+'Downloaded':IC.dl+'Download'}</a><a class="btn sm" href="${esc(drv)}" target="_blank" rel="noopener" style="min-height:26px;padding:3px 10px;font-size:9px">${IC.ext}Drive</a>
-    <button class="btn sm" style="min-height:26px;padding:3px 10px;font-size:9px" data-act="dlGo" ${a.replace('data-dlid','data-dlx')}>${IC.dl}Muat dalam app</button>`}
+  /* 24 Nov (Mira): buang Download / Muat dalam app, guna butang Drive sahaja */
+  return `<a class="btn sm ${done?'':'solid tab'}" href="${esc(drv)}" target="_blank" rel="noopener" data-drv="1" ${a}>${done?IC.check:IC.ext}Drive</a>`}
 /* Buka di Drive: link biasa (app Google Drive terbuka sendiri). Tanda Downloaded tanpa halang link. */
 document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('a[data-drv]');if(el)setTimeout(()=>dlMark(el),300)});
 function dlMark(el){const id=el.dataset.id;
