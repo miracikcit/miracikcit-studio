@@ -341,3 +341,6 @@ audio{width:100%;margin-top:8px}
 .schhook{overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .schcell .chk{font-size:12px}
 @media (min-width:700px){.schcells{grid-template-columns:1fr 1fr}}
+.tsplan{margin-top:8px;font-size:12px;padding:6px 10px;border-radius:10px;background:color-mix(in srgb,var(--pc) 12%,rgba(255,255,255,.7));color:var(--pc);line-height:1.4}
+.prodrow{margin-top:10px;padding-top:8px;border-top:1px solid rgba(122,78,45,.15)}
+.prodrow.red b{color:#C0392B}

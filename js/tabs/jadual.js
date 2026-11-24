@@ -47,7 +47,7 @@ function jadualView(segs){
   if(unslot.length)warn.push(`${unslot.length} video belum dapat slot dalam 90 hari.`);
   const busy=schedBusy?`<div style="margin-bottom:12px">${ldr((schedProg&&schedProg.txt)||'Kemas kini jadual',schedProg&&schedProg.pct)}</div>`:'';
   return head(live.length+' video dijadualkan',`<button class="btn sm" data-act="schRun">Susun semula</button>`)+segs+sheetNote()+busy+
-    (warn.length?`<div class="banner glass" style="--c:#C0392B">${warn.map(w=>`<div>⚠ ${w}</div>`).join('')}</div>`:'')+
+    (warn.length?`<div class="banner glass" style="--c:#C0392B">${warn.map(w=>`<div>⚠ ${w}</div>`).join('')}</div>`:'')+prodBox()+
     `<div class="list">${html||'<div class="empty">Tiada video untuk dijadualkan.</div>'}</div>`+
     (exc.length?`<p class="eyebrow" style="margin-top:22px">Excluded · post cepat · ${exc.length}</p><div class="list">${exc.map(schCard).join('')}</div>`:'')+
     `<p class="meta" style="margin-top:16px">${tok(0)} Masa ini untuk semua platform. Tanda Scheduled bila dah schedule. Excluded = post cepat, tak dikira kuota.</p>`}
@@ -86,3 +86,11 @@ A.schSave=el=>{const k=el.dataset.id;const date=$('#se-d').value,time=$('#se-t')
   if(clash){toast('Slot tu dah ada video Tetap/Scheduled: '+clash.v.prod);return}
   closeModal();schSet(k,{date,time,acc,status:'Tetap'},'Slot ditukar')};
 A.schAuto=el=>{closeModal();schSet(el.dataset.id,{date:'',time:'',status:''},'App akan pilih slot')};
+
+/* Pelan produksi (peringkat 3): job akan datang + deadline shoot / edit + berapa video lagi */
+function prodBox(){const P=prodPlanC();if(!P)return '';const rows=P.jobs.concat(P.cres).map(it=>{const p=P.res[it.id];if(!p)return '';const red=p.late||p.urgent||!p.post;
+    return `<div class="prodrow${red?' red':''}"><div style="min-width:0"><b>${esc(it.title||'Item')}</b> <span class="meta">${p.kind} · ${p.need} video</span><div class="meta">${p.post?`${p.shootBy?'Shoot by '+dmy(p.shootBy)+' · ':''}Edit by ${dmy(p.editBy)} · Post ${dmy(p.post)}${p.postEnd?'–'+dmy(p.postEnd):''}`:'Tiada slot kosong'}${p.late?' · lewat dari deadline '+dmy(p.due):''}</div></div></div>`}).join('');
+  const more=P.gapJ>0||P.gapC>0?`<div class="meta" style="margin-top:8px">Untuk penuhkan 14 hari: perlu <b>${P.moreProducts} produk lagi</b> (${P.gapJ} video jualan)${P.gapC?` dan <b>${P.gapC} video creative</b>`:''}.</div>`:`<div class="meta" style="margin-top:8px">14 hari ke depan penuh.</div>`;
+  const open=ui.prodOpen!==false;
+  return `<div class="card glass" style="margin-bottom:14px"><button class="rowh" type="button" data-act="prodTog" style="width:100%;background:none;border:0;padding:0;text-align:left"><p class="eyebrow" style="margin:0">Pelan produksi · ${P.jobs.length+P.cres.length} akan datang</p><span class="meta">${open?'Tutup':'Buka'}</span></button>${open?rows+more:''}</div>`}
+A.prodTog=()=>{ui.prodOpen=ui.prodOpen===false;render(true)};

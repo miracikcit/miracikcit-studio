@@ -72,3 +72,38 @@ async function autoSched(force){if(schedBusy||mode!=='live'||!MCP||!sheetRaw.PRO
         vals.forEach((nx,i)=>{const a=raw[i+4]=(raw[i+4]||[]).slice();nx.forEach((x,j)=>a[t.sc+j]=x)})}}
     if(n){render();toast('Jadual posting dikemas kini: '+n+' video')}}
   catch(e){toast('Tak dapat tulis jadual ke Sheet')}finally{schedBusy=false;schedProg=null}}
+
+/* ---------- Pelan produksi (24 Nov, peringkat 3) ----------
+   Job akan datang (Shoot / Shot / Edit, belum dalam Sheet): setiap produk perlu 3 video setiap akaun = 6 video,
+   post berselang hari (D, D+2, D+4). App cari slot kosong terawal yang muat, kemudian kira undur:
+   Edit siap = D-2, Shoot siap = D-4 (folder VO/VLOG D-6). Creative: 1 video setiap slot creative kosong. 0 token. */
+const PROD_SHOOT=4,PROD_SHOOT_VO=6,PROD_EDIT=2,PROD_DAYS=14;
+function prodPlan(now){now=now||new Date();const today=ymd(now);const groups=parseSheet();if(!groups)return null;
+  const plan=schedPlan(groups,now),W=schedWarn(plan,groups,now),slots=schedSlots();
+  const cap={},cre={};for(let d=0;d<75;d++){const date=addDays(today,d);cap[date]={};SCHED_ACC.forEach(a=>cap[date][a]=0);cre[date]=0}
+  for(let d=0;d<75;d++){const date=addDays(today,d);const nowT=pad(now.getHours())+':'+pad(now.getMinutes());
+    slots.forEach(s=>{if(d===0&&s.t<=nowT)return;let used=false;plan.forEach(v=>{if(v.date===date&&v.time===s.t&&v.acc===s.a&&v.status!=='Posted')used=true});if(used)return;if(s.k==='C')cre[date]++;else cap[date][s.a]++})}
+  const isVO=it=>/VO|VLOG/i.test(String(it.folder||''));
+  const due=it=>it.sample&&it.sample.postBy||it.postDate||'';
+  const up=S.items.filter(it=>['toshoot','shot','toedit'].includes(it.stage));
+  const jobs=up.filter(isJob).sort((a,b)=>(due(a)||'9').localeCompare(due(b)||'9')||(a.created||0)-(b.created||0));
+  const cres=up.filter(it=>!isJob(it)).sort((a,b)=>(a.created||0)-(b.created||0));
+  const res={},need=SCHED_MIN_BATCH*SCHED_ACC.length;
+  const lead=it=>it.stage==='toshoot'?(isVO(it)?PROD_SHOOT_VO:PROD_SHOOT):PROD_EDIT;
+  const fits=date=>[0,2,4].every(o=>{const x=addDays(date,o);return cap[x]&&SCHED_ACC.every(a=>cap[x][a]>0)});
+  /* deadline dah dekat: mampatkan (shoot hari ni, edit esok, post lusa) */
+  jobs.forEach(it=>{const L=lead(it),du=due(it);const L0=du?Math.max(2,Math.min(L,dayDiff(today,du))):L;let D=null;for(let d=L0;d<70;d++){const date=addDays(today,d);if(fits(date)){D=date;break}}
+    if(D)[0,2,4].forEach(o=>SCHED_ACC.forEach(a=>cap[addDays(D,o)][a]--));
+    const back=D?dayDiff(today,D):0,tight=D&&back<L;
+    const sh=D?(tight?today:addDays(D,-(isVO(it)?PROD_SHOOT_VO:PROD_SHOOT))):'',ed=D?(tight?addDays(D,-1):addDays(D,-PROD_EDIT)):'';
+    res[it.id]={kind:'Jualan',need,post:D||'',postEnd:D?addDays(D,4):'',shootBy:it.stage==='toshoot'?sh:'',editBy:ed,due:du,late:!!(D&&du&&D>du),urgent:!!(D&&(it.stage==='toshoot'?sh:ed)<=today)}});
+  cres.forEach(it=>{let D=null;for(let d=lead(it);d<70;d++){const date=addDays(today,d);if(cre[date]>0){D=date;cre[date]--;break}}
+    res[it.id]={kind:'Creative',need:1,post:D||'',shootBy:D&&it.stage==='toshoot'?addDays(D,-PROD_SHOOT):'',editBy:D?addDays(D,-PROD_EDIT):'',urgent:!!(D&&addDays(D,-(it.stage==='toshoot'?PROD_SHOOT:PROD_EDIT))<=today)}});
+  /* baki kekosongan 14 hari selepas job akan datang */
+  let gapJ=0,gapC=0;for(let d=0;d<PROD_DAYS;d++){const date=addDays(today,d);gapJ+=SCHED_ACC.reduce((n,a)=>n+Math.max(0,cap[date][a]),0);gapC+=Math.max(0,cre[date])}
+  return {res,jobs,cres,W,gapJ,gapC,moreProducts:Math.ceil(gapJ/need)}}
+const prodLine=it=>{const P=prodPlanC();const p=P&&P.res[it.id];if(!p)return '';const c=p.late||p.urgent?'#C0392B':'#7A4E2D';
+  if(!p.post)return `<div class="tsplan" style="--pc:#C0392B">Perlu ${p.need} video · tiada slot kosong dalam 70 hari</div>`;
+  return `<div class="tsplan" style="--pc:${c}"><b>Perlu ${p.need} video</b>${p.kind==='Jualan'?' (3 setiap akaun)':''}${p.shootBy?' · Shoot by '+dmy(p.shootBy):''} · Edit by ${dmy(p.editBy)} · Post ${dmy(p.post)}${p.postEnd?'–'+dmy(p.postEnd):''}${p.late?' · lewat dari deadline '+dmy(p.due):''}</div>`};
+let prodCache=null,prodAt=0;
+function prodPlanC(){if(!prodCache||Date.now()-prodAt>5000){try{prodCache=prodPlan()}catch(e){prodCache=null}prodAt=Date.now()}return prodCache}
