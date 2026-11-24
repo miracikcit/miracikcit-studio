@@ -94,3 +94,35 @@ function prodBox(){const P=prodPlanC();if(!P)return '';const rows=P.jobs.concat(
   const open=ui.prodOpen!==false;
   return `<div class="card glass" style="margin-bottom:14px"><button class="rowh" type="button" data-act="prodTog" style="width:100%;background:none;border:0;padding:0;text-align:left"><p class="eyebrow" style="margin:0">Pelan produksi · ${P.jobs.length+P.cres.length} akan datang</p><span class="meta">${open?'Tutup':'Buka'}</span></button>${open?rows+more:''}</div>`}
 A.prodTog=()=>{ui.prodOpen=ui.prodOpen===false;render(true)};
+
+/* ---------- Peringkat 4: kad Home + Google Calendar ---------- */
+const schStockCol=n=>n>=5?'#7A4E2D':n>=2?'#D1A23A':'#C0392B';
+function schedHome(){if(!sheetRaw.PRODUCTS)return '';const J=jadualRows();if(!J)return '';const W=schedWarn(J.plan,J.groups);const today=ymd(new Date());
+  const days=W.fullUntil?dayDiff(today,W.fullUntil)+1:0;const col=schStockCol(days);
+  const strip=W.days.map(d=>{const need=SCHED_ACC.reduce((n,a)=>n+d.quota[a].need,0),have=SCHED_ACC.reduce((n,a)=>n+d.quota[a].have,0);const c=have>=need?'#7A4E2D':have>0?'#D1A23A':'#C0392B';
+    return `<i title="${esc(schDayLbl(d.date))}: ${have}/${need}" style="background:${c}"></i>`}).join('');
+  const late=W.soon.length,P=prodPlanC();const urg=P?Object.values(P.res).filter(p=>p.urgent||p.late).length:0;
+  const rows=`<div class="schstrip">${strip}</div><div class="meta" style="display:flex;justify-content:space-between;margin-top:4px"><span>Hari ni</span><span>14 hari</span></div>`+
+    ccRow('Stok cukup',days?'sampai '+schDayLbl(W.fullUntil).split(' · ')[1]:'kurang sehari',col,Math.min(100,days/14*100))+
+    (late?ccRow('Belum Scheduled (3 hari)',late+' video','#C0392B',100):'')+
+    (urg?ccRow('Perlu shoot / edit segera',urg+' job','#C0392B',100):'')+
+    (P&&P.moreProducts?ccRow('Untuk penuhkan 14 hari',P.moreProducts+' produk lagi','#D1A23A',0):'');
+  return ccard('ready','Jadual posting',days+' hari stok · 9 posting sehari',days,rows).replace('<div class="ccmore">',`<div style="margin-top:6px">${tok(0)}</div><div class="ccmore">`)}
+
+/* Calendar: slot posting 7 hari ke depan (tajuk ada masa + akaun) dan deadline Shoot by / Edit by. noRemind = tiada notifikasi. */
+let schCalBusy=false,schCalAt=0;
+async function schedCal(){if(schCalBusy||mode!=='live'||calState!=='ok'||!MCP||!sheetRaw.PRODUCTS)return;if(Date.now()-schCalAt<180000)return;schCalAt=Date.now();schCalBusy=true;
+  try{const J=jadualRows();if(!J)return;const today=ymd(new Date()),end=addDays(today,7);const want=[];
+    J.list.forEach(({r,v})=>{if(v.status==='Excluded'||!v.date||v.date<today||v.date>end)return;
+      want.push({ref:'post-'+r.tab+'-'+r.row,date:v.date,time:v.time,title:`${timeLbl(v.time).toUpperCase()} · @${v.acc} · ${v.kind} · ${v.prod}`,acc:v.acc})});
+    const P=prodPlanC();if(P)P.jobs.concat(P.cres).forEach(it=>{const p=P.res[it.id];if(!p)return;
+      if(p.shootBy&&p.shootBy>=today)want.push({ref:'shoot-'+it.id,date:p.shootBy,title:'Shoot by: '+(it.title||'')+' ('+p.need+' video)'});
+      if(p.editBy&&p.editBy>=today)want.push({ref:'edit-'+it.id,date:p.editBy,title:'Edit by: '+(it.title||'')})});
+    let n=0;const keep=new Set(want.map(w=>w.ref));
+    for(const w of want){if(n>=15)break;const ex=calEvents.find(e=>e.note.includes('Ref: '+w.ref));if(ex&&ex.date===w.date&&(ex.time||'')===(w.time||'')&&ex.title===w.title)continue;
+      const nx=addDays(w.date,1);const st=w.time?w.date+'T'+w.time+':00':w.date+'T00:00:00';const en=w.time?w.date+'T'+(()=>{const [h,m]=w.time.split(':').map(Number);const t=h*60+m+15;return pad(Math.floor(t/60))+':'+pad(t%60)})()+':00':nx+'T00:00:00';
+      const p={summary:w.title,description:[w.acc?'Akaun: '+w.acc:'','Ref: '+w.ref,MARK].filter(Boolean).join('\n'),allDay:!w.time,startTime:st,endTime:en,noRemind:true};
+      if(ex)await MCP.callTool(GC,'update_event',Object.assign({eventId:ex.id},p));else await MCP.callTool(GC,'create_event',p);n++}
+    /* slot / deadline yang dah tiada (Excluded, ditukar, dah lepas) dibuang */
+    for(const e of calEvents){const m=e.note.match(/Ref: ((?:post|shoot|edit)-\S+)/);if(!m||keep.has(m[1])||e.date<today||n>=25)continue;await MCP.callTool(GC,'delete_event',{eventId:e.id});n++}
+    if(n)loadCal()}catch(e){}finally{schCalBusy=false}}

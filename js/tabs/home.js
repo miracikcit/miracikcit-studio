@@ -6,7 +6,7 @@ async function loadCal(){if(!MCP){calState='off';return}if(!calEvents.length)cal
   try{const r=await MCP.callTool(GC,'list_events',{fullText:'miracikcitstudio',startTime:s,endTime:e,pageSize:250,orderBy:'startTime'},{cache:false});
     calEvents=(((r.payload||{}).events)||[]).filter(ev=>ev.status!=='cancelled').map(ev=>{const st=ev.start||{};const dt=st.dateTime||'';const desc=String(ev.description||'').replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]+>/g,'');const m=desc.match(/Akaun:\s*([^\n]+)/i);
       return {id:ev.id,title:ev.summary||'',date:String(dt||st.date||'').slice(0,10),time:dt?dt.slice(11,16):'',account:m?m[1].trim():'',note:desc.split('\n').filter(l=>!/^Akaun:/i.test(l)&&!l.includes(MARK)).join('\n').trim()}});
-    calState='ok';calErr=null;setTimeout(autoCal,3000)}catch(err){calErr=err&&err.code;calState='err'}
+    calState='ok';calErr=null;setTimeout(autoCal,3000);setTimeout(()=>schedCal(),6000)}catch(err){calErr=err&&err.code;calState='err'}
   render()}
 /* Deadline masuk Google Calendar sendiri: akhir post sample + tarikh draf / posting / submission paid job.
    Setiap event ada baris "Ref: <kunci>" supaya tak dibuat dua kali. Tarikh berubah: event dikemas kini. */
@@ -95,6 +95,7 @@ V.home=()=>{
   </div>
   <div class="mgrid">${mini('ideas',n.ideas,'Ideas')}${mini('threads',0,'Threads','threads')}${mini('inspiration',n.inspiration,'Inspo')}${mini('media-kit',n['media-kit'],'Media Kit')}${mini('footage',(S.brlib||[]).reduce((a,d)=>a+(d.clips||[]).length,0)||S.footage.length+S.broll.length,'Footage library')}${mini('shot',n.shot,'Shot')}${mini('caption',0,'Caption','caption')}${mini('transcribe',0,'Transcribe','transcribe')}</div>
   ${ccard('ready',TAB.ready.l,'Publish dalam 1 minggu selepas siap',n.ready,urgent.map(u=>ccRow(shortName(u.r.group.name,u.r.vid),u.d?u.d.label:'tiada tarikh',u.d?u.d.color:'#999',u.d?u.d.pct:0)).join('')||`<p class="meta" style="margin:8px 0 0">${sv?'Tiada video menunggu.':'Menunggu sheet.'}</p>`)}
+  ${schedHome()}
   ${ccard('links','Projects','Sample dan paid job ikut deadline',projCount(),projItems().filter(o=>!o.done).sort((a,b)=>String(a.date).localeCompare(String(b.date))).slice(0,4).map(projRow).join('')||'<p class="meta" style="margin:8px 0 0">Tiada projek menunggu.</p>')}
   ${sorterCard()||(S.workprojects&&S.workprojects.length?`<div class="card big glass" style="--c:#8676BE;margin-top:14px"><p class="eyebrow" style="margin:0">Footage Sorter · Mac mini</p>${ongoingSlot()}</div>`:'')}
   ${voAlert()}

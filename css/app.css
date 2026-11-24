@@ -344,3 +344,4 @@ audio{width:100%;margin-top:8px}
 .tsplan{margin-top:8px;font-size:12px;padding:6px 10px;border-radius:10px;background:color-mix(in srgb,var(--pc) 12%,rgba(255,255,255,.7));color:var(--pc);line-height:1.4}
 .prodrow{margin-top:10px;padding-top:8px;border-top:1px solid rgba(122,78,45,.15)}
 .prodrow.red b{color:#C0392B}
+.schstrip{display:grid;grid-template-columns:repeat(14,1fr);gap:3px;margin-top:10px}.schstrip i{height:14px;border-radius:4px;display:block}

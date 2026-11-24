@@ -280,6 +280,7 @@ function calSave(id, b) {
     ev = b.allDay ? cal.createAllDayEvent(b.summary || '', s, { description: b.description || '' })
                   : cal.createEvent(b.summary || '', s, e, { description: b.description || '' });
   }
+  if (b.noRemind) { try { ev.removeAllReminders(); } catch (x) {} }   /* 24 Nov: jadual posting / deadline tanpa notifikasi */
   return { id: ev.getId() };
 }
 
