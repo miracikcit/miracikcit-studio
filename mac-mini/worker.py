@@ -1489,6 +1489,9 @@ def studio_jobs(sheet, cfg):
             elif j["type"] == "brtag":
                 import brlib
                 outp = brlib.job_brtag(inp, sheet)
+            elif j["type"] == "disk_now":
+                import brlib
+                outp = brlib.job_disk_now(inp, sheet)
             elif j["type"] == "gaya_scan":
                 import gaya
                 outp = gaya.job_gaya_scan(inp, sheet, cfg, drive_upload, sys.modules[__name__])

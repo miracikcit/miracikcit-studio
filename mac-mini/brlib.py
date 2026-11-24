@@ -185,8 +185,9 @@ def _tree(lib):
         fs = [f for f in os.listdir(d) if not f.startswith(".") and not f.endswith((".part.mp4", ".tmp"))]
         on = sum(1 for f in fs if os.path.exists(os.path.join(DISK_ROOT, "B-ROLL LIBRARY", name, f)))
         gone = [c for c in ix["clips"] if c["tempat"] == name and c["path"].startswith("/Volumes/")]
+        mt = [os.path.getmtime(os.path.join(d, f)) for f in fs]
         out.append({"name": name, "mac": len(fs), "disk": on + len(gone), "size": sum(os.path.getsize(os.path.join(d, f)) for f in fs),
-                    "n": len(fs) + len(gone)})
+                    "n": len(fs) + len(gone), "oldest": int(min(mt) * 1000) if mt else None})
     return out
 
 
@@ -231,6 +232,19 @@ def _trash(p):
     if os.path.exists(dst):
         dst += time.strftime(" %H.%M.%S")
     shutil.move(p, dst)
+
+
+def job_disk_now(inp, sheet):
+    """Studio: butang Simpan ke PERTAMA sekarang (24 Nov). Salin terus kalau hard disk bersambung."""
+    if not os.path.ismount(DISK):
+        raise RuntimeError("PERTAMA tak bersambung ke Mac mini. Sambung dulu, Mac salin sendiri")
+    if _disk_busy.is_set():
+        return {"ok": True, "busy": True}
+    _st["disk"] = 0
+    disk_run(sheet)
+    time.sleep(2)
+    storage(sheet, force=True)
+    return {"ok": True}
 
 
 def disk_run(sheet):

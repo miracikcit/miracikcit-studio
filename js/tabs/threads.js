@@ -128,7 +128,7 @@ function thStyleBox(){const st=thStyle();const t=thUi();const ps=thPosts().filte
     ${st.notes&&st.notes.length?`<ul class="thtips">${st.notes.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
     ${st.tips&&st.tips.length?`<span class="num" style="display:block;margin-top:12px">Cadangan untuk naikkan posting kau</span><ul class="thtips">${st.tips.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
     ${st.learnedAt?`<p class="meta" style="margin:6px 0 0">Kemaskini ${fmtD(st.learnedAt)}</p>`:''}
-    <div class="btns" style="gap:6px;margin-top:12px"><button class="btn sm" data-act="thPasteOld">${IC.plus}Tampal posting lama</button></div>
+    <div class="btns" style="gap:6px;margin-top:12px"><button class="btn sm" data-act="thPasteOld">${IC.plus}Tampal posting lama</button><button class="btn sm" data-act="thShotOld"${t.shotBusy?' disabled':''}>${t.shotBusy?'<i class="spin"></i>'+esc(t.shotBusy):'🖼 Upload gambar posting'}</button></div>
     <p class="meta" style="margin:8px 0 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">${t.learnBusy?ldr('Sedang belajar gaya kau'):`Belajar sendiri setiap 5 posting baru (${ps.filter(x=>(x.updated||0)>(st.learnedAt||0)).length}/5)`}${tok(TOK.thstyle,'belajar gaya, auto')}</p></div>`}
 A.thPasteOld=()=>modal(`<h2>Tampal posting lama</h2><p class="meta">Tampal posting Threads kau yang perform. Asingkan setiap posting dengan baris kosong berganda atau ---.</p>
   <textarea class="inp" id="thOld" rows="10" style="margin:10px 0"></textarea><div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="thOldOk">Simpan</button></div>`,TAB.threads.c);
@@ -159,3 +159,12 @@ A.thHCopy=el=>{const p=get('threads',el.dataset.id);if(p)copyText(thParts(p.fina
 A.thHDel=el=>confirmBox('Padam posting ni? Aku tak akan belajar dari dia lagi.',()=>{del('threads',el.dataset.id);toast('Dipadam')},'Ya, padam');
 
 V.threads=()=>{thUi();return head('Gambar cantik, ayat gaya kau')+thImgBox()+thTextBox()+thResBox()+thStyleBox()+thHistory()};
+
+/* 24 Nov (Mira): ingat gaya dari gambar. Screenshot posting lama > Mac mini baca teks (Apple Vision, 0 token) > disimpan sebagai contoh gaya. */
+A.thShotOld=()=>pickFile('image/*',async fs=>{const t=thUi();if(!ASSETS||!window.studioJob){toast('Perlu sambungan Studio');return}let n=0;
+  try{for(let i=0;i<fs.length&&i<10;i++){t.shotBusy='Baca '+(i+1)+'/'+Math.min(fs.length,10);render(true);
+      const up=await ASSETS.upload(fs[i]);const o=await window.studioJob('ocr',{file:up.id},2*60000);
+      const txt=(o.lines||[]).map(String).filter(l=>!/^\d+[smhj]$|^(like|reply|repost|share|suka|balas)$/i.test(l.trim())).join('\n').trim();
+      if(txt.length>=15){save('threads',{final:txt,source:'gambar',edited:false},true);n++}}
+    toast(n?n+' posting dari gambar disimpan sebagai contoh gaya':'Tiada teks dijumpai dalam gambar');if(n)thAutoStudy()}
+  catch(e){toast('Tak dapat baca gambar. Semak Mac mini hidup')}finally{t.shotBusy=null;render(true)}},true);

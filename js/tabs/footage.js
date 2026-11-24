@@ -11,9 +11,9 @@ const brPending=b=>b&&['precut','ready','backup'].includes(b.status);
 const brFor=key=>S.broll.find(b=>b.key===key)||null;
 const ftSemak=()=>S.broll.filter(b=>brPending(b)||b.status==='error').length+S.footage.filter(f=>f.status==='semak'||f.status==='backup').length;
 function thumbImg(id,extra){return id?`<img src="${esc(dThumb(id))}" alt="" loading="lazy" referrerpolicy="no-referrer"${extra||''}>`:'<span class="noth"></span>'}
-V.footage=()=>{const seg=ui.ftSeg==='disk'?'disk':'stok';
-  const segs=[['stok','Stok klip'],['disk','Lokasi & ruang']];
-  return head('Library klip',`<button class="btn sm" data-act="go" data-id="to-edit">${IC.back||'←'} Edit</button>`)+ftNotes()+`<div class="seg" style="margin-bottom:14px">${segs.map(([k,l])=>`<button type="button" class="${seg===k?'on':''}" data-act="ftSeg" data-x="${k}">${l}</button>`).join('')}</div>`+
+V.footage=()=>{const seg=ui.ftSeg==='stok'?'stok':'disk';   /* 24 Nov: Lokasi jadi utama */
+  const segs=[['disk','Lokasi & ruang'],['stok','Stok klip']];
+  return head('Footage library',`<button class="btn sm" data-act="go" data-id="to-edit">${IC.back||'←'} Edit</button>`)+ftNotes()+`<div class="seg" style="margin-bottom:14px">${segs.map(([k,l])=>`<button type="button" class="${seg===k?'on':''}" data-act="ftSeg" data-x="${k}">${l}</button>`).join('')}</div>`+
     (seg==='stok'?ftStokView():ftDiskView())};
 A.ftSeg=el=>{ui.ftSeg=el.dataset.x;render(true)};
 function ftSemakView(){const c=brCfg();
@@ -50,8 +50,9 @@ function ftNotes(){const st=S.sync.storage;if(!st)return `<div class="card glass
   return `<div class="card glass"><p class="eyebrow" style="margin:0 0 4px">Mana klip disimpan ${tok(0)}</p>
    <p class="meta" style="margin:0"><b>Mac:</b> ${esc(m.path||'~/Movies/B-ROLL LIBRARY')} (${gb(m.lib)||'0 MB'}) · klip Final ${st.keepDays||30} hari, kemudian Mac buang ke Trash</p>${ftMeter('Mac mini',m)}
    <p class="meta" style="margin:10px 0 0"><b>Hard disk:</b> ${esc(d.path||'PERTAMA')} ${d.mounted?'':'· <span style="color:var(--warn)">tak bersambung</span>'}</p>${ftMeter('PERTAMA',d)}
-   ${cp.running?`<div style="margin-top:8px">${ldr(cp.msg||'Salin ke PERTAMA',cp.total?cp.done/cp.total*100:0)}</div>`:''}
-   <p class="meta" style="margin:10px 0 0"><b>Google Drive:</b> ${esc(g.path||'')} (${gb(g.lib)||'0 MB'})</p>${g.total?ftMeter('Google Drive',g):`<p class="meta" style="margin:2px 0 0;font-size:11px">% Drive keluar lepas Apps Script dikemaskini.</p>`}
+   ${cp.running?`<div class="stbar" style="--c:var(--warn);margin-top:8px"><div class="stt"><span>${esc(String(cp.msg||'Salin ke PERTAMA').slice(0,40))}</span><span>${cp.total?Math.round(cp.done/cp.total*100):0}% · ${cp.done}/${cp.total}</span></div><div class="stg"><i style="width:${Math.max(3,cp.total?cp.done/cp.total*100:0)}%"></i></div></div>`:''}
+   <div class="btns" style="margin-top:10px"><button class="btn sm solid tab" data-act="diskNow"${cp.running||ui.diskBusy?' disabled':''}>${cp.running||ui.diskBusy?'<i class="spin"></i>Sedang salin':'💾 Simpan ke PERTAMA sekarang'}</button></div>
+   <p class="meta" style="margin:10px 0 0"><b>Google Drive:</b> ${esc(g.path||'')} (${gb(g.lib)||'0 MB'})</p>${g.total?ftMeter('Google Drive',g):`<p class="meta" style="margin:2px 0 0;font-size:11px;color:var(--warn)">% Drive belum bersambung: Apps Script dalam Google belum dikemaskini (tampal Code.gs baru, kemudian Deploy › Manage deployments › New version).</p>`}
    <p class="meta" style="margin:8px 0 0;font-size:11px">Studio tunjuk preview sahaja. Fail sebenar: tekan klip, kemudian Buka fail sebenar.</p></div>`}
 /* Lokasi: senarai ikut susunan folder dalam hard disk (dan Drive). Mac salin sendiri ke PERTAMA bila bersambung. */
 function ftDiskView(){const st=S.sync.storage||{};const root=((st.disk||{}).path)||'PERTAMA/MIRA/WORK ARCHIVE/WORK 2026';
@@ -60,17 +61,22 @@ function ftDiskView(){const st=S.sync.storage||{};const root=((st.disk||{}).path
   /* folder ikut Mac (doc storage.tree); kiraan Drive dari brlib, klip lama dari set B-roll yang dibackup */
   const folders=(st.tree||[]).map(t=>{const d=libs.find(x=>x.place===t.name)||(S.brlib||[]).find(x=>x.place===String(t.name).replace(/^\d{1,3}[ ._-]+/,''));
     const old=S.broll.find(b=>b.status==='stok'&&String(b.lib||'').endsWith('/'+t.name));
-    return {place:t.name,n:t.n,mac:t.mac,disk:t.disk,size:t.size,drive:d?(d.clips||[]).filter(x=>x.drive).length:old&&old.backedUp?t.n:0,driveFolder:d&&d.driveFolder}});
+    return {place:t.name,n:t.n,mac:t.mac,disk:t.disk,size:t.size,oldest:t.oldest,drive:d?(d.clips||[]).filter(x=>x.drive).length:old&&old.backedUp?t.n:0,driveFolder:d&&d.driveFolder}});
   libs.filter(d=>!folders.some(f=>f.place===d.place)).forEach(d=>{const cl=d.clips||[];folders.push({place:d.place,n:cl.length,mac:cl.filter(x=>x.mac).length,disk:cl.filter(x=>x.disk).length,size:cl.reduce((a,x)=>a+(x.size||0),0),drive:cl.filter(x=>x.drive).length,driveFolder:d.driveFolder})});
-  const place=d=>{return `<div class="brrow"><div style="flex:1;min-width:0"><strong>📁 ${esc(d.place)}</strong><span class="meta" style="display:block">${d.n} klip · ${gb(d.size)}</span>
-      <div class="btns" style="gap:4px;margin-top:4px">${chip(d.mac>=d.n,'Mac '+d.mac)}${chip(d.disk>=d.n,'PERTAMA '+d.disk)}${chip(d.drive>=d.n,'Drive '+d.drive)}</div></div>
+  const keep=st.keepDays||30;
+  /* 24 Nov: klip disimpan dalam PERTAMA sahaja; slider = berapa hari lagi sebelum salinan Mac dibuang ke Trash */
+  const left=d=>{if(!d.mac)return null;const t=d.oldest||((S.brlib||[]).find(x=>x.place===d.place)||{clips:[]}).clips.reduce((a,x)=>Math.min(a,Date.parse(x.final||'')||a),Date.now());return Math.max(0,Math.ceil(keep-(Date.now()-t)/DAY))};
+  const place=d=>{const l=left(d);const pct=l==null?0:Math.round(l/keep*100);const col=l==null?'var(--ok)':l<=5?'var(--bad)':l<=12?'var(--warn)':'var(--ok)';
+    return `<div class="brrow"><div style="flex:1;min-width:0"><strong>📁 ${esc(d.place)}</strong><span class="meta" style="display:block">${d.n} klip · ${gb(d.size)}</span>
+      <div class="btns" style="gap:4px;margin-top:4px">${chip(d.disk>=d.n,d.disk>=d.n?'Dalam PERTAMA':'PERTAMA '+d.disk+'/'+d.n)}</div>
+      ${l==null?`<p class="meta" style="margin:4px 0 0;font-size:11px">Mac dah kosong, simpan dalam PERTAMA sahaja</p>`:`<div class="stbar" style="--c:${col};margin-top:6px"><div class="stt"><span>Dibuang dari Mac dalam</span><span>${l} hari</span></div><div class="stg"><i style="width:${Math.max(3,pct)}%"></i></div></div>${d.disk<d.n&&l<=5?`<p class="meta" style="margin:2px 0 0;font-size:11px;color:var(--bad)">Belum masuk PERTAMA: Mac tak buang selagi belum disalin</p>`:''}`}</div>
       ${d.driveFolder?`<a class="btn icon sm" href="https://drive.google.com/drive/folders/${encodeURIComponent(d.driveFolder)}" target="_blank" rel="noopener" aria-label="Buka folder Drive" title="Buka folder dalam Google Drive">${IC.ext}</a>`:''}</div>`};
   const best=S.footage.filter(f=>(f.status==='stok'||!f.status)&&((f.files||[]).length||+f.clips));
   return `<div class="card glass"><p class="eyebrow" style="margin:0">📂 ${esc(root)}</p>
-    <p class="meta" style="margin:8px 0 0"><b>B-ROLL LIBRARY</b> (sama dalam Mac, PERTAMA dan Drive)</p>
+    <p class="meta" style="margin:8px 0 0"><b>B-ROLL LIBRARY</b> · simpanan tetap dalam PERTAMA</p>
     ${folders.map(place).join('')||'<p class="meta">Belum ada klip Final.</p>'}
     ${best.length?`<p class="meta" style="margin:14px 0 0"><b>KLIP TERBAIK</b></p>${best.map(f=>`<div class="brrow"><div style="flex:1;min-width:0"><strong>📁 ${esc(f.name)}</strong><span class="meta" style="display:block">${(f.files||[]).length||+f.clips||0} klip · ${gb(f.size)}</span></div>${f.backedUp?chip(true,'Drive'):''}</div>`).join('')}`:''}
-    <p class="meta" style="margin:12px 0 0;font-size:11px">Mac salin sendiri ke PERTAMA setiap kali hard disk disambung. Tiada apa perlu ditick.</p></div>`}
+    <p class="meta" style="margin:12px 0 0;font-size:11px">Bila PERTAMA disambung ke Mac mini, Mac salin sendiri (bar % keluar di atas). Salinan Mac dibuang ke Trash selepas ${keep} hari, hanya bila dah ada dalam PERTAMA. 0 token Claude.</p></div>`}
 /* Satu klip Final: preview, buka fail sebenar, ubah tag (tambah / buang) */
 A.ftClip=el=>{const d=(S.brlib||[]).find(x=>x.id===el.dataset.id);const x=d&&(d.clips||[]).find(c=>c.k===el.dataset.x);if(!x)return;
   ui.ftEd={lib:d.id,k:x.k,tag:(x.tag||[]).slice()};ftClipDraw()};
@@ -106,3 +112,6 @@ A.brStart=el=>{const key=el.dataset.id;ui.ftBusy=Object.assign({},ui.ftBusy,{[ke
   studioJob('broll_start',{key},3*60000).then(()=>toast('Pre-cut dimulakan. Siap dalam beberapa minit')).catch(e=>toast('Tak dapat pre-cut: '+String((e&&e.message)||'').slice(0,80)))
    .finally(()=>{const x=Object.assign({},ui.ftBusy);delete x[key];ui.ftBusy=x;render()})};
 A.brSave=()=>{const h=$('#brHome').value.trim()||BR_HOME,a=$('#brAway').value.trim();if(!/^https?:\/\//i.test(h)||(a&&!/^https?:\/\//i.test(a))){toast('Alamat mesti mula dengan http://');return}saveSettings({broll:{home:h,away:a}});render(true);toast('Disimpan')};
+
+A.diskNow=async()=>{ui.diskBusy=1;render();try{await studioJob('disk_now',{},2*60000);toast('Sedang salin ke PERTAMA. Bar % keluar di atas')}
+  catch(e){toast(String((e&&e.message)||'Mac mini tak jawab').slice(0,90))}finally{ui.diskBusy=0;render()}};
