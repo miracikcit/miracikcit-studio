@@ -79,7 +79,7 @@ V.home=()=>{
   const sv=sheetView();const te=toEditFolders();const hr=new Date().getHours();const eds=S.editor.filter(e=>!edDone(e));
   const n={ideas:byStage('ideas').length,'to-shoot':byStage('toshoot').length,shot:byStage('shot').length,'to-edit':te.length+byStage('toedit').length,
     ready:(sv?sv.ready.length:0)+appReady(sv).length,published:publishedEntries(sv).length,links:sv?sv.groups.filter(g=>g.tab==='PRODUCTS').length:'–',
-    jobs:S.jobs.filter(j=>!/siap|bayaran/i.test(j.status||'')).length,editor:eds.length,footage:S.footage.length,inspiration:S.inspo.length,'media-kit':3};
+    jobs:S.jobs.filter(j=>!/siap|bayaran/i.test(j.status||'')).length,editor:eds.length,footage:S.footage.length,inspiration:S.inspo.length+S.gaya.length,'media-kit':3};
   const urgent=sv?sv.ready.map(r=>({r,d:deadline(rowStart(r,sv),7)})).sort((a,b)=>(a.d?a.d.left:99)-(b.d?b.d.left:99)).slice(0,3):[];
   const box=(k,num,lab)=>{const t=TAB[k];return `<button class="hbox glass" style="--c:${t.c}" data-act="go" data-id="${k}"><b>${num!==undefined?num:n[k]}</b><span class="l">${lab||navLabel(t.l)}</span></button>`};
   const icn=k=>IC[k].replace('<svg ','<svg style="width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round" ');
@@ -168,4 +168,4 @@ function autoSheet(){if(mode!=='live'||!sheetRaw.PRODUCTS||Date.now()-autoSheetA
 
 /* Lagi: semua alat dan rekod yang jarang guna */
 V.lagi=()=>{const sv=sheetView();const t=(k,num,lab,icon)=>{const c=TAB[k].c;return `<button class="hbox glass mini" style="--c:${c}" data-act="go" data-id="${k}">${icon?`<b style="display:flex;color:${c}">${IC[icon].replace('<svg ','<svg style="width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round" ')}</b>`:`<b>${num}</b>`}<span class="l">${lab}</span></button>`};
-  return head('Alat dan rekod')+`<div class="mgrid">${t('inspiration',S.inspo.length,'Inspo')}${t('media-kit',3,'Media Kit')}${t('footage',S.footage.length,'Footage library')}${t('caption',0,'Caption','caption')}${t('threads',0,'Threads','threads')}${t('transcribe',0,'Transcribe','transcribe')}${t('shot',byStage('shot').length,'Shot')}${t('ideas',byStage('ideas').length,'Ideas')}</div>`};
+  return head('Alat dan rekod')+`<div class="mgrid">${t('inspiration',S.inspo.length+S.gaya.length,'Inspo')}${t('media-kit',3,'Media Kit')}${t('footage',S.footage.length,'Footage library')}${t('caption',0,'Caption','caption')}${t('threads',0,'Threads','threads')}${t('transcribe',0,'Transcribe','transcribe')}${t('shot',byStage('shot').length,'Shot')}${t('ideas',byStage('ideas').length,'Ideas')}</div>`};

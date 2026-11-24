@@ -1049,6 +1049,20 @@ def run_edit_now(inp, sheet, cfg):
     key = os.path.basename(main) + "/" + name
     ed_id = "ed-f-" + re.sub(r"[^a-z0-9]+", "", key.lower())[:40]
     prompt = f"/edit-reel {no}/{name} (tracker Studio: editor/{ed_id})"
+    gid = str(inp.get("gaya") or "")
+    if gid:
+        import gaya
+    if gid:                                          # butang "Guna style ni" dalam Studio > Inspiration
+        if not re.match(r"^[a-z0-9-]{4,40}$", gid):
+            raise RuntimeError("id resipi tak sah")
+        g = sheet.call("dget", path="gaya/" + gid).get("doc") or {}
+        if not g.get("card"):
+            raise RuntimeError("Resipi tak dijumpai atau belum siap")
+        gname = re.sub(r"[^\w .&+-]", "", str(g.get("name") or "resipi"))[:40]
+        prompt = (f"/edit-reel {no}/{name} resipi {gid} \"{gname}\" (tracker Studio: editor/{ed_id}). GUNA STYLE NI: baca resipi dengan "
+                  f"python3 ~/MiracikcitTranscribe/studio.py get gaya/{gid} dan edit footage folder ni ikut Resipi Style tu. "
+                  "Tiru gaya dan susunan sahaja, JANGAN salin ayat, skrip, muzik atau footage video asal. "
+                  "Terus draf (tiada storyboard): draf masuk Editor PWA dalam Studio, tunggu Mira lulus, final ke 00. TO POST FINAL.")
     q = lambda x: "'" + str(x).replace("'", "'\\''") + "'"
     d = os.path.join(HOME, "edit-now")
     os.makedirs(d, exist_ok=True)
@@ -1073,6 +1087,9 @@ def run_edit_now(inp, sheet, cfg):
     now = int(time.time() * 1000)
     cur = sheet.call("dget", path="editor/" + ed_id).get("doc") or {"created": now}
     cur.update({"name": name, "folder": key, "style": os.path.basename(main), "status": "Sesi dibuka", "updated": now, "sessionAt": now})
+    if gid:
+        cur.update({"style": "Resipi: " + gname, "gaya": gid})
+        gaya._merge(sheet, "gaya/" + gid, {"used": (g.get("used") or []) + [{"folder": key, "at": now}]})
     cur.pop("chat", None)
     sheet.call("dset", path="editor/" + ed_id, data=cur)
     threading.Thread(target=_watch_session, args=(sheet, ed_id, logf), daemon=True).start()

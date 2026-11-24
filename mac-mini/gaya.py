@@ -1,12 +1,14 @@
-"""Tiru Gaya: Mira tampal link video rujukan (Drive, TikTok, IG...) dalam Studio > Editor > Style.
+"""Resipi Style (dulu Tiru Gaya): Mira tampal link dalam Studio > Inspiration (atau upload fail video).
 
-Mac mini buat kerja berat tanpa token: muat turun, transkrip, kesan potongan (rentak cut), panjang, BPM,
-OCR teks atas skrin, satu scan sheet 12 frame dan jalur effect (12 frame rapat) untuk masa yang Mira tanda.
-Kemudian Claude Opus (effort low) baca sekali sahaja dan tulis kad gaya ke koleksi `gaya/<id>` status `semak`.
-Mira luluskan dalam Studio. Video yang dimuat turun dibuang sebaik scan siap; hanya scan sheet + preview kecil
-disimpan dalam Drive FOOTAGE/GAYA/<id>.
+Mac mini buat kerja berat tanpa token: muat turun (yt-dlp), transkrip dalam bahasa asal, kesan scene cut (rentak),
+panjang, BPM, 1 frame sesaat (OCR teks atas skrin sampai 180 s; sheet 12 frame untuk 60 s pertama), jalur hook 0-3 s
+dan jalur effect. Kemudian Claude Opus (effort low) baca sekali dan tulis Resipi Style (Bahasa Melayu) ke koleksi
+`gaya/<id>`: status `scan` (step download / analyse) -> `semak` (siap) atau `error` (step = tempat gagal).
+Mira tekan suka (status `simpan`, like 1) atau tak suka (like -1). Link post teks (Threads dsb.): ambil teks sahaja
+(kind `teks`). Video yang dimuat turun dibuang sebaik scan siap; thumbnail, sheet dan preview kecil sahaja disimpan
+dalam Drive FOOTAGE/GAYA/<id>.
 """
-import base64, json, logging, os, re, shutil, subprocess, tempfile, threading, time
+import base64, html, json, logging, os, re, shutil, subprocess, tempfile, threading, time, urllib.request
 
 log = logging.getLogger("worker")
 HOME = os.path.dirname(os.path.abspath(__file__))
@@ -17,14 +19,21 @@ FONT = "/System/Library/Fonts/Helvetica.ttc"
 _lock = threading.Lock()
 _running = set()
 
-FIELDS = ["hook", "cut", "text", "font", "color", "transition", "zoom", "audio", "cta", "length"]
+FIELDS = ["hook", "cut", "text", "font", "color", "transition", "zoom", "audio", "cta", "length", "message", "why"]
+SHEET_S = 60          # Claude baca 1 frame sesaat untuk 60 s pertama (pilihan Mira 24 Nov)
+OCR_S = 180           # OCR 1 frame sesaat (0 token) sampai 180 s
+TEXT_HOSTS = ("threads.net", "threads.com")
 
-PROMPT = """Kau editor video Reels untuk @miracikcit. Tengok video rujukan ni dan tulis KAD GAYA supaya editor boleh tiru
-STRUKTUR dan RUPA dia (bukan aset: jangan cadang guna muzik, logo, watermark, footage atau skrip mereka).
+
+class DownloadError(RuntimeError):
+    pass
+
+PROMPT = """Kau editor video Reels untuk @miracikcit. Tengok video rujukan ni dan tulis RESIPI STYLE dalam Bahasa Melayu
+supaya editor boleh tiru GAYA dan SUSUNAN dia dengan footage Mira sendiri (bukan aset: jangan cadang guna ayat, skrip,
+muzik, logo, watermark atau footage mereka).
 
 Fail untuk dibaca (guna tool Read, baca SEMUA fail serentak dalam satu langkah, jangan baca fail lain):
-- Scan sheet 12 frame (masa tertulis di setiap frame): {scan}
-{fxfiles}
+{files}
 Data yang Mac mini dah ukur (tepat, guna terus):
 {data}
 
@@ -32,21 +41,51 @@ Nota Mira: {note}
 Tag yang Mira pilih: {tags}
 Tag sedia ada: {alltags}
 
-Kad gaya yang dah wujud (bandingkan; kalau hampir sama, isi "match"):
+Resipi yang dah wujud (bandingkan; kalau hampir sama, isi "match"):
 {existing}
 
 Balas JSON sahaja:
 {{"name":"nama pendek 2 perkataan, campur Melayu + English boleh, senang ingat (cth Pop Kilat, Diari Tenang)",
  "summary":"satu ayat rupa keseluruhan",
- "hook":"apa jadi 0-2 saat pertama, teks hook", "cut":"rentak potong (guna data cut)",
- "text":"gaya teks atas skrin: saiz, kedudukan, animasi masuk", "font":"jenis font paling dekat (font percuma)",
- "color":"grading / palet", "transition":"jenis transition", "zoom":"punch-in / gerakan kamera",
- "audio":"jenis muzik (mood, BPM dari data), SFX, VO atau tidak", "cta":"cara tutup + CTA", "length":"panjang + cadangan",
- "beats":["susunan babak ringkas, 4-8 baris, ikut masa"],
+ "hook":"apa jadi dalam 3 saat pertama: shot, gerakan, teks hook, bunyi, dan teknik hook yang dipakai",
+ "cut":"rentak: jumlah cut, purata panjang cut, bahagian laju / perlahan (guna data cut)",
+ "text":"gaya teks atas skrin: posisi, saiz, warna, latar / outline, animasi masuk",
+ "font":"jenis font paling dekat (font percuma)",
+ "color":"grading / palet", "transition":"jenis transition dan effect peralihan", "zoom":"punch-in / gerakan kamera",
+ "audio":"muzik (mood, BPM dari data), sound effect (bila dan jenis apa), VO atau tidak",
+ "cta":"cara tutup + CTA", "length":"panjang + cadangan",
+ "message":"mesej utama video, satu atau dua ayat",
+ "why":"kenapa video ni menarik: 2-4 sebab yang boleh ditiru",
+ "beats":["susunan cerita ikut masa, 4-8 baris: apa peranan setiap bahagian (hook, masalah, bukti, payoff, CTA...)"],
  "effects":[{{"name":"nama effect pendek","at":"masa","look":"apa nampak","recipe":"cara bina semula: lapisan, masa, nilai (zoom %, blur px, flash ms, ease)"}}],
- "tagsSuggest":["0-3 tag tambahan yang sesuai, guna tag sedia ada kalau padan"],
- "match":null atau {{"id":"id kad sedia ada","name":"nama","pct":0-100,"why":"apa yang sama"}}}}
-Effect: tulis hanya effect yang betul-betul nampak (terutama dalam jalur effect). Kalau tiada, [].
+ "tagsSuggest":["0-3 tag yang sesuai, guna tag sedia ada kalau padan"],
+ "match":null atau {{"id":"id resipi sedia ada","name":"nama","pct":0-100,"why":"apa yang sama"}}}}
+SEMUA kunci wajib ada (termasuk "text"); setiap nilai selain beats / effects / tagsSuggest / match ialah satu string.
+Tulis gaya dan struktur sahaja; jangan salin ayat asal video (petik paling banyak 5 perkataan sebagai contoh).
+Effect: tulis hanya effect yang betul-betul nampak. Kalau tiada, [].
+"""
+
+TEXT_PROMPT = """Kau penulis content untuk @miracikcit. Ini satu POST TEKS rujukan (bukan video). Tulis RESIPI STYLE dalam
+Bahasa Melayu supaya Mira boleh tiru GAYA dan SUSUNAN dia dengan cerita sendiri. Jangan salin ayat asal.
+
+Sumber: {link}
+Teks post:
+{text}
+
+Nota Mira: {note}
+Tag sedia ada: {alltags}
+
+Balas JSON sahaja:
+{{"name":"nama pendek 2 perkataan, senang ingat",
+ "summary":"satu ayat rupa keseluruhan",
+ "hook":"macam mana ayat pembuka tarik perhatian (teknik, bukan salin ayat)",
+ "text":"gaya ayat: panjang ayat, nada, perenggan, emoji, tanda baca",
+ "length":"panjang + cadangan",
+ "cta":"cara tutup",
+ "message":"mesej utama, satu atau dua ayat",
+ "why":"kenapa post ni menarik: 2-4 sebab yang boleh ditiru",
+ "beats":["susunan cerita, 3-7 baris: apa peranan setiap bahagian"],
+ "tagsSuggest":["0-3 tag yang sesuai, guna tag sedia ada kalau padan"]}}
 """
 
 
@@ -68,7 +107,71 @@ def _run(cmd, timeout=600):
 
 
 # ---------------------------------------------------------------- muat turun
+def _host(link):
+    m = re.match(r"^https?://([^/?#]+)", str(link or "").strip(), re.I)
+    return (m.group(1).lower() if m else "").split(":")[0]
+
+
+def _is_text_host(link):
+    h = _host(link)
+    return any(h == d or h.endswith("." + d) for d in TEXT_HOSTS)
+
+
+def _og(link):
+    """Baca og:description / og:image halaman (post teks). Pulang (teks, url gambar, tajuk)."""
+    req = urllib.request.Request(link, headers={"User-Agent": "facebookexternalhit/1.1", "Accept-Language": "ms,en;q=0.8"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        page = r.read(1500000).decode("utf-8", "replace")
+
+    def meta(key):
+        for pat in (r'<meta[^>]+(?:property|name)=["\']%s["\'][^>]*content=(["\'])(.*?)\1' % re.escape(key),
+                    r'<meta[^>]+content=(["\'])(.*?)\1[^>]*(?:property|name)=["\']%s["\']' % re.escape(key)):
+            m = re.search(pat, page, re.S | re.I)
+            if m:
+                return html.unescape(m.group(2)).strip()
+        return ""
+    return meta("og:description") or meta("description"), meta("og:image"), meta("og:title")
+
+
+def _why(err):
+    """Terjemah ralat yt-dlp jadi mesej yang Mira faham."""
+    e = (err or "").lower()
+    if "private" in e or "login" in e or "sign in" in e or "cookies" in e or "rate-limit" in e:
+        return "Video ni private atau perlu log masuk."
+    if "unsupported url" in e:
+        return "Laman ni tak disokong."
+    if "unavailable" in e or "not found" in e or "404" in e or "removed" in e or "does not exist" in e:
+        return "Video dah dipadam atau link salah."
+    if "timed out" in e or "resolve" in e or "connection" in e or "network" in e:
+        return "Internet Mac mini bermasalah."
+    if "no video" in e or "there is no video" in e:
+        return "Post ni tak ada video."
+    return "Video tak dapat dimuat turun."
+
+
+def _fetch_text(link, tmp):
+    try:
+        text, img, title = _og(link)
+    except Exception as e:
+        raise DownloadError("Tak dapat buka link. Semak link tu boleh dibuka tanpa log masuk. (%s)" % str(e)[:120])
+    if len(text) < 20:
+        raise DownloadError("Tak jumpa teks pada link ni. Post mungkin private. Copy teksnya dan tampal dalam Threads > Gaya kau, atau upload fail video.")
+    thumb = None
+    if img.startswith("http"):
+        try:
+            thumb = os.path.join(tmp, "thumb.jpg")
+            req = urllib.request.Request(img, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=30) as r, open(thumb, "wb") as fh:
+                fh.write(r.read(8000000))
+            _run([FFMPEG, "-y", "-loglevel", "error", "-i", thumb, "-vf", "scale=480:-2", "-q:v", "4", thumb + ".jpg"], 60)
+            thumb = thumb + ".jpg" if os.path.exists(thumb + ".jpg") else None
+        except Exception:
+            thumb = None
+    return {"text": text[:6000], "title": title[:160], "thumb": thumb}
+
+
 def _fetch(sheet, link, tmp, ytdlp):
+    """Pulang (laluan video, nama fail, None) atau (None, "", post teks)."""
     fid = drive_id(link)
     if fid:
         try:
@@ -83,19 +186,31 @@ def _fetch(sheet, link, tmp, ytdlp):
                     fh.write(b)
                     start += len(b)
             if os.path.getsize(out) > 0:
-                return out, name
+                return out, name, None
         except Exception as e:
             log.info("Drive dchunk tak jalan (%s), cuba yt-dlp", e)
+    if _is_text_host(link):
+        return None, "", _fetch_text(link, tmp)
     if not ytdlp:
-        raise RuntimeError("yt-dlp tak dijumpai")
+        raise DownloadError("yt-dlp tak dijumpai dalam Mac mini. Upload fail video sebagai ganti.")
     cmd = [ytdlp, "--no-playlist", "--no-warnings", "-f", "bv*[height<=1920]+ba/b", "--merge-output-format", "mp4",
            "--ffmpeg-location", os.path.dirname(FFMPEG), "-o", os.path.join(tmp, "ref.%(ext)s"), link]
-    r = _run(cmd, 900)
+    try:
+        r = _run(cmd, 900)
+    except subprocess.TimeoutExpired:
+        raise DownloadError("Download ambil masa lebih 15 minit, dihentikan. Upload fail video sebagai ganti.")
     files = [f for f in os.listdir(tmp) if f.startswith("ref.") and not f.endswith(".part")]
     if r.returncode or not files:
-        hint = "Link Drive mesti boleh dibuka akaun Mira, atau dikongsi 'Anyone with the link'." if fid else "Video tak dapat dimuat turun."
-        raise RuntimeError(hint + " (" + ((r.stderr or "").strip().splitlines() or ["?"])[-1][:200] + ")")
-    return os.path.join(tmp, files[0]), ""
+        last = ((r.stderr or "").strip().splitlines() or ["?"])[-1][:200]
+        if fid:
+            raise DownloadError("Link Drive mesti boleh dibuka akaun Mira, atau dikongsi 'Anyone with the link'. (" + last + ")")
+        if re.search(r"no video|unsupported url", last, re.I):      # mungkin post teks / gambar
+            try:
+                return None, "", _fetch_text(link, tmp)
+            except DownloadError:
+                pass
+        raise DownloadError(_why(last) + " Simpan video tu ke phone dan tekan Upload video sebagai ganti. (" + last + ")")
+    return os.path.join(tmp, files[0]), "", None
 
 
 # ---------------------------------------------------------------- ukur
@@ -215,12 +330,31 @@ def analyse(src, tmp, cfg, fx, worker):
         data["audio"] = "tiada"
     times = [round((i + 0.5) * dur / 12, 2) for i in range(12)]
     scan, _ = _sheet(src, times, os.path.join(tmp, "scan.jpg"), tmp, "s")
-    texts = []
-    for i, t in enumerate(times):
-        f = _frame(src, t, os.path.join(tmp, f"o{i}.jpg"))
-        for o in (_ocr(f) if f else []):
-            texts.append({"s": t, "teks": o["t"], "atas_%": round(o["y"] * 100), "tinggi_%": round(o["h"] * 100, 1)})
-    data["teks_atas_skrin"] = texts[:40]
+    thumb = _frame(src, min(1.0, dur / 2), os.path.join(tmp, "thumb.jpg"), 480)
+    # 1 frame sesaat: OCR (0 token) sampai OCR_S, sheet 12 frame untuk SHEET_S pertama
+    _run([FFMPEG, "-y", "-loglevel", "error", "-t", str(OCR_S), "-i", src, "-vf", "fps=1,scale=720:-2", "-q:v", "4",
+          os.path.join(tmp, "sec_%03d.jpg")], 600)
+    secs = sorted(f for f in os.listdir(tmp) if f.startswith("sec_"))
+    data["frame_sesaat"] = len(secs)
+    texts, last = [], None
+    for i, f in enumerate(secs):
+        now = []
+        for o in _ocr(os.path.join(tmp, f)):
+            now.append({"s": i, "teks": o["t"], "atas_%": round(o["y"] * 100), "tinggi_%": round(o["h"] * 100, 1)})
+        key = "|".join(x["teks"] for x in now)
+        if now and key != last:                 # teks sama pada saat berturut tak diulang
+            texts.extend(now)
+        last = key
+    data["teks_atas_skrin"] = texts[:80]
+    n = min(len(secs), SHEET_S, int(dur) + 1)
+    sheets = []
+    for k in range(0, n, 12):
+        tt = [float(t) for t in range(k, min(k + 12, n))]
+        path, _ = _sheet(src, tt, os.path.join(tmp, f"sec{k // 12}.jpg"), tmp, f"q{k // 12}")
+        if path:
+            sheets.append({"a": k, "b": k + len(tt) - 1, "img": path})
+    h_end = min(3.0, dur)
+    hook, _ = _sheet(src, [round(h_end * i / 11, 2) for i in range(12)], os.path.join(tmp, "hook.jpg"), tmp, "h")
     # jalur effect: masa yang Mira tanda; kalau tiada, sekitar cut paling kuat
     ranges = []
     for r in (fx or [])[:3]:
@@ -239,24 +373,18 @@ def analyse(src, tmp, cfg, fx, worker):
         pv = _prev(src, a, b, os.path.join(tmp, f"fx{k}.mp4"))
         if path:
             strips.append({"a": round(a, 2), "b": round(b, 2), "mira": mine, "img": path, "mp4": pv})
-    return info, data, scan, strips
+    return info, data, scan, strips, {"thumb": thumb, "sheets": sheets, "hook": hook}
 
 
 # ---------------------------------------------------------------- Claude
-def _claude(cfg, worker, tmp, scan, strips, data, doc, existing, alltags):
+def _ask(cfg, worker, tmp, prompt, read=True):
     cli = worker.find_tool("claude", [cfg.get("claude_cli")])
     if not cli:
         raise RuntimeError("Claude Code tak dijumpai dalam Mac mini.")
-    fxfiles = "\n".join(f"- Jalur effect {s['a']:.1f}-{s['b']:.1f} s ({'Mira tanda' if s['mira'] else 'cut paling kuat'}): {s['img']}"
-                        for s in strips)
-    ex = "\n".join(f"- {g['id']}: {g.get('name')} [{', '.join(g.get('tags') or [])}] {(g.get('card') or {}).get('summary', '')}"
-                   for g in existing) or "(belum ada)"
-    prompt = PROMPT.format(scan=scan, fxfiles=fxfiles, data=json.dumps(data, ensure_ascii=False), note=doc.get("note") or "-",
-                           tags=", ".join(doc.get("tags") or []) or "-", alltags=", ".join(alltags), existing=ex)
-    cmd = [cli, "-p", prompt, "--model", cfg.get("gaya_model", "claude-opus-5-5"), "--effort", cfg.get("gaya_effort", "low"),
-           "--tools", "Read", "--allowedTools", "Read", "--add-dir", tmp, "--system-prompt", worker.AI_SYSTEM,
-           "--no-session-persistence", "--output-format", "json", "--setting-sources", "",
-           "--disable-slash-commands", "--strict-mcp-config", "--exclude-dynamic-system-prompt-sections"]
+    cmd = [cli, "-p", prompt, "--model", cfg.get("gaya_model", "claude-opus-5-5"), "--effort", cfg.get("gaya_effort", "low")]
+    cmd += ["--tools", "Read", "--allowedTools", "Read", "--add-dir", tmp] if read else ["--tools", ""]
+    cmd += ["--system-prompt", worker.AI_SYSTEM, "--no-session-persistence", "--output-format", "json", "--setting-sources", "",
+            "--disable-slash-commands", "--strict-mcp-config", "--exclude-dynamic-system-prompt-sections"]
     r = _run(cmd, 900)
     try:
         d = json.loads(r.stdout)
@@ -274,23 +402,69 @@ def _claude(cfg, worker, tmp, scan, strips, data, doc, existing, alltags):
                                     "turns": len(u.get("iterations") or [])}
 
 
+def _claude(cfg, worker, tmp, scan, strips, data, doc, existing, alltags, extra=None):
+    extra = extra or {}
+    files = []
+    if extra.get("hook"):
+        files.append(f"- Jalur hook 0-3 s (12 frame rapat): {extra['hook']}")
+    for sh in extra.get("sheets") or []:
+        files.append(f"- 1 frame sesaat, saat {sh['a']}-{sh['b']} (masa tertulis di setiap frame): {sh['img']}")
+    if scan and (not files or data.get("panjang_s", 0) > SHEET_S):
+        files.append(f"- Scan sheet 12 frame sepanjang video: {scan}")
+    files += [f"- Jalur effect {s['a']:.1f}-{s['b']:.1f} s ({'Mira tanda' if s['mira'] else 'cut paling kuat'}): {s['img']}"
+              for s in strips]
+    ex = "\n".join(f"- {g['id']}: {g.get('name')} [{', '.join(g.get('tags') or [])}] {(g.get('card') or {}).get('summary', '')}"
+                   for g in existing) or "(belum ada)"
+    prompt = PROMPT.format(files="\n".join(files), data=json.dumps(data, ensure_ascii=False), note=doc.get("note") or "-",
+                           tags=", ".join(doc.get("tags") or []) or "-", alltags=", ".join(alltags), existing=ex)
+    return _ask(cfg, worker, tmp, prompt)
+
+
+def _card(card):
+    def flat(v):
+        if isinstance(v, (list, tuple)):
+            return " • ".join(str(x).strip() for x in v if str(x).strip())
+        return str(v or "").strip()
+    c = {k: flat(card.get(k)) for k in FIELDS + ["summary"]}
+    c["beats"] = [str(b) for b in (card.get("beats") or [])][:10]
+    return c
+
+
 # ---------------------------------------------------------------- kerja
 def _scan(sheet, cfg, up, worker, gid):
     path = "gaya/" + gid
+    step = "download"
     try:
         doc = sheet.call("dget", path=path).get("doc") or {}
         if not doc.get("link"):
             raise RuntimeError("Link tiada")
-        _merge(sheet, path, {"status": "scan", "msg": "Muat turun video", "err": ""})
+        _merge(sheet, path, {"status": "scan", "step": step, "msg": "Downloading", "err": ""})
         pull = sheet.call("pull", since=0).get("docs", [])
         existing = [dict(x["d"], id=x["p"].split("/", 1)[1]) for x in pull
                     if x["p"].startswith("gaya/") and x.get("d") and x["d"].get("status") == "simpan"]
         st = next((x["d"] for x in pull if x["p"] == "settings/main" and x.get("d")), {}) or {}
         alltags = st.get("gayaTags") or []
         with tempfile.TemporaryDirectory(prefix="miracikcit-gaya-") as tmp:
-            src, name = _fetch(sheet, doc["link"], tmp, worker.ytdlp_bin())
-            _merge(sheet, path, {"msg": "Ukur rentak, transkrip, scan frame"})
-            info, data, scan, strips = analyse(src, tmp, cfg, doc.get("fx"), worker)
+            src, name, post = _fetch(sheet, doc["link"], tmp, worker.ytdlp_bin())
+            step = "analyse"
+            if post:                                 # post teks (Threads dsb.): teks sahaja
+                _merge(sheet, path, {"step": step, "msg": "Analysing: Claude tulis Resipi Style"})
+                card, usage = _ask(cfg, worker, tmp, TEXT_PROMPT.format(link=doc["link"], text=post["text"],
+                                   note=doc.get("note") or "-", alltags=", ".join(alltags)), read=False)
+                fid = thumb_id = None
+                if post.get("thumb"):
+                    fid = sheet.call("dpath", base="studio", path=["FOOTAGE", "GAYA", gid], share=True)["id"]
+                    thumb_id = up(sheet, post["thumb"], fid)
+                c = _card(card)
+                tags = list(doc.get("tags") or []) or [t for t in (card.get("tagsSuggest") or []) if isinstance(t, str)][:3]
+                _merge(sheet, path, {"status": "semak", "step": "siap", "msg": "", "kind": "teks", "name": card.get("name") or "Resipi baru",
+                                     "card": c, "tags": tags, "tagsSuggest": [], "match": None, "effects": [], "text": post["text"],
+                                     "srcName": post.get("title") or "", "folder": fid, "thumb": thumb_id, "scan": None, "usage": usage,
+                                     "refs": [{"link": doc["link"], "note": doc.get("note") or "", "at": int(time.time() * 1000)}]})
+                log.info("Resipi teks %s siap: %s (%s token)", gid, card.get("name"), usage)
+                return
+            _merge(sheet, path, {"step": step, "msg": "Analysing: transkrip, scene cut, 1 frame sesaat"})
+            info, data, scan, strips, extra = analyse(src, tmp, cfg, doc.get("fx"), worker)
             try:
                 os.remove(src)                       # video rujukan tak disimpan
             except Exception:
@@ -300,10 +474,11 @@ def _scan(sheet, cfg, up, worker, gid):
                     sheet.call("dtrash", id=doc["upload"])
                 except Exception as e:
                     log.info("Trash upload gagal: %s", e)
-            _merge(sheet, path, {"msg": "Claude tulis kad gaya"})
-            card, usage = _claude(cfg, worker, tmp, scan, strips, data, doc, existing, alltags)
+            _merge(sheet, path, {"msg": "Analysing: Claude tulis Resipi Style"})
+            card, usage = _claude(cfg, worker, tmp, scan, strips, data, doc, existing, alltags, extra)
             fid = sheet.call("dpath", base="studio", path=["FOOTAGE", "GAYA", gid], share=True)["id"]
             scan_id = up(sheet, scan, fid) if scan else None
+            thumb_id = up(sheet, extra["thumb"], fid) if extra.get("thumb") else None
             fx = []
             effs = card.get("effects") or []
             for k, s in enumerate(strips):
@@ -314,10 +489,13 @@ def _scan(sheet, cfg, up, worker, gid):
             for e in effs[len(strips):]:
                 fx.append({"id": f"{gid}-fx{len(fx)}", "name": e.get("name") or "Effect", "at": e.get("at") or "", "look": e.get("look") or "",
                            "recipe": e.get("recipe") or "", "on": True})
-        c = {k: card.get(k) or "" for k in FIELDS + ["summary"]}
-        c["beats"] = card.get("beats") or []
-        _merge(sheet, path, {"status": "semak", "msg": "", "name": card.get("name") or "Gaya baru", "card": c,
-                             "tagsSuggest": [t for t in (card.get("tagsSuggest") or []) if t not in (doc.get("tags") or [])][:3],
+        c = _card(card)
+        sug = [t for t in (card.get("tagsSuggest") or []) if isinstance(t, str) and t not in (doc.get("tags") or [])][:3]
+        tags = list(doc.get("tags") or [])
+        if not tags:                                 # borang baru tiada pilihan tag: guna cadangan Claude terus
+            tags, sug = sug, []
+        _merge(sheet, path, {"status": "semak", "step": "siap", "msg": "", "kind": "video", "name": card.get("name") or "Resipi baru", "card": c,
+                             "tags": tags, "tagsSuggest": sug, "thumb": thumb_id,
                              "match": card.get("match") or None, "effects": fx, "data": {k: v for k, v in data.items() if k != "transkrip"},
                              "info": info, "srcName": name, "folder": fid, "scan": scan_id, "usage": usage,
                              "refs": [{"link": doc["link"], "note": doc.get("note") or "", "scan": scan_id, "at": int(time.time() * 1000)}]})
@@ -325,7 +503,8 @@ def _scan(sheet, cfg, up, worker, gid):
     except Exception as e:
         log.exception("Gaya %s gagal", gid)
         try:
-            _merge(sheet, path, {"status": "error", "msg": str(e)[:300]})
+            _merge(sheet, path, {"status": "error", "step": step,
+                                 "msg": ("Analisis gagal: " if step == "analyse" else "") + str(e)[:280]})
         except Exception:
             pass
     finally:
