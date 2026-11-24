@@ -247,7 +247,7 @@
   /* playhead tetap di tengah: #inner dan #rinner ada margin 50% (CSS), jadi scrollLeft = masa × pps.
      Enjin juga cuba scroll timeline semasa main (drawHead) — tulisan tu diabaikan supaya tak bergegar; hanya ed-boot yang scroll.
      Semasa main, kedudukan dilicinkan setiap frame (pos enjin bergerak berperingkat). */
-  let lastSeek = 0, touchSc = null, touchAt = 0, seekT = 0, pinch = null, own = false, disp = 0, lastT = 0, off = null, phDrag = null;   /* 24 Nov: off = jarak playhead dari kiri timeline (px); tak lagi tetap di tengah */
+  let snapAt = null, snapT = 0, lastSeek = 0, touchSc = null, touchAt = 0, seekT = 0, pinch = null, own = false, disp = 0, lastT = 0, off = null, phDrag = null;   /* 24 Nov: off = jarak playhead dari kiri timeline (px); tak lagi tetap di tengah */
   const SL = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollLeft');
   function lock(sc) {
     if (sc.dataset.lk) return; sc.dataset.lk = '1';
@@ -295,6 +295,10 @@
         const other = sc === tsc ? rsc : tsc; setSL(other, SL.get.call(sc));
         const pps = G('pps'); if (!pps) return;   /* Fasa 2: seret timeline = scrub video (playhead tetap di tengah) */
         disp = Math.max(0, SL.get.call(sc) / pps);
+        { /* 24 Nov: snap ke hujung klip (dalam 7 px) + getaran halus di phone yang benarkan (iPhone Safari tak benarkan getaran dari web) */
+          const S = G('S'), st = G('startOf'); let hit = null;
+          if (S && st) { const thr = 7 / pps; for (let i = 0; i <= S.clips.length; i++) { let e; try { e = i < S.clips.length ? st(i) : G('total()'); } catch (x) { break; } if (Math.abs(e - disp) < thr) { hit = e; break; } if (e > disp + thr) break; } }
+          if (hit != null) { disp = hit; if (snapAt !== hit) { snapAt = hit; try { if (navigator.vibrate) navigator.vibrate(8); } catch (x) {} H.classList.add('edsnap'); clearTimeout(snapT); snapT = setTimeout(() => H.classList.remove('edsnap'), 260); } } else snapAt = null; }
         if (G('playing')) { try { (0, eval)('stop()'); } catch (e2) {} }
         const go = () => { lastSeek = Date.now(); try { window.__edSeek = disp; (0, eval)('seek(window.__edSeek); drawStickers && drawStickers();'); } catch (e2) {} };
         clearTimeout(seekT); if (Date.now() - lastSeek > 70) go(); else seekT = setTimeout(go, 80);
@@ -325,6 +329,7 @@
       <button type="button" class="chip cc ccplay" data-p="play" aria-label="Main / henti"><svg class="ic"><use id="ccPlayIc" href="#i-play"/></svg></button>
       <button type="button" class="chip cc" data-p="fFwd" aria-label="Maju 1 frame">${ic('i-ffwd')}</button>
       <button type="button" class="chip cc" data-p="undo" aria-label="Undo">${ic('i-undo')}</button>
+      <button type="button" class="chip cc ccredo" data-p="redo" aria-label="Redo">${ic('i-undo')}</button>
       <button type="button" class="chip cc cckey" data-p="split" aria-label="Belah klip">${ic('i-split')}</button>
       <button type="button" class="chip cc cckey" data-p="del" aria-label="Buang">${ic('i-del')}</button>
       <button type="button" class="chip cc ccswap" data-p="swapClip" aria-label="Tukar klip dipilih">⇄</button>
@@ -352,7 +357,29 @@
       <button type="button" class="ccmore" id="ccMore" aria-haspopup="true" aria-expanded="false">MORE</button>`);
     $('ccSide').append($('ccBig'), $('ccPlay2'));
     const toSiap = () => { if (!goTab('Siap') && window.toast) toast('Butang render ada pada video terakhir projek ni'); };
-    $('ccDone').onclick = toSiap;
+    /* 24 Nov (Mira lulus): DONE buka helaian dua butang. Draf = terus hantar (Mac mini render, 0 token). Final = buka skrin Render dengan Final dipilih
+       (pilihan Jobs / Creative dan fail asal perlu disemak dulu, jadi satu tekan UPLOAD lagi). */
+    document.body.insertAdjacentHTML('beforeend', `<div class="ccveil" id="ccDVeil" hidden></div><div class="ccdsheet" id="ccDSheet" hidden role="dialog" aria-label="Render">
+      <button type="button" class="big" data-r="draft"><b>Draf</b><span>540×960 · Mac mini render terus</span></button>
+      <button type="button" class="big fin" data-r="final"><b>Final</b><span>1080×1920 · semak pilihan, kemudian UPLOAD</span></button>
+      <button type="button" class="x" data-r="">Batal</button></div>`);
+    { const sh = $('ccDSheet'), ve = $('ccDVeil'), open = on => { sh.hidden = ve.hidden = !on; };
+      $('ccDone').onclick = e => { e.stopPropagation(); if (!document.querySelector('#tabs [data-tab="Siap"]')) return toSiap(); open(true); };
+      ve.onclick = () => open(false);
+      sh.onclick = e => { const b = e.target.closest('button'); if (!b) return; open(false); const r = b.dataset.r; if (!r) return;
+        if (!goTab('Siap')) return toSiap();
+        setTimeout(() => { const c = document.querySelector(`#panel [data-fp="render"][data-v="${r}"]`); if (c && c.getAttribute('aria-pressed') !== 'true') c.click();
+          setTimeout(() => { const up = $('upload'); if (!up) return; if (r === 'draft') up.click(); else up.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 250); }, 250); }; }
+    /* 24 Nov (Mira lulus): tekan lama kad preset = tengok warna ASAL selagi ditekan (banding sebelum / selepas). Tak ubah apa-apa, tak simpan. */
+    { let tm = 0, held = false, x0 = 0, y0 = 0;
+      const off = () => { clearTimeout(tm); if (!held) return; held = false; H.classList.remove('edcmp');
+        try { (0, eval)('(function(){ const h = window.__edCmp; if (!h) return; const c = S.clips[h.i]; if (c) { if (h.g) c.grade = h.g; else delete c.grade; } window.__edCmp = null; lastGrade = ""; applyGrade(S.clips[curIdx]); gradeKick(); })()'); } catch (e) {} };
+      document.addEventListener('pointerdown', e => { const b = e.target.closest && e.target.closest('#panel .preset'); if (!b) return; x0 = e.clientX; y0 = e.clientY; clearTimeout(tm);
+        tm = setTimeout(() => { try { (0, eval)('(function(){ const c = S.clips[curIdx]; if (!c || !c.grade) return; window.__edCmp = { i: curIdx, g: c.grade }; delete c.grade; lastGrade = ""; applyGrade(c); gradeKick(); })()'); } catch (e2) {}
+          if (window.__edCmp) { held = true; H.classList.add('edcmp'); } }, 380); }, true);
+      document.addEventListener('pointermove', e => { if (!held && (Math.abs(e.clientX - x0) > 8 || Math.abs(e.clientY - y0) > 8)) clearTimeout(tm); }, true);
+      ['pointerup', 'pointercancel'].forEach(ev => document.addEventListener(ev, () => { const was = held; off(); if (was) { const stop = c => { c.stopPropagation(); c.preventDefault(); }; document.addEventListener('click', stop, { capture: true, once: true }); setTimeout(() => document.removeEventListener('click', stop, true), 400); } }, true));
+      document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('#panel .preset')) e.preventDefault(); }); }
     { const sv = $('saved'), out = $('ccSv');
       const svs = () => { out.textContent = (sv.textContent || '').replace('Semua perubahan disimpan', 'Disimpan'); out.className = 'ccsv' + (/\berr\b/.test(sv.className) ? ' err' : ''); };
       if (sv) { new MutationObserver(svs).observe(sv, { childList: true, characterData: true, subtree: true, attributes: true }); svs(); } }

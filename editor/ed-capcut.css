@@ -331,3 +331,22 @@ html.pwa #panel .lkb.y[aria-pressed="true"] { background: #58c7d6 !important; bo
     grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)) !important; }
   html.pwa.edsheet .catbar { top: -14px !important; }
 }
+
+/* ===== 24 Nov 2026 (Mira lulus cadangan): redo dalam edit bar, helaian DONE, banding ASAL, pemegang trim besar, tanda snap ===== */
+html.pwa .transport .ccredo .ic { transform: scaleX(-1); }
+html.pwa .transport .chip.cc, html.pwa.edtab-Potong .transport .cc, html.pwa.edtab-Cut .transport .cc { width: 40px !important; min-width: 40px !important; }
+html.pwa .transport [data-p="redo"] { order: 4; } html.pwa .transport .cczoom { order: 5; flex-basis: 52px; min-width: 52px; margin: 0 2px; } html.pwa .transport .ccjump { order: 6; }
+html.pwa .ccjump button { width: 40px; }
+html.pwa .ccveil:not([hidden]) { position: fixed; inset: 0; z-index: 59; background: rgba(0,0,0,.5); }
+html.pwa .ccdsheet:not([hidden]) { position: fixed; left: 10px; right: 10px; bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); z-index: 60; display: grid; gap: 8px; max-width: 460px; margin: 0 auto; padding: 12px; border-radius: 22px;
+  background: rgba(28,28,36,.84); border: 1px solid var(--line); -webkit-backdrop-filter: blur(24px) saturate(150%); backdrop-filter: blur(24px) saturate(150%); box-shadow: 0 18px 50px rgba(0,0,0,.6); }
+html.pwa .ccdsheet .big { display: grid; gap: 2px; min-height: 64px; padding: 10px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--glass2); color: var(--fg); text-align: left; }
+html.pwa .ccdsheet .big b { font: 800 17px var(--display); } html.pwa .ccdsheet .big span { font: 500 12px var(--display); color: var(--muted); }
+html.pwa .ccdsheet .big.fin { background: #58c7d6; border-color: #58c7d6; color: #06262b; } html.pwa .ccdsheet .big.fin span { color: rgba(6,38,43,.75); }
+html.pwa .ccdsheet .x { min-height: 44px; border: 0; background: none; color: var(--muted); font: 600 14px var(--display); }
+html.pwa #panel .preset { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+html.pwa.edcmp .stage::after { content: "ASAL"; position: absolute; left: 8px; top: 8px; z-index: 9; padding: 4px 9px; border-radius: 8px; background: rgba(0,0,0,.6); color: #fff; font: 800 11px var(--display); letter-spacing: .1em; }
+html.pwa .handle { width: 24px; background: #f3f1ee; color: #0d0d11; }
+html.pwa .handle.l { border-radius: 8px 0 0 8px; } html.pwa .handle.r { border-radius: 0 8px 8px 0; }
+html.pwa .clip.sel { outline: 2px solid #f3f1ee; outline-offset: -2px; }
+html.pwa.edsnap .edph { background: #ffd24a; box-shadow: 0 0 10px #ffd24a; } html.pwa.edsnap .edph::before { background: #ffd24a; }

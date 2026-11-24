@@ -1633,7 +1633,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .fixsug:empty { display: none; }
 .fixsug .chip.fixc { background: #fbd36b; border-color: #e6b94a; color: var(--fg); font-weight: 600; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=3ef85f448d">
+<link rel="stylesheet" href="../../ed-capcut.css?v=ab33b4e70b">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1704,6 +1704,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
     </div>
     <div class="transport">
       <button class="chip" id="undo" title="Undo" aria-label="Undo"><svg class="ic"><use href="#i-undo"/></svg><span class="tl">Undo</span></button>
+      <button class="chip" id="redo" title="Redo" aria-label="Redo"><svg class="ic" style="transform:scaleX(-1)"><use href="#i-undo"/></svg><span class="tl">Redo</span></button>
       <button class="chip" id="split" title="Split" aria-label="Split"><svg class="ic"><use href="#i-split"/></svg><span class="tl">Split</span></button>
       <button class="chip" id="swapClip" title="Tukar klip dipilih" aria-label="Tukar klip dipilih"><span class="tl">⇄ Tukar</span></button>
       <button class="chip" id="addFoot" title="Tambah footage" aria-label="Tambah footage"><span class="tl">＋ Footage</span></button>
@@ -1737,9 +1738,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=3ef85f448d"></script>
-<script src="../../../js/runtime.js?v=3ef85f448d"></script>
-<script src="../../ed-boot.js?v=3ef85f448d"></script>
+<script src="../../../js/config.js?v=ab33b4e70b"></script>
+<script src="../../../js/runtime.js?v=ab33b4e70b"></script>
+<script src="../../ed-boot.js?v=ab33b4e70b"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -2248,6 +2249,7 @@ function touched() {
   dirty = true;
   if (dbDoc) setSaved("Menyimpan…", "busy");
   clearTimeout(saveTimer); saveTimer = setTimeout(flush, 800);
+  histMark();
 }
 /* p22c (2026-11-23, Mira: klip yang dia tukar bertukar balik sendiri): editor terbuka di dua device (Mac + phone) saling tindih
    dengan keadaan lama. Sekarang: sebelum simpan, dan setiap 5 s, semak doc. Kalau device lain dah simpan lebih baru, muat yang itu. */
@@ -2258,7 +2260,7 @@ async function remoteNewer() {
 }
 function applyRemote(d, lost) {
   const p0 = pos; freshState(); applyDoc(d); lastAt = d.at;
-  undoStack = []; clearPick(); segsMemo = null; clipSig = null; lastGrade = ""; WT = null; capSig = ""; if (isTalk()) syncStickers(); HOOK_END = calcHookEnd(); hlMigrate(); hlRematch();
+  undoStack = []; redoStack = []; histLast = ""; setTimeout(histInit, 0); clearPick(); segsMemo = null; clipSig = null; lastGrade = ""; WT = null; capSig = ""; if (isTalk()) syncStickers(); HOOK_END = calcHookEnd(); hlMigrate(); hlRematch();
   if (sel >= S.clips.length) sel = 0; draw(); seek(Math.min(p0, endT() - .05));
   setSaved("Semua perubahan disimpan"); toast(lost ? "Edit dari device lain lebih baru, jadi itu yang dimuat. Buat semula perubahan terakhir kau." : "Dikemas kini dengan edit dari device lain");
 }
@@ -2964,7 +2966,16 @@ const GRADE_PRESETS = [["none", "Asal", {}], /* 24 Nov 2026 (Mira): preset "enha
   ["fresh", "Fresh", { br: 8, ct: 14, sa: 24, bl: 16, sh: 16, t: -8 }], ["golden", "Golden", { br: 6, ct: 14, sa: 26, bl: 12, sh: 12, t: 18 }], ["sedap", "Sedap", { br: 6, ct: 16, sa: 34, bl: 10, sh: 30, t: 10 }],
   ["clean", "Clean", { br: 6, ct: 6, sa: -4, bl: 14, sh: 12, t: -4 }], ["vibrant", "Vibrant", { br: 4, ct: 14, sa: 26, bl: 10, sh: 10 }], ["sharpen", "Sharpen", { ct: 6, sh: 55 }], ["crisp", "Crisp", { br: 3, ct: 20, sa: 6, bl: 6, sh: 40, b: -10 }], ["highlight", "Highlight", { br: 14, ct: 4, sa: 4, bl: 32, sh: 8 }],
   ["warm", "Warm", { br: 4, ct: 6, sa: 10, bl: 8, t: 30 }], ["cool", "Cool", { br: 3, ct: 8, sa: 4, bl: 6, t: -28 }], ["creamy", "Creamy", { br: 8, ct: -12, sa: -10, bl: 20, b: 18, t: 12 }], ["moody", "Moody", { br: -8, ct: 22, sa: -14, b: -22, t: -6 }], ["film", "Film", { br: 2, ct: 10, sa: -18, sh: 6, b: 16, t: 10 }]];
-const presetOf = g => { const hit = GRADE_PRESETS.find(([, , p]) => GK.every(k => (+p[k] || 0) === g[k])); return hit ? hit[0] : ""; };
+/* 24 Nov 2026 (Mira lulus): slider "Kekuatan preset" 20–150%. Preset pada kekuatan lain = parameter didarab, jadi render ikut tanpa diubah.
+   presetK cari preset + kekuatan yang sepadan dengan grade klip (100% dulu), supaya kad preset kekal bertanda. */
+const GP_KS = [100, ...Array.from({ length: 27 }, (_, i) => 20 + i * 5).filter(v => v !== 100)];
+const gpScale = (p, k) => { const o = gradeOf(null); GK.forEach(q => { o[q] = Math.round((+p[q] || 0) * k / 100); }); return o; };
+function presetK(g) {
+  if (GK.every(k => !g[k])) return ["none", 100];
+  for (const [id, , p] of GRADE_PRESETS) { if (id === "none") continue; for (const k of GP_KS) { const o = gpScale(p, k); if (GK.every(q => o[q] === g[q])) return [id, k]; } }
+  return ["", 100];
+}
+const presetOf = g => presetK(g)[0];
 function drawPresetState() { const c = S.clips[sel], id = presetOf(gradeOf(c)); document.querySelectorAll("#panel .preset").forEach(b => b.setAttribute("aria-pressed", b.dataset.gp === id)); }
 function glFail() { glOn = false; GL = false; $("gc").hidden = true; lastGrade = ""; applyGrade(S.clips[curIdx]); }
 function applyGrade(c) {
@@ -3327,6 +3338,7 @@ function drawPanel() {
     h = c ? `<div class="row"><span class="lab">Klip dipilih: ${esc(c.name)}</span><span class="legend">Tekan klip lain dalam timeline untuk ubah klip tu.</span></div>
       <div class="row"><span class="lab" style="font-size:14px">Preset warna</span><div class="presets">${GRADE_PRESETS.filter(p => p[0] === "none" || ok("preset:" + p[0]) || cur === p[0]).map(([id, n, p]) => `<div class="pwrap"><button class="preset" data-gp="${id}" aria-pressed="${cur === id}"><i style="filter:${cssGrade({ ...gradeOf(null), ...p }) || "none"}"></i>${n}</button>${id === "none" ? "" : lk("preset:" + id)}</div>`).join("")}</div>
       <span class="legend">Satu tekan tukar warna klip ni. Halus lagi dengan slider di bawah.</span></div>
+      ${cur && cur !== "none" ? `<div class="row"><label class="lab" for="gpK">Kekuatan preset: <span id="gpKv">${presetK(gradeOf(c))[1]}%</span></label><input id="gpK" type="range" min="20" max="150" step="5" value="${presetK(gradeOf(c))[1]}" style="--fill:${((presetK(gradeOf(c))[1] - 20) / 130 * 100).toFixed(1)}%"></div>` : ""}
       <div class="chips"><button class="chip" id="grAll">Apply to all</button><button class="chip" id="grReset">Reset warna klip</button></div>
       <div class="row"><span class="lab" style="font-size:14px">Kesan filem (seluruh video)</span><div class="chips">${chip("Vignette", !!S.overlay.vig, 'data-ovl="vig"')}${chip("Light leak", !!S.overlay.leak, 'data-ovl="leak"')}${chip("Film grain", !!S.overlay.grain, 'data-ovl="grain"')}</div></div>
       ${[["Smart", GRADE_SMART], ["Customize", GRADE_CUSTOM]].map(([hd, L]) => `<div class="row"><span class="lab" style="font-size:14px">${hd}</span></div>` + L.map(([k, n, tip]) => `<div class="row"><label class="lab" for="gr_${k}" title="${esc(tip)}">${n}: <span id="grV_${k}">${g[k] > 0 ? "+" : ""}${g[k]}</span></label><input id="gr_${k}" data-gr="${k}" type="range" min="${k === "sh" ? 0 : -100}" max="100" step="1" value="${g[k]}" title="${esc(tip)}"></div>`).join("")).join("")}
@@ -3536,7 +3548,41 @@ function draw() {
   $("main").classList.remove("capt"); $("main").classList.toggle("stick", tab !== "Potong"); wireRuler(); requestAnimationFrame(() => { stickTops(); document.querySelectorAll('input[type="range"]').forEach(rangeFill); { const ri = $("rinner"), inn = $("inner"); if (ri && inn) ri.style.width = inn.scrollWidth + "px"; } }); drawTabs(); refreshGroups(); drawPanel(); drawTimeline(); drawStageStatic(); setVideoMute(); }
 
 /* ---------- actions ---------- */
-const snapshot = () => { sfxPin(); undoStack.push(JSON.stringify({ clips: S.clips, bin: S.bin, sfx: S.sfx, zooms: S.zooms, vo: S.vo, stickers: S.stickers })); if (undoStack.length > 40) undoStack.shift(); };
+/* 24 Nov 2026 (Mira lulus): UNDO PENUH + REDO. Dulu snapshot() hanya rakam klip / bin / SFX / zoom / VO / sticker, jadi caption, highlight, tajuk,
+   warna dan gaya tak boleh undo. Sekarang setiap touched() rakam keadaan penuh (docBody, sama dengan yang disimpan) SEBELUM perubahan tu.
+   Perubahan rapat (< 0.5 s, cth seret slider) jadi SATU langkah. Pulih guna laluan yang sama dengan applyRemote (freshState + applyDoc). */
+const snapshot = () => { sfxPin(); };
+let redoStack = [], histLast = "", histAt = 0, histLock = false;
+const histNow = () => { try { const b = docBody(); delete b.at; return JSON.stringify(b); } catch (e) { return ""; } };
+function histInit() { if (loaded && !histLock) histLast = histNow(); }
+function histMark() {
+  if (histLock || !loaded) return;
+  const cur = histNow(); if (!cur) return;
+  if (!histLast) { histLast = cur; return; }
+  if (cur === histLast) return;
+  const t = performance.now();
+  if (t - histAt > 500) { undoStack.push(histLast); if (undoStack.length > 60) undoStack.shift(); }
+  redoStack = []; histLast = cur; histAt = t;
+}
+function histApply(str) {
+  histLock = true;
+  try {
+    const d = JSON.parse(str), p0 = pos, sel0 = sel;
+    if (playing) stop();
+    freshState(); applyDoc(d);
+    clearPick(); segsMemo = null; clipSig = null; lastGrade = ""; WT = null; capSig = ""; if (isTalk()) syncStickers(); HOOK_END = calcHookEnd(); hlMigrate(); hlRematch();
+    sel = Math.max(0, Math.min(sel0, S.clips.length - 1)); draw(); seek(Math.min(p0, endT() - .05));
+  } catch (e) { histLock = false; return false; }
+  histLock = false; histLast = str; histAt = 0;
+  dirty = true; if (dbDoc) setSaved("Menyimpan…", "busy"); clearTimeout(saveTimer); saveTimer = setTimeout(flush, 800);
+  return true;
+}
+function undoStep(dir) {
+  const from = dir < 0 ? undoStack : redoStack, to = dir < 0 ? redoStack : undoStack;
+  if (!from.length) return say(dir < 0 ? "Tiada apa untuk undo" : "Tiada apa untuk redo");
+  const cur = histNow(), str = from.pop();
+  if (histApply(str)) { if (cur) to.push(cur); } else { from.push(str); say("Tak dapat " + (dir < 0 ? "undo" : "redo")); }
+}
 /* 24 Nov 2026 (Mira): bunyi (SFX) melekat pada footage. Sebelum setiap ubahan, setiap bunyi ingat fail + saat footage di bawahnya;
    lepas klip dipotong / dibuang / disusun, bunyi pindah ikut saat footage tu (bukan kekal pada saat timeline lama). */
 const SFXA = new WeakMap(); let sfxSig = "";
@@ -3920,10 +3966,8 @@ document.addEventListener("click", e => {
   if (b.id === "del") return del();
   if (b.id === "mvL") return move(-1);
   if (b.id === "mvR") return move(1);
-  if (b.id === "undo") {
-    const s = undoStack.pop(); if (!s) return say("Tiada apa untuk undo");
-    const u = JSON.parse(s); S.clips = u.clips; S.bin = u.bin; S.sfx = u.sfx; S.zooms = u.zooms || S.zooms; S.vo = u.vo; S.stickers = u.stickers; clearPick(); sel = Math.min(sel, S.clips.length - 1); if (playing) stop(); seek(Math.min(pos, total())); touched(); return draw();
-  }
+  if (b.id === "undo") return undoStep(-1);
+  if (b.id === "redo") return undoStep(1);
   if (d.gp) { const c = S.clips[sel], p = (GRADE_PRESETS.find(x => x[0] === d.gp) || [])[2]; if (c && p) { snapshot(); if (d.gp === "none") delete c.grade; else c.grade = { ...gradeOf(null), ...p }; if (curIdx !== sel && !playing) seek(startOf(sel) + .05); lastGrade = ""; setVideoMute(); gradeKick(); touched(); drawPanel(); } return; }
   if (b.id === "grReset") { const c = S.clips[sel]; if (c) { snapshot(); delete c.grade; lastGrade = ""; setVideoMute(); touched(); drawPanel(); } return; }
   if (b.id === "grAll") { const c = S.clips[sel]; if (c) { snapshot(); const g = gradeOf(c); S.clips.forEach(x => { x.grade = { ...g }; }); lastGrade = ""; setVideoMute(); touched(); toast("Warna klip ni dipakai pada semua " + S.clips.length + " klip"); } return; }
@@ -4046,6 +4090,14 @@ document.addEventListener("click", e => {
   if (d.sttxt) return addSticker(d.sttxt, TEXT_ST.find(x => x[0] === d.sttxt)[2]);
   if (d.stk && stSel >= 0 && S.stickers[stSel]) { snapshot(); S.stickers[stSel].k = d.stk; touched(); drawStickers(); showStickers(); return drawPanel(); }   // switch a text sticker's style (user: "boleh ubah di editor")
 });
+document.addEventListener("input", e => {
+  if (e.target.id !== "gpK") return;
+  const c = S.clips[sel]; if (!c) return;
+  const id = e.target.dataset.id || (e.target.dataset.id = presetK(gradeOf(c))[0]), p = (GRADE_PRESETS.find(x => x[0] === id) || [])[2]; if (!p) return;
+  const k = +e.target.value; c.grade = gpScale(p, k); $("gpKv").textContent = k + "%"; e.target.style.setProperty("--fill", ((k - 20) / 130 * 100).toFixed(1) + "%");
+  GK.forEach(q => { const el = $("gr_" + q), v = $("grV_" + q); if (el) el.value = c.grade[q]; if (v) v.textContent = (c.grade[q] > 0 ? "+" : "") + c.grade[q]; });
+  if (curIdx !== sel && !playing) seek(startOf(sel) + .05); lastGrade = ""; gradeKick(); touched();
+});
 document.addEventListener("dblclick", e => { const el = e.target; if (!el.dataset || !el.dataset.gr) return; el.value = 0; el.dispatchEvent(new Event("input", { bubbles: true })); });
 document.addEventListener("input", e => {
   if (e.target.dataset && e.target.dataset.ttf) return ttInput(e.target);   /* p22 */
@@ -4110,7 +4162,7 @@ document.addEventListener("keydown", e => {
   const t = e.target, tag = t.tagName, typing = t.isContentEditable || tag === "TEXTAREA" || tag === "SELECT" || (tag === "INPUT" && t.type !== "range" && t.type !== "checkbox");
   if (typing || e.altKey || !loaded || switching) return;
   const k = e.key, mod = e.metaKey || e.ctrlKey;
-  if (mod) { if (k.toLowerCase() === "z" && !e.shiftKey) { e.preventDefault(); $("undo").click(); } return; }
+  if (mod) { if (k.toLowerCase() === "z") { e.preventDefault(); undoStep(e.shiftKey ? 1 : -1); } else if (k.toLowerCase() === "y") { e.preventDefault(); undoStep(1); } return; }
   if (k === " " || e.code === "Space") { e.preventDefault(); if (tag === "BUTTON" || tag === "A") t.blur(); playing ? stop() : start(); return; }
   if (k === "Delete" || k === "Backspace") { if (t.closest && t.closest(".w")) return; e.preventDefault(); return keyDel(); }
   if (tag === "INPUT") return;   // a focused slider keeps its own arrow keys
@@ -4164,7 +4216,7 @@ function freshState() {
   if (D.brand) { S.brandKit = D.brand; S.style = { ...S.style, ...D.brand }; } else if (keep.brandKit) S.brandKit = keep.brandKit;
   if (D.style) S.style = { ...S.style, ...D.style }; if (D.capInit) Object.assign(S, D.capInit);
 }
-function afterLoad() { undoStack = []; clearPick(); sel = 0; wSel = -1; segsMemo = null; clipSig = null; lastGrade = ""; WT = null; capSig = ""; if (isTalk()) syncStickers(); HOOK_END = calcHookEnd(); hlMigrate(); hlRematch(); if (playing) stop(); touched(); draw(); seek(0); }
+function afterLoad() { undoStack = []; redoStack = []; histLast = ""; setTimeout(histInit, 0); clearPick(); sel = 0; wSel = -1; segsMemo = null; clipSig = null; lastGrade = ""; WT = null; capSig = ""; if (isTalk()) syncStickers(); HOOK_END = calcHookEnd(); hlMigrate(); hlRematch(); if (playing) stop(); touched(); draw(); seek(0); }
 function resetAll() {
   const backup = JSON.stringify(docBody());
   freshState(); afterLoad();
@@ -4172,7 +4224,7 @@ function resetAll() {
 }
 function resetState() {
   loaded = false; dirty = false; clearTimeout(saveTimer); dbDoc = null; D = null; lastAt = "";
-  S = S0(); undoStack = []; clearPick(); sel = 0; pos = 0; lastPos = 0; curIdx = 0; wSel = -1; segsMemo = null; GR = []; grKey = ""; WT = null; clipSig = null; lastGrade = ""; HOOK_END = 4.35; lastStatus = ""; CAPPLAN = null; capSig = "";
+  S = S0(); undoStack = []; redoStack = []; histLast = ""; setTimeout(histInit, 0); clearPick(); sel = 0; pos = 0; lastPos = 0; curIdx = 0; wSel = -1; segsMemo = null; GR = []; grKey = ""; WT = null; clipSig = null; lastGrade = ""; HOOK_END = 4.35; lastStatus = ""; CAPPLAN = null; capSig = "";
   Object.keys(tiles).forEach(k => delete tiles[k]);
 }
 async function switchPart(i) {
@@ -4215,7 +4267,7 @@ async function boot() {
     sel = 0; if (isTalk()) { clipSig = null; syncStickers(); } HOOK_END = calcHookEnd(); WT = null; const moved = hlMigrate() | hlRematch();
     if (!prefsOn) { prefsOn = true; const p0 = D.prefs || {}; PREFS = { like: [...new Set([...(p0.like || []), ...PREFS.like])], no: [...new Set([...(p0.no || []), ...PREFS.no])], names: { ...(p0.names || {}), ...PREFS.names } }; }
     { let add = 0; (S.style.more || []).forEach(k => { if (ok(k) && !liked(k)) { PREFS.like.push(k); PREFS.names[k] = keyName(k); add++; } }); if (add) savePrefs(); }
-    drawParts(); draw(); seek(0); setSaved(txt, cls); loaded = true; mark("shown"); setTimeout(swapAfter, 400); if (moved && dbDoc) touched();
+    drawParts(); draw(); seek(0); setSaved(txt, cls); loaded = true; histInit(); mark("shown"); setTimeout(swapAfter, 400); if (moved && dbDoc) touched();
   };
   const timer = setTimeout(() => { gaveUp = true; open("Tak boleh sambung ke simpanan. Muat semula page sebelum edit.", "err"); }, 20000);
   try {
