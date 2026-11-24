@@ -1625,8 +1625,15 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .hlwl { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
 .hlwl .chip { flex: 0 0 auto !important; width: auto !important; max-width: none !important; white-space: nowrap; padding: 6px 12px !important; }
 .ttcols .chip { min-width: 34px; justify-content: center; }
+
+/* 24 Nov: hanya perkataan highlight pudar dalam senarai caption (tak keluar dalam caption video); perkataan lain kekal jelas */
+.w.gone { opacity: 1; }
+.w.hlw { opacity: .45; }
+.w.hlw.now, .w.hlw.pick { opacity: 1; }
+.fixsug:empty { display: none; }
+.fixsug .chip.fixc { background: #fbd36b; border-color: #e6b94a; color: var(--fg); font-weight: 600; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=16f6b8b399">
+<link rel="stylesheet" href="../../ed-capcut.css?v=241f62dcc6">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1730,9 +1737,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=16f6b8b399"></script>
-<script src="../../../js/runtime.js?v=16f6b8b399"></script>
-<script src="../../ed-boot.js?v=16f6b8b399"></script>
+<script src="../../../js/config.js?v=241f62dcc6"></script>
+<script src="../../../js/runtime.js?v=241f62dcc6"></script>
+<script src="../../ed-boot.js?v=241f62dcc6"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -2834,6 +2841,16 @@ let fHold = null;
   el.addEventListener("click", e => { if (e.detail === 0) stepFrame(d); });
   el.addEventListener("contextmenu", e => e.preventDefault());
 });
+/* 24 Nov 2026 (Mira): cadangan auto ganti arahan tab Caption. Lepas betulkan satu perkataan, butang tukar semua perkataan sama
+   (ejaan asal sama, belum dibetulkan) muncul di atas senarai. Perkataan terbaru dibetulkan di depan. */
+const fixKey = t => String(t || "").toLowerCase().replace(/[.,?!"]+/g, "").trim();
+function fixSugHTML(first) {
+  const seen = new Set(), out = [], order = S.words.map((w, i) => i).filter(i => S.words[i].fixed && fixKey(S.words[i].t) !== fixKey(D.words[i].t));
+  if (first != null) { order.splice(order.indexOf(first) >>> 0, 0); order.unshift(first); }
+  for (const i of order) { const from = fixKey(D.words[i].t), to = clean(S.words[i].t); if (!from || seen.has(from) || from === fixKey(to)) continue; seen.add(from);
+    const n = D.words.filter((x, j) => j !== i && fixKey(x.t) === from && !S.words[j].fixed).length; if (n) out.push(`<button class="chip fixc" data-fixall="${esc(from)}" data-to="${esc(to)}">✨ Tukar ${n} lagi "${esc(from)}" → "${esc(to)}"</button>`); if (out.length >= 4) break; }
+  return out.length ? `<div class="chips">${out.join("")}</div>` : "";
+}
 /* Word list highlight: edit-time of every kept word, worked out once per edit (reset in refreshGroups). */
 var WT = null, wNow = -1;
 function wordTimes() { const segs = voSegs(); return S.words.map((w, i) => { if (w.cut || !inSegs((w.s + w.e) / 2, segs)) return null; const t = isTalk() ? talkWordT(w, segs) : { es: voToEdit(w.s, segs), ee: voToEdit(w.e, segs) }; return { i, es: t.es, ee: t.ee }; }).filter(Boolean).sort((a, b) => a.es - b.es); }
@@ -2844,7 +2861,9 @@ function markWord() {
   const old = box.querySelector(".w.now"); if (k === wNow && (k < 0 || old)) return;
   wNow = k; if (old) old.classList.remove("now"); if (k < 0) return;
   const el = box.querySelector(`[data-w="${k}"]`); if (!el) return; el.classList.add("now");
-  if (playing && document.activeElement !== el) { const t = el.offsetTop; if (t < box.scrollTop || t > box.scrollTop + box.clientHeight - el.offsetHeight) box.scrollTop = t - box.clientHeight / 3; }
+  if (playing && document.activeElement !== el) { let sc = box; while (sc && !(sc.scrollHeight > sc.clientHeight + 4 && /auto|scroll/.test(getComputedStyle(sc).overflowY))) sc = sc.parentElement; sc = sc || document.scrollingElement;
+    const r = el.getBoundingClientRect(), q = sc === document.scrollingElement ? { top: 0, bottom: innerHeight } : sc.getBoundingClientRect();
+    if (r.top < q.top + 8 || r.bottom > q.bottom - 8) sc.scrollTop += r.top - q.top - (q.bottom - q.top) / 3; }
 }
 function drawHead() {
   const ph = $("ph"), tx = `translateX(${Math.min(pos, endT()) * pps}px)`; if (ph) ph.style.transform = tx; { const rp = $("rph"); if (rp) rp.style.transform = tx; }
@@ -3311,12 +3330,12 @@ function drawPanel() {
       <span class="legend">Tekan dua kali pada slider untuk balik ke 0. Warna dalam render final sama dengan preview ni. Sharpen dalam preview cuma anggaran.</span>` : `<div class="note">Tiada klip dipilih.</div>`;
   } else if (tab === "Caption") {
     const modeTip = { frasa: "2–4 perkataan", short: "1–2 perkataan, ringkas dan jelas", single: "Keluar perkataan satu-satu", line: "Sehingga 4 perkataan, dua baris" }[S.capMode];
-    h = `<div class="row"><span class="lab">Tekan perkataan untuk pilih, tekan lagi untuk taip. Huruf BESAR jadi kuning. Tong sampah buang perkataan, VO ikut terpotong</span>
+    h = `<div class="row"><div id="fixSug" class="fixsug">${fixSugHTML()}</div>
       <div class="words" id="words">${(() => { const sg = voSegs(); return S.words.map((w, i) => `<span class="w${w.cut ? " cut" : ""}${!w.cut && !inSegs((w.s + w.e) / 2, sg) ? " gone" : ""}${w.unsure && !w.fixed ? " unsure" : ""}${w.fixed ? " fixed" : ""}${i === wSel ? " pick" : ""}${KEYSET.has(i) ? " hlw" : w.hl === 0 ? " hloff" : ""}" data-w="${i}"${KEYSET.has(i) && (S.hlx || {})[i] && S.hlx[i].text && S.hlx[i].text.toLowerCase() !== showWord(w).toLowerCase() ? ` data-ht="${esc(S.hlx[i].text)}"` : ""} role="button" tabindex="0">${esc(w.t)}</span>`).join(" "); })()}</div>
       <div class="chips"><button class="chip" id="hlBtn" title="Jadikan perkataan dipilih word highlight, atau buang">★ Word highlight</button><button class="chip" id="hlAuto">Pilih auto</button><button class="chip" id="hlClear" ${KEYSET.size ? "" : "disabled"}>Buang semua highlight</button>${(() => { const nf = fillerList().length, np = isTalk() ? pauseList().length : 0; return (nf ? `<button class="chip" id="cutFill">Buang emm / aaa (${nf})</button>` : "") + (np ? `<button class="chip" id="cutSil">Buang jeda panjang (${np})</button>` : ""); })()}</div>
       <span class="legend">Ungu = word highlight (preview dan render sama). Lalai: perkataan ungu kekal dalam caption dengan font dan gaya sendiri. Tekan satu perkataan, kemudian ★ untuk jadikan atau buang. Perkataan ungu yang bersebelahan jadi satu highlight.</span>
       <div class="chips"><button class="chip" data-gotab="Highlight">✨ Design word highlight: tab Highlight</button></div>
-      <span class="legend" id="left">${leftText()}</span><div id="fixAll"></div></div>${bPanel("capStyle")}`;
+      <span class="legend" id="left">${leftText()}</span></div>${bPanel("capStyle")}`;
   } else if (tab === "Highlight") {
     h = hlTabPanel();
   } else if (tab === "Sticker") {
@@ -3916,8 +3935,8 @@ document.addEventListener("click", e => {
     return;
   }
   if (d.fixall) {
-    const from = d.fixall, to = d.to; S.words.forEach((x, i) => { if (D.words[i].t === from && !x.fixed) { x.t = to; x.fixed = true; } });
-    touched(); return draw();
+    snapshot(); const from = d.fixall, to = d.to; let n = 0; S.words.forEach((x, i) => { if (fixKey(D.words[i].t) === from && !x.fixed) { const p = (x.t.match(/[.,?!]+$/) || [""])[0]; x.t = to.replace(/[.,?!]+$/, "") + p; x.fixed = true; n++; } });
+    refreshGroups(); touched(); toast(n + " perkataan ditukar"); return draw();
   }
   if (d.tab) { tab = d.tab === "Style Board" && TAB_OF[bTab] ? TAB_OF[bTab] : d.tab; return draw(); }
   if (d.bt) { const was = tab; bTab = d.bt; tab = TAB_OF[d.bt] || "Style Board"; return tab === was ? drawPanel() : draw(); }
@@ -4068,9 +4087,7 @@ document.addEventListener("focusout", e => {
   const w = e.target.closest && e.target.closest(".w");
   if (!w || !w.isContentEditable) return;
   w.removeAttribute("contenteditable");
-  const i = +w.dataset.w, from = D.words[i].t, to = S.words[i].t, box = $("fixAll"); if (!box) return;
-  const others = D.words.filter((x, j) => j !== i && x.t === from && !S.words[j].fixed).length;
-  box.innerHTML = to !== from && others ? `<button class="chip" data-fixall="${esc(from)}" data-to="${esc(to)}">Fix ${others} more "${esc(from)}" to "${esc(to)}"</button>` : "";
+  const box = $("fixSug"); if (box) box.innerHTML = fixSugHTML(+w.dataset.w);
   refreshGroups(); drawTimeline();
 });
 document.addEventListener("keydown", e => {
