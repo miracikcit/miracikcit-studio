@@ -91,7 +91,23 @@
     window.ED_MAN = man;
     if (man.title) document.title = man.title + ' · Editor';
     await toSW(man);
+    edTidy(man);
   });
+  /* Fasa 1B: minta phone jangan buang storan editor, dan suruh service worker buang media projek yang dah final / published / tiada lagi.
+     Hanya selepas tarikan pertama berjaya (senarai edpwa terkini); projek yang sedang dibuka sentiasa dikekalkan. */
+  function edTidy(man) {
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {}
+    if (LOCAL || !pullOk || window.ED_TIDY) return;
+    window.ED_TIDY = 1;
+    let done = false;
+    base.collection('edpwa').onSnapshot(snap => {
+      if (done) return; done = true;
+      const keep = new Set(Object.values(man.files || {})), vids = [VID];
+      snap.docs.forEach(d => { const x = d.data() || {}; if (x.final || x.pub || !x.files) return; vids.push(d.id); Object.values(x.files).forEach(id => keep.add(id)); });
+      const sw = navigator.serviceWorker.controller;
+      if (sw && keep.size) sw.postMessage({ t: 'edclean', keep: [...keep], vids });
+    });
+  }
   /* 23 Nov: footage dari folder lain (job ed_foot di Mac mini, 0 token) */
   window.ED_FOOT = {
     job: input => studioCall('job_add', { type: 'ed_foot', input }),

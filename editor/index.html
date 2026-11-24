@@ -24,6 +24,7 @@ body.list{margin:0;padding:calc(env(safe-area-inset-top) + 18px) 16px 40px;min-h
   /* 24 Nov 2026 (Mira): Editor boleh jadi app sendiri di Home Screen (manifest editor/, start_url ?app=1), berasingan dari Studio
      supaya boleh tukar antara Studio dan Editor dalam app switcher. Tanpa ?v= : senarai projek dari Studio (doc edpwa). */
   if (new URLSearchParams(location.search).get('app')) try { localStorage.setItem('edApp', '1'); } catch (e) {}
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {}   // Fasa 1B: jangan biar phone buang storan editor
   if (!v) return edList(m);
   if (!('serviceWorker' in navigator)) { m.textContent = 'Browser ni tak sokong editor Studio.'; return; }
   const reg = await navigator.serviceWorker.register('../sw.js', { scope: '../' });
