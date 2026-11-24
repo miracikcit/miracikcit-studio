@@ -1040,7 +1040,7 @@ button:focus-visible, [contenteditable]:focus-visible, input:focus-visible, text
 .stagecol { display: flex; flex-direction: column; gap: 8px; }
 .fstep { display: flex; align-items: center; justify-content: center; gap: 8px; }
 .fstep .chip { white-space: nowrap; padding: 9px 14px; font-size: 14px; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
-@media (max-width: 680px) { .transport.transport #fBack { order: 9; } .transport.transport .tc { order: 10; font-size: 12px; } .transport.transport #fFwd { order: 11; } .transport.transport label { order: 12; } .transport #fBack, .transport #fFwd { padding: 7px 12px; } }
+@media (max-width: 99999px) { .transport.transport #fBack { order: 9; } .transport.transport .tc { order: 10; font-size: 12px; } .transport.transport #fFwd { order: 11; } .transport.transport label { order: 12; } .transport #fBack, .transport #fFwd { padding: 7px 12px; } }
 .ftc { font: 600 13px var(--display); font-variant-numeric: tabular-nums; min-width: 78px; text-align: center; }
 .stagecol > .chip { display: none; }
 .sidectl { display: none; }
@@ -1128,7 +1128,7 @@ button:focus-visible, [contenteditable]:focus-visible, input:focus-visible, text
 .mini.ecard > div { top: 50%; left: 50%; right: auto; width: max-content; max-width: none; transform: translate(-50%, -50%) scale(.72); text-shadow: none; text-align: left; }
 .blk.stb.efb { background: #dedcf6; }
 #fxForm { scroll-margin-top: 12px; }
-@media (max-width: 680px) { #fxForm { scroll-margin-top: calc(40px + 40vh + 24px); } }
+@media (max-width: 99999px) { #fxForm { scroll-margin-top: calc(40px + 40vh + 24px); } }
 .phgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 6px; }
 .phgrid button { padding: 0; border: 2px solid transparent; border-radius: 8px; overflow: hidden; background: var(--panel2); cursor: pointer; aspect-ratio: 1; }
 .phgrid button[aria-pressed="true"] { border-color: var(--brown); }
@@ -1263,14 +1263,14 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
 .boot { padding: 30px; text-align: center; color: var(--muted); }
 
 /* Desktop / web (2026-11-10): preview sticks at the top, the button bars, ruler and timeline stick at the bottom (bottom offsets from stickTops), so editing never hides the preview. Phone keeps its own sticky layout below. */
-@media (min-width: 681px) {
+@media (min-width: 100000px) {
   .app { overflow: clip; }
   .stagecol { position: sticky; top: 8px; align-self: start; z-index: 6; }
   .stage { align-self: center; width: auto; max-width: 100%; height: max(220px, min(480px, calc(100vh - var(--botH, 300px) - 28px))); }
   #main .transport, #main .tbar2, #main .lenbar, #main .rbar, #main .ed { position: sticky; z-index: 9; }
   #main .ed { background: var(--panel); }
 }
-@media (max-width: 680px) {
+@media (max-width: 99999px) {
   body { padding-left: 0; padding-right: 0; padding-block: 0 40px; }
   .app { border: 0; border-radius: 0; overflow: visible; }
   #main { display: flex; flex-direction: column; }
@@ -1397,14 +1397,14 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .preset { display: flex; flex-direction: column; gap: 4px; align-items: stretch; background: rgba(255,255,255,.6); border: 2px solid var(--gline); border-radius: 14px; padding: 5px; cursor: pointer; font: 600 12px var(--display); color: var(--fg); text-align: center; }
 .preset[aria-pressed="true"] { border-color: var(--brown); }
 .preset i { display: block; aspect-ratio: 4 / 5; border-radius: 10px; background: #000 var(--poster, none) center / cover; }
-@media (min-width: 681px) {
+@media (min-width: 100000px) {
   .tabs { position: sticky; top: var(--hH, 0px); z-index: 22; margin: 0; border-radius: 0; border-left: 0; border-right: 0; padding: 6px 14px; }
   .top { border-bottom: 0; }
   .stagecol { top: calc(var(--topH, 96px) + 4px); }
   .stage { height: max(220px, min(480px, calc(100vh - var(--botH, 300px) - var(--topH, 96px) - 40px))); }
   .legend.keys { display: block; }
 }
-@media (max-width: 680px) {
+@media (max-width: 99999px) {
   .app { background: none; box-shadow: none; }
   .top { border-radius: 0; padding: 5px 10px; gap: 4px 8px; }
   .top h1 { font-size: 18px; }
@@ -1478,7 +1478,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .chip.danger { background: var(--red); border-color: var(--red); color: #fff; }
 .actbar { position: fixed; left: 50%; bottom: calc(70px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 85; display: flex; align-items: center; gap: 10px; background: rgba(29,27,26,.9); color: #fff; padding: 8px 8px 8px 16px; border-radius: 999px; font-size: 13px; max-width: 92vw; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
 .actbar .chip { padding: 6px 12px; font-size: 12px; white-space: nowrap; }
-@media (min-width: 681px) {
+@media (min-width: 100000px) {
   /* the preview takes what the screen has left; the timeline is compact */
   .body { grid-template-columns: auto minmax(0, 1fr); gap: 22px; }
   .stagecol { width: min-content; }
@@ -1491,7 +1491,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
   .ruler { height: 20px; } .rbar > span { padding-top: 24px; }
   .transport .tc { margin-left: 4px; }
 }
-@media (max-width: 680px) {
+@media (max-width: 99999px) {
   /* nav runs down the left edge, so the preview and the options below get the height (user 2026-11-13) */
   .tabs { position: fixed; left: 0; top: var(--hH, 0px); bottom: 0; width: var(--railW); height: auto; display: flex; flex-direction: column; gap: 2px; overflow-x: hidden; overflow-y: auto; margin: 0; padding: 6px 4px calc(8px + env(safe-area-inset-bottom, 0px)) max(4px, env(safe-area-inset-left, 0px)); border: 0; border-right: 1px solid var(--gline); border-radius: 0; z-index: 26; }
   .tab, .tab.ictab { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 50px; padding: 4px 0; border-radius: 12px; font-size: 9.5px; line-height: 1.1; white-space: normal; }
@@ -1515,7 +1515,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 
 /* ===== phone layout 2026-11-13 (her sketch): [nav] [video] [start / play], drag handle under it ===== */
 #vsplit { display: none; }
-@media (max-width: 680px) {
+@media (max-width: 99999px) {
   #main { padding-left: 0; }
   .stagecol { display: flex; flex-direction: row; align-items: stretch; justify-content: space-between; gap: 6px; padding: 6px 6px 14px; }
   .stagecol .tabs { position: static; order: 0; flex: 0 0 56px; width: 56px; height: var(--sh, 42vh); margin: 0; padding: 0; gap: 2px; border: 0; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; overflow-x: hidden; overflow-y: auto; z-index: auto; }
@@ -1633,7 +1633,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .fixsug:empty { display: none; }
 .fixsug .chip.fixc { background: #fbd36b; border-color: #e6b94a; color: var(--fg); font-weight: 600; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=6e7aff0ea2">
+<link rel="stylesheet" href="../../ed-capcut.css?v=3ef85f448d">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1737,9 +1737,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=6e7aff0ea2"></script>
-<script src="../../../js/runtime.js?v=6e7aff0ea2"></script>
-<script src="../../ed-boot.js?v=6e7aff0ea2"></script>
+<script src="../../../js/config.js?v=3ef85f448d"></script>
+<script src="../../../js/runtime.js?v=3ef85f448d"></script>
+<script src="../../ed-boot.js?v=3ef85f448d"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -2959,7 +2959,10 @@ function gradeKick() {
   const was = v.muted; v.muted = true; const p = v.play();
   if (p && p.then) p.then(() => { if (!playing) { v.pause(); setVideoMute(); glDirty = 6; } }).catch(() => { v.muted = was; });
 }
-const GRADE_PRESETS = [["none", "Asal", {}], ["clean", "Clean", { br: 6, ct: 6, sa: -4, bl: 14, sh: 12, t: -4 }], ["vibrant", "Vibrant", { br: 4, ct: 14, sa: 26, bl: 10, sh: 10 }], ["sharpen", "Sharpen", { ct: 6, sh: 55 }], ["crisp", "Crisp", { br: 3, ct: 20, sa: 6, bl: 6, sh: 40, b: -10 }], ["highlight", "Highlight", { br: 14, ct: 4, sa: 4, bl: 32, sh: 8 }],
+const GRADE_PRESETS = [["none", "Asal", {}], /* 24 Nov 2026 (Mira): preset "enhance" supaya warna lebih naik. Data sahaja: render_draft.grade_filter guna parameter yang sama, jadi final ikut pratonton. */
+  ["pop", "Pop", { br: 5, ct: 18, sa: 38, bl: 14, sh: 18 }], ["glow", "Glow", { br: 12, ct: 8, sa: 18, bl: 24, sh: 10, t: 6 }], ["punch", "Punch", { br: 2, ct: 30, sa: 30, bl: 4, sh: 28, b: -12 }],
+  ["fresh", "Fresh", { br: 8, ct: 14, sa: 24, bl: 16, sh: 16, t: -8 }], ["golden", "Golden", { br: 6, ct: 14, sa: 26, bl: 12, sh: 12, t: 18 }], ["sedap", "Sedap", { br: 6, ct: 16, sa: 34, bl: 10, sh: 30, t: 10 }],
+  ["clean", "Clean", { br: 6, ct: 6, sa: -4, bl: 14, sh: 12, t: -4 }], ["vibrant", "Vibrant", { br: 4, ct: 14, sa: 26, bl: 10, sh: 10 }], ["sharpen", "Sharpen", { ct: 6, sh: 55 }], ["crisp", "Crisp", { br: 3, ct: 20, sa: 6, bl: 6, sh: 40, b: -10 }], ["highlight", "Highlight", { br: 14, ct: 4, sa: 4, bl: 32, sh: 8 }],
   ["warm", "Warm", { br: 4, ct: 6, sa: 10, bl: 8, t: 30 }], ["cool", "Cool", { br: 3, ct: 8, sa: 4, bl: 6, t: -28 }], ["creamy", "Creamy", { br: 8, ct: -12, sa: -10, bl: 20, b: 18, t: 12 }], ["moody", "Moody", { br: -8, ct: 22, sa: -14, b: -22, t: -6 }], ["film", "Film", { br: 2, ct: 10, sa: -18, sh: 6, b: 16, t: 10 }]];
 const presetOf = g => { const hit = GRADE_PRESETS.find(([, , p]) => GK.every(k => (+p[k] || 0) === g[k])); return hit ? hit[0] : ""; };
 function drawPresetState() { const c = S.clips[sel], id = presetOf(gradeOf(c)); document.querySelectorAll("#panel .preset").forEach(b => b.setAttribute("aria-pressed", b.dataset.gp === id)); }
@@ -3486,24 +3489,24 @@ function wireRuler() {
   b.addEventListener("scroll", () => { if (rsync) { rsync = false; return; } rsync = true; a.scrollLeft = b.scrollLeft; }, { passive: true });
 }
 function stickTops() {
-  { const desk = innerWidth > 680; let b = 0; [".ed", ".rbar", ".lenbar", ".tbar2", ".transport"].forEach(q => { const el = document.querySelector(q); if (!el) return; el.style.bottom = desk ? b + "px" : ""; if (desk && el.offsetParent) b += el.offsetHeight; }); const mm = $("main"); if (mm) mm.style.setProperty("--botH", b + "px"); }
+  { const desk = innerWidth > 99999; let b = 0; [".ed", ".rbar", ".lenbar", ".tbar2", ".transport"].forEach(q => { const el = document.querySelector(q); if (!el) return; el.style.bottom = desk ? b + "px" : ""; if (desk && el.offsetParent) b += el.offsetHeight; }); const mm = $("main"); if (mm) mm.style.setProperty("--botH", b + "px"); }
   const m = $("main"), sc = document.querySelector(".stagecol"), tr = document.querySelector(".transport"); if (!m || !sc || !tr) return;
-  const tabsH = innerWidth > 680 ? $("tabs").offsetHeight : 0; const hH = $("top").offsetHeight + (($("siProbe") || {}).offsetHeight || 0), root = document.documentElement; root.style.setProperty("--hH", hH + "px"); root.style.setProperty("--topH", hH + tabsH + 8 + "px");
+  const tabsH = innerWidth > 99999 ? $("tabs").offsetHeight : 0; const hH = $("top").offsetHeight + (($("siProbe") || {}).offsetHeight || 0), root = document.documentElement; root.style.setProperty("--hH", hH + "px"); root.style.setProperty("--topH", hH + tabsH + 8 + "px");
   const t = hH + tabsH + sc.offsetHeight; m.style.setProperty("--tTop", t + "px"); m.style.setProperty("--rTop", t + tr.offsetHeight + "px");
-  { const rb = $("rbar"); m.style.setProperty("--stkH", (innerWidth <= 680 && m.classList.contains("stick") ? tr.offsetHeight + (rb ? rb.offsetHeight : 0) : 0) + "px"); }
+  { const rb = $("rbar"); m.style.setProperty("--stkH", (innerWidth <= 99999 && m.classList.contains("stick") ? tr.offsetHeight + (rb ? rb.offsetHeight : 0) : 0) + "px"); }
 }
 function rangeFill(el) { const mn = +el.min || 0, mx = +el.max || 100; el.style.setProperty("--fill", ((+el.value - mn) / (mx - mn) * 100).toFixed(1) + "%"); }
 document.addEventListener("input", e => { if (e.target.type === "range") rangeFill(e.target); }, true);
 addEventListener("resize", stickTops);
 /* Start + Play: column beside the video on a phone, first two buttons of the bar on the web. */
-function placePlay() { const sc = $("sidectl"), tr = document.querySelector(".transport"), a = $("toStart"), b = $("play"); if (!sc || !tr || !a || !b) return; if (innerWidth <= 680) { if (a.parentNode !== sc) sc.append(a, b); } else if (a.parentNode !== tr) tr.prepend(a, b); }
+function placePlay() { const sc = $("sidectl"), tr = document.querySelector(".transport"), a = $("toStart"), b = $("play"); if (!sc || !tr || !a || !b) return; if (innerWidth <= 99999) { if (a.parentNode !== sc) sc.append(a, b); } else if (a.parentNode !== tr) tr.prepend(a, b); }
 addEventListener("resize", placePlay); placePlay();
 let rowsAll = false; try { rowsAll = localStorage.getItem("reelRows") === "1"; } catch (e) {}
-function placeTabs() { const tb = $("tabs"), sc = document.querySelector(".stagecol"), m = $("main"); if (!tb || !sc || !m) return; if (innerWidth <= 680) { if (tb.parentNode !== sc) sc.prepend(tb); } else if (tb.parentNode !== m) m.insertBefore(tb, m.querySelector(".body")); }
+function placeTabs() { const tb = $("tabs"), sc = document.querySelector(".stagecol"), m = $("main"); if (!tb || !sc || !m) return; if (innerWidth <= 99999) { if (tb.parentNode !== sc) sc.prepend(tb); } else if (tb.parentNode !== m) m.insertBefore(tb, m.querySelector(".body")); }
 let shPx = 0; try { shPx = +localStorage.getItem("reelSH") || 0; } catch (e) {}
 function applySH() {
   const root = document.documentElement;
-  if (innerWidth > 680 || !shPx) root.style.removeProperty("--sh");
+  if (innerWidth > 99999 || !shPx) root.style.removeProperty("--sh");
   else root.style.setProperty("--sh", Math.round(Math.max(innerHeight * .18, Math.min(innerHeight * .66, (innerWidth - 136) * 16 / 9, shPx))) + "px");
   requestAnimationFrame(stickTops);
 }
@@ -3517,7 +3520,7 @@ function applySH() {
 addEventListener("resize", () => { placeTabs(); applySH(); });
 function placeBars() {   // web: frame step, time and zoom share the button row, so the timeline block is shorter
   const tr = document.querySelector(".transport"), t2 = document.querySelector(".tbar2"), rb = $("rowsBtn"); if (!tr || !t2 || !rb) return;
-  const desk = innerWidth > 680, items = [$("fBack"), $("tc"), $("fFwd"), $("zoom").closest("label")];
+  const desk = innerWidth > 99999, items = [$("fBack"), $("tc"), $("fFwd"), $("zoom").closest("label")];
   if (desk && (items[0].parentNode !== tr || rb.parentNode !== tr)) [...items, rb, $("resetAll")].forEach(el => tr.appendChild(el));
   if (!desk && rb.parentNode !== t2) [...items, rb, $("resetAll")].forEach(el => t2.appendChild(el));   // phone: one row of buttons stays sticky, the rest sits in the second row
   t2.hidden = desk;
@@ -4208,7 +4211,7 @@ async function boot() {
   let gaveUp = false;
   const open = (txt, cls) => {
     $("boot").hidden = true; $("main").hidden = false;
-    pps = innerWidth <= 680 ? 26 : Math.max(16, Math.min(30, ($("tscroll").clientWidth || 700) / Math.max(total(), 1) * 1.6)); $("zoom").value = zFromPps(pps);
+    pps = innerWidth <= 99999 ? 26 : Math.max(16, Math.min(30, ($("tscroll").clientWidth || 700) / Math.max(total(), 1) * 1.6)); $("zoom").value = zFromPps(pps);
     sel = 0; if (isTalk()) { clipSig = null; syncStickers(); } HOOK_END = calcHookEnd(); WT = null; const moved = hlMigrate() | hlRematch();
     if (!prefsOn) { prefsOn = true; const p0 = D.prefs || {}; PREFS = { like: [...new Set([...(p0.like || []), ...PREFS.like])], no: [...new Set([...(p0.no || []), ...PREFS.no])], names: { ...(p0.names || {}), ...PREFS.names } }; }
     { let add = 0; (S.style.more || []).forEach(k => { if (ok(k) && !liked(k)) { PREFS.like.push(k); PREFS.names[k] = keyName(k); add++; } }); if (add) savePrefs(); }

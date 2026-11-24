@@ -18,7 +18,7 @@ html.pwa body { padding-block: 0 28px; }
 .transport .ccsep { flex: 0 0 1px; align-self: stretch; margin: 4px 2px; background: var(--line); }
 .edshd { display: none; }
 
-@media (max-width: 680px) {
+@media (min-width: 0px) {
   html.pwa #main:not([hidden]) { display: flex; flex-direction: column; }
   html.pwa .body { display: contents; }
   html.pwa .stagecol { order: 1; }
@@ -88,7 +88,7 @@ html.pwa body { padding-block: 0 28px; }
 }
 
 /* Effects / Sticker / Title: kotak pilihan 3 lajur macam CapCut (2026-11-22) */
-@media (max-width: 680px) {
+@media (min-width: 0px) {
   html.pwa.edtab-Effects #panel .grid, html.pwa.edtab-Sticker #panel .grid, html.pwa.edtab-Title #panel .grid,
   html.pwa.edtab-StyleBoard #panel .grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 8px !important; }
   html.pwa.edtab-Effects #panel .grid .opt, html.pwa.edtab-Sticker #panel .grid .opt, html.pwa.edtab-Title #panel .grid .opt,
@@ -97,7 +97,7 @@ html.pwa body { padding-block: 0 28px; }
 }
 
 /* Caption gaya CapCut: pratonton kecil, senarai ayat */
-@media (max-width: 680px) {
+@media (min-width: 0px) {
   html.pwa.edtab-Caption:not(.edbig) { --sh: 30vh !important; }
   html.pwa.edtab-Caption #panel .words { max-height: none; }
   html.pwa .words.edrows { display: block; padding: 4px 8px; }
@@ -116,7 +116,7 @@ html.pwa body { padding-block: 0 28px; }
   html.pwa .edshd #ccHl.on { background: #1d1b1a !important; color: #fff !important; }
   html.pwa.edtab-Caption #hlBtn { display: none !important; }   /* 23 Nov: butang ★ dipindah ke kepala panel */
 }
-@media (max-width: 680px) {   /* kotak 3 lajur: nama sahaja, penerangan panjang disorok macam CapCut */
+@media (min-width: 0px) {   /* kotak 3 lajur: nama sahaja, penerangan panjang disorok macam CapCut */
   html.pwa.edtab-Effects #panel .grid .opt > p, html.pwa.edtab-Sticker #panel .grid .opt > p { display: none; }
   html.pwa.edtab-Effects #panel .grid .opt > h3, html.pwa.edtab-Sticker #panel .grid .opt > h3 { font-size: 12px; margin: 4px 0 2px; }
   html.pwa.edtab-Effects #panel .grid .optb { gap: 4px; flex-wrap: wrap; }
@@ -133,14 +133,14 @@ html.pwa #tscroll, html.pwa #rscroll { touch-action: pan-x; }
 html.pwa.edtab-Caption .rbar .rlab, html.pwa.edtab-Caption .rbar .track { display: none !important; }
 
 /* 23 Nov (Mira): tab Cut, biru (VO, pembaris, video) melekat; merah (trek lain + panel) satu skrol */
-@media (max-width: 680px) {
+@media (min-width: 0px) {
   html.pwa .edlow { order: 5; flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; }
   html.pwa .edlow .ed { max-height: none !important; overflow-y: visible !important; flex: none; }
   html.pwa .edlow .controls { flex: none !important; overflow: visible !important; min-height: auto; }
   html.pwa.edsheet .edlow { order: 6; }
   html.pwa .rbar .vrow.fxsticky { margin-top: 2px; }
 }
-@media (max-width: 680px) { html.pwa.edtab-Highlight:not(.edbig) { --sh: 30vh !important; } }
+@media (min-width: 0px) { html.pwa.edtab-Highlight:not(.edbig) { --sh: 30vh !important; } }
 
 /* p22: butang ⇄ Tukar nampak dalam bar butang (tab Cut sahaja); butang asal enjin di hujung bar disorok */
 html.pwa .transport #swapClip { display: none !important; }
@@ -176,7 +176,7 @@ html.pwa { --bg: #0d0d11; --panel: #17171c; --panel2: #1f1f26; --line: rgba(255,
 html.pwa body { background: radial-gradient(120% 60% at 15% 0%, #2a2440 0%, transparent 60%), radial-gradient(100% 50% at 100% 30%, #123438 0%, transparent 60%), #0d0d11; }
 html.pwa .app { background: transparent; border: 0; border-radius: 0; }
 .ccside, .ccmore, .ccmenu, .ccadd, .ccjump { display: none; }
-@media (max-width: 680px) {
+@media (min-width: 0px) {
   html.pwa .top { display: none !important; }
   html.pwa:not(.edsheet) { --sh: 40vh; }
   html.pwa.edsheet:not(.edbig):not(.edtab-Caption):not(.edtab-Highlight) { --sh: 34vh !important; }
@@ -262,7 +262,7 @@ html.pwa #panel .cat[aria-pressed="true"], html.pwa #panel .btab[aria-selected="
 html.pwa #panel .preset[aria-pressed="true"] { background: var(--glass2) !important; outline: 2px solid #58c7d6; }
 html.pwa #panel .lkb { background: rgba(0,0,0,.55) !important; color: #fff; }
 html.pwa #panel .e-strike.eu { color: #1d1b1a; }
-@media (max-width: 680px) {
+@media (min-width: 0px) {
   html.pwa .stagecol .tabs, html.pwa .ccmore { width: 92px; }
   html.pwa .stagecol .tab, html.pwa .stagecol .tab.ictab { gap: 5px; padding: 0 7px; }
   html.pwa .ccside { width: 80px; }
@@ -273,12 +273,61 @@ html.pwa #panel .e-strike.eu { color: #1d1b1a; }
 html.pwa #panel input[type=text], html.pwa #panel input:not([type]), html.pwa #panel input[type=number], html.pwa #panel textarea, html.pwa #panel select {
   background: var(--glass2) !important; color: var(--fg) !important; border: 1px solid var(--line); }
 html.pwa #panel input::placeholder, html.pwa #panel textarea::placeholder { color: var(--muted); }
-@media (max-width: 680px) { html.pwa.edsheet .catbar { top: -12px !important; margin: 0 -4px; padding-top: 8px; border-radius: 12px; } }
+@media (min-width: 0px) { html.pwa.edsheet .catbar { top: -12px !important; margin: 0 -4px; padding-top: 8px; border-radius: 12px; } }
 
 /* 24 Nov (Mira): butang besarkan di atas (jauh dari main); nota penerangan disorok (makan ruang), kecuali dalam Render; dalam Effects pilihan dulu, senarai di bawah */
-@media (max-width: 680px) {
+@media (min-width: 0px) {
   html.pwa .ccside .ccdone { order: -2; } html.pwa .ccside .ccbig { order: -1; }
   html.pwa:not(.edtab-Siap) #panel .note, html.pwa:not(.edtab-Siap) #panel .legend { display: none !important; }
   html.pwa.edtab-Effects #panel > .catbar { order: 0; } html.pwa.edtab-Effects #panel > .row { order: 1; }
   html.pwa.edtab-Effects #panel > #fxList { order: 8; } html.pwa.edtab-Effects #panel > .row:has(.pool) { order: 9; }
+}
+
+/* ===== 24 Nov 2026 (Mira): gaya selari di semua skrin. Syarat 680 px ditukar jadi semua lebar (juga dalam enjin, melalui build_editor.py --pwa).
+   Kad pilihan dikemaskan, butang suka / buang kecil dan satu warna, slider dan tulisan ikut tema kaca. ===== */
+html.pwa #panel > .row, html.pwa #panel > .fold { background: var(--glass); border: 1px solid var(--line); border-radius: 16px; padding: 12px; }
+html.pwa #panel .lab, html.pwa #panel .fold > summary { font: 600 11px/1.3 var(--display); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+html.pwa #panel .lab span, html.pwa #panel .lab b { color: var(--fg); letter-spacing: 0; }
+html.pwa #panel h3 { font: 600 12px/1.25 var(--display); color: var(--fg); }
+html.pwa #panel .chip { border: 1px solid var(--line); border-radius: 12px; padding: 9px 13px; font: 600 13px var(--display); }
+/* slider */
+html.pwa input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 30px; margin: 0; background: transparent; accent-color: #58c7d6; }
+html.pwa input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, #58c7d6 var(--fill, 50%), rgba(255,255,255,.18) var(--fill, 50%)); }
+html.pwa input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -9px; border-radius: 50%; background: #f3f1ee; border: 0; box-shadow: 0 2px 8px rgba(0,0,0,.55); }
+html.pwa input[type=range]::-moz-range-track { height: 4px; border-radius: 2px; background: rgba(255,255,255,.18); }
+html.pwa input[type=range]::-moz-range-progress { height: 4px; border-radius: 2px; background: #58c7d6; }
+html.pwa input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #f3f1ee; border: 0; box-shadow: 0 2px 8px rgba(0,0,0,.55); }
+/* kad preset / pilihan */
+html.pwa #panel .presets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+html.pwa #panel .pwrap { position: relative; min-width: 0; }
+html.pwa #panel .preset { width: 100%; padding: 5px 5px 8px; border: 1px solid var(--line); border-radius: 14px; font: 600 12px var(--display); color: var(--fg); overflow: hidden; }
+html.pwa #panel .preset i { border-radius: 10px; overflow: hidden; }
+html.pwa #panel .preset[aria-pressed="true"] { border-color: #58c7d6; outline: 2px solid #58c7d6; outline-offset: -1px; }
+/* butang suka / buang: kecil, satu warna (dulu emoji hijau / merah yang mengganggu) */
+html.pwa #panel .lk { display: flex; gap: 4px; }
+html.pwa #panel .pwrap .lk { position: absolute; top: 9px; right: 9px; z-index: 2; margin: 0; }
+html.pwa #panel .lkb { width: 24px; height: 24px; min-width: 0; padding: 0; border: 1px solid rgba(255,255,255,.28); border-radius: 50%; background: rgba(10,10,14,.55) !important; font-size: 0; line-height: 0; display: grid; place-items: center;
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+html.pwa #panel .lkb::before { font: 600 12px/1 var(--display); color: rgba(255,255,255,.85); }
+html.pwa #panel .lkb.y::before { content: "\2713"; } html.pwa #panel .lkb.n::before { content: "\2715"; font-size: 11px; }
+html.pwa #panel .lkb.y[aria-pressed="true"] { background: #58c7d6 !important; border-color: #58c7d6; } html.pwa #panel .lkb.y[aria-pressed="true"]::before { color: #06262b; }
+
+/* ----- skrin lebar (laptop / desktop): komponen sama, kedudukan dua lajur. Kiri: video + rel tab + DONE + edit bar. Kanan: panel. Timeline di bawah. ----- */
+@media (min-width: 900px) {
+  html.pwa, html.pwa.edsheet:not(.edbig), html.pwa.edtab-Caption:not(.edbig), html.pwa.edtab-Highlight:not(.edbig),
+  html.pwa.edsheet:not(.edbig):not(.edtab-Caption):not(.edtab-Highlight) { --sh: 46vh !important; }
+  html.pwa.edbig { --sh: 62vh !important; }
+  html.pwa #main:not([hidden]) { display: grid; grid-template-columns: 480px minmax(0, 1fr); grid-template-rows: auto auto auto auto auto minmax(0, 1fr); column-gap: 12px; width: 100%; max-width: 1500px; margin: 0 auto; padding: 0 10px;
+    grid-template-areas: "stage panel" "bar panel" "menu panel" "len panel" "tl1 tl1" "tl2 tl2"; }
+  html.pwa.edsheet #main:not([hidden]) { grid-template-areas: "stage panel" "bar panel" "menu panel" "len panel" "tl1 panel" "tl2 panel"; }
+  html.pwa .stagecol { grid-area: stage; } html.pwa .transport { grid-area: bar; } html.pwa .ccmenu { grid-area: menu; } html.pwa .lenbar { grid-area: len; }
+  html.pwa .rbar { grid-area: tl1; margin-top: 8px; } html.pwa .edlow { display: contents; } html.pwa .ed { grid-area: tl2; overflow-y: auto; min-height: 0; }
+  html.pwa .edshd { grid-area: len; }
+  html.pwa .controls, html.pwa.edsheet .controls { grid-area: panel; align-self: start; max-height: calc(46vh + 86px); overflow-y: auto !important; margin: 6px 0 0; padding: 14px; border-radius: 18px;
+    background: var(--glass); border: 1px solid var(--line); -webkit-backdrop-filter: blur(18px) saturate(140%); backdrop-filter: blur(18px) saturate(140%); }
+  html.pwa.edsheet .controls { max-height: none; align-self: stretch; height: calc(100vh - 20px); }
+  html.pwa .transport, html.pwa .ccmenu:not([hidden]) { margin-left: 0; margin-right: 0; }
+  html.pwa #panel .presets, html.pwa.edtab-Effects #panel .grid, html.pwa.edtab-Sticker #panel .grid, html.pwa.edtab-Title #panel .grid, html.pwa.edtab-StyleBoard #panel .grid {
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)) !important; }
+  html.pwa.edsheet .catbar { top: -14px !important; }
 }
