@@ -1691,7 +1691,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .spticks button[aria-pressed="true"] { color: #3fd0c0; }
 #spBtn { display: inline-grid; place-items: center; } #spBtn .ic { width: 16px; height: 16px; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=436df063bf">
+<link rel="stylesheet" href="../../ed-capcut.css?v=83980a19f9">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1802,9 +1802,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=436df063bf"></script>
-<script src="../../../js/runtime.js?v=436df063bf"></script>
-<script src="../../ed-boot.js?v=436df063bf"></script>
+<script src="../../../js/config.js?v=83980a19f9"></script>
+<script src="../../../js/runtime.js?v=83980a19f9"></script>
+<script src="../../ed-boot.js?v=83980a19f9"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -3567,7 +3567,7 @@ function fxPanel() {
       ${x.k.startsWith("e-usp") && (D.broll || []).length ? `<span class="lab">Video belakang</span><div class="chips">${chip("Tiada (guna gambar)", !x.vid, 'data-evid=""')}${D.broll.map(b => chip(b.n, x.vid === b.id, `data-evid="${b.id}"`)).join("")}</div>` : ""}
       ${o.ph ? `<span class="lab">Pilih ${o.ph} gambar${x.k === "e-usph" ? " (pertama = latar)" : ""}</span><div class="phgrid">${(D.photos || []).map(p => `<button data-eph="${p.id}" aria-pressed="${(x.photos || []).includes(p.id)}" aria-label="${esc(p.n)}"><img src="${photoUrl(p.id)}" alt="" loading="lazy"></button>`).join("")}</div>` : ""}
       <label class="lab" for="stSize">Saiz: <span id="stSizeV">${Math.round(x.s * 100)}%</span></label><input id="stSize" type="range" min="8" max="50" value="${Math.round(x.s * 100)}">
-      ${fam ? `<span class="lab">Tukar gaya</span><div class="chips">${fam[1].filter(k => fxDef(k)).map(k => chip(fxDef(k)[1], x.k === k, `data-etk="${k}"`)).join("")}</div>` : ""}
+      ${fam ? `<span class="lab">Tukar gaya</span><div class="grid etkgrid">${fam[1].filter(k => fxDef(k) && (ok("fx:" + k) || x.k === k)).map(k => { const f = fxDef(k); return `<div class="opt"><button class="mini ecard" data-etk="${k}" aria-pressed="${x.k === k}" aria-label="Tukar ke ${esc(f[1])}"><div>${fxPreview(vBase(k), { ...f[3], ...(x.text ? { text: x.text } : {}) })}</div></button><h3>${f[1]}</h3>${lk("fx:" + k)}</div>`; }).join("")}</div>` : ""}   /* 25 Nov 2026: kad gambar, bukan tulisan; ✓ ✕ sama macam galeri */
       <div class="chips"><button class="chip" data-stdel="${stSel}">Buang effect ni</button></div>
       <span class="legend">Seret atas video untuk alih tempat. Tarik blok di baris Effects untuk alih masa dan tempoh.</span></div>`;
   }
@@ -4212,7 +4212,8 @@ document.addEventListener("click", e => {
     if (w.isContentEditable) return;
     if (wSel === i) { w.contentEditable = "true"; w.spellcheck = false; w.focus(); const r = document.createRange(); r.selectNodeContents(w); r.collapse(false); const sl = getSelection(); sl.removeAllRanges(); sl.addRange(r); return; }
     pickWord(i);
-    if (!playing) seek(voToEdit(S.words[i].s, voSegs()));
+    if (playing) stop();   /* 25 Nov 2026: ketik perkataan = terus pause supaya boleh betulkan */
+    seek(voToEdit(S.words[i].s, voSegs()));
     return;
   }
   const b = e.target.closest("button"); if (!b) return;

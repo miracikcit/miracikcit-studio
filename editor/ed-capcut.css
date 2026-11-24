@@ -356,3 +356,27 @@ html.pwa #panel .gseg { background: var(--glass); border: 1px solid var(--line);
 html.pwa #panel .gseg button { color: var(--fg); opacity: .6; }
 html.pwa #panel .gseg button[aria-pressed="true"] { background: var(--glass2); color: #58c7d6; opacity: 1; }
 html.pwa #panel .preset i.mkth { aspect-ratio: 1 / .78; }
+
+/* ===== 25 Nov 2026 (Mira): kotak pilihan gaya Adjust (3 lajur, tiada tulisan penerangan), bar bahagian ikon, rel tab ikon sahaja, butang safe zone ===== */
+html.pwa #panel [data-ccoff] { display: none !important; }
+html.pwa #panel .ccpseg { position: sticky; top: -12px; z-index: 6; -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+html.pwa #panel .ccpseg button svg { display: block; }
+@media (max-width: 899px) { html.pwa #panel .grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 8px !important; } }
+html.pwa #panel .grid .opt { position: relative; display: block; min-width: 0; min-height: 0 !important; padding: 5px 5px 7px; border: 1px solid var(--line); border-radius: 14px; background: var(--glass); }
+html.pwa #panel .grid .opt > .mini { display: block; width: 100%; border-radius: 10px; }
+html.pwa #panel .grid .opt > h3 { margin: 5px 0 0 !important; font: 600 11px/1.25 var(--display) !important; color: var(--fg); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.pwa #panel .grid .opt > p, html.pwa #panel .grid .opt > .tag, html.pwa #panel .grid .opt > .newtag, html.pwa #panel .grid .opt .optb > .chip { display: none !important; }
+html.pwa #panel .grid .opt .optb { display: contents; }
+html.pwa #panel .grid .opt .lk { position: absolute; top: 9px; right: 9px; z-index: 2; display: flex; gap: 4px; width: auto; margin: 0; }
+html.pwa #panel .grid .opt:has(> .mini[aria-pressed="true"]) { border-color: #58c7d6; outline: 2px solid #58c7d6; outline-offset: -1px; }
+html.pwa #panel .grid .opt > .mini[aria-pressed="true"] { outline: 0; }
+/* rel tab: ikon sahaja, sempit */
+html.pwa .stagecol .tabs, html.pwa .ccmore { width: 46px; }
+html.pwa .stagecol .tab, html.pwa .stagecol .tab.ictab { justify-content: center; gap: 0; padding: 0; }
+html.pwa .stagecol .tab .tl, html.pwa .stagecol .tab .tlab { display: block !important; position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+html.pwa .stagecol .tab .ic, html.pwa .stagecol .tab.ictab .ic { width: 20px; height: 20px; }
+html.pwa .ccmore { font-size: 0; letter-spacing: 0; }
+html.pwa .ccmore::before { content: "\22EF"; font: 700 22px/1 var(--display); }
+/* safe zone */
+html.pwa .ccside .ccsafe { order: -1; }
+html.pwa .ccside .ccsafe[aria-pressed="true"] { background: #58c7d6; border-color: #58c7d6; color: #06262b; }

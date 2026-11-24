@@ -1362,6 +1362,32 @@ def run_ed_draft(inp, sheet, cfg):
     return {"vid": vid}
 
 
+def push_send(sheet, title, body, vid=""):
+    """Notifikasi ke phone Mira (Web Push app Studio, 25 Nov 2026). Senyap kalau belum dihidupkan di phone."""
+    try:
+        subs = (sheet.call("dget", path="push/subs").get("doc") or {}).get("subs") or {}
+        if not subs:
+            return
+        from pywebpush import webpush, WebPushException
+        key = json.load(open(os.path.join(HOME, "push_vapid.json")))["private"]
+        dead = []
+        for k, sub in subs.items():
+            try:
+                webpush(subscription_info=sub, data=json.dumps({"title": title, "body": body, "vid": vid}), vapid_private_key=key,
+                        vapid_claims={"sub": "mailto:studio@miracikcit.github.io"}, ttl=3600)
+            except WebPushException as e:
+                if getattr(e, "response", None) is not None and e.response.status_code in (404, 410):
+                    dead.append(k)
+                else:
+                    log.warning("Push gagal: %s", str(e)[:200])
+        if dead:
+            for k in dead:
+                subs.pop(k, None)
+            sheet.call("dset", path="push/subs", data={"subs": subs, "at": int(time.time() * 1000)})
+    except Exception:
+        log.exception("Push gagal")
+
+
 def _ed_draft_run(sheet, vid, doc):
     def put(**kw):
         cur = sheet.call("dget", path="edpwa/" + vid).get("doc") or doc
@@ -1383,6 +1409,7 @@ def _ed_draft_run(sheet, vid, doc):
         r = subprocess.run([sys.executable, tpl, doc["project"], edits if ed else "none", build], capture_output=True, text=True, timeout=5400, env=env)
         mp4 = os.path.join(build, "draft", "draft_540.mp4")
         if r.returncode != 0 or not os.path.isfile(mp4):
+            push_send(sheet, "Draf gagal", str(doc.get("title") or vid), vid)
             return put(status="error", msg=("render: " + (r.stderr or r.stdout)[-240:]).strip())
         pid = sheet.call("dpath", base="studio", path=["EDITOR PWA", vid], share=True)["id"]
         old = (doc.get("draft") or {}).get("id")
@@ -1395,6 +1422,7 @@ def _ed_draft_run(sheet, vid, doc):
         put(status="sedia", id=fid, mb=round(os.path.getsize(mp4) / 1e6, 1))
         shutil.rmtree(build, ignore_errors=True)
         log.info("Draf Editor PWA siap: %s", vid)
+        push_send(sheet, "Draf siap", str(doc.get("title") or vid), vid)
     except Exception as e:
         log.exception("Draf Editor PWA gagal: %s", vid)
         try:

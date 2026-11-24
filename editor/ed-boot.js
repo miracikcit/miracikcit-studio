@@ -40,6 +40,27 @@
     return Promise.all(w);
   }
 
+  /* 25 Nov 2026: notifikasi "draf siap" (Web Push). Minta izin masa Mira tekan Draf / UPLOAD (mesti dari ketikan), simpan langganan dalam push/subs; worker Mac mini hantar. */
+  const PUSH_PUB = 'BOrwjub_k4y0gXG5KoweaHjtivWFmb3qp45RUIRSGyqHVHWC24jMfjEpRSpGPc1XFy5IRXGODl8aaULWzyEslfM';
+  let pushDone = false;
+  async function pushSub() {
+    if (pushDone || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    const reg = await navigator.serviceWorker.ready; if (!reg.pushManager) return;
+    let sb = await reg.pushManager.getSubscription();
+    if (!sb) { const r = atob(PUSH_PUB.replace(/-/g, '+').replace(/_/g, '/') + '='); sb = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: Uint8Array.from(r, c => c.charCodeAt(0)) }); }
+    const j = sb.toJSON(), id = String((j.keys || {}).auth || '').slice(0, 12); if (!id) return;
+    const d = (await readDoc('push/subs')) || {}, subs = d.subs || {};
+    if (!subs[id] || subs[id].endpoint !== j.endpoint) { subs[id] = j; await writeDoc('push/subs', { subs, at: Date.now() }); }
+    pushDone = true;
+  }
+  document.addEventListener('click', e => {
+    if (!(e.target.closest && e.target.closest('#upload, #ccDSheet button')) || !('Notification' in window)) return;
+    try {
+      if (Notification.permission === 'granted') pushSub().catch(() => {});
+      else if (Notification.permission === 'default') { const q = Notification.requestPermission(p => { if (p === 'granted') pushSub().catch(() => {}); }); if (q && q.then) q.then(p => { if (p === 'granted') pushSub().catch(() => {}); }).catch(() => {}); }
+    } catch (x) {}
+  }, true);
+
   const dbReady = (async () => {
     if (!VID) throw err('novid', 'Link editor tiada id video.');
     await Studio.ready();
@@ -504,5 +525,78 @@
     new MutationObserver(() => apply()).observe(p, { childList: true, subtree: true });
     new MutationObserver(() => { apply(); }).observe(H, { attributes: true, attributeFilter: ['class'] });
     apply();
+  }, 300);
+})();
+
+/* ===== 25 Nov 2026 (Mira): panel Title / Caption / Highlight / Effects disusun gaya Adjust (bar ikon bahagian), butang safe zone di tepi video ===== */
+(function () {
+  const $ = id => document.getElementById(id), H = document.documentElement;
+  const G = n => { try { return (0, eval)(n); } catch (e) { return undefined; } };
+  const svg = d => `<svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+  const SEG = {
+    words: ['Perkataan', 'M4 7h16M4 12h16M4 17h10'],
+    pick: ['Pilih gaya', 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z'],
+    set: ['Laras', 'M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4'],
+    list: ['Dalam video ni', 'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01']
+  };
+  const ORDER = { Title: ['pick', 'set'], Caption: ['words', 'pick', 'set'], Highlight: ['pick', 'set'], Effects: ['pick', 'set', 'list'] };
+  const cur = {}, had = {};
+  const tabNow = () => { const c = [...H.classList].find(x => x.startsWith('edtab-')); return c ? c.slice(6) : ''; };
+  function items(p, tab) {
+    const out = []; let after = false;
+    [...p.children].forEach(el => {
+      if (el.classList.contains('ccpseg') || el.hidden) return;
+      if (tab === 'Highlight' && el.id === 'ttTop') {
+        [...el.children].forEach(c => out.push([c, c.classList.contains('hlwl') ? '' : c.classList.contains('grid') ? 'pick' : 'set']));
+        return;
+      }
+      let k = 'set';
+      if (tab === 'Effects') {
+        if (el.classList.contains('catbar')) after = true;
+        k = after ? 'pick' : el.id === 'fxList' || el.querySelector('[data-readd]') ? 'list' : 'set';
+      } else if (el.querySelector('#words')) k = 'words';
+      else if (el.querySelector('.grid')) k = 'pick';
+      out.push([el, k]);
+    });
+    return out;
+  }
+  function apply() {
+    const p = $('panel'); if (!p) return;
+    const tab = tabNow(), ord = ORDER[tab]; let bar = p.querySelector(':scope > .ccpseg');
+    if (!ord) { if (bar) bar.remove(); return; }
+    const its = items(p, tab), kinds = ord.filter(k => its.some(x => x[1] === k));
+    if (kinds.length < 2) { if (bar) bar.remove(); its.forEach(x => x[0].removeAttribute('data-ccoff')); return; }
+    /* pilih effect / zoom pada timeline: borang muncul, terus ke bahagian Laras */
+    const hasSet = kinds.includes('set');
+    if (tab === 'Effects' && hasSet && !had[tab]) cur[tab] = 'set';
+    had[tab] = hasSet;
+    if (!kinds.includes(cur[tab])) cur[tab] = kinds[0];
+    const sig = tab + ':' + kinds.join(',');
+    if (!bar || bar.dataset.sig !== sig) {
+      if (bar) bar.remove();
+      bar = document.createElement('div'); bar.className = 'gseg ccpseg'; bar.dataset.sig = sig; bar.setAttribute('role', 'group'); bar.setAttribute('aria-label', 'Bahagian ' + tab);
+      bar.style.gridTemplateColumns = `repeat(${kinds.length}, 1fr)`;
+      bar.innerHTML = kinds.map(k => `<button type="button" data-ccs="${k}" aria-label="${SEG[k][0]}" title="${SEG[k][0]}">${svg(SEG[k][1])}</button>`).join('');
+      bar.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; e.stopPropagation(); cur[tabNow()] = b.dataset.ccs; apply(); p.scrollTop = 0; });
+      p.prepend(bar);
+    } else if (p.firstElementChild !== bar) p.prepend(bar);
+    bar.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.ccs === cur[tab]));
+    its.forEach(([el, k]) => { if (k && k !== cur[tab]) el.setAttribute('data-ccoff', '1'); else el.removeAttribute('data-ccoff'); });
+  }
+  let q = 0; const later = () => { if (q) return; q = requestAnimationFrame(() => { q = 0; apply(); }); };
+  let t = setInterval(() => {
+    const p = $('panel'), side = $('ccSide'), big = $('ccBig'); if (!p || !side || !big) return; clearInterval(t);
+    new MutationObserver(later).observe(p, { childList: true, subtree: true });
+    new MutationObserver(later).observe(H, { attributes: true, attributeFilter: ['class'] });
+    apply();
+    /* safe zone: butang kecil bawah butang besarkan */
+    big.insertAdjacentHTML('afterend', `<button type="button" class="ccbig ccsafe" id="ccSafe" aria-label="Tunjuk safe zone" title="Safe zone" aria-pressed="false">${svg('M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4M9 9h6v6H9z')}</button>`);
+    const sb = $('ccSafe');
+    sb.addEventListener('pointerdown', e => e.stopPropagation());
+    sb.onclick = e => {
+      e.stopPropagation(); e.preventDefault();
+      const b = document.createElement('button'); b.dataset.sz = '1'; b.hidden = true; p.appendChild(b); b.click(); b.remove();
+      sb.setAttribute('aria-pressed', !!G('safeOn'));
+    };
   }, 300);
 })();

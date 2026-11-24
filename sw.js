@@ -1,5 +1,5 @@
 /* Simpan app dalam phone supaya boleh dibuka tanpa internet. Data sendiri disimpan oleh runtime.js. */
-const V = '2026.11.25-1';
+const V = '2026.11.25-2';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-180.png'];
 const SHELL = 'studio-' + V, SC = self.registration.scope, NET_MS = 3000;
 /* Fasa 1B: precache shell Studio + editor. Senarai fail dibaca dari HTML sendiri (index.html guna ?v=<versi>, editor.html guna ?v=<hash isi>),
@@ -214,4 +214,15 @@ self.addEventListener('fetch', e => {
   const ed = same && u.pathname.includes('/editor/');
   const nav = e.request.mode === 'navigate' && same ? (/\/editor\/$|\/editor\/index\.html$/.test(u.pathname) ? 'editor/index.html' : 'index.html') : '';
   e.respondWith(netFirst(e, ed ? new Request(e.request, { cache: 'no-cache' }) : e.request, e.request, { same, nav }));
+});
+
+/* 25 Nov 2026: notifikasi draf siap (Web Push dari worker Mac mini) */
+self.addEventListener('push', e => {
+  let d = {}; try { d = e.data.json(); } catch (x) {}
+  e.waitUntil(self.registration.showNotification(d.title || 'Miracikcit Studio', { body: d.body || '', icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', tag: 'ed-' + (d.vid || ''), data: { vid: d.vid || '' } }));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const vid = (e.notification.data || {}).vid, u = self.registration.scope + (vid ? 'editor/?v=' + encodeURIComponent(vid) : '');
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => { const c = cs.find(x => 'focus' in x); return c ? c.focus() : self.clients.openWindow(u); }));
 });
