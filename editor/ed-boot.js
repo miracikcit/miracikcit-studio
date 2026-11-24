@@ -239,7 +239,7 @@
   }
   function sync() {
     const t = curTab();
-    H.classList.toggle('edsheet', !!t && t !== 'Potong');
+    H.classList.toggle('edsheet', !!t && (t !== 'Potong' || G('jnSel') > 0));   /* p24: sambungan dipilih = helaian pilih transition */
     [...H.classList].filter(c => c.startsWith('edtab-')).forEach(c => H.classList.remove(c)); if (t) H.classList.add('edtab-' + t.replace(/\s+/g, ''));
     rows(); pinVideo();
     const l = $('ccTab'); if (l) l.textContent = (document.querySelector('#tabs [aria-selected="true"] .tl, #tabs [aria-selected="true"]') || {}).textContent || t;
@@ -420,7 +420,7 @@
     if (tc) { new MutationObserver(tcs).observe(tc, { childList: true, characterData: true, subtree: true }); tcs(); }
     if (pi) new MutationObserver(() => { $('ccPlayIc').setAttribute('href', pi.getAttribute('href')); const p2 = $('ccPlayIc2'); if (p2) p2.setAttribute('href', pi.getAttribute('href')); }).observe(pi, { attributes: true });
     new MutationObserver(sync).observe($('tabs'), { attributes: true, childList: true, subtree: true, attributeFilter: ['aria-selected'] });
-    const inn = $('inner'); if (inn) new MutationObserver(() => { rows(); pinVideo(); }).observe(inn, { childList: true });
+    const inn = $('inner'); if (inn) new MutationObserver(() => { const j = curTab() === 'Potong' && G('jnSel') > 0; if (curTab() === 'Potong' && H.classList.contains('edsheet') !== j) sync(); else { rows(); pinVideo(); } }).observe(inn, { childList: true });
     const ed = document.querySelector('.ed'), pnl = $('panel');
     if (ed && pnl && !$('edlow')) { const low = document.createElement('div'); low.id = 'edlow'; low.className = 'edlow'; ed.parentNode.insertBefore(low, ed); low.append(ed, pnl); }
     sync(); timeline();

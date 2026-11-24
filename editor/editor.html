@@ -1632,14 +1632,53 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .w.hlw.now, .w.hlw.pick { opacity: 1; }
 .fixsug:empty { display: none; }
 .fixsug .chip.fixc { background: #fbd36b; border-color: #e6b94a; color: var(--fg); font-weight: 600; }
+
+/* p24: transition ikut sambungan */
+.vrow:not(.fxsticky) { position: relative; }
+.rinner .vrow.fxsticky { position: relative; }
+.jn { position: absolute; top: 50%; z-index: 4; width: 22px; height: 22px; margin: -11px 0 0 -11px; padding: 0; border: 0; border-radius: 7px; background: #fff; color: #111; display: grid; place-items: center; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.45); }
+.jn::before { content: ""; position: absolute; inset: -7px -5px; }
+.jn .ic { width: 13px; height: 13px; }
+.jn.set { background: #111; color: #3fd0c0; box-shadow: inset 0 0 0 1.5px #3fd0c0; }
+.jn.on { background: #3fd0c0; color: #062421; box-shadow: 0 0 0 3px rgba(63,208,192,.3); }
+.jnbar { align-items: center; }
+.jnbar .cat { display: grid; place-items: center; min-width: 40px; height: 34px; padding: 0 10px; }
+.jnbar .cat .ic { width: 18px; height: 18px; }
+.jnbar .jsp { flex: 1; }
+.jngrid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.jngrid .opt h3 { text-align: center; font-size: 11px; font-weight: 500; }
+.mini.jnm { aspect-ratio: 5 / 4; background: #000; }
+.mini.jnm[aria-pressed="true"] { border-color: #3fd0c0; }
+.jnm i { position: absolute; inset: 0; pointer-events: none; }
+.jnm .ja { background: linear-gradient(160deg, #6b5140, #a98463); }
+.jnm .jb { background: linear-gradient(160deg, #3d5a66, #7fa3ad); animation: jnB 2s linear infinite; }
+.jnm .jo { opacity: 0; }
+.jnm .jb.j-push { animation: jnB 2s linear infinite, jnPush 2s linear infinite; }
+.jnm .jb.j-whip { animation: jnB 2s linear infinite, jnWhip 2s linear infinite; }
+.jnm .jb.j-zoomin { animation: jnB 2s linear infinite, jnZoom 2s linear infinite; }
+.jnm .jo.j-dip { background: #000; animation: jnDip 2s linear infinite; }
+.jnm .jo.j-flash { background: #fff; animation: jnFlash 2s linear infinite; }
+.jnm .jo.j-paper { background: #f6efdc; opacity: 1; animation: jnPaper 2s linear infinite; }
+@keyframes jnB { 0%, 49.9% { opacity: 0; } 50%, 100% { opacity: 1; } }
+@keyframes jnPush { 0%, 50% { transform: scale(1.3); } 68%, 100% { transform: none; } }
+@keyframes jnWhip { 0%, 50% { transform: translateX(45%) scale(1.15); } 64%, 100% { transform: none; } }
+@keyframes jnZoom { 0%, 50% { transform: scale(2.2); } 68%, 100% { transform: none; } }
+@keyframes jnDip { 0%, 38% { opacity: 0; } 50% { opacity: 1; } 62%, 100% { opacity: 0; } }
+@keyframes jnFlash { 0%, 49.9% { opacity: 0; } 50% { opacity: .85; } 66%, 100% { opacity: 0; } }
+@keyframes jnPaper { 0%, 50% { transform: translateX(-100%); } 72%, 100% { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .jnm i { animation: none !important; } .jnm .jb { opacity: 1; clip-path: inset(0 0 0 50%); } }
+#panel .row.jnrow { display: flex; flex-direction: row; align-items: center; gap: 10px; }
+#panel .row.jnrow input[type="range"] { flex: 1 1 auto; width: auto; min-width: 0; max-width: none; }
+.jnrow .jnv { flex: none; min-width: 52px; text-align: right; font: 600 12px var(--mono, ui-monospace, monospace); font-variant-numeric: tabular-nums; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=2dfc0a2087">
+<link rel="stylesheet" href="../../ed-capcut.css?v=5a0ad60d91">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
   <symbol id="i-ffwd" viewBox="0 0 24 24"><path d="M9 6l8 6-8 6z" fill="currentColor"/><path d="M6 5v14"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor"/></symbol>
   <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+  <symbol id="i-trans" viewBox="0 0 24 24"><path d="M4 6v12l8-6zM20 6v12l-8-6z"/></symbol>
   <symbol id="i-split" viewBox="0 0 24 24"><path d="M12 3v18M4 8l5 4-5 4M20 8l-5 4 5 4"/></symbol>
   <symbol id="i-del" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5"/></symbol>
   <symbol id="i-left" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
@@ -1738,9 +1777,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=2dfc0a2087"></script>
-<script src="../../../js/runtime.js?v=2dfc0a2087"></script>
-<script src="../../ed-boot.js?v=2dfc0a2087"></script>
+<script src="../../../js/config.js?v=5a0ad60d91"></script>
+<script src="../../../js/runtime.js?v=5a0ad60d91"></script>
+<script src="../../ed-boot.js?v=5a0ad60d91"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -2100,7 +2139,7 @@ let D = null, db = null, dbDoc = null;
 let tab = "Potong", safeOn = false, mode = "fix", bTab = "brand", wSel = -1;
 /* Zoom slider is logarithmic: 0 = 6 px per second (whole video), 100 = 300 px per second (frame-level trims). */
 const ppsFromZ = v => 6 * Math.pow(50, v / 100), zFromPps = p => Math.round(Math.log(p / 6) / Math.log(50) * 100);
-let pps = 16, pos = 0, sel = 0, playing = false, curIdx = 0, lastPos = 0, sfxSel = -1, voSel = -1, stSel = -1, zmSel = -1, lastT = 0;
+let pps = 16, pos = 0, sel = 0, playing = false, curIdx = 0, lastPos = 0, sfxSel = -1, voSel = -1, stSel = -1, zmSel = -1, lastT = 0, jnSel = -1;   /* p24: jnSel = sambungan (indeks klip selepas potongan) yang dipilih */
 const S0 = () => ({ clips: [], bin: [], hook: "", words: [], globalMute: true, sfx: [], zooms: [], vo: [], stickers: [], capMode: "frasa", capSize: 1, capGap: 1, capPos: "bawah", hlStyle: "color", hlFont: "", hlColor: "", hlMode: "", hlKind: "ikut", hlLook: "none", hlFx: "pop", hlSize: 1, hlx: {}, hlPlace: "big", hlY: null, overlay: {}, style: { ...DEF_STYLE }, final: { render: "final", src: "simpan", list: "simpan" }, popDone: {}, music: { f: "", vol: .15, duck: true } });
 let S = S0();
 /* One editor for every part of a product (2026-11-12): parts.json at the page root lists the videos, each in its own folder (v1/, v2/ ...).
@@ -2115,7 +2154,7 @@ const hasVO = () => !!D.voDur;
 const isTalk = () => !!(D && D.talk);
 const hasCap = () => hasVO() || isTalk();
 let hlSel = -1;
-const clearPick = () => { sfxSel = voSel = stSel = zmSel = hlSel = -1; };
+const clearPick = () => { sfxSel = voSel = stSel = zmSel = hlSel = jnSel = -1; };
 
 /* ---------- timing ---------- */
 const total = () => S.clips.reduce((s, c) => s + c.out - c.in, 0);
@@ -2807,6 +2846,16 @@ function zmScale(z, d) { const Z = +z.z || 1.15, e = x => 1 - Math.pow(1 - Math.
   }
   return d < .06 ? 1 + (Z - 1) * d / .06 : 1 + (Z - 1) * (1 - e((d - .06) / .39)); }
 function zmOrigin(z) { return ""; }
+/* p24: transition ikut sambungan (butang .jn dalam trek video, panel pilih dalam tab Cut) */
+const TRD = { dip: .16, flash: .2, push: .3, paper: .36, whip: .26, zoomin: .3 };
+const jnKind = i => (S.clips[i] && S.clips[i].tr) || S.style.trans || "cut", jnDur = i => +(S.clips[i] && S.clips[i].trd) || TRD[jnKind(i)] || .3;
+function jnPlay() { const i = jnSel; if (!(i > 0) || !S.clips[i]) return; if (playing) stop(); const t = startOf(i); seek(Math.max(0, t - .8)); start(); clearTimeout(window._jp); window._jp = setTimeout(() => { if (playing) stop(); }, (Math.min(.8, t) + jnDur(i) + .9) * 1000); }
+function jnPanel() {
+  const cur = jnKind(jnSel), D = jnDur(jnSel), ic = n => `<svg class="ic"><use href="#i-${n}"/></svg>`;
+  return `<div class="catbar jnbar"><span class="cat" aria-pressed="true">${ic("trans")}</span><span class="jsp"></span><button class="cat" data-jall="1" aria-label="Guna untuk semua sambungan" title="Guna untuk semua sambungan">${ic("rows")}</button><button class="cat" data-jdel="1" aria-label="Buang transition" title="Buang transition">${ic("del")}</button></div>
+    <div class="grid jngrid">${OPTS.trans.filter(o => ok("trans:" + o.id) || cur === o.id).map(o => `<div class="opt"><button class="mini jnm" aria-pressed="${cur === o.id}" data-jtr="${o.id}" aria-label="${esc(o.n)}"><i class="ja"></i><i class="jb j-${o.id}"></i><i class="jo j-${o.id}"></i></button><h3>${esc(o.n)}</h3></div>`).join("")}</div>
+    ${cur !== "cut" ? `<div class="row jnrow"><input id="jnD" type="range" min="10" max="80" step="2" value="${Math.round(D * 100)}" aria-label="Panjang transition"><span class="jnv" id="jnDV">${D.toFixed(2)} s</span></div>` : ""}`;
+}
 function drawFx() {
   const v = $("mv"), tx = $("tx"); let sc = 1;
   for (const t of PUNCH) { const d = pos - t; if (d >= 0 && d < .28) { sc = 1.1 - .1 * (d / .28); break; } }
@@ -2814,18 +2863,20 @@ function drawFx() {
   for (const z of S.zooms) { const d = pos - z.t; if (d >= 0 && d < zmLen(z)) { sc = Math.max(sc, zmScale(z, d)); if (z.k === "shake") shx = ZSHAKE[Math.floor(d / .06)] || 0; if (!org) org = zmOrigin(z); } }
   v.style.transformOrigin = org; { const b = $("mvb"); if (b) b.style.transformOrigin = org; }
   v.style.transform = sc > 1 || shx ? `${shx ? `translateX(${shx}%) ` : ""}scale(${sc.toFixed(3)})` : "";
-  const tr = S.style.trans; if (tr === "cut") { tx.style.opacity = 0; return; }
-  if (tr === "push" || tr === "paper" || tr === "whip" || tr === "zoomin") {
-    let since = 9, a0 = 0; for (let i = 0; i < S.clips.length - 1; i++) { a0 += S.clips[i].out - S.clips[i].in; if (pos >= a0 && pos - a0 < since) since = pos - a0; }
-    if (tr === "push") { tx.style.opacity = 0; if (since < .3 && sc === 1) v.style.transform = `scale(${(1.1 - .1 * since / .3).toFixed(3)})`; return; }
-    if (tr === "whip") { tx.style.opacity = 0; if (since < .26 && sc === 1) { const q = Math.pow(1 - since / .26, 2); v.style.transform = `translateX(${(q * 20).toFixed(2)}%) scale(${(1 + .1 * q).toFixed(3)})`; } return; }
-    if (tr === "zoomin") { tx.style.opacity = 0; if (since < .3 && sc === 1) v.style.transform = `scale(${(1 + .5 * Math.pow(1 - since / .3, 2)).toFixed(3)})`; return; }
-    tx.style.background = "#f6efdc"; const pp = since / .36; tx.style.opacity = pp < 1 ? 1 : 0; tx.style.transform = pp < 1 ? `translateX(${(pp * 200 - 100).toFixed(0)}%)` : ""; return;
-  }
-  tx.style.transform = "";
-  let best = 9, a = 0; for (let i = 0; i < S.clips.length - 1; i++) { a += S.clips[i].out - S.clips[i].in; const d = Math.abs(pos - a); if (tr === "flash" ? (pos >= a && pos - a < best) : d < best) best = tr === "flash" ? pos - a : d; }
-  tx.style.background = tr === "dip" ? "#000" : "#fff";
-  tx.style.opacity = tr === "dip" ? Math.max(0, 1 - best / .16) : Math.max(0, .85 * (1 - best / .2));
+  /* p24: transition ikut sambungan. Klip "tr" = transition MASUK ke klip tu, "trd" = panjang (s); tanpa "tr" ikut pilihan Style Board. Sama dalam render_draft.py. */
+  let a = 0, pi = -1, pa = 0, ni = -1, na = 0;
+  for (let i = 1; i < S.clips.length; i++) { a += S.clips[i - 1].out - S.clips[i - 1].in; if (a <= pos) { pi = i; pa = a; } else { ni = i; na = a; break; } }
+  tx.style.opacity = 0; tx.style.transform = "";
+  if (ni > 0 && jnKind(ni) === "dip") { const D = jnDur(ni); if (na - pos < D) { tx.style.background = "#000"; tx.style.opacity = 1 - (na - pos) / D; return; } }
+  if (pi < 0) return;
+  const k = jnKind(pi), D = jnDur(pi), since = pos - pa; if (k === "cut" || since >= D) return;
+  const q = 1 - since / D;
+  if (k === "push") { if (sc === 1) v.style.transform = `scale(${(1 + .1 * q).toFixed(3)})`; return; }
+  if (k === "whip") { if (sc === 1) v.style.transform = `translateX(${(q * q * 20).toFixed(2)}%) scale(${(1 + .1 * q * q).toFixed(3)})`; return; }
+  if (k === "zoomin") { if (sc === 1) v.style.transform = `scale(${(1 + .5 * q * q).toFixed(3)})`; return; }
+  if (k === "paper") { tx.style.background = "#f6efdc"; tx.style.opacity = 1; tx.style.transform = `translateX(${((1 - q) * 200 - 100).toFixed(0)}%)`; return; }
+  tx.style.background = k === "dip" ? "#000" : "#fff";
+  tx.style.opacity = k === "dip" ? q : .85 * q;
 }
 /* Frame step: 30 frames per second, same as the render. Tap = one frame, hold = keeps stepping. */
 const FPS_STEP = 30;
@@ -3329,7 +3380,8 @@ function soundHTML() {
 }
 function drawPanel() {
   let h = "";
-  if (tab === "Potong") {
+  if (tab === "Potong" && jnSel > 0 && S.clips[jnSel]) { h = jnPanel(); }   /* p24 */
+  else if (tab === "Potong") {
     const c = S.clips[sel];
     h = `${voNote()}<div class="row"><span class="lab">Klip dipilih</span>${c ? `<dl class="kv"><dt>Nama</dt><dd>${esc(c.name)}</dd><dt>Guna</dt><dd id="cUse">${(c.out - c.in).toFixed(1)} s</dd><dt>Boleh sampai</dt><dd>${(c.srcMax - c.srcMin).toFixed(1)} s</dd></dl>` : `<div class="note">Tiada klip dipilih.</div>`}</div>
       ${c ? `<div class="chips"><button class="chip" id="swapClip">⇄ Tukar klip ni</button></div>` : ""}${swapPanel()}<div class="note">Tekan klip atau VO dalam timeline, kemudian tarik pemegang kuning. Belah pada garis hitam.</div>${footPanel()}`;
@@ -3411,11 +3463,11 @@ function drawTimeline() {
   $("labels").innerHTML = `<span class="lv" title="Video" aria-label="Video"><svg class="ic"><use href="#i-film"/></svg><span class="tl">Video</span></span>` + labels.map(([n, ic, ro]) => `<span class="${ro ? "ro" : ""}" title="${n}" aria-label="${n}">${ic ? `<svg class="ic"><use href="#${ic}"/></svg>` : ""}<span class="tl">${n}</span></span>`).join("");
   const step = pps < 12 ? 10 : pps < 26 ? 5 : 2, ticks = [];
   for (let s = 0; s <= endT(); s += step) ticks.push(`<i style="left:${s * pps}px">${fmt(s)}</i>`);
-  const otherPick = voSel >= 0 || stSel >= 0 || sfxSel >= 0;
+  const otherPick = voSel >= 0 || stSel >= 0 || sfxSel >= 0 || jnSel >= 0;
   const video = S.clips.map((c, i) => {
     const d = c.out - c.in;
     return `<div class="clip${i === sel && !otherPick ? " sel" : ""}${c.muted ? " muted" : ""}" data-c="${i}" style="width:${d * pps}px"><canvas class="thumbs" data-cv="${i}" width="${Math.ceil(d * pps)}" height="58"></canvas><span class="cname">${esc(c.name)}${c.muted ? " · mute" : ""}</span><div class="handle l" data-h="l">‹</div><div class="handle r" data-h="r">›</div></div>`;
-  }).join("");
+  }).join("") + (tab === "Potong" ? S.clips.map((c, i) => i && (i === jnSel || Math.min(c.out - c.in, S.clips[i - 1].out - S.clips[i - 1].in) * pps >= 24) ? `<button class="jn${i === jnSel ? " on" : jnKind(i) !== "cut" ? " set" : ""}" data-jn="${i}" style="left:${(startOf(i) * pps).toFixed(1)}px" aria-label="Transition"><svg class="ic"><use href="#i-trans"/></svg></button>` : "").join("") : "");   /* p24 */
   const E = endT(), bl = (t, d, cls, txt, extra = "") => `<div class="blk ${cls}" ${extra} style="left:${t * pps}px;width:${Math.max(d * pps, 3)}px">${txt}</div>`;
   const rows = [];
   const hxI = S.stickers.findIndex(x => x.k.startsWith("e-hook") && !x.hl);
@@ -3604,7 +3656,7 @@ function split() {
   const c = S.clips[l.i];
   if (l.t - c.in < 1 / 30 - .001 || c.out - l.t < 1 / 30 - .001) return say("Garis hitam di hujung klip. Undur atau maju 1 frame dulu");
   snapshot();
-  const b = { ...c, id: c.id + "-" + (++nameN), in: l.t, name: c.name + "b" };
+  const b = { ...c, tr: undefined, trd: undefined, id: c.id + "-" + (++nameN), in: l.t, name: c.name + "b" };
   c.out = l.t; c.name += "a";
   S.clips.splice(l.i + 1, 0, b); sel = l.i + 1; touched(); draw(); toast(`Klip dibelah pada ${fmt(pos)}`);
 }
@@ -3618,7 +3670,7 @@ function talkCut(i) {
   snapshot();
   if (cs <= c.in + .08) c.in = +Math.min(ce, c.out - .1).toFixed(3);
   else if (ce >= c.out - .08) c.out = +Math.max(cs, c.in + .1).toFixed(3);
-  else { const b = { ...c, id: c.id + "-" + (++nameN), in: +ce.toFixed(3), name: c.name + "b" }; c.out = +cs.toFixed(3); c.name += "a"; S.clips.splice(k + 1, 0, b); }
+  else { const b = { ...c, tr: undefined, trd: undefined, id: c.id + "-" + (++nameN), in: +ce.toFixed(3), name: c.name + "b" }; c.out = +cs.toFixed(3); c.name += "a"; S.clips.splice(k + 1, 0, b); }
   if (c.out - c.in < .15) S.clips.splice(S.clips.indexOf(c), 1);
   touched(); draw(); toast(`"${w.t}" dipotong`);
 }
@@ -3663,7 +3715,7 @@ function talkCutRaw(i) {   // same rule as talkCut, without the redraw
   const cs = (pv && w.s - pv.e < .6 ? (pv.e + w.s) / 2 : w.s - .04) - o, ce = (nx && nx.s - w.e < .6 ? (w.e + nx.s) / 2 : w.e + .04) - o;
   if (cs <= c.in + .08) c.in = +Math.min(ce, c.out - .1).toFixed(3);
   else if (ce >= c.out - .08) c.out = +Math.max(cs, c.in + .1).toFixed(3);
-  else { const b = { ...c, id: c.id + "-" + (++nameN), in: +ce.toFixed(3), name: c.name + "b" }; c.out = +cs.toFixed(3); c.name += "a"; S.clips.splice(k + 1, 0, b); }
+  else { const b = { ...c, tr: undefined, trd: undefined, id: c.id + "-" + (++nameN), in: +ce.toFixed(3), name: c.name + "b" }; c.out = +cs.toFixed(3); c.name += "a"; S.clips.splice(k + 1, 0, b); }
   if (c.out - c.in < .15) S.clips.splice(S.clips.indexOf(c), 1);
   return true;
 }
@@ -3683,7 +3735,7 @@ function pauseList() {
 function cutPauses() {
   const L = pauseList(); if (!L.length) return toast("Tiada jeda panjang");
   if (playing) stop(); snapshot(); let saved = 0;
-  L.slice().reverse().forEach(p => { const c = S.clips[p.k]; if (!c || p.a <= c.in + .1 || p.b >= c.out - .1) return; const nb = { ...c, id: c.id + "-" + (++nameN), in: +p.b.toFixed(3), name: c.name + "b" }; c.out = +p.a.toFixed(3); c.name += "a"; S.clips.splice(p.k + 1, 0, nb); saved += p.b - p.a; });
+  L.slice().reverse().forEach(p => { const c = S.clips[p.k]; if (!c || p.a <= c.in + .1 || p.b >= c.out - .1) return; const nb = { ...c, tr: undefined, trd: undefined, id: c.id + "-" + (++nameN), in: +p.b.toFixed(3), name: c.name + "b" }; c.out = +p.a.toFixed(3); c.name += "a"; S.clips.splice(p.k + 1, 0, nb); saved += p.b - p.a; });
   touched(); draw(); seek(Math.min(pos, total())); toast(`${L.length} jeda dipotong, video pendek ${saved.toFixed(1)} s. Undo untuk pulihkan`);
 }
 function pickWord(i) { wSel = i; document.querySelectorAll("#words .w.pick").forEach(x => x.classList.remove("pick")); const el = document.querySelector(`#words [data-w="${i}"]`); if (el) el.classList.add("pick"); }
@@ -3700,6 +3752,7 @@ function del() {
   if (stSel >= 0) { snapshot(); S.stickers.splice(stSel, 1); stSel = -1; touched(); return draw(); }
   if (sfxSel >= 0) { snapshot(); S.sfx.splice(sfxSel, 1); sfxSel = -1; touched(); return draw(); }
   if (zmSel >= 0) { snapshot(); S.zooms.splice(zmSel, 1); zmSel = -1; touched(); return draw(); }
+  if (jnSel > 0 && S.clips[jnSel]) { snapshot(); S.clips[jnSel].tr = "cut"; delete S.clips[jnSel].trd; touched(); return draw(); }   /* p24: buang = sambungan jadi cut biasa, klip tak dibuang */
   if (voSel >= 0) {
     if (S.vo.length < 2) return say("Ini VO terakhir. Tarik pemegang untuk potong");
     snapshot(); if (playing) stop();
@@ -3914,6 +3967,8 @@ document.addEventListener("click", e => {
   if (sBlk) { clearPick(); stSel = +sBlk.dataset.sb; const x = S.stickers[stSel]; tab = tabOf(x); if (playing) stop(); if (pos < x.t || pos >= x.t + x.d) seek(x.t); return draw(); }
   if (e.target.closest(".blk.zm")) { fxCat = "Zoom"; if (tab !== "Effects") { tab = "Effects"; draw(); } else { drawTimeline(); drawPanel(); } return; }
   if (e.target.closest(".blk.sfx")) { if (tab !== "Bunyi") { tab = "Bunyi"; draw(); } else drawTimeline(); return; }
+  const jnB = e.target.closest(".jn");   /* p24 */
+  if (jnB) { const i = +jnB.dataset.jn, was = jnSel === i; clearPick(); if (playing) stop(); jnSel = was ? -1 : i; if (!was) seek(startOf(i)); drawTimeline(); drawStickers(); drawPanel(); return; }
   const clipEl = e.target.closest(".clip");
   if (clipEl && !e.target.classList.contains("handle")) {
     sel = +clipEl.dataset.c; clearPick();
@@ -3936,6 +3991,14 @@ document.addEventListener("click", e => {
   }
   const b = e.target.closest("button"); if (!b) return;
   const d = b.dataset;
+  if (d.jtr || d.jall || d.jdel) {   /* p24 */
+    const c = S.clips[jnSel]; if (!(jnSel > 0) || !c) return;
+    snapshot();
+    if (d.jtr) { c.tr = d.jtr; delete c.trd; }
+    else if (d.jdel) { c.tr = "cut"; delete c.trd; }
+    else { const k = jnKind(jnSel), dd = c.trd; S.clips.forEach((x, i) => { if (!i) return; x.tr = k; if (dd) x.trd = dd; else delete x.trd; }); toast("Semua sambungan: " + ((OPTS.trans.find(o => o.id === k) || {}).n || k)); }
+    touched(); drawPanel(); drawTimeline(); if (!d.jall && jnKind(jnSel) !== "cut") jnPlay(); return;
+  }
   if (b.id === "mNo") { $("modal").hidden = true; mYesFn = null; return; }
   if (b.id === "mYes") { $("modal").hidden = true; const f = mYesFn; mYesFn = null; return f && f(); }
   if (b.id === "actBtn") { $("actbar").hidden = true; const f = actFn; actFn = null; return f && f(); }
@@ -4124,6 +4187,7 @@ document.addEventListener("input", e => {
   if (id === "capSize") { S.capSize = +e.target.value / 100; $("capSizeV").textContent = e.target.value + "%"; $("stage").style.setProperty("--ck", S.capSize); if (!playing && $("cap").hidden) capDemo(); planCaps(); grKey = ""; drawCaption(); return touched(); }
   if (id === "stSize") { const x = S.stickers[stSel]; if (x) { x.s = +e.target.value / 100; $("stSizeV").textContent = e.target.value + "%"; drawStickers(); touched(); } return; }
   if (id === "stText") { const x = S.stickers[stSel]; if (x) { x.text = e.target.value; drawStickers(); touched(); } return; }
+  if (id === "jnD") { const c = S.clips[jnSel]; if (c && jnSel > 0) { c.trd = +e.target.value / 100; $("jnDV").textContent = c.trd.toFixed(2) + " s"; touched(); } return; }   /* p24 */
   if (id === "zmZ") { const z = S.zooms[zmSel]; if (z) { z.z = +e.target.value / 100; $("zmZV").textContent = z.z.toFixed(2) + "x"; if (!playing) { seek(z.t + (z.k === "pull" ? .01 : z.k === "push" ? .7 : z.k === "digital" ? .7 : z.k === "vertigo" ? 1.5 : .06)); } const bl = document.querySelector(`.blk.zm[data-z="${zmSel}"]`); if (bl) bl.textContent = z.z.toFixed(2) + "x"; touched(); } return; }
   if (id === "bgmVol") { S.music.vol = +e.target.value / 100; $("bgmVolV").textContent = e.target.value + "%"; const a = $("bgm"); if (a) a.volume = S.music.vol; return touched(); }
   if (id === "noteBox") { S.style.note = e.target.value; return touched(); }
