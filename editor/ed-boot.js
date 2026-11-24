@@ -239,7 +239,7 @@
   }
   function sync() {
     const t = curTab();
-    H.classList.toggle('edsheet', !!t && (t !== 'Potong' || G('jnSel') > 0));   /* p24: sambungan dipilih = helaian pilih transition */
+    H.classList.toggle('edsheet', !!t && (t !== 'Potong' || G('jnSel') > 0 || G('spOpen')));   /* p24 / p25: sambungan atau kelajuan dipilih = helaian pilih */
     [...H.classList].filter(c => c.startsWith('edtab-')).forEach(c => H.classList.remove(c)); if (t) H.classList.add('edtab-' + t.replace(/\s+/g, ''));
     rows(); pinVideo();
     const l = $('ccTab'); if (l) l.textContent = (document.querySelector('#tabs [aria-selected="true"] .tl, #tabs [aria-selected="true"]') || {}).textContent || t;
@@ -389,7 +389,7 @@
       tr.insertAdjacentHTML('afterend', `<div class="ccmenu" id="ccMenu" hidden role="toolbar" aria-label="More">` +
         bt('data-t="Sticker"', 'Stickers', ic2('i-star')) + bt('data-t="Bunyi"', 'Sounds', ic2('i-note')) + bt('data-t="Style Board"', 'Style Board', ic2('i-palette')) + bt('data-t="Siap"', 'Render', ic2('i-up')) +
         `<i aria-hidden="true"></i>` +
-        bt('data-c="swapClip"', 'Tukar klip', sv('M4 8h14l-3-3M20 16H6l3 3')) + bt('data-c="muteClip"', 'Mute klip', ic2('i-sound')) + bt('data-c="mvL"', 'Alih klip ke kiri', ic2('i-left')) + bt('data-c="mvR"', 'Alih klip ke kanan', ic2('i-right')) +
+        bt('data-c="swapClip"', 'Tukar klip', sv('M4 8h14l-3-3M20 16H6l3 3')) + bt('data-c="muteClip"', 'Mute klip', ic2('i-sound')) + bt('data-c="mvL"', 'Alih klip ke kiri', ic2('i-left')) + bt('data-c="mvR"', 'Alih klip ke kanan', ic2('i-right')) + bt('data-sp="1"', 'Kelajuan klip', ic2('i-speed')) +
         bt('data-c="fBack"', 'Undur 1 frame', ic2('i-fback')) + bt('data-c="fFwd"', 'Maju 1 frame', ic2('i-ffwd')) + bt('data-c="resetAll"', 'Reset semua', ic2('i-reset')) +
         `<i aria-hidden="true"></i>` + bt('data-x="1"', 'Keluar editor', sv('M6 6l12 12M18 6L6 18')) + `</div>`); }
     { const menu = $('ccMenu'), more = $('ccMore');
@@ -398,6 +398,7 @@
       more.onclick = e => { e.stopPropagation(); open(menu.hidden); };
       menu.onclick = e => { const b = e.target.closest('button'); if (!b) return; e.stopPropagation();
         if (b.dataset.t) { open(false); if (b.dataset.t === 'Siap') toSiap(); else goTab(b.dataset.t); }
+        else if (b.dataset.sp) { const f = G('spToggle'); if (f) f(); }   /* p25 */
         else if (b.dataset.c) click(b.dataset.c);          // alat klip: bar kekal terbuka (cth tekan frame berkali-kali)
         else if (b.dataset.x) location.href = edApp ? '../../' : '../../../#editor'; };
       const moreOn = () => more.classList.toggle('on', !menu.hidden || /^(Sticker|Bunyi|Style Board)$/.test(curTab()));
@@ -420,7 +421,7 @@
     if (tc) { new MutationObserver(tcs).observe(tc, { childList: true, characterData: true, subtree: true }); tcs(); }
     if (pi) new MutationObserver(() => { $('ccPlayIc').setAttribute('href', pi.getAttribute('href')); const p2 = $('ccPlayIc2'); if (p2) p2.setAttribute('href', pi.getAttribute('href')); }).observe(pi, { attributes: true });
     new MutationObserver(sync).observe($('tabs'), { attributes: true, childList: true, subtree: true, attributeFilter: ['aria-selected'] });
-    const inn = $('inner'); if (inn) new MutationObserver(() => { const j = curTab() === 'Potong' && G('jnSel') > 0; if (curTab() === 'Potong' && H.classList.contains('edsheet') !== j) sync(); else { rows(); pinVideo(); } }).observe(inn, { childList: true });
+    const inn = $('inner'); if (inn) new MutationObserver(() => { const j = curTab() === 'Potong' && (G('jnSel') > 0 || !!G('spOpen')); if (curTab() === 'Potong' && H.classList.contains('edsheet') !== j) sync(); else { rows(); pinVideo(); } }).observe(inn, { childList: true });
     const ed = document.querySelector('.ed'), pnl = $('panel');
     if (ed && pnl && !$('edlow')) { const low = document.createElement('div'); low.id = 'edlow'; low.className = 'edlow'; ed.parentNode.insertBefore(low, ed); low.append(ed, pnl); }
     sync(); timeline();

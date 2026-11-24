@@ -1670,14 +1670,25 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 #panel .row.jnrow { display: flex; flex-direction: row; align-items: center; gap: 10px; }
 #panel .row.jnrow input[type="range"] { flex: 1 1 auto; width: auto; min-width: 0; max-width: none; }
 .jnrow .jnv { flex: none; min-width: 52px; text-align: right; font: 600 12px var(--mono, ui-monospace, monospace); font-variant-numeric: tabular-nums; }
+
+/* p25: kelajuan klip */
+.spb { position: absolute; left: 4px; top: 3px; z-index: 1; font: 700 10px var(--display); background: #3fd0c0; color: #062421; border-radius: 6px; padding: 1px 5px; pointer-events: none; }
+.spbig { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0 2px; }
+.spbig b { font: 700 34px/1 var(--display); font-variant-numeric: tabular-nums; }
+.spbig span { font: 500 12px var(--display); color: var(--muted); font-variant-numeric: tabular-nums; }
+.spticks { display: flex; justify-content: space-between; padding: 0 10px; }
+.spticks button { width: 0; padding: 8px 0; border: 0; background: none; display: flex; justify-content: center; white-space: nowrap; font: 600 11px var(--mono, ui-monospace, monospace); color: var(--muted); cursor: pointer; overflow: visible; }
+.spticks button[aria-pressed="true"] { color: #3fd0c0; }
+#spBtn { display: inline-grid; place-items: center; } #spBtn .ic { width: 16px; height: 16px; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=5a0ad60d91">
+<link rel="stylesheet" href="../../ed-capcut.css?v=a5116ee36b">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
   <symbol id="i-ffwd" viewBox="0 0 24 24"><path d="M9 6l8 6-8 6z" fill="currentColor"/><path d="M6 5v14"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor"/></symbol>
   <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+  <symbol id="i-speed" viewBox="0 0 24 24"><path d="M4 17a8 8 0 1 1 16 0M12 17l4-7"/></symbol>
   <symbol id="i-trans" viewBox="0 0 24 24"><path d="M4 6v12l8-6zM20 6v12l-8-6z"/></symbol>
   <symbol id="i-split" viewBox="0 0 24 24"><path d="M12 3v18M4 8l5 4-5 4M20 8l-5 4 5 4"/></symbol>
   <symbol id="i-del" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5"/></symbol>
@@ -1777,9 +1788,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=5a0ad60d91"></script>
-<script src="../../../js/runtime.js?v=5a0ad60d91"></script>
-<script src="../../ed-boot.js?v=5a0ad60d91"></script>
+<script src="../../../js/config.js?v=a5116ee36b"></script>
+<script src="../../../js/runtime.js?v=a5116ee36b"></script>
+<script src="../../ed-boot.js?v=a5116ee36b"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -2157,12 +2168,16 @@ let hlSel = -1;
 const clearPick = () => { sfxSel = voSel = stSel = zmSel = hlSel = jnSel = -1; };
 
 /* ---------- timing ---------- */
-const total = () => S.clips.reduce((s, c) => s + c.out - c.in, 0);
-const startOf = i => S.clips.slice(0, i).reduce((s, c) => s + c.out - c.in, 0);
+/* p25: kelajuan klip. c.sp (0.25–4, tiada = 1); panjang klip dalam video = (out - in) / sp. Sama dalam render_draft.py build_aroll. Tak ditawarkan untuk video bercakap (isTalk). */
+const cLen = c => (c.out - c.in) / (c.sp || 1);
+const SPS = [.25, .5, .75, 1, 1.5, 2, 3, 4], spTxt = v => String(+(+v).toFixed(2)) + "×";
+let spOpen = false;
+const total = () => S.clips.reduce((s, c) => s + cLen(c), 0);
+const startOf = i => S.clips.slice(0, i).reduce((s, c) => s + cLen(c), 0);
 const proxyT = (c, t) => c.pStart + (t - c.srcMin);
 function locate(p) {
   let a = 0;
-  for (let i = 0; i < S.clips.length; i++) { const d = S.clips[i].out - S.clips[i].in; if (p < a + d) return { i, t: S.clips[i].in + (p - a) }; a += d; }
+  for (let i = 0; i < S.clips.length; i++) { const d = cLen(S.clips[i]); if (p < a + d) return { i, t: S.clips[i].in + (p - a) * (S.clips[i].sp || 1) }; a += d; }
   const l = S.clips.length - 1; return l < 0 ? { i: -1, t: 0 } : { i: l, t: S.clips[l].out };
 }
 function cutRanges() {
@@ -2856,6 +2871,18 @@ function jnPanel() {
     <div class="grid jngrid">${OPTS.trans.filter(o => ok("trans:" + o.id) || cur === o.id).map(o => `<div class="opt"><button class="mini jnm" aria-pressed="${cur === o.id}" data-jtr="${o.id}" aria-label="${esc(o.n)}"><i class="ja"></i><i class="jb j-${o.id}"></i><i class="jo j-${o.id}"></i></button><h3>${esc(o.n)}</h3></div>`).join("")}</div>
     ${cur !== "cut" ? `<div class="row jnrow"><input id="jnD" type="range" min="10" max="80" step="2" value="${Math.round(D * 100)}" aria-label="Panjang transition"><span class="jnv" id="jnDV">${D.toFixed(2)} s</span></div>` : ""}`;
 }
+/* p25: panel kelajuan klip (tab Cut). spToggle() dipanggil oleh butang #spBtn dan bar MORE dalam PWA. */
+function spToggle(on) { if (isTalk()) return toast("Kelajuan hanya untuk video dengan VO"); spOpen = on === undefined ? !spOpen : !!on; clearPick(); if (playing) stop(); tab = "Potong"; draw(); }
+function spPlay() { const c = S.clips[sel]; if (!c) return; if (playing) stop(); seek(startOf(sel)); start(); clearTimeout(window._spp); window._spp = setTimeout(() => { if (playing) stop(); }, Math.min(cLen(c), 2.5) * 1000); }
+function spSet(v, all) { const c = S.clips[sel]; if (!c) return; snapshot(); (all ? S.clips : [c]).forEach(x => { if (v === 1) delete x.sp; else x.sp = v; }); touched(); draw(); }
+function spPanel() {
+  const c = S.clips[sel], sp = c.sp || 1, ic = n => `<svg class="ic"><use href="#i-${n}"/></svg>`;
+  let i = 0; SPS.forEach((v, k) => { if (Math.abs(v - sp) < Math.abs(SPS[i] - sp)) i = k; });
+  return `<div class="catbar jnbar"><button class="cat" aria-pressed="true" data-spx="1" aria-label="Tutup kelajuan" title="Tutup">${ic("speed")}</button><span class="jsp"></span><button class="cat" data-spall="1" aria-label="Guna untuk semua klip" title="Guna untuk semua klip">${ic("rows")}</button><button class="cat" data-spk="3" aria-label="Kelajuan asal" title="Kelajuan asal">${ic("reset")}</button></div>
+    <div class="spbig"><b id="spV">${spTxt(sp)}</b><span id="spL">${(c.out - c.in).toFixed(1)} s → ${cLen(c).toFixed(1)} s</span></div>
+    <div class="row jnrow"><input id="spS" type="range" min="0" max="${SPS.length - 1}" step="1" value="${i}" aria-label="Kelajuan klip"></div>
+    <div class="spticks">${SPS.map((v, k) => `<button data-spk="${k}" aria-pressed="${k === i}" aria-label="${spTxt(v)}">${String(v).replace(/^0/, "")}</button>`).join("")}</div>`;
+}
 function drawFx() {
   const v = $("mv"), tx = $("tx"); let sc = 1;
   for (const t of PUNCH) { const d = pos - t; if (d >= 0 && d < .28) { sc = 1.1 - .1 * (d / .28); break; } }
@@ -2865,7 +2892,7 @@ function drawFx() {
   v.style.transform = sc > 1 || shx ? `${shx ? `translateX(${shx}%) ` : ""}scale(${sc.toFixed(3)})` : "";
   /* p24: transition ikut sambungan. Klip "tr" = transition MASUK ke klip tu, "trd" = panjang (s); tanpa "tr" ikut pilihan Style Board. Sama dalam render_draft.py. */
   let a = 0, pi = -1, pa = 0, ni = -1, na = 0;
-  for (let i = 1; i < S.clips.length; i++) { a += S.clips[i - 1].out - S.clips[i - 1].in; if (a <= pos) { pi = i; pa = a; } else { ni = i; na = a; break; } }
+  for (let i = 1; i < S.clips.length; i++) { a += cLen(S.clips[i - 1]); if (a <= pos) { pi = i; pa = a; } else { ni = i; na = a; break; } }
   tx.style.opacity = 0; tx.style.transform = "";
   if (ni > 0 && jnKind(ni) === "dip") { const D = jnDur(ni); if (na - pos < D) { tx.style.background = "#000"; tx.style.opacity = 1 - (na - pos) / D; return; } }
   if (pi < 0) return;
@@ -2924,7 +2951,7 @@ function drawHead() {
   drawCaption(); markWord(); showStickers(); showHL(); drawFx();
   if (playing) { const sc = $("tscroll"), x = pos * pps; if (x < sc.scrollLeft + 10 || x > sc.scrollLeft + sc.clientWidth - 30) sc.scrollLeft = x - sc.clientWidth * .25; }
 }
-function setVideoMute() { const c = S.clips[curIdx]; $("mv").muted = S.globalMute || !!(c && c.muted); $("mv").volume = Math.max(0, Math.min(1, S.origVol ?? 1)); applyGrade(c); }
+function setVideoMute() { const c = S.clips[curIdx]; { const r = (c && c.sp) || 1, v = $("mv"); if (v.playbackRate !== r) v.playbackRate = r; } $("mv").muted = S.globalMute || !!(c && c.muted); $("mv").volume = Math.max(0, Math.min(1, S.origVol ?? 1)); applyGrade(c); }
 /* Adjust (macam CapCut). Same maths in render_draft.py grade_filter() so the final matches this preview. */
 const GRADE_SMART = [["br", "Brightness", "Terang atau gelap"], ["ct", "Contrast", "Beza terang dan gelap"], ["sa", "Saturation", "Warna lebih pekat atau pudar"], ["bl", "Brilliance", "Angkat bahagian gelap tanpa putihkan yang terang"], ["sh", "Sharpen", "Lebih tajam (0 hingga 100)"]];
 const GRADE_CUSTOM = [["b", "Blacks", "Gelapkan atau angkat bahagian hitam"], ["t", "Temp", "Kiri sejuk (biru), kanan panas (kuning)"], ["h", "Hue", "Anjak semua warna"]];
@@ -3088,7 +3115,7 @@ function tick(now) {
       stallT += dt;
       if (stallT > .3 && now - kickAt > 900) { kickAt = now; const tryPlay = quiet => { if (quiet) v.muted = true; const p = v.play(); if (p && p.then) p.then(() => playLog(quiet ? "re-quiet" : "re-ok"), e => { playLog((quiet ? "rq:" : "re:") + ((e && e.name) || "err")); if (!quiet) { tryPlay(true); toast("Phone sekat bunyi. Tekan Pause, kemudian Play sekali lagi"); } }); }; tryPlay(false); }
     } else stallT = 0;
-    pos = startOf(curIdx) + Math.max(0, v.currentTime - c.pStart - (c.in - c.srcMin));
+    pos = startOf(curIdx) + Math.max(0, v.currentTime - c.pStart - (c.in - c.srcMin)) / (c.sp || 1);
   }
   if (pos >= endT() - .02) { stop(); seek(0); return; }
   const l = locate(pos), c = S.clips[l.i];
@@ -3096,7 +3123,7 @@ function tick(now) {
     const want = proxyT(c, l.t);
     if (l.i !== curIdx && swapTo(l.i, want)) { /* switched to the pre-seeked second video: no pause */ }
     else if (l.i !== curIdx || (Math.abs(v.currentTime - want) > .8 && now - lastVS > 1500)) { curIdx = l.i; v.currentTime = want; lastVS = now; setVideoMute(); }
-    preloadNext(l.i, c.out - l.t);
+    preloadNext(l.i, (c.out - l.t) / (c.sp || 1));
     if (swapAt && v.currentTime > swapCT + .01) { if (DIAG.sw.length < 40) DIAG.sw.push(["run", Math.round(now - swapAt)]); swapAt = 0; }
   }
   fireSfx(lastPos, pos); lastPos = pos;
@@ -3108,6 +3135,7 @@ let stallT = 0, kickAt = 0;
 function playLog(x) { DIAG.pl = DIAG.pl || []; if (DIAG.pl.length < 30) DIAG.pl.push([Math.round(performance.now() - T0), x]); }
 function start() {
   if (!S.clips.length) return;
+  clearTimeout(window._spp); clearTimeout(window._jp);   /* p25: pemasa pratonton lama tak boleh hentikan main yang baru */
   stallT = 0; kickAt = 0;
   if (pos >= endT() - .05) pos = 0;
   seek(pos); lastPos = pos;
@@ -3124,10 +3152,10 @@ function start() {
 let swapAt = 0, swapCT = 0, rollBias = .2;  /* how late this device starts a video; learned at each cut */
 function preloadNext(i, left) {
   const b = $("mvb"), n = S.clips[i + 1]; if (!b || !n) return;
-  const want = proxyT(n, n.in);
+  const want = proxyT(n, n.in), nsp = n.sp || 1; if (b.playbackRate !== nsp) b.playbackRate = nsp;   /* p25 */
   if (playing && left < .5) {
     /* start the hidden copy early (muted) so it is already running at the cut; iPhone needs ~0.1-0.3 s to start a video */
-    if (b.paused) { try { b.currentTime = Math.max(0, want - left + rollBias); } catch (e) {} b.muted = true; const p = b.play(); if (p && p.catch) p.catch(() => {}); }
+    if (b.paused) { try { b.currentTime = Math.max(0, want - (left - rollBias) * nsp); } catch (e) {} b.muted = true; const p = b.play(); if (p && p.catch) p.catch(() => {}); }
   } else if (!b.paused) { b.pause(); }
   else if (!b.seeking && Math.abs(b.currentTime - want) > .04) { try { b.currentTime = want; } catch (e) {} }
 }
@@ -3381,10 +3409,11 @@ function soundHTML() {
 function drawPanel() {
   let h = "";
   if (tab === "Potong" && jnSel > 0 && S.clips[jnSel]) { h = jnPanel(); }   /* p24 */
+  else if (tab === "Potong" && spOpen && S.clips[sel] && !isTalk()) { h = spPanel(); }   /* p25 */
   else if (tab === "Potong") {
     const c = S.clips[sel];
-    h = `${voNote()}<div class="row"><span class="lab">Klip dipilih</span>${c ? `<dl class="kv"><dt>Nama</dt><dd>${esc(c.name)}</dd><dt>Guna</dt><dd id="cUse">${(c.out - c.in).toFixed(1)} s</dd><dt>Boleh sampai</dt><dd>${(c.srcMax - c.srcMin).toFixed(1)} s</dd></dl>` : `<div class="note">Tiada klip dipilih.</div>`}</div>
-      ${c ? `<div class="chips"><button class="chip" id="swapClip">⇄ Tukar klip ni</button></div>` : ""}${swapPanel()}<div class="note">Tekan klip atau VO dalam timeline, kemudian tarik pemegang kuning. Belah pada garis hitam.</div>${footPanel()}`;
+    h = `${voNote()}<div class="row"><span class="lab">Klip dipilih</span>${c ? `<dl class="kv"><dt>Nama</dt><dd>${esc(c.name)}</dd><dt>Guna</dt><dd id="cUse">${cLen(c).toFixed(1)} s</dd><dt>Boleh sampai</dt><dd>${(c.srcMax - c.srcMin).toFixed(1)} s</dd></dl>` : `<div class="note">Tiada klip dipilih.</div>`}</div>
+      ${c ? `<div class="chips"><button class="chip" id="swapClip">⇄ Tukar klip ni</button>${isTalk() ? "" : `<button class="chip" id="spBtn" aria-label="Kelajuan klip" title="Kelajuan klip"><svg class="ic"><use href="#i-speed"/></svg></button>`}</div>` : ""}${swapPanel()}<div class="note">Tekan klip atau VO dalam timeline, kemudian tarik pemegang kuning. Belah pada garis hitam.</div>${footPanel()}`;
   } else if (tab === "Warna") {
     const c = S.clips[sel], g = gradeOf(c), cur = presetOf(g);
     h = c ? `<div class="row"><span class="lab">Klip dipilih: ${esc(c.name)}</span><span class="legend">Tekan klip lain dalam timeline untuk ubah klip tu.</span></div>
@@ -3465,9 +3494,9 @@ function drawTimeline() {
   for (let s = 0; s <= endT(); s += step) ticks.push(`<i style="left:${s * pps}px">${fmt(s)}</i>`);
   const otherPick = voSel >= 0 || stSel >= 0 || sfxSel >= 0 || jnSel >= 0;
   const video = S.clips.map((c, i) => {
-    const d = c.out - c.in;
-    return `<div class="clip${i === sel && !otherPick ? " sel" : ""}${c.muted ? " muted" : ""}" data-c="${i}" style="width:${d * pps}px"><canvas class="thumbs" data-cv="${i}" width="${Math.ceil(d * pps)}" height="58"></canvas><span class="cname">${esc(c.name)}${c.muted ? " · mute" : ""}</span><div class="handle l" data-h="l">‹</div><div class="handle r" data-h="r">›</div></div>`;
-  }).join("") + (tab === "Potong" ? S.clips.map((c, i) => i && (i === jnSel || Math.min(c.out - c.in, S.clips[i - 1].out - S.clips[i - 1].in) * pps >= 24) ? `<button class="jn${i === jnSel ? " on" : jnKind(i) !== "cut" ? " set" : ""}" data-jn="${i}" style="left:${(startOf(i) * pps).toFixed(1)}px" aria-label="Transition"><svg class="ic"><use href="#i-trans"/></svg></button>` : "").join("") : "");   /* p24 */
+    const d = cLen(c);
+    return `<div class="clip${i === sel && !otherPick ? " sel" : ""}${c.muted ? " muted" : ""}" data-c="${i}" style="width:${d * pps}px"><canvas class="thumbs" data-cv="${i}" width="${Math.ceil(d * pps)}" height="58"></canvas><span class="cname">${esc(c.name)}${c.muted ? " · mute" : ""}</span>${c.sp && c.sp !== 1 ? `<span class="spb">${spTxt(c.sp)}</span>` : ""}<div class="handle l" data-h="l">‹</div><div class="handle r" data-h="r">›</div></div>`;
+  }).join("") + (tab === "Potong" ? S.clips.map((c, i) => i && (i === jnSel || Math.min(cLen(c), cLen(S.clips[i - 1])) * pps >= 24) ? `<button class="jn${i === jnSel ? " on" : jnKind(i) !== "cut" ? " set" : ""}" data-jn="${i}" style="left:${(startOf(i) * pps).toFixed(1)}px" aria-label="Transition"><svg class="ic"><use href="#i-trans"/></svg></button>` : "").join("") : "");   /* p24 */
   const E = endT(), bl = (t, d, cls, txt, extra = "") => `<div class="blk ${cls}" ${extra} style="left:${t * pps}px;width:${Math.max(d * pps, 3)}px">${txt}</div>`;
   const rows = [];
   const hxI = S.stickers.findIndex(x => x.k.startsWith("e-hook") && !x.hl);
@@ -3475,12 +3504,12 @@ function drawTimeline() {
   rows.push(`<div class="track" id="hookTrack">${hxI >= 0 ? stBlock(S.stickers[hxI], hxI) : bl(0, Math.min(HOOK_END, E), "title", "hook")}</div>`);
   if (hasCap()) rows.push(`<div class="track" id="capTrack">${GR.map(g => bl(g.start, g.end - g.start, "", "")).join("")}</div>`);
   if (hasCap()) rows.push(`<div class="track" id="hlTrack">${HLS.map(h => bl(h.t, h.d, "hlb" + (h.id === hlSel ? " sel" : ""), esc(h.text), `data-hb="${h.id}"`)).join("")}</div>`);
-  const lastC = S.clips[S.clips.length - 1], zEnd = lastC ? Math.min(lastC.out - lastC.in, E - endcLen()) : 0;
+  const lastC = S.clips[S.clips.length - 1], zEnd = lastC ? Math.min(cLen(lastC), E - endcLen()) : 0;
   rows.push(`<div class="track" id="zmTrack">${bl(0, Math.min(HOOK_END, E), "zoom", "1.04x")}${bl(Math.max(E - endcLen() - zEnd, 0), zEnd, "zoom", "1.06x")}${S.zooms.map((z, i) => bl(z.t, zmLen(z), "zm" + (i === zmSel ? " sel" : ""), (+z.z).toFixed(2) + "x", `data-z="${i}"`)).join("")}</div>`);
   rows.push(`<div class="track" id="fxTrack">${S.stickers.map((x, i) => inFx(x) && i !== hxI ? stBlock(x, i) : "").join("")}</div>`);
   rows.push(`<div class="track" id="stTrack">${S.stickers.map((x, i) => inFx(x) ? "" : stBlock(x, i)).join("")}</div>`);
   rows.push(`<div class="track" id="sfxTrack">${S.sfx.map((x, i) => bl(x.t, .8, "sfx" + (i === sfxSel ? " sel" : ""), esc(x.f), `data-s="${i}"`)).join("")}</div>`);
-  let a = 0; rows.push(`<div class="track ro">${S.clips.map(c => { const d = c.out - c.in, off = S.globalMute || c.muted, r = bl(a, d - .04, "voice" + (off ? " off" : ""), off ? "mute" : "asal"); a += d; return r; }).join("")}</div>`);
+  let a = 0; rows.push(`<div class="track ro">${S.clips.map(c => { const d = cLen(c), off = S.globalMute || c.muted, r = bl(a, d - .04, "voice" + (off ? " off" : ""), off ? "mute" : "asal"); a += d; return r; }).join("")}</div>`);
   if (hasVO()) rows.push(`<div class="track" id="voTrack">${voBlocks()}</div>`);
   rows.push(`<div class="track ro">${bl(0, E, "fixed", "Penuh, berkunci")}</div>`);
   const over = hasVO() && T > E + .05 ? `<div class="over" style="left:${E * pps}px;width:${(T - E) * pps}px">lebih, tak masuk video</div>` : "";
@@ -3518,7 +3547,7 @@ function paintThumbs() {
     document.querySelectorAll("canvas[data-cv]").forEach(cv => {
       const c = S.clips[+cv.dataset.cv]; if (!c) return;
       const g = cv.getContext("2d"), pa = proxyT(c, c.in);
-      for (let x = 0; x < cv.width; x += 33) g.drawImage(tile(Math.min(D.stripN - 1, Math.floor(pa + x / pps))), x, 0);
+      for (let x = 0; x < cv.width; x += 33) g.drawImage(tile(Math.min(D.stripN - 1, Math.floor(pa + x / pps * (c.sp || 1)))), x, 0);
     });
   }, 0);
 }
@@ -3642,7 +3671,7 @@ function sfxPin() { sfxSig = clipSigOf(); (S.sfx || []).forEach(x => { const l =
 function sfxFlow() {
   if (!sfxSig || sfxSig === clipSigOf()) return; sfxSig = clipSigOf();
   (S.sfx || []).forEach(x => { const a = SFXA.get(x); if (!a) return; let st = 0, hit = null;
-    for (const c of S.clips) { const d = c.out - c.in; if (c.file === a.f && a.s >= c.in - .001 && a.s < c.out + .001) { hit = st + Math.min(d, Math.max(0, a.s - c.in)); break; } st += d; }
+    for (const c of S.clips) { const d = cLen(c); if (c.file === a.f && a.s >= c.in - .001 && a.s < c.out + .001) { hit = st + Math.min(d, Math.max(0, a.s - c.in) / (c.sp || 1)); break; } st += d; }
     if (hit != null) x.t = +hit.toFixed(2); else x.t = +Math.min(x.t, Math.max(0, total() - .3)).toFixed(2); });
 }
 let nameN = 0;
@@ -3678,7 +3707,7 @@ function talkCut(i) {
    so an effect added back lands on the same words even after clips changed. */
 const fxKey = y => [y.k, y.text || "", (y.items || []).join(","), (y.photos || []).join(","), y.a || "", y.b || ""].join("|");
 function origSrc(o) {
-  let a = 0; for (const c of D.clips || []) { const d = c.out - c.in; if (o.t < a + d) return ((D.offsets || {})[c.file] || 0) + c.in + (o.t - a); a += d; }
+  let a = 0; for (const c of D.clips || []) { const d = cLen(c); if (o.t < a + d) return ((D.offsets || {})[c.file] || 0) + c.in + (o.t - a) * (c.sp || 1); a += d; }
   return null;
 }
 function origMissing() {
@@ -3943,19 +3972,20 @@ document.addEventListener("pointermove", e => {
     return;
   }
   const c = S.clips[dr.i];
-  if (dr.side === "l") c.in = Math.max(c.srcMin, Math.min(c.out - MIN_CLIP, dr.in + ds));
-  else c.out = Math.min(c.srcMax, Math.max(c.in + MIN_CLIP, dr.out + ds));
+  if (dr.side === "l") c.in = Math.max(c.srcMin, Math.min(c.out - MIN_CLIP, dr.in + ds * (c.sp || 1)));
+  else c.out = Math.min(c.srcMax, Math.max(c.in + MIN_CLIP, dr.out + ds * (c.sp || 1)));
   sel = dr.i;
   const tn = performance.now(); if (tn - lastSeekSet > 120) { $("mv").currentTime = proxyT(c, dr.side === "l" ? c.in : c.out - .04); lastSeekSet = tn; }
-  pos = startOf(dr.i) + (dr.side === "l" ? 0 : c.out - c.in - .02); curIdx = dr.i;
-  dr.el.style.width = (c.out - c.in) * pps + "px";
+  pos = startOf(dr.i) + (dr.side === "l" ? 0 : cLen(c) - .02); curIdx = dr.i;
+  dr.el.style.width = cLen(c) * pps + "px";
   drawLen(); const ph = $("ph"); if (ph) ph.style.transform = `translateX(${pos * pps}px)`;
-  const cu = $("cUse"); if (cu) cu.textContent = (c.out - c.in).toFixed(1) + " s";
+  const cu = $("cUse"); if (cu) cu.textContent = cLen(c).toFixed(1) + " s";
 });
 function endDrag() { if (dr) { const k = dr.k, m = dr.moved; dr = null; if (k !== "ph" && m) { touched(); draw(); seek(pos); } } }
 document.addEventListener("pointerup", endDrag);
 document.addEventListener("pointercancel", endDrag);
 
+document.addEventListener("change", e => { if (e.target.id === "spS") { draw(); spPlay(); } });   /* p25: lepas slider kelajuan dilepas, lukis semula timeline dan main klip tu */
 /* ---------- clicks ---------- */
 const hear = new Audio();
 document.addEventListener("click", e => {
@@ -3968,7 +3998,7 @@ document.addEventListener("click", e => {
   if (e.target.closest(".blk.zm")) { fxCat = "Zoom"; if (tab !== "Effects") { tab = "Effects"; draw(); } else { drawTimeline(); drawPanel(); } return; }
   if (e.target.closest(".blk.sfx")) { if (tab !== "Bunyi") { tab = "Bunyi"; draw(); } else drawTimeline(); return; }
   const jnB = e.target.closest(".jn");   /* p24 */
-  if (jnB) { const i = +jnB.dataset.jn, was = jnSel === i; clearPick(); if (playing) stop(); jnSel = was ? -1 : i; if (!was) seek(startOf(i)); drawTimeline(); drawStickers(); drawPanel(); return; }
+  if (jnB) { const i = +jnB.dataset.jn, was = jnSel === i; clearPick(); if (playing) stop(); spOpen = false; jnSel = was ? -1 : i; if (!was) seek(startOf(i)); drawTimeline(); drawStickers(); drawPanel(); return; }
   const clipEl = e.target.closest(".clip");
   if (clipEl && !e.target.classList.contains("handle")) {
     sel = +clipEl.dataset.c; clearPick();
@@ -3991,6 +4021,10 @@ document.addEventListener("click", e => {
   }
   const b = e.target.closest("button"); if (!b) return;
   const d = b.dataset;
+  if (b.id === "spBtn") return spToggle();   /* p25 */
+  if (d.spx) return spToggle(false);
+  if (d.spk) { spSet(SPS[+d.spk]); return spPlay(); }
+  if (d.spall) { const c = S.clips[sel]; if (!c) return; spSet(c.sp || 1, true); return toast("Semua klip: " + spTxt(c.sp || 1)); }
   if (d.jtr || d.jall || d.jdel) {   /* p24 */
     const c = S.clips[jnSel]; if (!(jnSel > 0) || !c) return;
     snapshot();
@@ -4100,7 +4134,7 @@ document.addEventListener("click", e => {
   if (d.mhear !== undefined) { hear.src = `music/${d.mhear}.mp3`; hear.volume = .5; hear.play().catch(() => {}); clearTimeout(window._mh); window._mh = setTimeout(() => hear.pause(), 15000); return; }
   if (d.music !== undefined) { S.music.f = d.music; hear.pause(); touched(); bgmSync(); return drawPanel(); }
   if (d.hear) { hear.src = `sfx/${d.hear}.mp3`; hear.volume = .6; hear.play().catch(() => {}); return; }
-  if (d.zadd) { snapshot(); let t = pos; if (d.zadd === "through") { let a = 0, best = null; S.clips.slice(0, -1).forEach(c => { a += c.out - c.in; if (best === null || Math.abs(a - pos) < Math.abs(best - pos)) best = a; }); if (best !== null && Math.abs(best - pos) < 1) t = Math.max(0, best - .25); }
+  if (d.zadd) { snapshot(); let t = pos; if (d.zadd === "through") { let a = 0, best = null; S.clips.slice(0, -1).forEach(c => { a += cLen(c); if (best === null || Math.abs(a - pos) < Math.abs(best - pos)) best = a; }); if (best !== null && Math.abs(best - pos) < 1) t = Math.max(0, best - .25); }
     S.zooms.push({ t: +t.toFixed(2), z: zmDef(d.zadd)[3], k: d.zadd }); clearPick(); zmSel = S.zooms.length - 1; touched(); drawPanel(); drawTimeline(); toast(zmDef(d.zadd)[1] + " ditambah"); return zmPlay(zmSel); }
   if (d.zk) { const z = S.zooms[zmSel]; if (!z) return; snapshot(); z.k = d.zk; touched(); drawPanel(); drawTimeline(); return zmPlay(zmSel); }
   if (d.zplay !== undefined) return zmPlay(+d.zplay);
@@ -4187,6 +4221,7 @@ document.addEventListener("input", e => {
   if (id === "capSize") { S.capSize = +e.target.value / 100; $("capSizeV").textContent = e.target.value + "%"; $("stage").style.setProperty("--ck", S.capSize); if (!playing && $("cap").hidden) capDemo(); planCaps(); grKey = ""; drawCaption(); return touched(); }
   if (id === "stSize") { const x = S.stickers[stSel]; if (x) { x.s = +e.target.value / 100; $("stSizeV").textContent = e.target.value + "%"; drawStickers(); touched(); } return; }
   if (id === "stText") { const x = S.stickers[stSel]; if (x) { x.text = e.target.value; drawStickers(); touched(); } return; }
+  if (id === "spS") { const c = S.clips[sel], v = SPS[+e.target.value]; if (c && v) { snapshot(); if (v === 1) delete c.sp; else c.sp = v; $("spV").textContent = spTxt(v); $("spL").textContent = (c.out - c.in).toFixed(1) + " s → " + cLen(c).toFixed(1) + " s"; document.querySelectorAll(".spticks button").forEach((q, k) => q.setAttribute("aria-pressed", k === +e.target.value)); touched(); } return; }   /* p25 */
   if (id === "jnD") { const c = S.clips[jnSel]; if (c && jnSel > 0) { c.trd = +e.target.value / 100; $("jnDV").textContent = c.trd.toFixed(2) + " s"; touched(); } return; }   /* p24 */
   if (id === "zmZ") { const z = S.zooms[zmSel]; if (z) { z.z = +e.target.value / 100; $("zmZV").textContent = z.z.toFixed(2) + "x"; if (!playing) { seek(z.t + (z.k === "pull" ? .01 : z.k === "push" ? .7 : z.k === "digital" ? .7 : z.k === "vertigo" ? 1.5 : .06)); } const bl = document.querySelector(`.blk.zm[data-z="${zmSel}"]`); if (bl) bl.textContent = z.z.toFixed(2) + "x"; touched(); } return; }
   if (id === "bgmVol") { S.music.vol = +e.target.value / 100; $("bgmVolV").textContent = e.target.value + "%"; const a = $("bgm"); if (a) a.volume = S.music.vol; return touched(); }
