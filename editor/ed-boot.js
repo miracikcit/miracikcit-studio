@@ -287,7 +287,8 @@
     if (!top || !sc || !tr || !$('tscroll')) return false;
     if (top.dataset.cc) return true;
     top.dataset.cc = '1';
-    top.insertAdjacentHTML('afterbegin', '<a class="edx" href="../../../#editor" aria-label="Balik ke Studio">✕</a>');
+    const edApp = (() => { try { return localStorage.getItem('edApp') === '1'; } catch (e) { return false; } })();   // app Editor sendiri (Home Screen): ✕ balik ke senarai projek, bukan Studio
+    top.insertAdjacentHTML('afterbegin', edApp ? '<a class="edx" href="../../" aria-label="Senarai projek">✕</a>' : '<a class="edx" href="../../../#editor" aria-label="Balik ke Studio">✕</a>');
     top.insertAdjacentHTML('beforeend', '<button class="edsiap" id="edSiap" type="button">Siap</button>');
     const ic = n => `<svg class="ic"><use href="#${n}"/></svg>`;
     tr.insertAdjacentHTML('afterbegin', `<span class="cctc" id="ccTc">0:00</span>
