@@ -124,7 +124,7 @@ function tpTop(plan,groups,ready,nNew){const W=schedWarn(plan,groups);const wk=t
   chips.push(`<span class="tpchip">Stock ${W.fullUntil?'until <b>'+esc(tpDayLbl(W.fullUntil).replace(/^.*· /,''))+'</b>':'<b>under a day</b>'}</span>`);
   if(W.short.length)chips.push(`<button type="button" class="tpchip w" data-act="tpShort" data-x="${esc(W.short.map(s=>s.name).join(', '))}">⚠ <b>${W.short.length}</b> product${W.short.length>1?'s':''} short</button>`);
   if(nNew)chips.push(`<button type="button" class="tpchip" data-act="tpDay" data-id="new"><b>${nNew}</b> new</button>`);
-  const busy=schedBusy?ldr((schedProg&&schedProg.txt)||'Updating schedule',schedProg&&schedProg.pct):`<button type="button" class="tpchip btnx" data-act="schRun">Auto-arrange</button>`;
+  const busy=schedBusy?ldr((schedProg&&schedProg.txt)||'Updating schedule',schedProg&&schedProg.pct):''   /* 25 Nov malam (Mira): butang Auto-arrange dibuang; jadual susun sendiri */;
   return `<div class="tph"><b class="tpn${n?'':' zero'}">${n}</b><h1>VIDEOS TO SCHEDULE</h1></div>
    <div class="tpcal glass"><div class="tpcalh"><span class="eyebrow">Next 7 days</span><span class="tpleg">${TP_PL.map(([l,,c])=>`<span><u class="on" style="--pc:var(--${c})"></u>${l}</span>`).join('')}</span></div><div class="tpgrid">${cal}</div></div>
    <div class="tpchips">${chips.join('')}<span style="margin-left:auto">${busy}</span></div>`}
