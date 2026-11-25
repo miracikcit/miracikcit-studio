@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 """
-make_carousel.py : carousel Instagram "seamless" gaya scrapbook.
+make_carousel.py : carousel Instagram "seamless" gaya scrapbook (gambar + cutout sahaja, tiada tulisan).
 
 Satu kanvas panjang (SLIDES x 1080) x 1350 dipotong jadi slide 4:5.
-Gambar, cutout (rembg), frame mockup (post IG, skrin kamera, polaroid)
-dan hiasan scrapbook (semua dilukis dengan code) diletak merentas garis
-potongan supaya bersambung bila swipe.
+Elemen diletak merentas garis potong supaya bersambung bila swipe:
+  - latar foto (koyak tepi) & kertas corak
+  - "pop-out zoom": orang dipotong (rembg) dan keluar dari bingkai foto / polaroid / skrin telefon
+  - bulatan zoom: kawasan kecil dalam foto dibesarkan dalam bulatan, dengan garis penyambung
+  - cutout belakang (tanpa muka) yang melintas garis slide
+  - hiasan scrapbook dilukis dengan code (boleh tutup: DECOR = False)
+Warna semua gambar ditingkatkan (enhance): white balance, kontras, vibrance, kejelasan.
 
 Guna:
     _carousel_tools/venv/bin/python make_carousel.py [folder_gambar] [--slides N]
 
 Gambar asal tak diubah. Hasil: output/slide_01.jpg ... + output/preview_strip.jpg
-Kalau PICKS di bawah kosong / fail tak wujud, script pilih sendiri
-(latar = paling sikit orang, cutout = orang yang jelas, frame = yang lain).
+Kalau fail dalam PICKS tiada, script pilih sendiri (lihat auto_picks).
 """
 import argparse
 import hashlib
@@ -24,90 +27,47 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont, ImageOps
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageOps
 
 # ---------------------------------------------------------------- SETTINGS
 SLIDES = 5
 SLIDE_W, SLIDE_H = 1080, 1350
 JPEG_QUALITY = 95
 SEED = 7                      # tukar untuk susunan hiasan lain
-SEAM_MARGIN = 45              # px: muka / teks mesti jauh sekurang-kurangnya ini dari garis potong
+SEAM_MARGIN = 45              # px: muka mesti jauh sekurang-kurangnya ini dari garis potong
+DECOR = True                  # False = gambar & cutout sahaja, tanpa sticker/pita
+ENHANCE = 0.8                 # kekuatan tingkatkan warna (0 = asal, 1 = biasa, 1.5 = kuat)
 
 HERE = Path(__file__).resolve().parent
 PHOTO_DIR = HERE / "photos"
 OUT_DIR = HERE / "output"
 CACHE_DIR = HERE / "_carousel_tools" / "cache"
 
-TEXT = {
-    "headline": "cuti-cuti",
-    "beads": "GENTING",
-    "label": "EP 1: 3,100FT ABOVE",
-    "ig_user": "miracikcit",
-    "ig_place": "Genting Highlands",
-    "ig_caption": "pagi berkabus, air sejuk, hati panas",
-    "polaroid": ["love at 3,100ft", "kolam bola!", "check mate"],
-    "phone_note": "eufloria",
-    "outro": "jumpa lagi, genting",
-}
-
 # Pilihan gambar (nama fail dalam PHOTO_DIR). Kosongkan {} untuk auto.
 PICKS = {
-    "bg":       ["awana1_p7.jpg", "awana2_p3.jpg", "eufloria_p6.jpg"],
-    "cutout":   ["awana2_p2.jpg", "eufloria_p0.jpg"],
-    "object":   ["eufloria_p2.jpg"],          # cutout objek (model u2net umum)
-    "ig":       ["awana2_p0.jpg"],
-    "phone":    ["eufloria_p3.jpg"],
-    "polaroid": ["awana1_p3.jpg", "eufloria_p7.jpg", "awana2_p1.jpg"],
+    "hero":     ["fam_stroller.jpg"],                 # slide 1: pop-out dari bingkai foto besar
+    "popout":   ["fam_couple.jpg", "fam_boys.jpg"],   # pop-out dari polaroid & skrin telefon
+    "zoom":     ["fam_mushroom.jpg"],                 # foto besar + bulatan zoom si kecil
+    "scene":    ["awana2_p3.jpg", "eufloria_p6.jpg"],  # latar koyak merentas garis
+    "backcut":  ["awana2_p2.jpg"],                    # cutout dari belakang, melintas garis
+    "polaroid": ["awana1_p3.jpg", "eufloria_p7.jpg", "awana2_p0.jpg", "awana2_p1.jpg", "awana1_p7.jpg"],
 }
+# Gambar yang orangnya bertindih dengan pokok/latar sewarna: buang latar di atas paras bahu
+TRIM_ABOVE_HEADS = {"fam_stroller.jpg"}
 
-# Warna asas (akan dilaraskan ikut tona gambar)
-CREAM = (246, 241, 231)
+# Warna asas
+CREAM = (247, 243, 235)
 INK = (58, 52, 46)
-PINK = (241, 196, 200)
-BUTTER = (247, 226, 140)
-SAGE = (170, 190, 160)
+PINK = (241, 190, 196)
+BUTTER = (247, 224, 130)
+SAGE = (168, 196, 160)
 
 RS = Image.Resampling
 
 
-# ---------------------------------------------------------------- FONTS
-def find_font(cands, size):
-    roots = ["/usr/share/fonts", "/Library/Fonts", "/System/Library/Fonts",
-             os.path.expanduser("~/Library/Fonts"), "C:/Windows/Fonts"]
-    for c in cands:
-        if os.path.isabs(c) and os.path.exists(c):
-            return ImageFont.truetype(c, size)
-        for r in roots:
-            for p in Path(r).rglob(c) if os.path.isdir(r) else []:
-                try:
-                    return ImageFont.truetype(str(p), size)
-                except OSError:
-                    pass
-    return ImageFont.load_default(size)
-
-
-_font_cache = {}
-
-
-def font(kind, size):
-    key = (kind, size)
-    if key not in _font_cache:
-        cands = {
-            "black": ["Inter-Black.otf", "Arial Rounded Bold.ttf", "Arial Black.ttf",
-                      "DejaVuSans-Bold.ttf"],
-            "bold": ["Inter-Bold.otf", "Helvetica.ttc", "Arial Bold.ttf", "DejaVuSans-Bold.ttf"],
-            "reg": ["Inter-Medium.otf", "Helvetica.ttc", "Arial.ttf", "DejaVuSans.ttf"],
-            "serif": ["DejaVuSerif-Italic.ttf", "Georgia Italic.ttf", "Times New Roman Italic.ttf",
-                      "FreeSerifItalic.ttf"],
-            "mono": ["JetBrainsMono-Bold.ttf", "Courier New Bold.ttf", "DejaVuSansMono-Bold.ttf"],
-        }[kind]
-        _font_cache[key] = find_font(cands, size)
-    return _font_cache[key]
-
-
 # ---------------------------------------------------------------- ELEMENT
 class El:
-    """Gambar RGBA + topeng 'protect' (muka/teks yang tak boleh kena garis potong)."""
+    """Gambar RGBA + topeng 'protect' (muka yang tak boleh kena garis potong)."""
 
     def __init__(self, img, prot=None):
         self.img = img.convert("RGBA")
@@ -116,14 +76,8 @@ class El:
     def rotate(self, deg):
         if not deg:
             return self
-        img = self.img.rotate(deg, resample=RS.BICUBIC, expand=True)
-        prot = self.prot.rotate(deg, resample=RS.NEAREST, expand=True)
-        return El(img, prot)
-
-    def scale(self, f):
-        w, h = self.img.size
-        sz = (max(1, int(w * f)), max(1, int(h * f)))
-        return El(self.img.resize(sz, RS.LANCZOS), self.prot.resize(sz, RS.NEAREST))
+        return El(self.img.rotate(deg, resample=RS.BICUBIC, expand=True),
+                  self.prot.rotate(deg, resample=RS.NEAREST, expand=True))
 
     @property
     def size(self):
@@ -137,54 +91,80 @@ def protect_all(img, inset=0):
 
 
 # ---------------------------------------------------------------- PHOTO PREP
+_photo_cache = {}
+
+
 def load_photo(path):
-    im = ImageOps.exif_transpose(Image.open(path)).convert("RGB")
-    return im
+    key = str(path)
+    if key not in _photo_cache:
+        _photo_cache[key] = ImageOps.exif_transpose(Image.open(path)).convert("RGB")
+    return _photo_cache[key]
 
 
-def grade(im, warm=1.0):
-    """Tona lembut & hangat yang seragam: kurang kontras sikit, angkat bayang, kabus."""
+def enhance(im, k=None):
+    """Tingkatkan warna: white balance separa, lengkung S, vibrance, sedikit hangat, kejelasan."""
+    k = ENHANCE if k is None else k
+    if k <= 0:
+        return im
     a = np.asarray(im).astype(np.float32) / 255.0
-    a = 0.06 + a * 0.92                                  # angkat hitam, turun putih
-    lum = a.mean(axis=2, keepdims=True)
-    a = lum + (a - lum) * 0.88                           # kurangkan saturasi sikit
-    a[..., 0] *= 1.0 + 0.035 * warm
-    a[..., 2] *= 1.0 - 0.035 * warm
-    a = a * 0.95 + np.array([0.97, 0.96, 0.94]) * 0.05   # kabus
-    return Image.fromarray((np.clip(a, 0, 1) * 255).astype(np.uint8))
+    m = a.reshape(-1, 3).mean(0)
+    a *= 1 + 0.3 * k * (m.mean() / np.maximum(m, 1e-3) - 1)            # white balance
+    lo, hi = np.percentile(a, 0.2), np.percentile(a, 99.8)              # regang tonal
+    a = np.clip((a - lo) / max(hi - lo, 1e-3), 0, 1)
+    a = a - 0.16 * k * np.sin(2 * np.pi * a) / (2 * np.pi)              # lengkung S
+    hsv = cv2.cvtColor(np.clip(a, 0, 1), cv2.COLOR_RGB2HSV)
+    s = hsv[..., 1]
+    hsv[..., 1] = np.clip(s + 0.55 * k * s * (1 - s) + 0.04 * k * s, 0, 1)  # vibrance
+    a = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+    a[..., 0] *= 1 + 0.025 * k
+    a[..., 2] *= 1 - 0.02 * k
+    out = Image.fromarray((np.clip(a, 0, 1) * 255).astype(np.uint8))
+    r = max(4, int(max(im.size) / 160))
+    return out.filter(ImageFilter.UnsharpMask(radius=r, percent=int(14 * k), threshold=4))
 
 
 def upscale(im, target_w=None, target_h=None):
-    """Besarkan dengan halus (LANCZOS + sedikit unsharp) bila gambar asal kecil."""
     w, h = im.size
     f = max((target_w or 0) / w, (target_h or 0) / h, 1e-9)
     if f <= 1:
-        return im.resize((max(1, int(w * f)), max(1, int(h * f))), RS.LANCZOS)
+        return im.resize((max(1, round(w * f)), max(1, round(h * f))), RS.LANCZOS)
     out = im
-    while f > 1.0:  # besarkan berperingkat
+    while f > 1.0:
         step = min(f, 2.0)
-        out = out.resize((int(out.size[0] * step), int(out.size[1] * step)), RS.LANCZOS)
+        out = out.resize((round(out.size[0] * step), round(out.size[1] * step)), RS.LANCZOS)
         f /= step
-    out = out.filter(ImageFilter.UnsharpMask(radius=2, percent=60, threshold=2))
-    return out
+    return out.filter(ImageFilter.UnsharpMask(radius=2, percent=35, threshold=3))
+
+
+def fit(im, w, h):
+    return upscale(im, w, h).resize((w, h), RS.LANCZOS)
 
 
 def cover_crop(im, w, h, fx=0.5, fy=0.5):
-    """Potong + besarkan gambar supaya penuh w x h. fx/fy = titik fokus (0..1)."""
     iw, ih = im.size
     s = max(w / iw, h / ih)
     cw, ch = w / s, h / s
     x0 = min(max(0, iw * fx - cw / 2), iw - cw)
     y0 = min(max(0, ih * fy - ch / 2), ih - ch)
-    crop = im.crop((int(x0), int(y0), int(x0 + cw), int(y0 + ch)))
-    return upscale(crop, w, h).resize((w, h), RS.LANCZOS)
+    return fit(im.crop((int(x0), int(y0), int(x0 + cw), int(y0 + ch))), w, h)
+
+
+_enh_cache = {}
+
+
+def photo(path):
+    """Gambar yang sudah di-enhance (cache)."""
+    key = str(path)
+    if key not in _enh_cache:
+        _enh_cache[key] = enhance(load_photo(path))
+    return _enh_cache[key]
 
 
 # ---------------------------------------------------------------- ANALYSIS (rembg + muka)
 _sessions = {}
 
 
-def rembg_mask(path, model):
+def rembg_mask(path, model="u2net_human_seg"):
     from rembg import new_session, remove
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     st = os.stat(path)
@@ -196,8 +176,7 @@ def rembg_mask(path, model):
         _sessions[model] = new_session(model)
     im = load_photo(path)
     big = upscale(im, target_w=max(im.size[0], 1000))
-    out = remove(big, session=_sessions[model], post_process_mask=True)
-    m = out.split()[-1]
+    m = remove(big, session=_sessions[model], post_process_mask=True).split()[-1]
     m.save(cp)
     return m
 
@@ -213,8 +192,7 @@ def detect_faces(im):
         _face_cascades = [cv2.CascadeClassifier(d + n) for n in
                           ("haarcascade_frontalface_default.xml", "haarcascade_profileface.xml")]
     f = 1000 / max(im.size)
-    g = cv2.cvtColor(np.asarray(im.resize((int(im.size[0] * f), int(im.size[1] * f)))),
-                     cv2.COLOR_RGB2GRAY)
+    g = cv2.cvtColor(np.asarray(im.resize((int(im.size[0] * f), int(im.size[1] * f)))), cv2.COLOR_RGB2GRAY)
     g = cv2.equalizeHist(g)
     boxes = []
     for c in _face_cascades:
@@ -224,92 +202,93 @@ def detect_faces(im):
                 if flip:
                     x = gg.shape[1] - x - w
                 boxes.append((x / f, y / f, (x + w) / f, (y + h) / f))
-    return boxes
+    # buang pendua
+    out = []
+    for b in sorted(boxes, key=lambda b: -(b[2] - b[0])):
+        if all(abs((b[0] + b[2]) / 2 - (o[0] + o[2]) / 2) > (o[2] - o[0]) * 0.5 or
+               abs((b[1] + b[3]) / 2 - (o[1] + o[3]) / 2) > (o[3] - o[1]) * 0.5 for o in out):
+            out.append(b)
+    return out
 
 
-def analyse(paths):
-    info = {}
-    for p in paths:
-        im = load_photo(p)
-        m = np.asarray(rembg_mask(p, "u2net_human_seg").resize(im.size)) > 128
-        ratio = m.mean()
-        n, lab, stats, _ = cv2.connectedComponentsWithStats(m.astype(np.uint8))
-        big = stats[1:, cv2.CC_STAT_AREA].max() / max(1, m.sum()) if n > 1 else 0
-        cols = np.where(m.any(0))[0]
-        touches = len(cols) and (cols[0] <= 1 or cols[-1] >= m.shape[1] - 2)
-        sharp = cv2.Laplacian(cv2.cvtColor(np.asarray(im), cv2.COLOR_RGB2GRAY), cv2.CV_64F).var()
-        info[p.name] = dict(ratio=ratio, solid=big, touches=bool(touches), sharp=sharp,
-                            faces=len(detect_faces(im)))
-    return info
+_mask_cache = {}
 
 
-def auto_picks(paths):
-    print("Auto pilih gambar (analisis rembg + muka)...")
-    info = analyse(paths)
-    med = np.median([v["sharp"] for v in info.values()])
-    ok = [k for k, v in info.items() if v["sharp"] > 0.35 * med]
-    left = set(ok)
-
-    def take(cands, n):
-        got = [c for c in cands if c in left][:n]
-        left.difference_update(got)
-        return got
-
-    cut = take(sorted([k for k in ok if 0.04 < info[k]["ratio"] < 0.45 and info[k]["solid"] > 0.85
-                       and not info[k]["touches"]],
-                      key=lambda k: (info[k]["faces"] > 0, -info[k]["ratio"])), 2)
-    bg = take(sorted(ok, key=lambda k: info[k]["ratio"]), 3)
-    rest = sorted(left, key=lambda k: -info[k]["faces"])
-    picks = {"bg": bg, "cutout": cut, "object": [],
-             "ig": rest[:1], "phone": rest[1:2], "polaroid": rest[2:5]}
-    for k, v in info.items():
-        print(f"  {k:24s} orang={v['ratio']:.2f} muka={v['faces']} tajam={v['sharp']:.0f}")
-    return picks
-
-
-def resolve_picks(photo_dir):
-    paths = sorted([p for p in photo_dir.iterdir()
-                    if p.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp", ".heic")])
-    if not paths:
-        sys.exit(f"Tiada gambar dalam {photo_dir}")
-    names = {p.name for p in paths}
-    want = [n for v in PICKS.values() for n in v]
-    if PICKS and all(n in names for n in want):
-        picks = {k: list(v) for k, v in PICKS.items()}
-    else:
-        picks = auto_picks(paths)
-    # isi kekosongan dengan apa yang ada supaya layout sentiasa lengkap
-    pool = [p.name for p in paths]
-    need = {"bg": 3, "cutout": 2, "ig": 1, "phone": 1, "polaroid": 3}
-    i = 0
-    for k, n in need.items():
-        while len(picks.get(k, [])) < n:
-            picks.setdefault(k, []).append(pool[i % len(pool)])
-            i += 1
-    return {k: [photo_dir / n for n in v] for k, v in picks.items()}
+def person_mask(path):
+    """Topeng orang (L, saiz gambar asal), dibersihkan. Untuk TRIM_ABOVE_HEADS: latar di atas bahu dibuang."""
+    key = str(path)
+    if key in _mask_cache:
+        return _mask_cache[key]
+    im = load_photo(path)
+    a = np.asarray(rembg_mask(path).resize(im.size, RS.BILINEAR)) > 128
+    faces = [f for f in detect_faces(im) if a[int((f[1] + f[3]) / 2), int((f[0] + f[2]) / 2)]]
+    if Path(path).name in TRIM_ABOVE_HEADS and faces:
+        cut = min(f[3] + 0.3 * (f[3] - f[1]) for f in faces)
+        keep = Image.new("L", im.size, 0)
+        d = ImageDraw.Draw(keep)
+        d.rectangle([0, cut, im.size[0], im.size[1]], fill=255)
+        for x0, y0, x1, y1 in faces:  # bentuk kepala ketat: tengkorak + muka + leher
+            w, h = x1 - x0, y1 - y0
+            cx = (x0 + x1) / 2
+            d.ellipse([cx - 0.6 * w, y0 - 0.32 * h, cx + 0.6 * w, y0 + 0.9 * h], fill=255)
+            d.rectangle([x0 + 0.04 * w, y0 + 0.3 * h, x1 - 0.04 * w, y1], fill=255)
+            d.rectangle([x0 + 0.18 * w, y1 - 0.1 * h, x1 - 0.18 * w, max(y1, cut) + 2], fill=255)
+        rgb = np.asarray(im).astype(np.float32)
+        R, G, B = rgb[..., 0] + 1, rgb[..., 1], rgb[..., 2]
+        foliage = ((G < 0.5 * R) & (B < 0.55 * R) & (R > 32)) | ((G > R * 1.05) & (G > B))
+        yy = np.arange(im.size[1])[:, None]
+        a = a & (np.asarray(keep) > 0) & ~(foliage & (yy < cut))
+    m = cv2.morphologyEx(a.astype(np.uint8), cv2.MORPH_OPEN, np.ones((7, 7), np.uint8))
+    n, lab, st, _ = cv2.connectedComponentsWithStats(m)
+    if n > 1:  # simpan komponen besar sahaja
+        big = st[1:, cv2.CC_STAT_AREA].max()
+        m = np.isin(lab, [i for i in range(1, n) if st[i, cv2.CC_STAT_AREA] > 0.08 * big]).astype(np.uint8)
+    m = cv2.morphologyEx(m, cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8))
+    m = cv2.medianBlur(m * 255, 9)
+    res = (Image.fromarray(m), faces)
+    _mask_cache[key] = res
+    return res
 
 
-# ---------------------------------------------------------------- PALETTE
-def derive_palette(paths):
-    global CREAM, SAGE, PINK
-    px = []
-    for p in paths:
-        im = load_photo(p).resize((48, 80))
-        px.append(np.asarray(im).reshape(-1, 3))
-    px = np.concatenate(px).astype(np.float32)
-    hsv = cv2.cvtColor(px.reshape(1, -1, 3).astype(np.uint8), cv2.COLOR_RGB2HSV).reshape(-1, 3)
-    green = px[(hsv[:, 0] > 30) & (hsv[:, 0] < 90) & (hsv[:, 1] > 40)]
-    if len(green) > 50:
-        g = green.mean(0)
-        # versi pastel/berkabus dari hijau gambar
-        SAGE = tuple(int(c * 0.45 + 235 * 0.55) for c in g)
-    light = px[px.mean(1) > 200]
-    if len(light) > 50:  # cream hangat, hanya sedikit dipengaruhi tona cerah gambar
-        l = light.mean(0)
-        CREAM = tuple(int(min(250, c * 0.15 + w * 0.85)) for c, w in zip(l, (249, 243, 232)))
-    print(f"Palet: cream={CREAM} sage={SAGE} pink={PINK}")
+def person_bbox(path):
+    m, _ = person_mask(path)
+    return m.point(lambda v: 255 if v > 128 else 0).getbbox()
 
 
+def popout_window(path, aspect, head_frac=0.17, widen=1.55):
+    """Tetingkap bingkai (x0,y0,x1,y1) supaya kepala keluar di atas bingkai.
+    aspect = lebar/tinggi tetingkap."""
+    im = load_photo(path)
+    W, H = im.size
+    bx0, by0, bx1, by1 = person_bbox(path)
+    bw, bh = bx1 - bx0, by1 - by0
+    top = by0 + head_frac * bh
+    w = bw * widen
+    h = w / aspect
+    need = (by1 - top) * 1.08
+    if h < need:
+        h = need
+        w = h * aspect
+    cx = (bx0 + bx1) / 2
+    x0 = min(max(0, cx - w / 2), W - w)
+    x0 = max(0, x0)
+    w = min(w, W)
+    y1 = min(H, top + h)
+    return (x0, top, x0 + w, y1)
+
+
+def zoom_target(path):
+    """Muka paling bawah (biasanya si kecil) dalam topeng orang -> (cx, cy, r)."""
+    _, faces = person_mask(path)
+    if not faces:
+        bx0, by0, bx1, by1 = person_bbox(path)
+        return ((bx0 + bx1) / 2, by0 + (by1 - by0) * 0.2, (bx1 - bx0) * 0.25)
+    f = max(faces, key=lambda b: (b[1] + b[3]) / 2)
+    w = f[2] - f[0]
+    return ((f[0] + f[2]) / 2, (f[1] + f[3]) / 2 + 0.55 * w, 1.75 * w)
+
+
+# ---------------------------------------------------------------- PAPER BASE
 # ---------------------------------------------------------------- DRAW HELPERS
 SS = 2  # supersampling untuk hiasan
 
@@ -593,214 +572,287 @@ def sparkle(r=26, color=(255, 255, 255)):
     return El(ss_done(lay))
 
 
-# ---------------------------------------------------------------- TEXT
-def text_el(txt, f, fill, stroke=0, stroke_fill=None, shadow=False, protect=True):
-    d = ImageDraw.Draw(Image.new("L", (1, 1)))
-    bb = d.textbbox((0, 0), txt, font=f, stroke_width=stroke)
-    w, h = bb[2] - bb[0] + 20, bb[3] - bb[1] + 20
-    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    ImageDraw.Draw(img).text((10 - bb[0], 10 - bb[1]), txt, font=f, fill=fill,
-                             stroke_width=stroke, stroke_fill=stroke_fill)
-    return El(img, protect_all(img) if protect else None)
+# ---------------------------------------------------------------- FRAMES (tanpa tulisan)
+def frame_print(iw, ih, seed=0):
+    """Cetakan foto bersempadan putih, tepi koyak halus."""
+    b = int(iw * 0.045)
+    w, h = iw + 2 * b, ih + 2 * b
+    card = paper_texture(w, h, (252, 251, 248), seed, fiber=3).convert("RGBA")
+    card.putalpha(deckle_mask(w, h, "lrtb", amp=4, seed=seed))
+    return card, (b, b, b + iw, b + ih)
 
 
-def beads(word, r=62, gap=10):
-    n = len(word)
-    w = n * (2 * r + gap) + 30
-    h = 2 * r + 40
+def frame_polaroid(iw, ih, seed=0):
+    pad, bottom = int(iw * 0.065), int(iw * 0.26)
+    w, h = iw + 2 * pad, ih + pad + bottom
+    card = paper_texture(w, h, (252, 250, 246), seed, fiber=3).convert("RGBA")
+    return card, (pad, pad, pad + iw, pad + ih)
+
+
+def frame_phone(iw, ih, seed=0):
+    b = int(iw * 0.05)
+    top, bot = int(ih * 0.12), int(ih * 0.27)
+    w, h = iw + 2 * b, ih + top + bot
     lay = ss_canvas(w, h)
     d = ImageDraw.Draw(lay)
-    f = font("black", int(r * 1.05 * SS))
-    for i, ch in enumerate(word):
-        cx = (15 + r + i * (2 * r + gap)) * SS
-        cy = (h / 2 + (6 if i % 2 else -6)) * SS
-        rr = r * SS
-        d.ellipse([cx - rr, cy - rr + 6 * SS, cx + rr, cy + rr + 6 * SS], fill=(150, 140, 130, 120))
-        d.ellipse([cx - rr, cy - rr, cx + rr, cy + rr], fill=(236, 234, 230, 255))
-        d.ellipse([cx - rr * 0.92, cy - rr * 0.95, cx + rr * 0.92, cy + rr * 0.8], fill=(252, 252, 250, 255))
-        d.ellipse([cx - rr * 0.55, cy - rr * 0.8, cx - rr * 0.1, cy - rr * 0.55], fill=(255, 255, 255, 255))
-        d.text((cx, cy + 2 * SS), ch, font=f, fill=INK + (255,), anchor="mm")
-    img = ss_done(lay)
-    return El(img, protect_all(img))
+    d.rounded_rectangle([0, 0, w * SS - 1, h * SS - 1], radius=int(w * 0.15 * SS), fill=(26, 26, 28, 255))
+    d.rounded_rectangle([5 * SS, 5 * SS, (w - 5) * SS, (h - 5) * SS], radius=int(w * 0.14 * SS),
+                        outline=(78, 78, 82, 255), width=2 * SS)
+    body = ss_done(lay)
+    d = ImageDraw.Draw(body)
+    d.rounded_rectangle([w / 2 - w * 0.15, top * 0.28, w / 2 + w * 0.15, top * 0.58], radius=40, fill=(0, 0, 0))
+    for x in (w * 0.18, w * 0.82):                                 # ikon bulat (tanpa tulisan)
+        r = w * 0.032
+        d.ellipse([x - r, top * 0.72 - r, x + r, top * 0.72 + r], outline=(215, 215, 215), width=3)
+    sy = top + ih + bot * 0.5                                      # shutter
+    r = w * 0.105
+    d.ellipse([w / 2 - r - 9, sy - r - 9, w / 2 + r + 9, sy + r + 9], outline=(255, 255, 255), width=6)
+    d.ellipse([w / 2 - r, sy - r, w / 2 + r, sy + r], fill=(255, 255, 255))
+    t = w * 0.075
+    d.rounded_rectangle([w * 0.17 - t, sy - t, w * 0.17 + t, sy + t], radius=10, fill=SAGE)
+    d.ellipse([w * 0.83 - t, sy - t, w * 0.83 + t, sy + t], fill=(62, 62, 66))
+    for i in range(5):                                             # titik mod kamera
+        x = w / 2 + (i - 2) * w * 0.09
+        rr = 7 if i == 2 else 4
+        d.ellipse([x - rr, top + ih + bot * 0.17 - rr, x + rr, top + ih + bot * 0.17 + rr],
+                  fill=(255, 214, 10) if i == 2 else (150, 150, 150))
+    return body, (b, top, b + iw, top + ih)
 
 
-def label_chip(txt, color=None):
-    """Label kecil macam pita pelabel (teks mono atas kertas kuning mentega)."""
-    color = color or BUTTER
-    f = font("mono", 42)
-    tw = int(ImageDraw.Draw(Image.new("L", (1, 1))).textlength(txt, font=f))
-    w, h = tw + 60, 74
-    img = paper_texture(w, h, color, seed=len(txt), fiber=4).convert("RGBA")
-    ImageDraw.Draw(img).text((w / 2, h / 2), txt, font=f, fill=INK + (255,), anchor="mm")
-    img.putalpha(deckle_mask(w, h, "lr", amp=5, seed=3))
-    return El(img, protect_all(img))
+FRAMES = {"print": frame_print, "polaroid": frame_polaroid, "phone": frame_phone}
 
 
-# ---------------------------------------------------------------- FRAMES
-def photo_el(im, w, h, fx=0.5, fy=0.5, protect=False, edges=None, seed=0):
-    p = cover_crop(grade(im), w, h, fx, fy).convert("RGBA")
+def framed(path, kind, inner_w, window=None, aspect=None, seed=0, protect="person"):
+    """Foto dalam bingkai. Pulangkan (El, info) di mana info memetakan koordinat gambar -> elemen."""
+    im = photo(path)
+    if window is None:
+        window = (0, 0, im.size[0], im.size[1])
+    x0, y0, x1, y1 = window
+    if aspect:  # paksa nisbah dengan memotong tengah tetingkap
+        ww, hh = x1 - x0, y1 - y0
+        if ww / hh > aspect:
+            nw = hh * aspect
+            x0, x1 = x0 + (ww - nw) / 2, x0 + (ww + nw) / 2
+        else:
+            nh = ww / aspect
+            y0, y1 = y0 + (hh - nh) / 2, y0 + (hh + nh) / 2
+    s = inner_w / (x1 - x0)
+    inner_h = round((y1 - y0) * s)
+    card, box = FRAMES[kind](inner_w, inner_h, seed)
+    card.paste(fit(im.crop((int(x0), int(y0), int(x1), int(y1))), inner_w, inner_h), box[:2])
+    prot = Image.new("L", card.size, 0)
+    if protect == "all":
+        prot = protect_all(card)
+    elif protect == "person":
+        m, faces = person_mask(path)
+        pm = m.crop((int(x0), int(y0), int(x1), int(y1))).resize((inner_w, inner_h), RS.NEAREST)
+        pd = ImageDraw.Draw(pm)
+        for f in detect_faces(load_photo(path)):  # muka yang rembg terlepas
+            pd.rectangle([(f[0] - x0) * s, (f[1] - y0) * s, (f[2] - x0) * s, (f[3] - y0) * s], fill=255)
+        pm = Image.fromarray(cv2.dilate(np.asarray(pm), np.ones((25, 25), np.uint8)))
+        prot.paste(pm, box[:2])
+    info = dict(s=s, ox=box[0] - x0 * s, oy=box[1] - y0 * s, box=box, window=(x0, y0, x1, y1))
+    return El(card, prot), info
+
+
+def popout(path, kind, inner_w, aspect, seed=0, outline=11, head_frac=0.17):
+    """Pop-out zoom: orang dipotong dan keluar dari atas bingkai (kepala di luar bingkai)."""
+    win = popout_window(path, aspect, head_frac=head_frac)
+    el, info = framed(path, kind, inner_w, window=win, aspect=aspect, seed=seed, protect="all")
+    s, ox, oy, box = info["s"], info["ox"], info["oy"], info["box"]
+    im = photo(path)
+    m, _ = person_mask(path)
+    bx0, by0, bx1, by1 = person_bbox(path)
+    # kedudukan subjek dalam koordinat elemen
+    sx0, sy0 = ox + bx0 * s, oy + by0 * s
+    sx1 = ox + bx1 * s
+    padT = max(0, int(-sy0) + outline + 6)
+    padL = max(0, int(-sx0) + outline + 6)
+    padR = max(0, int(sx1 - el.size[0]) + outline + 6)
+    W, H = el.size[0] + padL + padR, el.size[1] + padT
+    base = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    base.alpha_composite(el.img, (padL, padT))
+    # lapisan subjek (seluruh gambar diskala sama, hanya di atas garis bawah tetingkap)
+    crop_box = (int(bx0), int(by0), int(bx1), int(by1))
+    sw, sh = max(1, round((bx1 - bx0) * s)), max(1, round((by1 - by0) * s))
+    subj = fit(im.crop(crop_box), sw, sh).convert("RGBA")
+    a = m.crop(crop_box).resize((sw, sh), RS.LANCZOS).filter(ImageFilter.GaussianBlur(0.8))
+    px, py = round(sx0) + padL, round(sy0) + padT
+    lim = Image.new("L", (sw, sh), 0)                    # potong di bawah garis bawah tetingkap
+    cut_y = box[3] + padT - py
+    ImageDraw.Draw(lim).rectangle([0, 0, sw, max(0, cut_y)], fill=255)
+    a = ImageChops.multiply(a, lim)
+    full_a = Image.new("L", (W, H), 0)
+    full_a.paste(a, (px, py))
+    outside = Image.new("L", (W, H), 255)                # garisan putih hanya di luar tetingkap
+    ImageDraw.Draw(outside).rectangle([box[0] + padL + outline, box[1] + padT + outline,
+                                       box[2] + padL - outline, box[3] + padT], fill=0)
+    # garisan hanya untuk bahagian besar yang terkeluar (elak tompok putih kecil di tepi tetingkap)
+    out_part = np.asarray(ImageChops.multiply(full_a, outside)) > 100
+    nlab, lab, st, _ = cv2.connectedComponentsWithStats(out_part.astype(np.uint8))
+    keep = np.isin(lab, [i for i in range(1, nlab) if st[i, cv2.CC_STAT_AREA] > 2500])
+    keep = cv2.morphologyEx(keep.astype(np.uint8), cv2.MORPH_OPEN,
+                            cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (17, 17)))
+    big = Image.fromarray((keep * 255).astype(np.uint8))
+    ol = ImageChops.multiply(outline_alpha(big, outline), outside.filter(ImageFilter.GaussianBlur(outline / 2)))
+    white = Image.new("RGBA", (W, H), (255, 255, 255, 0))
+    white.putalpha(ol)
+    # bayang lembut subjek atas bingkai
+    sh_a = full_a.filter(ImageFilter.GaussianBlur(10)).point(lambda v: int(v * 0.25))
+    shadow = Image.new("RGBA", (W, H), (60, 45, 35, 0))
+    shadow.putalpha(ImageChops.multiply(sh_a, outside))
+    base.alpha_composite(shadow, (6, 10))
+    base.alpha_composite(white)
+    layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    layer.paste(subj, (px, py))
+    layer.putalpha(full_a)
+    base.alpha_composite(layer)
+    prot = protect_all(base)
+    return El(base, prot)
+
+
+def tangent_lines(c1, r1, c2, r2):
+    dx, dy = c2[0] - c1[0], c2[1] - c1[1]
+    d = math.hypot(dx, dy)
+    th = math.atan2(dy, dx)
+    al = math.acos(max(-1, min(1, (r1 - r2) / d)))
+    out = []
+    for sgn in (1, -1):
+        a = th + sgn * al
+        out.append(((c1[0] + r1 * math.cos(a), c1[1] + r1 * math.sin(a)),
+                    (c2[0] + r2 * math.cos(a), c2[1] + r2 * math.sin(a))))
+    return out
+
+
+def print_with_zoom(path, inner_w, aspect, bubble_r, bubble_off, kind="print", seed=0, widen=2.2,
+                    target=None):
+    """Foto dalam bingkai + bulatan zoom (besarkan si kecil) dengan garis penyambung."""
+    bx0, by0, bx1, by1 = person_bbox(path)
+    im = photo(path)
+    cx = (bx0 + bx1) / 2
+    w = (bx1 - bx0) * widen
+    h = w / aspect
+    cy = (by0 + by1) / 2
+    win = (max(0, cx - w / 2), max(0, cy - h / 2), min(im.size[0], cx + w / 2), min(im.size[1], cy + h / 2))
+    el, info = framed(path, kind, inner_w, window=win, aspect=aspect, seed=seed, protect="person")
+    s, ox, oy = info["s"], info["ox"], info["oy"]
+    tx, ty, tr = target or zoom_target(path)
+    c1 = (ox + tx * s, oy + ty * s)
+    r1 = tr * s
+    c2 = (c1[0] + bubble_off[0], c1[1] + bubble_off[1])
+    ring = 12
+    R = bubble_r + ring
+    x_min = min(0, c2[0] - R - 20)
+    y_min = min(0, c2[1] - R - 20)
+    x_max = max(el.size[0], c2[0] + R + 20)
+    y_max = max(el.size[1], c2[1] + R + 20)
+    W, H = int(x_max - x_min), int(y_max - y_min)
+    dx, dy = int(-x_min), int(-y_min)
+    base = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    base.alpha_composite(el.img, (dx, dy))
+    prot = Image.new("L", (W, H), 0)
+    prot.paste(el.prot, (dx, dy))
+    c1 = (c1[0] + dx, c1[1] + dy)
+    c2 = (c2[0] + dx, c2[1] + dy)
+    # garis penyambung + bulatan sumber
+    lay = ss_canvas(W, H)
+    d = ImageDraw.Draw(lay)
+    for p, q in tangent_lines(c1, r1, c2, R):
+        d.line([(p[0] * SS, p[1] * SS), (q[0] * SS, q[1] * SS)], fill=(255, 255, 255, 235), width=4 * SS)
+    d.ellipse([(c1[0] - r1) * SS, (c1[1] - r1) * SS, (c1[0] + r1) * SS, (c1[1] + r1) * SS],
+              outline=(255, 255, 255, 255), width=5 * SS)
+    lines = ss_done(lay)
+    sh = lines.split()[-1].filter(ImageFilter.GaussianBlur(3)).point(lambda v: int(v * 0.35))
+    shimg = Image.new("RGBA", (W, H), (40, 30, 25, 0))
+    shimg.putalpha(sh)
+    base.alpha_composite(shimg, (2, 3))
+    base.alpha_composite(lines)
+    # bulatan zoom dari gambar asal (resolusi penuh)
+    zr = tr
+    zc = im.crop((int(tx - zr), int(ty - zr), int(tx + zr), int(ty + zr)))
+    D = 2 * bubble_r
+    zc = fit(zc, D, D)
+    cm = Image.new("L", (D * SS, D * SS), 0)
+    ImageDraw.Draw(cm).ellipse([0, 0, D * SS - 1, D * SS - 1], fill=255)
+    cm = cm.resize((D, D), RS.LANCZOS)
+    bub = Image.new("RGBA", (2 * R, 2 * R), (0, 0, 0, 0))
+    rm = Image.new("L", (2 * R * SS, 2 * R * SS), 0)
+    ImageDraw.Draw(rm).ellipse([0, 0, 2 * R * SS - 1, 2 * R * SS - 1], fill=255)
+    rm = rm.resize((2 * R, 2 * R), RS.LANCZOS)
+    ringimg = Image.new("RGBA", (2 * R, 2 * R), (255, 255, 255, 255))
+    ringimg.putalpha(rm)
+    bub.alpha_composite(ringimg)
+    zc = zc.convert("RGBA")
+    zc.putalpha(cm)
+    bub.alpha_composite(zc, (ring, ring))
+    bs = rm.filter(ImageFilter.GaussianBlur(14)).point(lambda v: int(v * 0.35))
+    bsh = Image.new("RGBA", (2 * R, 2 * R), (50, 40, 30, 0))
+    bsh.putalpha(bs)
+    bx, by = int(c2[0] - R), int(c2[1] - R)
+    base.alpha_composite(bsh, (bx + 8, by + 14))
+    base.alpha_composite(bub, (bx, by))
+    ImageDraw.Draw(prot).ellipse([bx, by, bx + 2 * R, by + 2 * R], fill=255)
+    return El(base, prot)
+
+
+def scene(path, w, h, fx=0.5, fy=0.5, edges="lrtb", seed=0, crop=None):
+    """Latar foto koyak tepi (tanpa bingkai). protect = orang dalam gambar."""
+    im = photo(path)
+    m, _ = person_mask(path)
+    if crop:
+        im, m = im.crop(crop), m.crop(crop)
+    iw, ih = im.size
+    s = max(w / iw, h / ih)
+    cw, ch = w / s, h / s
+    x0 = min(max(0, iw * fx - cw / 2), iw - cw)
+    y0 = min(max(0, ih * fy - ch / 2), ih - ch)
+    box = (int(x0), int(y0), int(x0 + cw), int(y0 + ch))
+    p = fit(im.crop(box), w, h).convert("RGBA")
     if edges:
         p.putalpha(deckle_mask(w, h, edges, amp=9, seed=seed))
-    return El(p, protect_all(p) if protect else None)
+    pm = m.crop(box).resize((w, h), RS.NEAREST)
+    pm = Image.fromarray(cv2.dilate(np.asarray(pm), np.ones((15, 15), np.uint8)))
+    return El(p, pm)
 
 
-def polaroid(im, w, caption="", fx=0.5, fy=0.45, seed=0):
-    pad, bottom = int(w * 0.06), int(w * 0.24)
-    ph = int((w - 2 * pad) * 1.05)
-    card = paper_texture(w, ph + pad + bottom, (252, 250, 246), seed, fiber=3).convert("RGBA")
-    photo = cover_crop(grade(im), w - 2 * pad, ph, fx, fy)
-    card.paste(photo, (pad, pad))
-    d = ImageDraw.Draw(card)
-    d.rectangle([pad, pad, w - pad - 1, pad + ph - 1], outline=(0, 0, 0, 25), width=2)
-    if caption:
-        d.text((w / 2, pad + ph + bottom / 2), caption, font=font("serif", int(w * 0.075)),
-               fill=INK + (255,), anchor="mm")
-    prot = Image.new("L", card.size, 0)
-    ImageDraw.Draw(prot).rectangle([pad, pad, w - pad, pad + ph + bottom], fill=255)
-    return El(card, prot)
-
-
-def ig_post(im, w, user, place, caption, fx=0.5, fy=0.45):
-    hdr, ftr = int(w * 0.15), int(w * 0.30)
-    ph = int(w * 1.25)  # 4:5
-    card = Image.new("RGBA", (w, hdr + ph + ftr), (255, 255, 255, 255))
-    d = ImageDraw.Draw(card)
-    # header
-    r = int(hdr * 0.3)
-    cx, cy = int(w * 0.07), hdr // 2
-    d.ellipse([cx - r - 4, cy - r - 4, cx + r + 4, cy + r + 4], outline=(232, 140, 160), width=4)
-    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=SAGE)
-    d.text((cx + r + 18, cy - 4), user, font=font("bold", int(w * 0.042)), fill=(20, 20, 20), anchor="ls")
-    d.text((cx + r + 18, cy + 6), place, font=font("reg", int(w * 0.033)), fill=(90, 90, 90), anchor="lt")
-    for i in range(3):
-        d.ellipse([w - 60 + i * 14 - 3, cy - 3, w - 60 + i * 14 + 3, cy + 3], fill=(30, 30, 30))
-    # photo
-    card.paste(cover_crop(grade(im), w, ph, fx, fy), (0, hdr))
-    # footer icons
-    y = hdr + ph + int(ftr * 0.22)
-    s = int(w * 0.05)
-    lw = max(3, s // 9)
-    x = int(w * 0.05)
-    hp = heart_pts(x + s / 2, y + s * 0.05, s * 0.55)
-    d.polygon(hp, fill=(237, 73, 86))
-    x += int(s * 1.7)                                            # bubble komen
-    d.ellipse([x, y - s / 2, x + s, y + s / 2], outline=(20, 20, 20), width=lw)
-    d.polygon([(x + s * 0.1, y + s * 0.25), (x - s * 0.05, y + s * 0.6), (x + s * 0.35, y + s * 0.45)],
-              fill=(20, 20, 20))
-    x += int(s * 1.7)                                            # kapal terbang kertas
-    d.polygon([(x, y - s * 0.35), (x + s, y - s * 0.5), (x + s * 0.55, y + s * 0.5)],
-              outline=(20, 20, 20), width=lw)
-    d.line([(x, y - s * 0.35), (x + s * 0.45, y - s * 0.05), (x + s, y - s * 0.5)], fill=(20, 20, 20),
-           width=lw)
-    bx = w - int(w * 0.05) - s                                   # bookmark
-    d.line([(bx, y - s / 2), (bx + s * 0.8, y - s / 2), (bx + s * 0.8, y + s / 2), (bx + s * 0.4, y + s * 0.2),
-            (bx, y + s / 2), (bx, y - s / 2)], fill=(20, 20, 20), width=lw, joint="curve")
-    fb = font("bold", int(w * 0.036))
-    d.text((int(w * 0.05), y + int(s * 0.9)), "3,100 likes", font=fb, fill=(20, 20, 20))
-    d.text((int(w * 0.05), y + int(s * 1.9)), f"{user}", font=fb, fill=(20, 20, 20))
-    ul = d.textlength(user + " ", font=fb)
-    d.text((int(w * 0.05) + ul, y + int(s * 1.9)), caption, font=font("reg", int(w * 0.036)),
-           fill=(40, 40, 40))
-    prot = Image.new("L", card.size, 0)
-    ImageDraw.Draw(prot).rectangle([0, 0, w, card.size[1]], fill=255)
-    m = Image.new("L", card.size, 0)
-    ImageDraw.Draw(m).rounded_rectangle([0, 0, w - 1, card.size[1] - 1], radius=18, fill=255)
-    card.putalpha(m)
-    return El(card, prot)
-
-
-def phone_camera(im, w, fx=0.5, fy=0.5):
-    h = int(w * 2.05)
-    lay = ss_canvas(w, h)
-    d = ImageDraw.Draw(lay)
-    d.rounded_rectangle([0, 0, w * SS - 1, h * SS - 1], radius=int(w * 0.14 * SS), fill=(24, 24, 26, 255))
-    d.rounded_rectangle([5 * SS, 5 * SS, (w - 5) * SS, (h - 5) * SS], radius=int(w * 0.13 * SS),
-                        outline=(70, 70, 74, 255), width=2 * SS)
-    body = ss_done(lay)
-    b = int(w * 0.045)
-    top, bot = int(h * 0.13), int(h * 0.25)
-    sw, sh = w - 2 * b, h - top - bot
-    body.paste(cover_crop(grade(im), sw, sh, fx, fy), (b, top))
-    d = ImageDraw.Draw(body)
-    # grid kamera
-    for i in (1, 2):
-        d.line([(b + sw * i / 3, top), (b + sw * i / 3, top + sh)], fill=(255, 255, 255, 90), width=2)
-        d.line([(b, top + sh * i / 3), (b + sw, top + sh * i / 3)], fill=(255, 255, 255, 90), width=2)
-    # ikon atas
-    d.rounded_rectangle([w / 2 - w * 0.14, h * 0.03, w / 2 + w * 0.14, h * 0.06], radius=20, fill=(0, 0, 0))
-    for i, x in enumerate((w * 0.18, w * 0.5, w * 0.82)):
-        r = w * 0.03
-        d.ellipse([x - r, h * 0.09 - r, x + r, h * 0.09 + r], outline=(220, 220, 220), width=3)
-    # zoom pills
-    zy = top + sh - int(h * 0.05)
-    for i, t in enumerate((".5", "1x", "2", "3")):
-        x = w / 2 + (i - 1.5) * w * 0.13
-        r = w * 0.045
-        d.ellipse([x - r, zy - r, x + r, zy + r], fill=(0, 0, 0, 120))
-        d.text((x, zy), t, font=font("bold", int(w * 0.035)), fill=(255, 214, 10) if t == "1x" else (240, 240, 240),
-               anchor="mm")
-    # mod & shutter
-    my = top + sh + int(bot * 0.17)
-    fm = font("bold", int(w * 0.04))
-    for i, t in enumerate(("VIDEO", "PHOTO", "PORTRAIT")):
-        d.text((w / 2 + (i - 1) * w * 0.3, my), t, font=fm,
-               fill=(255, 214, 10) if t == "PHOTO" else (230, 230, 230), anchor="mm")
-    sy = top + sh + int(bot * 0.55)
-    r = w * 0.1
-    d.ellipse([w / 2 - r - 8, sy - r - 8, w / 2 + r + 8, sy + r + 8], outline=(255, 255, 255), width=6)
-    d.ellipse([w / 2 - r, sy - r, w / 2 + r, sy + r], fill=(255, 255, 255))
-    t = w * 0.07
-    d.rounded_rectangle([w * 0.16 - t, sy - t, w * 0.16 + t, sy + t], radius=10, fill=SAGE)
-    d.ellipse([w * 0.84 - t, sy - t, w * 0.84 + t, sy + t], fill=(60, 60, 64))
-    prot = Image.new("L", body.size, 0)
-    ImageDraw.Draw(prot).rectangle([0, 0, w, h], fill=255)
-    return El(body, prot)
-
-
-def cutout(path, height, model="u2net_human_seg", outline=12, person=True):
-    im = load_photo(path)
-    m = rembg_mask(path, model)
-    big = upscale(im, target_w=m.size[0]).resize(m.size, RS.LANCZOS)
-    big = grade(big)
-    a = m.filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(1.2))
-    bb = a.point(lambda v: 255 if v > 40 else 0).getbbox()
-    if not bb:
-        raise RuntimeError(f"rembg tak jumpa subjek dalam {path.name}")
-    big, a = big.crop(bb), a.crop(bb)
-    f = height / big.size[1]
-    size = (int(big.size[0] * f), height)
-    big = upscale(big, *size).resize(size, RS.LANCZOS)
-    a = a.resize(size, RS.LANCZOS)
+def back_cutout(path, height, outline=12):
+    """Cutout orang (biasanya dari belakang). Kepala dilindungi daripada garis potong."""
+    im = photo(path)
+    m, faces = person_mask(path)
+    bb = m.point(lambda v: 255 if v > 128 else 0).getbbox()
+    sub, a = im.crop(bb), m.crop(bb)
+    f = height / sub.size[1]
+    size = (round(sub.size[0] * f), height)
+    sub = fit(sub, *size)
+    a = a.resize(size, RS.LANCZOS).filter(ImageFilter.GaussianBlur(1))
     pad = outline + 4
     W, H = size[0] + 2 * pad, size[1] + 2 * pad
     alpha = Image.new("L", (W, H), 0)
     alpha.paste(a, (pad, pad))
     img = Image.new("RGBA", (W, H), (255, 255, 255, 0))
-    if outline:
-        img.putalpha(outline_alpha(alpha, outline))       # garisan putih sticker
-    subj = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    subj.paste(big, (pad, pad))
-    subj.putalpha(alpha)
-    img.alpha_composite(subj)
+    img.putalpha(outline_alpha(alpha, outline))
+    layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    layer.paste(sub, (pad, pad))
+    layer.putalpha(alpha)
+    img.alpha_composite(layer)
     prot = Image.new("L", (W, H), 0)
-    if person:
-        # muka: guna Haar; kalau tak jumpa, lindungi bahagian kepala (atas ~24% subjek)
-        crop_im = load_photo(path).crop(tuple(int(v * im.size[0] / m.size[0]) for v in bb))
-        faces = detect_faces(crop_im)
-        pd = ImageDraw.Draw(prot)
-        sx = size[0] / crop_im.size[0]
-        sy = size[1] / crop_im.size[1]
-        for (x0, y0, x1, y1) in faces:
-            pd.rectangle([pad + x0 * sx, pad + y0 * sy, pad + x1 * sx, pad + y1 * sy], fill=255)
-        ah = np.asarray(alpha) > 128
-        rows = np.where(ah.any(1))[0]
-        if len(rows):
-            head_end = rows[0] + int((rows[-1] - rows[0]) * 0.17)
-            band = (ah[rows[0]:head_end].any(0))
-            cols = np.where(band)[0]
-            if len(cols):
-                pd.rectangle([cols[0], rows[0], cols[-1], head_end], fill=255)
+    pd = ImageDraw.Draw(prot)
+    for (x0, y0, x1, y1) in faces:
+        pd.rectangle([pad + (x0 - bb[0]) * f, pad + (y0 - bb[1]) * f, pad + (x1 - bb[0]) * f,
+                      pad + (y1 - bb[1]) * f], fill=255)
+    ah = np.asarray(alpha) > 128
+    rows = np.where(ah.any(1))[0]
+    if len(rows):
+        he = rows[0] + int((rows[-1] - rows[0]) * 0.17)
+        cols = np.where(ah[rows[0]:he].any(0))[0]
+        if len(cols):
+            pd.rectangle([cols[0], rows[0], cols[-1], he], fill=255)
     return El(img, prot)
+
+
+def polaroid(path, w, seed=0, fy=0.5):
+    el, _ = framed(path, "polaroid", w, window=None, aspect=1 / 1.05, seed=seed, protect="all")
+    return el
 
 
 # ---------------------------------------------------------------- COMPOSER
@@ -813,170 +865,220 @@ class Canvas:
         self.seams = [SLIDE_W * i for i in range(1, n)]
         self.log = []
 
-    def _bad_cols(self, el, x):
+    def _bad(self, el, x):
         cols = np.where(np.asarray(el.prot).any(0))[0]
         if not len(cols):
             return False
-        c0, c1 = x + cols[0], x + cols[-1]
-        return any(c0 - SEAM_MARGIN < s < c1 + SEAM_MARGIN for s in self.seams)
+        segs = np.split(cols, np.where(np.diff(cols) > 1)[0] + 1)
+        for sgm in segs:
+            c0, c1 = x + sgm[0], x + sgm[-1]
+            if any(c0 - SEAM_MARGIN < s < c1 + SEAM_MARGIN for s in self.seams):
+                return True
+        return False
 
     def put(self, el, x, y, shadow=0.28, blur=16, off=(10, 16), avoid=True, name=""):
-        """Letak elemen. x,y = tengah elemen. Kalau kawasan 'protect' kena garis potong,
-        anjak mendatar sedikit demi sedikit sampai selamat."""
+        """Letak elemen (x,y = tengah). Kalau kawasan protect kena garis potong, anjak mendatar."""
+        if el is None:
+            return
         w, h = el.size
         x0, y0 = int(x - w / 2), int(y - h / 2)
-        if avoid and self._bad_cols(el, x0):
-            for d in range(10, 600, 10):
-                for s in (d, -d):
-                    if not self._bad_cols(el, x0 + s):
-                        self.log.append(f"  anjak '{name}' {s:+d}px supaya tak kena garis potong")
-                        x0 += s
-                        break
-                else:
-                    continue
-                break
+        if avoid and self._bad(el, x0):
+            for d in range(10, 700, 10):
+                hit = next((s for s in (d, -d) if not self._bad(el, x0 + s)), None)
+                if hit is not None:
+                    self.log.append(f"  anjak '{name}' {hit:+d}px supaya muka tak kena garis potong")
+                    x0 += hit
+                    break
         if shadow:
             a = el.img.split()[-1]
-            sh = Image.new("RGBA", (w + 4 * blur, h + 4 * blur), (0, 0, 0, 0))
-            sa = Image.new("L", sh.size, 0)
+            sa = Image.new("L", (w + 4 * blur, h + 4 * blur), 0)
             sa.paste(a, (2 * blur, 2 * blur))
             sa = sa.filter(ImageFilter.GaussianBlur(blur)).point(lambda v: int(v * shadow))
-            col = Image.new("RGBA", sh.size, (70, 55, 45, 255))
+            col = Image.new("RGBA", sa.size, (70, 55, 45, 255))
             col.putalpha(sa)
-            self._paste_clip(col, x0 - 2 * blur + off[0], y0 - 2 * blur + off[1])
-        self._paste_clip(el.img, x0, y0)
+            self._paste(col, x0 - 2 * blur + off[0], y0 - 2 * blur + off[1])
+        self._paste(el.img, x0, y0)
         p = Image.new("L", (self.W, self.H), 0)
         p.paste(el.prot, (x0, y0))
         self.prot = ImageChops.lighter(self.prot, p)
-        return x0 + w / 2, y0 + h / 2
 
-    def _paste_clip(self, im, x, y):
+    def deco(self, el, x, y, **kw):
+        if DECOR:
+            kw.setdefault("avoid", False)
+            self.put(el, x, y, **kw)
+
+    def _paste(self, im, x, y):
         layer = Image.new("RGBA", (self.W, self.H), (0, 0, 0, 0))
         layer.paste(im, (x, y))
         self.img.alpha_composite(layer)
 
     def check_seams(self):
         p = np.asarray(self.prot) > 0
-        bad = []
-        for i, s in enumerate(self.seams):
-            if p[:, max(0, s - SEAM_MARGIN):s + SEAM_MARGIN].any():
-                bad.append(i + 1)
-        return bad
+        return [i + 1 for i, s in enumerate(self.seams) if p[:, max(0, s - SEAM_MARGIN):s + SEAM_MARGIN].any()]
 
     def finish(self):
-        rgb = self.img.convert("RGB")
         rng = np.random.default_rng(SEED)
-        a = np.asarray(rgb).astype(np.float32)
-        a += rng.normal(0, 3.2, a.shape[:2])[..., None]   # grain seragam
+        a = np.asarray(self.img.convert("RGB")).astype(np.float32)
+        a += rng.normal(0, 2.4, a.shape[:2])[..., None]
         return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8))
+
+
+# ---------------------------------------------------------------- PICKS
+def analyse(paths):
+    info = {}
+    for p in paths:
+        im = load_photo(p)
+        m, faces = person_mask(p)
+        a = np.asarray(m) > 128
+        n, _, st, _ = cv2.connectedComponentsWithStats(a.astype(np.uint8))
+        solid = st[1:, cv2.CC_STAT_AREA].max() / max(1, a.sum()) if n > 1 else 0
+        sharp = cv2.Laplacian(cv2.cvtColor(np.asarray(im.resize((320, int(320 * im.size[1] / im.size[0])))),
+                                           cv2.COLOR_RGB2GRAY), cv2.CV_64F).var()
+        info[p.name] = dict(ratio=a.mean(), solid=solid, faces=len(faces), sharp=sharp, px=im.size[0] * im.size[1])
+    return info
+
+
+def auto_picks(paths):
+    print("Auto pilih gambar (analisis rembg + muka)...")
+    info = analyse(paths)
+    med = np.median([v["sharp"] for v in info.values()])
+    left = {k for k, v in info.items() if v["sharp"] > 0.35 * med}
+
+    def take(key, n, cond=lambda k: True):
+        got = [k for k in sorted(left, key=key) if cond(k)][:n]
+        left.difference_update(got)
+        return got
+
+    people = lambda k: info[k]["ratio"] > 0.02 and info[k]["faces"] > 0
+    hero = take(lambda k: -info[k]["px"] * info[k]["faces"], 1, people)
+    pop = take(lambda k: -info[k]["px"] * info[k]["solid"], 2, lambda k: people(k) and info[k]["solid"] > 0.8)
+    zoom = take(lambda k: -info[k]["px"], 1, people)
+    back = take(lambda k: -info[k]["ratio"], 1, lambda k: 0.04 < info[k]["ratio"] < 0.45 and info[k]["faces"] == 0)
+    scene_ = take(lambda k: info[k]["ratio"], 2)
+    pol = take(lambda k: -info[k]["faces"], 5)
+    for k, v in info.items():
+        print(f"  {k:24s} orang={v['ratio']:.2f} muka={v['faces']} solid={v['solid']:.2f}")
+    return {"hero": hero, "popout": pop, "zoom": zoom, "scene": scene_, "backcut": back, "polaroid": pol}
+
+
+def resolve_picks(photo_dir):
+    paths = sorted(p for p in photo_dir.iterdir() if p.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"))
+    if not paths:
+        sys.exit(f"Tiada gambar dalam {photo_dir}")
+    names = {p.name for p in paths}
+    want = [n for v in PICKS.values() for n in v]
+    picks = {k: list(v) for k, v in PICKS.items()} if PICKS and all(n in names for n in want) \
+        else auto_picks(paths)
+    pool = [p.name for p in paths]
+    need = {"hero": 1, "popout": 2, "zoom": 1, "scene": 2, "backcut": 1, "polaroid": 5}
+    i = 0
+    for k, n in need.items():
+        while len(picks.get(k, [])) < n:
+            picks.setdefault(k, []).append(pool[i % len(pool)])
+            i += 1
+    return {k: [photo_dir / n for n in v] for k, v in picks.items()}
 
 
 # ---------------------------------------------------------------- LAYOUT
 def build(n, P):
-    """Susun semua elemen atas kanvas panjang. Koordinat = tengah elemen."""
+    """Susun semua elemen atas kanvas panjang. Koordinat = tengah elemen; ox(i) = tepi kiri slide i."""
     rng = random.Random(SEED)
     c = Canvas(n)
     S, H = SLIDE_W, SLIDE_H
-    bg, cut, obj, pol = P["bg"], P["cutout"], P.get("object", []), P["polaroid"]
-    L = lambda p: load_photo(p)
+    hero, pops, zoom, scenes, back, pol = (P["hero"][0], P["popout"], P["zoom"][0], P["scene"],
+                                           P["backcut"], P["polaroid"])
+    ox = lambda i: S * i
 
-    def ox(i):
-        return S * i
-
-    # --- latar bersambung: jalur kertas corak di belakang ---
-    c.put(paper_panel("dots", 900, 460, seed=11, edges="lrb"), ox(0) + 470, 205, shadow=0.15)
+    # ===== SLIDE 1 : hero (family + stroller) keluar dari cetakan foto =====
+    hm, _ = person_mask(hero)
+    top_people = person_bbox(hero)[1]
+    hw, hh = load_photo(hero).size
+    # latar: bahagian atas gambar hero (bumbung, hiasan) tanpa orang, merentas ke slide 2
+    c.put(scene(hero, 1380, H, fx=0.5, fy=0.5, edges="r", seed=3,
+                crop=(0, 0, hw, max(int(hh * 0.25), int(top_people * 0.92)))),
+          ox(0) + 690, H / 2, shadow=0.22, avoid=False)
     if n > 1:
-        c.put(paper_panel("hearts", 1060, 1000, seed=12), ox(1) + 560, 640, shadow=0.18, avoid=False)
+        c.put(scene(pops[0], 560, 1000, seed=5, crop=_side_crop(pops[0])).rotate(3),
+              ox(1) + 120, 560, shadow=0.22, avoid=False)
+    c.deco(lace(700, 70).rotate(-90), ox(0) + 40, 760, shadow=0.15, blur=6)
+    c.put(popout(hero, "print", 760, aspect=0.86, seed=2, head_frac=0.34).rotate(-3), ox(0) + 530, 735,
+          shadow=0.35, blur=20, name="hero")
+    c.deco(washi(200, seed=1).rotate(-35), ox(0) + 205, 205, shadow=0.1, blur=5)
+    c.deco(washi(200, color=SAGE, seed=2).rotate(30), ox(0) + 860, 1260, shadow=0.1, blur=5)
+    c.deco(sparkle(34), ox(0) + 950, 150, shadow=0)
+    c.deco(sparkle(22), ox(0) + 1010, 230, shadow=0)
 
-    # ===== SLIDE 1 : cover =====
-    c.put(photo_el(L(bg[0]), 1340, 960, fx=0.5, fy=0.62, edges="tr", seed=3),
-          ox(0) + 670, H - 470, shadow=0.25, avoid=False)
-    c.put(text_el(TEXT["headline"], font("black", 150), BUTTER + (255,), stroke=6, stroke_fill=INK + (255,)),
-          ox(0) + 520, 150, shadow=0.2, blur=8, off=(6, 8))
-    c.put(beads(TEXT["beads"], r=58), ox(0) + 520, 300, shadow=0.18, blur=10)
-    c.put(paper_clip(190).rotate(-28), ox(0) + 85, 330, shadow=0.25, blur=6, off=(5, 7), avoid=False)
-    c.put(sticker_star(52).rotate(14), ox(0) + 965, 240, shadow=0.25, blur=8, avoid=False)
-    c.put(sticker_heart_button(40).rotate(-12), ox(0) + 140, 470, shadow=0.25, blur=8, avoid=False)
-    lab = text_el(TEXT["label"], font("mono", 46), BUTTER + (255,), stroke=3, stroke_fill=INK + (255,))
-    c.put(lab, ox(0) + 330, H - 90, shadow=0.2, blur=6, off=(4, 5))
+    # ===== SLIDE 2 : couple pop-out dari polaroid =====
     if n > 1:
-        # cutout besar merentas slide 1 -> 2 (badan sahaja kena garis; kepala dilindungi)
-        c.put(cutout(cut[0], 900).rotate(2), ox(1) - 150, H - 455, shadow=0.3, blur=14, name="cutout1")
-        c.put(washi(260, seed=1).rotate(-8), ox(1) + 20, 520, shadow=0.1, blur=5, avoid=False)
+        c.put(polaroid(pol[0], 330, seed=4).rotate(-8), ox(1) + 185, 1145, shadow=0.3, name="pol0")
+        c.put(popout(pops[0], "polaroid", 600, aspect=0.9, seed=6, head_frac=0.3).rotate(4),
+              ox(1) + 610, 700, shadow=0.35, blur=20, name="couple")
+        c.deco(small_heart(26).rotate(12), ox(1) + 960, 300, shadow=0.2, blur=5)
+        c.deco(small_heart(18).rotate(-15), ox(1) + 1005, 370, shadow=0.2, blur=5)
+        c.deco(sticker_heart_button(40).rotate(-10), ox(1) + 200, 140, shadow=0.25, blur=8)
 
-    # ===== SLIDE 2 : post IG =====
-    if n > 1:
-        ig = ig_post(L(P["ig"][0]), 600, TEXT["ig_user"], TEXT["ig_place"], TEXT["ig_caption"], fy=0.5)
-        c.put(ig.rotate(-4), ox(1) + 610, 620, shadow=0.3, blur=18, name="ig")
-        c.put(small_heart(24).rotate(10), ox(1) + 950, 160, shadow=0.2, blur=5, avoid=False)
-        c.put(small_heart(17).rotate(-15), ox(1) + 1000, 230, shadow=0.2, blur=5, avoid=False)
-        c.put(sparkle(30), ox(1) + 250, 120, shadow=0, avoid=False)
-
-    # ===== SLIDE 3 : latar separuh + polaroid =====
+    # ===== SLIDE 3 : foto besar + bulatan zoom si kecil =====
     if n > 2:
-        c.put(lace(1400, 74).rotate(0), ox(2) - 50, 64, shadow=0.15, blur=6, avoid=False)
-        # latar berkabus merentas garis 3 -> 4 (orang kecil kekal di slide 3)
-        c.put(photo_el(L(bg[1]), 980, 1180, fx=0.45, fy=0.42, edges="lrtb", seed=5).rotate(1.2),
-              ox(2) + 840, 720, shadow=0.25, avoid=False)
-        c.put(polaroid(L(pol[0]), 470, TEXT["polaroid"][0], fy=0.55, seed=4).rotate(-5),
-              ox(2) + 300, 600, shadow=0.32, blur=16, name="polaroid1")
-        c.put(washi(190, color=SAGE, seed=2).rotate(4), ox(2) + 300, 290, shadow=0.1, blur=5, avoid=False)
-        c.put(sticker_star(46, PINK).rotate(-18), ox(2) - 10, 1150, shadow=0.25, blur=8, avoid=False)
-        c.put(small_heart(18).rotate(12), ox(2) + 60, 1240, shadow=0.2, blur=5, avoid=False)
-    if n > 3:
-        c.put(cutout(cut[1], 940), ox(3) + 130, H - 490, shadow=0.3, blur=14, name="cutout2")
+        if n > 3:  # latar rumah kaca merentas garis 3 -> 4
+            c.put(scene(scenes[1], 640, 1050, seed=7).rotate(-2), ox(3) + 20, 640, shadow=0.22, avoid=False)
+        c.put(polaroid(pol[1], 330, seed=8).rotate(7), ox(2) + 880, 250, shadow=0.3, name="pol1")
+        # jalur foto koyak (latar tanpa orang dari gambar zoom) merentas garis 2 -> 3
+        c.put(scene(zoom, 560, 300, fy=0.55, seed=15, crop=_side_crop(zoom)).rotate(-4), ox(2) - 30, 1180,
+              shadow=0.22, avoid=False)
+        c.put(print_with_zoom(zoom, 800, aspect=0.85, bubble_r=225, bubble_off=(345, 360), seed=9).rotate(-2),
+              ox(2) + 520, 690, shadow=0.32, blur=18, name="zoom")
+        c.deco(washi(210, color=SAGE, seed=3).rotate(-6), ox(2) + 120, 120, shadow=0.1, blur=5)
 
-    # ===== SLIDE 4 : skrin kamera =====
+    # ===== SLIDE 4 : adik-beradik keluar dari skrin telefon =====
     if n > 3:
-        c.put(paper_panel("grid", 640, 1210, seed=13, edges="lrtb").rotate(-1.5), ox(3) + 720, 690,
-              shadow=0.15, avoid=False)
-        # latar rumah kaca merentas garis 4 -> 5
-        c.put(photo_el(L(bg[2]), 780, 900, fx=0.5, fy=0.5, edges="lrtb", seed=7).rotate(-2.5),
-              ox(3) + 850, 470, shadow=0.25, avoid=False)
-        ph = phone_camera(L(P["phone"][0]), 430, fy=0.4)
-        c.put(ph.rotate(4), ox(3) + 640, 820, shadow=0.35, blur=18, name="phone")
-        c.put(label_chip(TEXT["phone_note"].upper()).rotate(-5), ox(3) + 470, 1290, shadow=0.2, blur=6,
-              off=(4, 6), name="note")
-        c.put(paper_clip(170, color=(170, 180, 190)).rotate(15), ox(3) + 920, 130, shadow=0.25, blur=6,
-              off=(5, 7), avoid=False)
+        c.put(polaroid(pol[2], 330, seed=10).rotate(-6), ox(3) + 905, 1120, shadow=0.3, name="pol2")
+        ph = popout(pops[1], "phone", 480, aspect=0.62, seed=11, head_frac=0.22, outline=10)
+        c.put(ph.rotate(4), ox(3) + 560, 690, shadow=0.38, blur=20, name="phone")
+        c.deco(paper_clip(170, color=(170, 182, 192)).rotate(18), ox(3) + 930, 140, shadow=0.25, blur=6,
+               off=(5, 7))
+        c.deco(sparkle(30), ox(3) + 250, 1250, shadow=0)
 
-    # ===== SLIDE 5 : objek + polaroid + penutup =====
+    # ===== SLIDE 5 : kenangan lain + cutout melintas garis =====
     if n > 4:
-        c.put(polaroid(L(pol[1]), 400, TEXT["polaroid"][1], seed=6).rotate(-6), ox(4) + 330, 400,
-              shadow=0.3, name="polaroid2")
-        c.put(polaroid(L(pol[2]), 380, TEXT["polaroid"][2], fy=0.6, seed=8).rotate(7), ox(4) + 760, 470,
-              shadow=0.3, name="polaroid3")
-        c.put(washi(180, seed=3).rotate(30), ox(4) + 200, 150, shadow=0.1, blur=5, avoid=False)
-        c.put(sticker_heart_button(46).rotate(10), ox(4) + 930, 180, shadow=0.25, blur=8, avoid=False)
-        if obj:
-            # objek di hujung kanan: kalau objek terpotong dalam gambar asal, tepi lurusnya
-            # jatuh tepat di tepi kanan slide terakhir
-            ob = cutout(obj[0], 470, model="u2net", outline=10, person=False)
-            c.put(ob, ox(4) + S - ob.size[0] / 2 + 30, H - 250, shadow=0.32, blur=14, avoid=False)
-        c.put(text_el(TEXT["outro"], font("serif", 72), INK + (255,)).rotate(3), ox(4) + 400, 930, shadow=0,
-              name="outro")
-        c.put(small_heart(28), ox(4) + 760, 905, shadow=0.2, blur=5, avoid=False)
-        c.put(sparkle(34), ox(4) + 980, 760, shadow=0, avoid=False)
-        c.put(sticker_star(40).rotate(-10), ox(4) + 170, 1150, shadow=0.25, blur=8, avoid=False)
-        c.put(washi(220, color=SAGE, seed=4).rotate(-12), ox(4) + 380, 1230, shadow=0.1, blur=5, avoid=False)
+        c.put(scene(scenes[0], 900, 1150, seed=12).rotate(1.5), ox(4) + 330, 650, shadow=0.22, avoid=False)
+        c.put(polaroid(pol[3], 330, seed=13).rotate(-7), ox(4) + 850, 330, shadow=0.3, name="pol3")
+        c.put(polaroid(pol[4], 330, seed=14).rotate(6), ox(4) + 830, 1000, shadow=0.3, name="pol4")
+        c.put(back_cutout(back[0], 660), ox(4) + 60, 1000, shadow=0.3, blur=14, name="backcut")
+        c.deco(sticker_star(40).rotate(-12), ox(4) + 560, 1250, shadow=0.25, blur=8)
+        c.deco(sticker_heart_button(38).rotate(14), ox(4) + 1000, 640, shadow=0.25, blur=8)
+        c.deco(washi(180, seed=4).rotate(28), ox(4) + 720, 140, shadow=0.1, blur=5)
 
-    # slide tambahan (SLIDES > 5): ulang corak polaroid + latar
+    # slide tambahan (SLIDES > 5)
     for i in range(5, n):
-        c.put(photo_el(L(bg[i % len(bg)]), 760, 1100, edges="lrtb", seed=20 + i).rotate(rng.uniform(-3, 3)),
-              ox(i) + 420, 680, shadow=0.25, avoid=False)
-        c.put(polaroid(L(pol[i % len(pol)]), 430, seed=30 + i).rotate(rng.uniform(-7, 7)),
-              ox(i) + 700, 760, shadow=0.3, name=f"polaroid_{i}")
-        c.put(sticker_star(40).rotate(rng.uniform(-20, 20)), ox(i) + 180, 220, shadow=0.25, blur=8, avoid=False)
+        c.put(scene(scenes[i % len(scenes)], 760, 1100, seed=20 + i).rotate(rng.uniform(-3, 3)),
+              ox(i) + 400, 680, shadow=0.22, avoid=False)
+        c.put(polaroid(pol[i % len(pol)], 400, seed=30 + i).rotate(rng.uniform(-7, 7)),
+              ox(i) + 700, 760, shadow=0.3, name=f"pol_{i}")
+        c.deco(sticker_star(40).rotate(rng.uniform(-20, 20)), ox(i) + 180, 220, shadow=0.25, blur=8)
     return c
+
+
+def _side_crop(path):
+    """Kawasan latar di sebelah orang (tiada orang) untuk dijadikan kertas foto koyak."""
+    im = load_photo(path)
+    bx0, by0, bx1, by1 = person_bbox(path)
+    W, H = im.size
+    if bx0 > W - bx1:
+        return (0, int(H * 0.1), max(10, int(bx0 * 0.7)), int(H * 0.75))
+    return (min(W - 10, int(bx1 + (W - bx1) * 0.3)), int(H * 0.1), W, int(H * 0.75))
 
 
 # ---------------------------------------------------------------- MAIN
 def main():
+    global DECOR
     ap = argparse.ArgumentParser()
     ap.add_argument("photos", nargs="?", default=str(PHOTO_DIR))
     ap.add_argument("--slides", type=int, default=SLIDES)
     ap.add_argument("--out", default=str(OUT_DIR))
+    ap.add_argument("--no-decor", action="store_true", help="tanpa sticker/pita/renda")
     a = ap.parse_args()
+    if a.no_decor:
+        DECOR = False
     n = max(2, a.slides)
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -984,36 +1086,29 @@ def main():
     P = resolve_picks(Path(a.photos))
     for k, v in P.items():
         print(f"{k:9s}: {', '.join(p.name for p in v)}")
-    small = [p.name for v in P.values() for p in v if max(Image.open(p).size) < 1200]
+    small = sorted({p.name for v in P.values() for p in v if max(load_photo(p).size) < 1200})
     if small:
-        print(f"AMARAN: {len(set(small))} gambar resolusi rendah (<1200px), hasil akan nampak lembut. "
-              "Guna gambar asal dari telefon untuk hasil tajam.")
-    derive_palette(P["bg"])
+        print(f"Nota: {len(small)} gambar resolusi rendah (<1200px) digunakan kecil sahaja: {', '.join(small)}")
 
     c = build(n, P)
     for line in c.log:
         print(line)
     bad = c.check_seams()
-    print("Semakan garis potong:", "OK, tiada muka/teks atas garis" if not bad
-          else f"MASALAH di garis selepas slide {bad}")
+    print("Semakan garis potong:", "OK, tiada muka atas garis" if not bad else f"MASALAH di garis selepas slide {bad}")
 
     final = c.finish()
     for i in range(n):
         final.crop((i * SLIDE_W, 0, (i + 1) * SLIDE_W, SLIDE_H)).save(
             out / f"slide_{i + 1:02d}.jpg", quality=JPEG_QUALITY, subsampling=0)
 
-    # preview: kanvas penuh + tanda garis potong di luar gambar (atas & bawah)
-    band = 36
-    scale = 0.5
+    # preview: kanvas penuh + tanda segi tiga di garis potong (di luar gambar)
+    band, scale = 30, 0.5
     pw, ph_ = int(c.W * scale), int(c.H * scale)
     prev = Image.new("RGB", (pw, ph_ + 2 * band), (40, 40, 40))
     prev.paste(final.resize((pw, ph_), RS.LANCZOS), (0, band))
     d = ImageDraw.Draw(prev)
-    for i in range(n):
-        d.text((int((i + 0.5) * SLIDE_W * scale), band // 2), f"{i + 1}", font=font("bold", 22),
-               fill=(230, 230, 230), anchor="mm")
-    for s in c.seams:
-        x = int(s * scale)
+    for s_ in c.seams:
+        x = int(s_ * scale)
         d.polygon([(x - 9, 4), (x + 9, 4), (x, band - 4)], fill=(255, 90, 110))
         d.polygon([(x - 9, ph_ + 2 * band - 4), (x + 9, ph_ + 2 * band - 4), (x, ph_ + band + 4)],
                   fill=(255, 90, 110))
