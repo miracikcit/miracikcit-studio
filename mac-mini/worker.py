@@ -994,6 +994,11 @@ def run_nota(inp, sheet, cfg):
 
 # ---------------------------------------------------------------- EDIT NOW, folder edit, paid job
 EDIT_MODEL, EDIT_EFFORT = "claude-opus-5-5", "medium"
+# Jenis video "Satu Vlog Lima" (skrin Edit Style): kunci dari app -> (nama, cara)
+EDIT_JENIS = {"pendek": ("Versi pendek + muzik", "Pendekkan vlog yang sama, tambah muzik dan teks, jadi video baru."),
+              "split": ("Split screen", "Klip atas, klip atau gambar lain di bawah; teks tak wajib, biar video bercerita sendiri."),
+              "broll": ("B-roll estetik + teks", "Ambil satu potongan B-roll (cth buat kopi) dan letak teks relatable."),
+              "penuh": ("Vlog penuh", "Cerita penuh sesi tu, sama ada bercakap depan kamera atau guna VO.")}
 
 
 def _edit_main(stage):
@@ -1069,6 +1074,17 @@ def run_edit_now(inp, sheet, cfg):
         raise RuntimeError("Claude Code tak dijumpai dalam Mac mini.")
     key = os.path.basename(main) + "/" + name
     ed_id = "ed-f-" + re.sub(r"[^a-z0-9]+", "", key.lower())[:40]
+    # 2026-11-25 (Mira): START EDIT dari Published = VIDEO BARU dari footage sama. Setiap pusingan ada tracker sendiri.
+    try:
+        rnd = max(0, min(99, int(inp.get("round") or 0)))
+    except (TypeError, ValueError):
+        rnd = 0
+    fkey = key
+    if rnd:
+        ed_id += f"-r{rnd}"
+        fkey = f"{key}#r{rnd}"
+    jenis = EDIT_JENIS.get(str(inp.get("jenis") or ""))
+    nota = re.sub(r"\s+", " ", str(inp.get("nota") or "")).strip()[:600]
     prompt = f"/edit-reel {no}/{name} (tracker Studio: editor/{ed_id})"
     style = inp.get("style") if isinstance(inp.get("style"), dict) else {}
     if inp.get("gaya"):                              # butang lama "Guna style ni"
@@ -1079,7 +1095,14 @@ def run_edit_now(inp, sheet, cfg):
     gid, gname = str(style.get("tpl") or ""), ""
     import gaya
     br = gaya.brief(sheet, no, style)               # skrin Edit Style: template + rupa pilihan Mira + tips folder
-    if br.get("tips") or br.get("template") or br.get("rupa"):
+    if jenis:
+        br["jenis_video"] = {"nama": jenis[0], "cara": jenis[1]}
+    if nota:
+        br["nota_mira"] = nota
+    if rnd:
+        br["video_baru"] = {"nombor": rnd, "arahan": "Footage ni dah ada video yang published. Buat video BARU dengan gaya lain. "
+                            "JANGAN ubah, ganti atau padam video lama dan fail finalnya. Opening dan ending mesti berbeza dari semua video lama projek ni."}
+    if br.get("tips") or br.get("template") or br.get("rupa") or jenis or nota or rnd:
         br["updated"] = int(time.time() * 1000)
         sheet.call("dset", path="editstyle/" + ed_id, data=br)
         gname = re.sub(r"[^\w .&+-]", "", str((br.get("template") or {}).get("nama") or ""))[:40]
@@ -1088,6 +1111,10 @@ def run_edit_now(inp, sheet, cfg):
                   f"EDIT STYLE: baca python3 ~/MiracikcitTranscribe/studio.py get editstyle/{ed_id} dulu. "
                   "template = susunan video yang mesti diikut, rupa = rupa teks / effect yang mesti dipakai (guna kod_siap kalau ada), "
                   "tips = peraturan tambahan folder ni. Tiru gaya dan susunan sahaja, JANGAN salin ayat, skrip, muzik atau footage video asal."
+                  + (" jenis_video = jenis post yang Mira nak (ikut cara tu)." if jenis else "")
+                  + (" nota_mira = arahan Mira untuk video ni, utamakan." if nota else "")
+                  + (f" VIDEO BARU #{rnd}: baca video_baru. Semak hook dan penutup video lama projek ni dulu supaya tak berulang; "
+                     f"nama fail final mesti baru (jangan tindih fail lama dalam 00. TO POST FINAL)." if rnd else "")
                   + (" Terus draf (tiada storyboard): draf masuk Editor PWA dalam Studio, tunggu Mira lulus, final ke 00. TO POST FINAL." if picked else ""))
     else:
         sheet.call("dset", path="editstyle/" + ed_id, data=None)
@@ -1097,10 +1124,10 @@ def run_edit_now(inp, sheet, cfg):
     for old in glob.glob(os.path.join(d, "*.command")) + glob.glob(os.path.join(d, "*.log")):
         if time.time() - os.path.getmtime(old) > 86400:
             os.remove(old)
-    slug = re.sub(r"[^A-Za-z0-9]+", "-", key)[:60]
+    slug = re.sub(r"[^A-Za-z0-9]+", "-", fkey)[:60]
     cmdf = os.path.join(d, slug + ".command")
     logf = os.path.join(d, slug + ".log")
-    title = f"{no} · {name}"
+    title = f"{no} · {name}" + (f" (video {rnd})" if rnd else "")
     if os.path.exists(logf):
         os.remove(logf)
     with open(cmdf, "w", encoding="utf-8") as fh:
@@ -1114,7 +1141,12 @@ def run_edit_now(inp, sheet, cfg):
         raise RuntimeError("Tak dapat buka Terminal: " + (r.stderr or "")[-200:])
     now = int(time.time() * 1000)
     cur = sheet.call("dget", path="editor/" + ed_id).get("doc") or {"created": now}
-    cur.update({"name": name, "folder": key, "style": os.path.basename(main), "status": "Sesi dibuka", "updated": now, "sessionAt": now})
+    cur.update({"name": name, "folder": fkey, "style": os.path.basename(main), "status": "Sesi dibuka", "updated": now, "sessionAt": now})
+    if rnd:
+        cur["round"] = rnd
+        cur.pop("final", None)                        # pusingan baru: tunggu final baru
+    if jenis:
+        cur["jenis"] = jenis[0]
     if gid and gname:
         cur.update({"style": "Tiru: " + gname, "gaya": gid})
         g = sheet.call("dget", path="gaya/" + gid).get("doc") or {}

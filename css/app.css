@@ -586,3 +586,43 @@ button.tpchip{cursor:pointer}.tpchip.btnx{font-weight:500}
 .tp{--sv-p:#FFB36B;--sv-t:#7A3300}
 .tpbr{flex-basis:100%;height:0}   /* 25 Nov malam (Mira): baris 1 tarikh, baris 2 akaun + Excluded */
 .tpvb{width:44px;height:44px;font-size:21px;margin-right:14px}.tpvb.off{font-size:16px}   /* 25 Nov malam (Mira): bulat video lebih besar, jauh sikit dari tepi kanan */
+
+/* ---------- Shoot: kad Creative + helaian footage tiga cara (2026-11-25) ---------- */
+.crc .crp{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:7px}
+.crc .crp .pill{color:#fff;background:var(--pc);border-color:transparent}
+.crc .crp button.crd{cursor:pointer;font-family:inherit}
+.crc .crp .inp.acc{width:auto;max-width:130px;height:24px;min-height:24px;padding:2px 8px;font-size:10px;margin:0}
+.crc h3{line-height:1.35}.crc .meta{margin-top:3px}
+.crm{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.crm .tsgrow{flex:1 1 auto;justify-content:center}
+.fuos{display:flex;flex-direction:column;gap:7px;margin:10px 0}
+.fuo{display:flex;gap:10px;align-items:center;text-align:left;width:100%;border:1px solid var(--line);border-radius:16px;padding:10px 12px;background:rgba(255,255,255,.6);cursor:pointer;font-family:inherit;color:inherit}
+.fuo.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 10%,#fff)}
+.fuo i{flex:none;width:34px;height:34px;border-radius:11px;background:var(--tile);display:flex;align-items:center;justify-content:center}
+.fuo i svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.fuo b{display:block;font-size:14px;font-weight:500;line-height:1.25}.fuo small{display:block;font-size:12px;color:var(--muted);line-height:1.3}
+.fulab{font-size:10px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:4px 0 6px}
+.fuchips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.fuchip{font:inherit;font-size:12px;padding:6px 11px;border-radius:999px;border:1px solid var(--line);background:#fff;cursor:pointer;color:inherit;min-height:32px}
+.fuchip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.fub{justify-content:flex-end;flex-wrap:wrap}.fub .btn{flex:1 1 auto}
+
+/* ---------- Published: tiga bahagian + Start edit; Edit: kad Video baru (2026-11-25) ---------- */
+.pbfs{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 12px}
+.pbf{font:inherit;font-size:12px;padding:6px 11px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.7);cursor:pointer;color:inherit;min-height:32px}
+.pbf.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.pbc .pbh{margin:14px 0 8px;padding-top:12px;border-top:1px solid var(--line)}
+.pbv{display:flex;gap:8px;align-items:center;margin:0 0 7px;font-size:13px;line-height:1.3}
+.pbv .pbt{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}.pbv .pbt b{color:var(--c);font-weight:600;font-variant-numeric:tabular-nums}
+.pbxs{display:flex;gap:4px;flex:none}
+.pbx{font:inherit;font-size:10px;font-weight:600;width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.7);color:var(--muted);cursor:pointer;padding:0}
+.pbx.ok{background:#CDE8D3;color:#1F5A30;border-color:#9FD0AB}.pbx.bad{background:#F3D2D0;color:#8E2F2B;border-color:#E3AAA6}
+.pbl{display:flex;gap:7px;align-items:baseline;font-size:12.5px;line-height:1.4;margin:0 0 5px}.pbl span{min-width:0;overflow-wrap:anywhere}.pbl .pill{margin-left:4px}
+.pbdot{flex:none;width:8px;height:8px;border-radius:50%;background:#3E8E5A;transform:translateY(-1px)}
+.pbdot.wait{background:var(--warn)}.pbdot.bad{background:var(--bad)}.pbdot.hd{background:#5A8FB5}
+.pblink{font:inherit;font-size:12px;color:var(--muted);text-decoration:underline;background:none;border:0;padding:4px 0;cursor:pointer}
+.pbs{display:flex;flex-direction:column;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.pbs .pbgo{min-height:44px;font-size:12px}
+.pbsn{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.pill.rdp{--pc:var(--warn);margin-bottom:4px}
+.esnota{width:100%;box-sizing:border-box;font:inherit;font-size:16px;line-height:1.4;border:1.5px solid var(--ln,rgba(46,39,35,.15));border-radius:16px;padding:10px 14px;background:#fff;color:inherit;resize:vertical}

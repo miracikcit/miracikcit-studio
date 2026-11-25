@@ -12,24 +12,25 @@ function edDeadline(name,start){const it=smpFor(name);if(!it)return {d:deadline(
 V['to-edit']=()=>{const te=S.sync.toedit;const folders=toEditFolders();const fset=new Set(folders.map(f=>nrm(f.name)));
   const rows=folders.map(x=>({kind:'f',key:x.key,stage:x.stage,no:fno(x.stage),name:x.name,sub:[x.stage.replace(/^\d+\.\s*/,''),(x.clips||0)+' klip'+(x.images?' + '+x.images+' gambar':'')].join(' · '),start:x.mtime}))
    .concat(byStage('toedit').filter(it=>!fset.has(nrm(it.title))).map(it=>({kind:'i',key:it.id,stage:it.folder||'',no:fno(it.folder),name:it.title,sub:[(it.folder||'Belum pilih folder').replace(/^\d+\.\s*/,''),it.account,'folder belum ada footage'].filter(Boolean).join(' · '),start:(it.stageAt&&it.stageAt.toedit)||it.created})))
-   .filter(r=>!isPublishedName(r.name)&&!HELPER_DIR.test(r.name)).map(r=>Object.assign(r,edDeadline(r.name,r.start),{ed:edFor(r.key,r.name)})).sort((a,b)=>(a.d?a.d.left:99)-(b.d?b.d.left:99));
+   .filter(r=>!isPublishedName(r.name)&&!HELPER_DIR.test(r.name)).concat(redoRows()).map(r=>Object.assign(r,edDeadline(r.name,r.start),{ed:edFor(r.key,r.name)})).sort((a,b)=>(a.d?a.d.left:99)-(b.d?b.d.left:99));
   const off=macOff();
   if(ui.teSeg==='broll')return head('B-roll untuk semak')+teSegs()+ftSemakView();
   return head(te?'Folder sync '+fmtD(te.syncedAt):'Belum sync',`<button class="btn sm" data-act="addEdit">${IC.plus}Tambah</button>`)+teSegs()+shotList()+
   `<p class="eyebrow" style="margin:4px 0 10px">Dalam folder edit · ${rows.length}</p>${off?`<div class="banner glass">Mac mini tak jawab sejak ${esc(off)}. EDIT NOW perlukan Mac mini hidup dan app Claude dibuka.</div>`:''}<div class="list">${rows.map(r=>{const e=r.ed;const busy=ui.edNow&&ui.edNow[r.key];
-    return `<div class="card glass"><div class="rowh">${fnoBadge(r.no)}<div style="flex:1;min-width:0"><h3>${esc(r.name)}</h3><div class="meta">${esc(r.sub)}${r.start?' · masuk '+fmtD(r.start):''}</div></div>${e?`<span class="pill" style="--pc:${edTone(e.status)}">${esc(e.status||'Draf')}</span>`:''}${voMic(r)}</div>
+    return `<div class="card glass"><div class="rowh">${fnoBadge(r.no)}<div style="flex:1;min-width:0">${r.kind==='r'?`<span class="pill rdp">Video baru #${r.round}</span>`:''}<h3>${esc(r.title||r.name)}</h3><div class="meta">${esc(r.sub)}${r.start?' · masuk '+fmtD(r.start):''}</div></div>${e?`<span class="pill" style="--pc:${edTone(e.status)}">${esc(e.status||'Draf')}</span>`:''}${voMic(r)}</div>
     ${trk(r.d,r.t)}
     ${brSteps(r,e)}
-    <div class="btns tem" style="margin-top:12px">${edBtns(r,e,busy,off)}${r.kind==='f'?`<button class="btn icon sm" data-act="peek" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}" aria-label="Lihat footage" title="Lihat footage">${IC.footage}</button>`:''}<button class="btn icon sm bad" data-act="${r.kind==='f'?'fHide':'delItem'}" data-id="${esc(r.key)}" aria-label="Buang">${IC.trash}</button></div>
+    <div class="btns tem" style="margin-top:12px">${edBtns(r,e,busy,off)}${r.kind==='f'||r.kind==='r'?`<button class="btn icon sm" data-act="peek" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}" aria-label="Lihat footage" title="Lihat footage">${IC.footage}</button>`:''}<button class="btn icon sm bad" data-act="${r.kind==='f'?'fHide':r.kind==='r'?'redoDel':'delItem'}" data-id="${esc(r.kind==='r'?r.rid:r.key)}" aria-label="Buang">${IC.trash}</button></div>
     ${edNote(r,e)}</div>`}).join('')||`<div class="empty">${te?'Tiada video tunggu edit.':'Belum sync. Tekan Sync folder di Home.'}</div>`}</div>`};
 /* Butang kad: belum mula = EDIT NOW; dah tekan = link terus ke chat Claude (Remote Control) atau status */
-function edBtns(r,e,busy,off){/* 23 Nov: EDIT NOW tak lagi tunggu semua B-roll disemak; Claude guna klip Final yang dah ada */
-  const now=`<button class="btn sm${e?'':' solid tab'} edgo" data-act="esOpen" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}"${busy||off||!r.stage||esScan(r.key)?' disabled':''}>${esScan(r.key)?'<i class="spin"></i>Analysing '+Math.round(esScan(r.key).pct||0)+'%':busy?'<i class="spin"></i>'+esc(busy):e?'Buka sesi baru':'▶ EDIT NOW'}</button>${tok(TOK.edit,'satu sesi edit Claude, ikut panjang video')}`;
+function edBtns(r,e,busy,off){if(r.kind==='r'&&!r.clips)return `<button class="btn sm edgo" disabled>Footage tiada di Mac mini</button>`;
+  /* 23 Nov: EDIT NOW tak lagi tunggu semua B-roll disemak; Claude guna klip Final yang dah ada */
+  const now=`<button class="btn sm${e?'':' solid tab'} edgo" data-act="esOpen" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}"${r.round?` data-r="${r.round}"`:''}${busy||off||!r.stage||esScan(r.key)?' disabled':''}>${esScan(r.key)?'<i class="spin"></i>Analysing '+Math.round(esScan(r.key).pct||0)+'%':busy?'<i class="spin"></i>'+esc(busy):e?'Buka sesi baru':'▶ EDIT NOW'}</button>${tok(TOK.edit,'satu sesi edit Claude, ikut panjang video',TOKM.edit)}`;
   if(!e)return now;const st=e.status||'';const stuck=/perlu|tiada link/i.test(st);
   const chat=isUrl(e.chat)?`<a class="btn sm solid tab" href="${esc(e.chat)}" target="_blank" rel="noopener">${IC.ext}Buka chat Claude</a>`:'';
   const page=isUrl(e.url)?`<a class="btn sm${chat?'':' solid tab'}" href="${esc(e.url)}" target="_blank" rel="noopener">${IC.ext}${/storyboard/i.test(st)?'Storyboard':'Editor'}</a>`:'';
   const wait=!chat&&!page&&!stuck?`<span class="pill" style="--pc:var(--c)"><i class="spin"></i>Sedang buka sesi</span>`:'';
-  return chat+page+wait+(stuck||(!chat&&Date.now()-(e.sessionAt||e.updated||0)>15*60000)?now:'')}
+  return chat+page+wait+(r.kind==='r'||stuck||(!chat&&Date.now()-(e.sessionAt||e.updated||0)>15*60000)?now:'')}
 function edNote(r,e){if(!e)return '';const st=e.status||'';
   if(/persediaan/i.test(st))return `<p class="meta" style="margin:8px 0 0;color:var(--bad)">Sesi tunggu di Terminal Mac mini (persediaan kali pertama). Tekan Enter di Terminal, kemudian jawab Yes untuk Trust folder.</p>`;
   if(/trust/i.test(st))return `<p class="meta" style="margin:8px 0 0;color:var(--bad)">Sesi tunggu di Terminal Mac mini: pilih Yes untuk Trust folder ${esc(r.stage)}. Sekali sahaja untuk folder ni.</p>`;
@@ -62,3 +63,11 @@ A.peek=async el=>{const stage=el.dataset.x,name=el.dataset.n;
 function voMic(r){const id=voId(r.name),d=get('vo',id),need=voAuto(r.stage||'')||(d&&d.status!=='buang'),has=d&&(((d.vos||[]).some(v=>v.status==='siap'))||d.status==='siap');
   if(!need&&!has)return '';return `<button class="micb ${has?'ok':'need'}" data-act="voGo" data-id="${esc(id)}" data-x="${esc(r.stage||'')}" data-n="${esc(r.name)}" aria-label="${has?'VO dah ada':'Perlu rakam VO'}">${IC.mic.replace('<svg ','<svg style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8" ')}</button>`}
 A.voGo=el=>{const id=el.dataset.id;if(!get('vo',id))save('vo',{id,folder:el.dataset.x,sub:el.dataset.n,status:'perlu',points:[]},true);ui.voOpen=id;location.hash='#vo'};
+
+/* 2026-11-25 (Mira): START EDIT dari Published = kad "Video baru #N" di sini (koleksi redo {title, folder, n, pubKey}).
+   EDIT NOW sama macam kad lain; tracker pusingan = editor/ed-f-<folder>-r<n> (folder "<kunci>#r<n>"). Kad hilang bila final baru masuk 00. */
+function redoStyles(folder){return S.editor.filter(t=>t.folder&&(t.folder===folder||t.folder.startsWith(folder+'#r'))&&(t.jenis||/^(Tiru|Resipi)/.test(t.style||''))).map(t=>t.jenis||String(t.style).replace(/^(Tiru|Resipi):\s*/,''))}
+function redoRows(){return S.redo.filter(x=>!redoDone(x)).map(x=>{const [st,...rest]=String(x.folder||'').split('/'),nm=rest.join('/');const fi=folderInfo(x.folder);const used=redoStyles(x.folder);
+  return {kind:'r',rid:x.id,key:x.folder+'#r'+x.n,round:x.n,stage:st,no:fno(st),name:nm,title:x.title,clips:fi?(fi.clips||0)+(fi.images||0):0,
+    sub:[st.replace(/^\d+\.\s*/,'')+' › '+nm,fi?(fi.clips||0)+' klip'+(fi.images?' + '+fi.images+' gambar':''):'folder tak dijumpai',used.length?'dah dibuat: '+used.join(', '):''].filter(Boolean).join(' · '),start:x.at||x.created}})}
+A.redoDel=el=>{const x=get('redo',el.dataset.id);if(!x)return;confirmBox('Buang kad "'+(x.title||'')+' · video baru #'+x.n+'"? Footage tak disentuh.',()=>{del('redo',x.id);toast('Dibuang')},'Ya, buang')};

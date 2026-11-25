@@ -157,25 +157,33 @@ A.gyUse=el=>{const g=get('gaya',el.dataset.id);const f=csFoldOf(g);const L=toEdi
     <div class="btns" style="justify-content:flex-end;margin-top:12px"><button class="btn" data-act="closeModal">Batal</button></div>`)};
 
 /* ---------- EDIT STYLE: keluar bila tekan EDIT NOW. Hanya style dalam library folder utama projek tu. ---------- */
-function esBody(){const e=ui.es;const no=fno(e.stage);const lib=csLib(no);const off=macOff();
-  const opt=(on,inner,act,x,type)=>`<label class="esopt${on?' on':''}"><input type="${type}" name="es${type}" data-act="${act}" data-x="${esc(x)}"${on?' checked':''}>${inner}</label>`;
+/* 2026-11-25 (Mira): "Satu Vlog Lima" = satu footage jadi lima jenis post. Senarai tetap (0 token, tiada scan semula);
+   keluar untuk kad Video baru (START EDIT) dan folder vlog. Carousel ada aliran sendiri (belum dibina). */
+const ES_JENIS=[['pendek','Versi pendek + muzik','Potong vlog yang sama, tambah muzik dan teks'],['split','Split screen','Klip atas, klip atau gambar lain di bawah'],['broll','B-roll estetik + teks','Satu potongan B-roll dengan teks relatable'],['penuh','Vlog penuh','Cerita penuh, bercakap atau VO']];
+const esVlog=e=>!!e.round||/^(22|23|29)$/.test(fno(e.stage));
+function esBody(){const e=ui.es;const no=fno(e.stage);const lib=csLib(no);const off=macOff();const base=String(e.key).replace(/#r\d+$/,'');const used=redoStyles(base);
+  const opt=(on,inner,act,x,type,grp)=>`<label class="esopt${on?' on':''}"><input type="${type}" name="es${grp||type}" data-act="${act}" data-x="${esc(x)}"${on?' checked':''}>${inner}</label>`;
   return `<div class="cs es"><p class="cseye">${esc(e.name)} · Library ${esc(csFoldName(no))}</p><h2>Edit Style</h2>
     ${off?`<div class="banner glass">Mac mini tak jawab sejak ${esc(off)}.</div>`:''}
     <p class="essec">Susunan video</p><div class="esopts">${opt(!e.tpl,`<div><b>Ikut folder</b><span class="d">Cara biasa folder ${esc(no)}, tanpa template</span></div>`,'esTpl','','radio')}
       ${lib.tpls.map(g=>opt(e.tpl===g.id,`<div><span class="n">${esc(g.name)}</span><span class="d">Template · ${(g.tpl.slots||[]).length} bahagian${g.info&&g.info.dur?' · '+Math.round(g.info.dur)+' saat':''}${(g.used||[]).length?' · dipakai '+g.used.length+' kali':''}</span></div>`,'esTpl',g.id,'radio')).join('')}</div>
     ${lib.tpls.length?'':`<p class="csmeta">Belum ada template dalam library folder ${esc(no)}.</p>`}
     ${lib.looks.length?`<p class="essec">Rupa teks</p><div class="esopts">${lib.looks.map(x=>{const k=x.g.id+':'+x.i;return opt(e.looks.includes(k),`<div class="sw t-${esc(x.l.type)}">Aa</div><div><span class="n">${esc(x.l.name)}</span><span class="d">${esc(x.l.type)}${x.l.st==='semak'?' · belum lulus':''}</span></div>`,'esLook',k,'checkbox')}).join('')}</div>`:''}
+    ${esVlog(e)?`<p class="essec">Jenis video · Satu Vlog Lima</p><div class="esopts">${opt(!e.jenis,`<div><b>Bebas</b><span class="d">Ikut susunan yang dipilih di atas</span></div>`,'esJenis','','radio','jenis')}${ES_JENIS.map(j=>opt(e.jenis===j[0],`<div><span class="n">${j[1]}</span><span class="d">${j[2]}${used.includes(j[1])?' · dah dibuat':''}</span></div>`,'esJenis',j[0],'radio','jenis')).join('')}</div>`:''}
+    ${used.length?`<p class="csmeta">Dah dipakai untuk footage ni: ${esc(used.join(', '))}. Video baru akan dibuat lain.</p>`:''}
     <p class="essec">Atau tiru video baru (disimpan ke library ${esc(no)})</p>
     <div class="cspaste dash"><input id="esL" aria-label="Paste link video untuk ditiru" placeholder="Paste link, Claude tiru terus" inputmode="url" autocapitalize="off" autocorrect="off"><button type="button" class="go" data-act="esLink" aria-label="Tiru video ni"${off?' disabled':''}>${CS_GO}</button></div>
     <div class="estips"><span><b>Tips folder ${esc(no)}</b> · ${lib.tips.length} tips</span><span>Sentiasa dipakai</span></div>
+    <p class="essec">Nota untuk Claude (pilihan)</p><textarea class="esnota" id="esN" rows="2" maxlength="600" aria-label="Nota untuk Claude" placeholder="cth: fokus bahagian cable car, 20 saat">${esc(e.nota||'')}</textarea>
     <button type="button" class="csbtn solid big" data-act="esGo"${off?' disabled':''}>Mula edit</button>
-    <div class="csnote" style="justify-content:center">${tok(TOK.edit,'satu sesi edit Claude')}<span>${e.tpl||e.looks.length?'Draf masuk Editor dulu.':'Ikut cara biasa folder.'}</span><button type="button" class="chip" data-act="closeModal">Batal</button></div></div>`}
-A.esOpen=el=>{ui.es={key:el.dataset.id,stage:el.dataset.x,name:el.dataset.n,tpl:el.dataset.k||'',looks:[]};modal(esBody())};
-const esRe=()=>{const v=$('#esL')?$('#esL').value:'';modal(esBody());if($('#esL'))$('#esL').value=v};
+    <div class="csnote" style="justify-content:center">${tok(TOK.edit,'satu sesi edit Claude',TOKM.edit)}<span>${e.tpl||e.looks.length?'Draf masuk Editor dulu.':'Ikut cara biasa folder.'}</span><button type="button" class="chip" data-act="closeModal">Batal</button></div></div>`}
+A.esOpen=el=>{ui.es={key:el.dataset.id,stage:el.dataset.x,name:el.dataset.n,tpl:el.dataset.k||'',looks:[],round:+el.dataset.r||0,jenis:'',nota:''};modal(esBody())};
+const esRe=()=>{const v=$('#esL')?$('#esL').value:'';if($('#esN'))ui.es.nota=$('#esN').value;modal(esBody());if($('#esL'))$('#esL').value=v};
+A.esJenis=el=>{ui.es.jenis=el.dataset.x;esRe()};
 A.esTpl=el=>{ui.es.tpl=el.dataset.x;esRe()};
 A.esLook=el=>{const k=el.dataset.x;const L=ui.es.looks;ui.es.looks=L.includes(k)?L.filter(x=>x!==k):L.concat(k);esRe()};
-A.esGo=async()=>{const e=ui.es;closeModal();ui.edNow=Object.assign({},ui.edNow,{[e.key]:'Buka sesi...'});render();
-  try{await studioJob('edit_now',{stage:e.stage,name:e.name,key:e.key,style:{tpl:e.tpl||'',looks:e.looks}},3*60000);toast('Sesi Claude dibuka di Mac mini. Buka app Claude di phone untuk kawal')}
+A.esGo=async()=>{const e=ui.es;if($('#esN'))e.nota=$('#esN').value.trim();closeModal();ui.edNow=Object.assign({},ui.edNow,{[e.key]:'Buka sesi...'});render();
+  try{await studioJob('edit_now',{stage:e.stage,name:e.name,key:e.key,style:{tpl:e.tpl||'',looks:e.looks},round:e.round||0,jenis:e.jenis||'',nota:e.nota||''},3*60000);toast('Sesi Claude dibuka di Mac mini. Buka app Claude di phone untuk kawal')}
   catch(x){toast('Tak dapat buka sesi: '+String((x&&(x.message||x.code))||'semak Mac mini hidup').slice(0,80))}
   finally{const b=Object.assign({},ui.edNow);delete b[e.key];ui.edNow=b;render()}};
 /* Tiru video baru: analisis dulu (kad folder tunjuk %), worker buka sesi edit sendiri bila siap */
