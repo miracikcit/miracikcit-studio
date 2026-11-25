@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Editor">
 <link rel="apple-touch-icon" href="../icons/editor-180.png">
 <link rel="stylesheet" href="../css/app.css">
-<meta name="theme-color" content="#101014">
+<meta name="theme-color" content="#0c0c13">
 <style>body.boot{margin:0;background:#101014;color:#eee;font:15px/1.5 system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;text-align:center;padding:20px}body.boot a{color:#58c7d6}
 body.list{margin:0;padding:calc(env(safe-area-inset-top) + 18px) 16px 40px;min-height:100vh}
 .el h1{font-size:26px;margin:0 0 4px}.el .row{display:flex;align-items:center;gap:10px;padding:14px;margin-top:10px;border-radius:18px;text-decoration:none;color:inherit}
@@ -37,21 +37,15 @@ body.list{margin:0;padding:calc(env(safe-area-inset-top) + 18px) 16px 40px;min-h
 })().catch(e => { document.getElementById('m').textContent = 'Editor tak dapat dibuka: ' + e.message; });
 
 async function edList(m) {
-  m.textContent = 'Memuatkan projek…';
-  const load = src => new Promise((res, rej) => { const t = document.createElement('script'); t.src = src + '?v=' + Date.now(); t.onload = res; t.onerror = rej; document.head.appendChild(t); });
-  await load('../js/config.js'); await load('../js/runtime.js');
+  /* 25 Nov 2026 (Mira): senarai + New Video duduk DALAM APP EDITOR ni (bukan tab Studio). Kod: ed-list.js, gaya: ../css/editor-list.css */
+  m.textContent = 'Memuatkan video…';
+  const bust = '?v=' + Date.now();
+  const load = src => new Promise((res, rej) => { const t = document.createElement('script'); t.src = src + bust; t.onload = res; t.onerror = rej; document.head.appendChild(t); });
+  await new Promise(res => { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '../css/editor-list.css' + bust; l.onload = l.onerror = res; document.head.appendChild(l); });
+  await load('../js/config.js'); await load('../js/runtime.js'); await load('ed-list.js');
   document.body.className = 'list'; m.remove();
-  const box = document.createElement('div'); box.className = 'el'; box.innerHTML = '<p class="eyebrow">Miracikcit</p><h1>Editor</h1><p class="meta">Memuatkan…</p>'; document.body.appendChild(box);
-  await Studio.ready();
-  const db = await claude.use('db');
-  db.collection('edpwa').onSnapshot(snap => {
-    const L = snap.docs.map(d => Object.assign({}, d.data(), { id: d.id })).filter(e => e.status !== 'error' && !e.pub).sort((a, b) => (b.updated || 0) - (a.updated || 0));
-    const esc = t => String(t || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-    const day = t => t ? new Date(t).toLocaleDateString('ms-MY', { day: 'numeric', month: 'short' }) : '';
-    box.innerHTML = '<p class="eyebrow">Miracikcit</p><h1>Editor</h1><p class="meta">App berasingan dari Studio. Tukar antara dua app dengan app switcher.</p>' +
-      (L.map(e => e.status === 'proses' ? `<div class="row card glass"><span><b>${esc(e.title || e.id)}</b><small class="meta">Mac mini sedang sediakan…</small></span></div>`
-        : `<a class="row card glass" href="./?v=${encodeURIComponent(e.id)}"><span><b>${esc(e.title || e.id)}</b><small class="meta">${e.n || 0} fail · ${day(e.updated)}</small></span><i>›</i></a>`).join('') || '<p class="meta">Tiada projek editor lagi.</p>');
-  });
+  const box = document.createElement('div'); box.className = 'elroot'; document.body.appendChild(box);
+  await EdList.start(box);
 }
 </script>
 </body>

@@ -1,8 +1,15 @@
 /* Senarai Editor (25 Nov 2026, Mira): rupa gelap kaca + teal, sama dengan Editor PWA. Lakaran diluluskan: claude.ai/artifact/D2qnWv9iCXEzXkZf1CTgDw
    Fail berasingan dari app.css supaya tak bertembung dengan kerja tab lain. Semua peraturan hidup HANYA bila #main ada .edlist (tab Editor). */
-body:has(#main .edlist){--ink:#f3f1ee;--muted:#a09ca8;--bg:#0c0c13;--line:rgba(255,255,255,.12);color-scheme:dark;
+body.edapp,body:has(#main .edlist){--ink:#f3f1ee;--muted:#a09ca8;--bg:#0c0c13;--line:rgba(255,255,255,.12);color-scheme:dark;
   background:#0c0c13;background-image:radial-gradient(70vw 45vh at 100% 0%,rgba(88,199,214,.18),transparent 70%),radial-gradient(60vw 40vh at 0% 12%,rgba(120,90,200,.18),transparent 70%);background-attachment:fixed;color:var(--ink)}
 body:has(#main .edlist)::before{background:#0c0c13}
+/* app Editor berasingan (editor/?app=1): halaman penuh, tiada bar Studio */
+body.edapp{margin:0;min-height:100vh;font:400 15px/1.5 var(--font,system-ui),system-ui,sans-serif;padding:calc(env(safe-area-inset-top,0px) + 16px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 32px) max(16px,env(safe-area-inset-left,0px))}
+body.edapp>.elroot{max-width:860px;margin:0 auto}
+.el-toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:80;max-width:calc(100vw - 32px);padding:10px 16px;border-radius:999px;background:#f3f1ee;color:#111;font-size:13px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none;text-align:center}
+.el-toast.show{opacity:1}
+.el-acts{display:grid;gap:8px}.el-acts .el-btn{justify-content:center;padding:13px}
+p.el-foot{text-align:center;margin:6px 0 0}
 body:has(#main .edlist) .glass{background:rgba(30,30,40,.78);border-color:rgba(255,255,255,.12);box-shadow:0 10px 30px rgba(0,0,0,.35)}
 body:has(#main .edlist) .hbtn{background:#58c7d6;color:#06262b}
 body:has(#main .edlist) .nav a.on{color:#fff;background:rgba(255,255,255,.12);box-shadow:none}
