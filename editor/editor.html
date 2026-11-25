@@ -1100,8 +1100,8 @@ button:focus-visible, [contenteditable]:focus-visible, input:focus-visible, text
 .cs-paper .key { color: #b5523a; font-weight: 400; }
 .cs-underline .key { position: relative; }
 .cs-underline .key::after { content: ""; position: absolute; left: 0; right: 0; bottom: -.06em; height: .1em; background: var(--kc); border-radius: 99px; transform: rotate(-1.5deg); }
-.stlayer { inset: 0; z-index: 5; pointer-events: none; }
-.stk { position: absolute; transform: translate(-50%, -50%); pointer-events: auto; touch-action: none; cursor: grab; }
+.stlayer { inset: 0; pointer-events: none; }   /* 26 Nov: tiada z-index di sini, supaya sticker .bh boleh duduk DI BAWAH kanvas badan #cfg */
+.stk { z-index: 5; position: absolute; transform: translate(-50%, -50%); pointer-events: auto; touch-action: none; cursor: grab; }
 .stk.sel { outline: 2px dashed #fff; outline-offset: 2px; border-radius: 4px; }
 .stk svg { display: block; width: 100%; height: auto; overflow: visible; }
 .t-stick { background: #fff; color: #d6336c; font: 900 4.44cqw/1.1 "Montserrat", sans-serif; padding: 1cqw 2.6cqw; border-radius: 2cqw; transform: rotate(-6deg); white-space: nowrap; }
@@ -1695,8 +1695,19 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .spticks button { width: 0; padding: 8px 0; border: 0; background: none; display: flex; justify-content: center; white-space: nowrap; font: 600 11px var(--mono, ui-monospace, monospace); color: var(--muted); cursor: pointer; overflow: visible; }
 .spticks button[aria-pressed="true"] { color: #3fd0c0; }
 #spBtn { display: inline-grid; place-items: center; } #spBtn .ic { width: 16px; height: 16px; }
+
+/* ---- Cutout (26 Nov 2026): latar baru #cbg di atas video, badan #cfg di atas sticker "Belakang saya" (.bh) ---- */
+.stage canvas.cutc { inset: 0; width: 100%; height: 100%; pointer-events: none; transform-origin: 50% 45%; }
+#cbg { z-index: 1; } #cfg { z-index: 3; } #ovl { z-index: 3; } .stk.bh { z-index: 2; } #hllayer .hlw { z-index: 5; }
+.mini.cutcard { aspect-ratio: 9 / 13; background-size: cover; background-position: center; }
+.mini.cutcard.cosy { background-image: linear-gradient(rgba(60,34,10,.45), rgba(40,22,8,.6)), radial-gradient(circle at 24% 16%, rgba(255,196,110,.95) 0 5%, transparent 9%), radial-gradient(circle at 70% 24%, rgba(255,196,110,.8) 0 4%, transparent 8%), radial-gradient(circle at 46% 9%, rgba(255,196,110,.7) 0 3%, transparent 7%), var(--poster, none); }
+.mini.cutcard.off { background: repeating-linear-gradient(45deg, rgba(128,128,128,.25) 0 6px, transparent 6px 12px); }
+.cutprep { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.cutbusy { display: inline-flex; align-items: center; gap: 8px; opacity: 1; }
+.cutspin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: cutspin .8s linear infinite; }
+@keyframes cutspin { to { transform: rotate(360deg); } }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=568feb74ec">
+<link rel="stylesheet" href="../../ed-capcut.css?v=4ceb711184">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1750,6 +1761,8 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
           <video id="mvb" playsinline muted preload="auto" style="opacity:0" aria-hidden="true"></video>
           <video id="mv" playsinline preload="auto"></video>
           <canvas id="gc" class="gc" hidden></canvas>
+          <canvas id="cbg" class="cutc" hidden aria-hidden="true"></canvas>
+          <canvas id="cfg" class="cutc" hidden aria-hidden="true"></canvas>
           <button id="mkCmp" class="mkcmp" aria-label="Tekan lama: tengok tanpa makeup" aria-pressed="false" hidden><svg class="ic"><use href="#i-cmp"/></svg></button>
           <div id="ovl"></div>
           <div class="safe t" hidden></div><div class="safe b" hidden></div><div class="safe l" hidden></div><div class="safe r" hidden></div>
@@ -1807,9 +1820,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=568feb74ec"></script>
-<script src="../../../js/runtime.js?v=568feb74ec"></script>
-<script src="../../ed-boot.js?v=568feb74ec"></script>
+<script src="../../../js/config.js?v=4ceb711184"></script>
+<script src="../../../js/runtime.js?v=4ceb711184"></script>
+<script src="../../ed-boot.js?v=4ceb711184"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -1969,7 +1982,7 @@ const FX_KINDS = [
   /* no longer offered (user 2026-11-12: buang USP B, C, D; no text stickers), kept so older videos still open and render */
   ["Lama", [...TXT_OLD, ["e-uspb", "B Polaroid", "", { text: "Vanilla Rose", a: "bau dia macam…", items: ["fruity", "floral", "sweet"], ph: 3 }], ["e-uspc", "C Jubin nombor", "", { text: "top notes", items: ["starfruit", "quince", "mocktail"], a: "", ph: 1 }], ["e-uspd", "D Label + sticky", "", { a: "Vanilla Peony ✿", b: "soft & comforting", items: ["CREAMY", "FLORAL", "SWEET"], text: "← lembut, tenang", ph: 1 }], ["t-blob", "Die-cut krim", "", { text: "SEDAP!" }], ["t-cta", "Pill beg bawah", "", { text: "Tengok beg bawah" }], ["t-stick", "Word sticker", "", { text: "JIMAT!" }], ["t-note", "Tip note", "", { text: "Tip" }], ["t-pill", "Pill", "", { text: "Tahan lembap" }]]]
 ];
-const FX_CATS = ["Text", "Photos", "USP", "End Card", "Labels", "Cards", "Paper Labels", "Big Text", "Zoom"];
+const FX_CATS = ["Latar", "Text", "Photos", "USP", "End Card", "Labels", "Cards", "Paper Labels", "Big Text", "Zoom"];
 let fxCat = "Text", fxListOpen = false;
 document.addEventListener("toggle", e => { if (e.target && e.target.id === "fxList") { fxListOpen = e.target.open; const sm = e.target.querySelector("summary"); if (sm) sm.textContent = sm.textContent.replace(/tekan untuk (tutup|buka)/, "tekan untuk " + (fxListOpen ? "tutup" : "buka")); } }, true);
 /* field labels of the newer effects: text, a, b, items */
@@ -2171,7 +2184,7 @@ let tab = "Potong", safeOn = false, mode = "fix", bTab = "brand", wSel = -1;
 /* Zoom slider is logarithmic: 0 = 6 px per second (whole video), 100 = 300 px per second (frame-level trims). */
 const ppsFromZ = v => 6 * Math.pow(50, v / 100), zFromPps = p => Math.round(Math.log(p / 6) / Math.log(50) * 100);
 let pps = 16, pos = 0, sel = 0, playing = false, curIdx = 0, lastPos = 0, sfxSel = -1, voSel = -1, stSel = -1, zmSel = -1, lastT = 0, jnSel = -1;   /* p24: jnSel = sambungan (indeks klip selepas potongan) yang dipilih */
-const S0 = () => ({ clips: [], bin: [], hook: "", words: [], globalMute: true, sfx: [], zooms: [], vo: [], stickers: [], capMode: "frasa", capSize: 1, capGap: 1, capPos: "bawah", hlStyle: "color", hlFont: "", hlColor: "", hlMode: "", hlKind: "ikut", hlLook: "none", hlFx: "pop", hlSize: 1, hlx: {}, hlPlace: "big", hlY: null, overlay: {}, style: { ...DEF_STYLE }, final: { render: "final", src: "simpan", list: "simpan" }, popDone: {}, music: { f: "", vol: .15, duck: true } });
+const S0 = () => ({ clips: [], bin: [], hook: "", words: [], globalMute: true, sfx: [], zooms: [], vo: [], stickers: [], capMode: "frasa", capSize: 1, capGap: 1, capPos: "bawah", hlStyle: "color", hlFont: "", hlColor: "", hlMode: "", hlKind: "ikut", hlLook: "none", hlFx: "pop", hlSize: 1, hlx: {}, hlPlace: "big", hlY: null, overlay: {}, style: { ...DEF_STYLE }, final: { render: "final", src: "simpan", list: "simpan" }, popDone: {}, cut: null, music: { f: "", vol: .15, duck: true } });
 let S = S0();
 /* One editor for every part of a product (2026-11-12): parts.json at the page root lists the videos, each in its own folder (v1/, v2/ ...).
    Without parts.json the page is a single video, as before. Saved edits: edits/current (single) or edits/p1, edits/p2 ... (combined). */
@@ -2292,7 +2305,7 @@ function setSaved(txt, cls) { const s = $("saved"); s.textContent = txt; s.class
 function docBody() {
   const fixes = {}, cuts = [], hl = {};
   const hid = hlHid(), hidT = {}; S.words.forEach((w, i) => { if (hid.has(i)) { fixes[i] = ""; hidT[i] = w.t; } else if (w.t !== D.words[i].t) fixes[i] = w.t; if (w.cut) cuts.push(i); if (w.hl === 0 || w.hl === 1) hl[i] = w.hl; });
-  return { v: 1, clips: S.clips, bin: S.bin, hook: S.hook, fixes, hidT, cuts, globalMute: S.globalMute, origVol: S.origVol ?? 1, sfx: S.sfx, zooms: S.zooms, music: S.music, vo: S.vo, stickers: S.stickers, capMode: S.capMode, capSize: S.capSize, capGap: S.capGap, capPos: S.capPos, capChest: S.capPos === "dada", capAuto: S.capPos === "auto" ? CAPPLAN : null, hl, hlStyle: "color", hlFont: "", hlColor: S.hlColor, hlMode: S.hlMode || "", hlFix: S.hlFix || 0, hlKind: S.hlKind, hlLook: S.hlLook, hlFx: S.hlFx, hlSize: S.hlSize, hlx: S.hlx || {}, hlPlace: S.hlPlace || "big", hlv: 2, hlY: S.hlY ?? null, hlCap: S.hlPlace === "big" ? null : capHlMap(), hlItems: (S.hlPlace === "big" ? HLS : []).filter(h => !h.tt).map(h => ({ t: h.t, d: h.d, x: +h.x.toFixed(4), y: +h.y.toFixed(4), text: h.text, css: h.css, fs: h.fs, fx: h.fx })), overlay: S.overlay, hookEnd: HOOK_END, style: S.style, final: S.final, brandKit: S.brandKit || null, popDone: S.popDone, at: new Date().toISOString() };
+  return { v: 1, clips: S.clips, bin: S.bin, hook: S.hook, fixes, hidT, cuts, globalMute: S.globalMute, origVol: S.origVol ?? 1, sfx: S.sfx, zooms: S.zooms, music: S.music, vo: S.vo, stickers: S.stickers, capMode: S.capMode, capSize: S.capSize, capGap: S.capGap, capPos: S.capPos, capChest: S.capPos === "dada", capAuto: S.capPos === "auto" ? CAPPLAN : null, hl, hlStyle: "color", hlFont: "", hlColor: S.hlColor, hlMode: S.hlMode || "", hlFix: S.hlFix || 0, hlKind: S.hlKind, hlLook: S.hlLook, hlFx: S.hlFx, hlSize: S.hlSize, hlx: S.hlx || {}, hlPlace: S.hlPlace || "big", hlv: 2, hlY: S.hlY ?? null, hlCap: S.hlPlace === "big" ? null : capHlMap(), hlItems: (S.hlPlace === "big" ? HLS : []).filter(h => !h.tt).map(h => ({ t: h.t, d: h.d, x: +h.x.toFixed(4), y: +h.y.toFixed(4), text: h.text, css: h.css, fs: h.fs, fx: h.fx })), overlay: S.overlay, hookEnd: HOOK_END, style: S.style, final: S.final, brandKit: S.brandKit || null, popDone: S.popDone, cut: S.cut || null, at: new Date().toISOString() };
 }
 /* talking-head: each sticker/effect remembers the spot in her speech (s.src = offsets[file] + source second).
    When clips change, it moves with that spot; when only stickers change, src follows the new place. */
@@ -2446,7 +2459,7 @@ function applyDoc(saved) {
   if (d.vo && d.vo.length) S.vo = d.vo;
   if (d.stickers) S.stickers = d.stickers;
   S.capMode = d.capMode || "frasa"; S.capSize = d.capSize || 1; S.capPos = d.capPos || (d.capChest ? "dada" : "bawah");
-  S.capGap = d.capGap ?? 1; S.hlStyle = "color"; S.hlFont = ""; S.hlColor = d.hlColor || ""; S.overlay = d.overlay || {};
+  S.capGap = d.capGap ?? 1; S.hlStyle = "color"; S.hlFont = ""; S.hlColor = d.hlColor || ""; S.overlay = d.overlay || {}; S.cut = d.cut || null;
   S.hlMode = d.hlMode || ""; S.hlFix = d.hlFix || 0; S.hlKind = d.hlKind || "ikut"; S.hlPlace = d.hlv === 2 ? (d.hlPlace || "big") : "big"; S.hlY = d.hlY ?? null;   /* p19 */ S.hlLook = d.hlLook || "none"; S.hlFx = d.hlFx || "pop"; S.hlSize = d.hlSize || 1; S.hlx = d.hlx || {};
   Object.entries(d.hl || {}).forEach(([i, v]) => { if (S.words[i]) S.words[i].hl = v; });
   S.style = { ...DEF_STYLE, ...(d.style || {}) };
@@ -2546,7 +2559,7 @@ function stickerInner(x) {
 const libOf = k => (D.stickerLib || []).find(l => l.k === k);
 const stStyle = x => FULLFX(x) ? "left:50%;top:50%;" + fxVars(x) : `left:${x.x * 100}%;top:${x.y * 100}%;${x.k.startsWith("t-") || isFxS(x) ? "" : `width:${x.s * 100}%`}`;
 function drawStickers() {
-  $("stlayer").innerHTML = S.stickers.map((x, i) => `<div class="stk${i === stSel ? " sel" : ""}${x.sk ? " sk-" + x.sk : ""}${x.tn ? " tn-" + x.tn : ""}" data-st="${i}" style="${stStyle(x)}">${stickerInner(x)}</div>`).join("");
+  $("stlayer").innerHTML = S.stickers.map((x, i) => `<div class="stk${i === stSel ? " sel" : ""}${x.bh ? " bh" : ""}${x.sk ? " sk-" + x.sk : ""}${x.tn ? " tn-" + x.tn : ""}" data-st="${i}" style="${stStyle(x)}">${stickerInner(x)}</div>`).join("");
   showStickers(); drawHL(); planCaps();
 }
 /* AUTO caption position (user 2026-11-12): each caption takes the first free row inside the safe zone that does not sit on a sticker,
@@ -2784,7 +2797,7 @@ function ttEditor(h) {
   const x = ttOf(h.id); if (!x) return ""; const z = x.hz || {}, id = h.id, L = ttLine, f = { a: "a", b: "text", c: "b" }[L], o = (x.hx || {})[L] || {};
   const nm = { a: x.a || "Baris 1", b: x.text || "Baris 2", c: x.b || "Baris 3" };
   return `<div class="ttbox"><input type="text" data-ttf="all" data-tti="${id}" value="${esc([x.a, x.text, x.b].filter(Boolean).join(" / "))}" aria-label="Tulisan, pisah baris dengan /" style="font-size:16px;padding:8px 11px;border-radius:10px;border:1px solid rgba(0,0,0,.15)">
-    <div class="chips">${["a", "b", "c"].map(k => `<button class="chip" aria-pressed="${k === L}" data-ttline="${k}">${esc(String(nm[k]).slice(0, 14))}</button>`).join("")}<button class="chip" aria-pressed="${L === "all"}" data-ttline="all">Semua</button></div>
+    <div class="chips">${["a", "b", "c"].map(k => `<button class="chip" aria-pressed="${k === L}" data-ttline="${k}">${esc(String(nm[k]).slice(0, 14))}</button>`).join("")}<button class="chip" aria-pressed="${L === "all"}" data-ttline="all">Semua</button>${bhChip(x, "tt" + id)}</div>
     ${L === "all" ? `<label class="lab">Saiz semua <b id="ttv_s_${id}">${Math.round((x.s || .19) / .19 * 100)}%</b></label><input type="range" min="40" max="200" step="2" data-ttf="s" data-tti="${id}" value="${Math.round((x.s || .19) / .19 * 100)}">
       <label class="lab">Naik / turun <b id="ttv_y_${id}">${+x.ty || 0}</b></label><input type="range" min="-600" max="600" step="10" data-ttf="ty" data-tti="${id}" value="${+x.ty || 0}">
       <label class="lab">Tempoh <b id="ttv_d_${id}">${x.d.toFixed(1)} s</b></label><input type="range" min="5" max="60" step="1" data-ttf="d" data-tti="${id}" value="${Math.round(x.d * 10)}">`
@@ -2968,7 +2981,7 @@ function markWord() {
 function drawHead() {
   const ph = $("ph"), tx = `translateX(${Math.min(pos, endT()) * pps}px)`; if (ph) ph.style.transform = tx; { const rp = $("rph"); if (rp) rp.style.transform = tx; }
   $("tc").textContent = `${frameTC()} / ${fmt(endT())}`;
-  drawCaption(); markWord(); showStickers(); showHL(); drawFx();
+  drawCaption(); markWord(); showStickers(); showHL(); drawFx(); cutDraw();
   if (playing) { const sc = $("tscroll"), x = pos * pps; if (x < sc.scrollLeft + 10 || x > sc.scrollLeft + sc.clientWidth - 30) sc.scrollLeft = x - sc.clientWidth * .25; }
 }
 function setVideoMute() { const c = S.clips[curIdx]; { const r = (c && c.sp) || 1, v = $("mv"); if (v.playbackRate !== r) v.playbackRate = r; } $("mv").muted = S.globalMute || !!(c && c.muted); $("mv").volume = Math.max(0, Math.min(1, S.origVol ?? 1)); applyGrade(c); }
@@ -3363,7 +3376,7 @@ function tick(now) {
     if (swapAt && v.currentTime > swapCT + .01) { if (DIAG.sw.length < 40) DIAG.sw.push(["run", Math.round(now - swapAt)]); swapAt = 0; }
   }
   fireSfx(lastPos, pos); lastPos = pos;
-  if (now - lastPaint > 80) { lastPaint = now; drawHead(); }
+  if (now - lastPaint > 80) { lastPaint = now; drawHead(); } else if (CUT.live) { drawFx(); cutDraw(); }
   requestAnimationFrame(tick);
 }
 function setPlayBtn() { $("playTx").textContent = playing ? "Pause" : "Play"; $("playIc").setAttribute("href", playing ? "#i-pause" : "#i-play"); $("play").setAttribute("aria-label", playing ? "Pause" : "Play"); }
@@ -3467,7 +3480,7 @@ function bPanel(only) {
     main = `${hx ? `<div class="row"><label class="lab" for="hookIn">Teks tajuk (pisahkan baris dengan /)</label><input id="hookIn" type="text" value="${esc([hx.a || "", hx.text || "", hx.b || ""].join(" / "))}">
         <label class="lab" for="hookPill">Nama produk</label><input id="hookPill" type="text" value="${esc((hx.items || [])[0] || "")}">
         <label class="lab" for="hookSize">Saiz tajuk: <span id="hookSizeV">${Math.round((hx.s || .19) / .19 * 100)}%</span></label><input id="hookSize" type="range" min="60" max="140" step="2" value="${Math.round((hx.s || .19) / .19 * 100)}">
-        <label class="lab" for="hookDur">Tempoh tajuk: <span id="hookDurV">${hx.d.toFixed(1)} s</span></label><input id="hookDur" type="range" min="15" max="60" step="1" value="${Math.round(hx.d * 10)}"><span class="legend">Caption mula sebaik sahaja tajuk hilang.</span></div>`
+        <label class="lab" for="hookDur">Tempoh tajuk: <span id="hookDurV">${hx.d.toFixed(1)} s</span></label><input id="hookDur" type="range" min="15" max="60" step="1" value="${Math.round(hx.d * 10)}"><span class="legend">Caption mula sebaik sahaja tajuk hilang.</span><div class="chips">${bhChip(hx, "hook")}</div></div>`
       : `<div class="row"><label class="lab" for="hookIn">Tajuk (huruf BESAR jadi warna kunci)</label><input id="hookIn" type="text" value="${esc(S.hook)}"></div>`}
       <div class="row"><span class="lab">Kedudukan tajuk</span><div class="chips">${chip("Atas", posOf === "top", 'data-tp="top"')}${chip("Tengah", posOf === "mid", 'data-tp="mid"')}${chip("Bawah", posOf === "bot", 'data-tp="bot"')}${chip("Kiri", posOf === "left", 'data-tp="left"')}${chip("Kanan", posOf === "right", 'data-tp="right"')}</div></div>
       ${(() => { const ty = hx ? (+hx.ty || 0) : (+st.titleY || 0); return `<div class="row"><label class="lab" for="titleYR">Naik / turun tajuk: <span id="titleYV">${ty > 0 ? "+" : ""}${ty}</span></label><input id="titleYR" type="range" min="-400" max="400" step="10" value="${ty}"><span class="legend">Kiri = naik, kanan = turun. Tekan dua kali untuk balik ke 0.</span></div>`; })()}
@@ -3614,16 +3627,16 @@ function fxPanel() {
       ${o.ph ? `<span class="lab">Pilih ${o.ph} gambar${x.k === "e-usph" ? " (pertama = latar)" : ""}</span><div class="phgrid">${(D.photos || []).map(p => `<button data-eph="${p.id}" aria-pressed="${(x.photos || []).includes(p.id)}" aria-label="${esc(p.n)}"><img src="${photoUrl(p.id)}" alt="" loading="lazy"></button>`).join("")}</div>` : ""}
       <label class="lab" for="stSize">Saiz: <span id="stSizeV">${Math.round(x.s * 100)}%</span></label><input id="stSize" type="range" min="8" max="50" value="${Math.round(x.s * 100)}">
       ${fam ? `<span class="lab">Tukar gaya</span><div class="grid etkgrid">${fam[1].filter(k => fxDef(k) && (ok("fx:" + k) || x.k === k)).map(k => { const f = fxDef(k); return `<div class="opt"><button class="mini ecard" data-etk="${k}" aria-pressed="${x.k === k}" aria-label="Tukar ke ${esc(f[1])}"><div>${fxPreview(vBase(k), { ...f[3], ...(x.text ? { text: x.text } : {}) })}</div></button><h3>${f[1]}</h3>${lk("fx:" + k)}</div>`; }).join("")}</div>` : ""}   /* 25 Nov 2026: kad gambar, bukan tulisan; ✓ ✕ sama macam galeri */
-      <div class="chips"><button class="chip" data-stdel="${stSel}">Buang effect ni</button></div>
+      <div class="chips">${bhChip(x, "st")}<button class="chip" data-stdel="${stSel}">Buang effect ni</button></div>
       <span class="legend">Seret atas video untuk alih tempat. Tarik blok di baris Effects untuk alih masa dan tempoh.</span></div>`;
   }
   const placed = S.stickers.map((y, i) => inFx(y) && !y.k.startsWith("e-hook") ? [y, i] : null).filter(Boolean).sort((a, b) => a[0].t - b[0].t).map(([y, i]) => `<div${i === stSel ? ' style="outline:2px solid var(--fg);outline-offset:-2px"' : ""}><span>${fmt(y.t)} · ${esc((fxDef(y.k) || [0, y.k])[1])}${y.text ? `: ${esc(y.text.slice(0, 22))}` : ""}</span><span style="display:flex;gap:4px"><button class="chip" data-sefx="${i}">Edit</button><button class="chip" data-stdel="${i}">Delete</button></span></div>`).join("");
   const list = fillCat("fx:", fxCat === "Suka" ? FX_KINDS.filter(g => g[0] !== "Lama").flatMap(g => g[1]).filter(it => liked("fx:" + it[0])) : (FX_KINDS.find(g => g[0] === fxCat) || [0, []])[1]);   /* ⭐ Suka: effect yang kau tanda ✅ (2026-11-22) */
-  const gal = fxCat === "Zoom" ? zoomPanel() : `<div class="row"><div class="grid">${list.map(([k, n, d, o, isNew]) => `<div class="opt"><button class="mini ecard${skCls(k)}" data-eadd="${k}" aria-label="Tambah ${esc(n)} di sini"><div>${fxPreview(vBase(k), o)}</div></button>${isNew ? `<span class="newtag">baru</span>` : ""}<h3>${n}</h3><p>${d}</p><div class="optb"><button class="chip" data-eadd="${k}">+ here</button>${lk("fx:" + k)}</div></div>`).join("")}</div></div>`;
+  const gal = fxCat === "Latar" ? cutGallery() : fxCat === "Zoom" ? zoomPanel() : `<div class="row"><div class="grid">${list.map(([k, n, d, o, isNew]) => `<div class="opt"><button class="mini ecard${skCls(k)}" data-eadd="${k}" aria-label="Tambah ${esc(n)} di sini"><div>${fxPreview(vBase(k), o)}</div></button>${isNew ? `<span class="newtag">baru</span>` : ""}<h3>${n}</h3><p>${d}</p><div class="optb"><button class="chip" data-eadd="${k}">+ here</button>${lk("fx:" + k)}</div></div>`).join("")}</div></div>`;
   const miss = origMissing(), back = miss.length ? `<div class="row"><span class="lab">Effects asal yang dah dibuang (${miss.length})</span><div class="pool">${miss.map(m => `<div><span>${esc(m.label)}</span><button class="chip" data-readd="${m.i}">Add back</button></div>`).join("")}</div>${miss.length > 1 ? `<button class="chip" data-readd="all">Add back semua</button>` : ""}</div>` : "";
   const cats = `<div class="catbar" role="tablist" aria-label="Kategori effect">${[...(PREFS.like.some(k => k.startsWith("fx:")) ? ["Suka"] : []), ...FX_CATS].map(c => `<button class="cat" aria-pressed="${c === fxCat}" data-fxcat="${c}">${c === "Suka" ? "⭐ Suka" : c}</button>`).join("")}</div>`;
   const nPl = S.stickers.filter(y => inFx(y) && !y.k.startsWith("e-hook")).length;
-  return `${zmSel >= 0 && S.zooms[zmSel] ? zoomForm() : form}${popupRows()}${placed ? `<details class="fold" id="fxList"${fxListOpen ? " open" : ""}><summary class="lab">Dalam video ni (${nPl}) · tekan untuk ${fxListOpen ? "tutup" : "buka"} senarai</summary><div class="pool">${placed}</div></details>` : ""}${back}${cats}${gal}`;
+  return `${zmSel >= 0 && S.zooms[zmSel] ? zoomForm() : form || (fxCat === "Latar" ? cutForm() : "")}${popupRows()}${placed ? `<details class="fold" id="fxList"${fxListOpen ? " open" : ""}><summary class="lab">Dalam video ni (${nPl}) · tekan untuk ${fxListOpen ? "tutup" : "buka"} senarai</summary><div class="pool">${placed}</div></details>` : ""}${back}${cats}${gal}`;
 }
 const MUSIC = () => (D && D.music) || [];
 let bgmWait = false;
@@ -4451,7 +4464,9 @@ document.addEventListener("click", e => {
     S.zooms.push({ t: +t.toFixed(2), z: zmDef(d.zadd)[3], k: d.zadd }); clearPick(); zmSel = S.zooms.length - 1; touched(); drawPanel(); drawTimeline(); toast(zmDef(d.zadd)[1] + " ditambah"); return zmPlay(zmSel); }
   if (d.zk) { const z = S.zooms[zmSel]; if (!z) return; snapshot(); z.k = d.zk; touched(); drawPanel(); drawTimeline(); return zmPlay(zmSel); }
   if (d.zplay !== undefined) return zmPlay(+d.zplay);
-  if (d.fxcat) { fxCat = d.fxcat; return drawPanel(); }
+  if (d.fxcat) { fxCat = d.fxcat; if (fxCat === "Latar") { stSel = -1; zmSel = -1; } return drawPanel(); }
+  if (d.cut) return cutClick(d);
+  if (d.bh) return bhToggle(d.bh);
   if (d.ovl) { S.overlay = { ...S.overlay, [d.ovl]: !S.overlay[d.ovl] }; touched(); drawPanel(); return drawStageStatic(); }
   if (d.zdel) { snapshot(); if (d.zdel === "all") S.zooms = []; else S.zooms.splice(+d.zdel, 1); zmSel = -1; touched(); drawPanel(); toast("Zoom dibuang"); return drawTimeline(); }
   if (d.zgo) { const z = S.zooms[+d.zgo]; if (!z) return; if (playing) stop(); clearPick(); zmSel = +d.zgo; seek(Math.max(0, z.t - .3)); drawPanel(); drawTimeline(); const sc = $("tscroll"); sc.scrollLeft = Math.max(0, z.t * pps - sc.clientWidth * .3); return; }
@@ -4512,6 +4527,7 @@ document.addEventListener("dblclick", e => { const el = e.target; if (!el.datase
 document.addEventListener("input", e => {
   if (e.target.dataset && e.target.dataset.ttf) return ttInput(e.target);   /* p22 */
   if (e.target.id === "srcTo") { S.final.srcTo = e.target.value; touched(); return drawPanel(); }   /* p23 */
+  if (e.target.dataset && e.target.dataset.cutr) return cutRange(e.target);
   const id = e.target.id;
   if (id === "zoom") { pps = ppsFromZ(+e.target.value); return drawTimeline(); }
   if (id === "ov") { S.origVol = +e.target.value / 100; const v = $("ovV"); if (v) v.textContent = e.target.value + "%"; setVideoMute(); return touched(); }   /* kuat bunyi asal (render: origVol) */
@@ -4670,7 +4686,7 @@ async function boot() {
   S.stickers = (D.stickers || []).map(x => ({ ...x }));
   HOOK_END = calcHookEnd();
   if (D.voDur) $("vo").src = U("vo.mp3"); else $("vo").removeAttribute("src");
-  mark("data");
+  mark("data"); cutInit();
   $("boot").textContent = "Memuatkan suntingan kau…";
   let gaveUp = false;
   const open = (txt, cls) => {
@@ -4697,6 +4713,135 @@ async function boot() {
     [30, 120, 300].forEach(t => setTimeout(sendDiag, t * 1000));
   } catch (e) { clearTimeout(timer); if (!gaveUp) open("Tak boleh sambung ke simpanan. Muat semula page sebelum edit.", "err"); }
 }
+/* ---------- Cutout (26 Nov 2026, Mira): tukar latar + suis "Belakang saya" ----------
+   Mac mini (job ed_cut, cutout.py prep) sediakan jalur matte kecil cut/m*.jpg + cut/cut.json sekali bagi setiap video: setiap petak =
+   [alpha orang | jarak relatif], 12 gambar sesaat ikut masa proxy. Di sini hanya PRATONTON (kasar): #cbg = latar baru berlubang di tempat
+   Mira (di atas video), #cfg = badan Mira sahaja (di atas sticker .bh). Draf dan final dilukis kemas oleh cutout.py render.
+   Formula cutAlpha / cutLights MESTI sama dengan near_mask / lights_layer dalam cutout.py. S.cut disimpan dengan edits (render baca E["cut"]). */
+const CUT = { st: "", pct: 0, msg: "", meta: null, img: {}, key: "", live: false, bg: {}, pt: 0 };
+const CUT_BGS = [["m12", "Moden krim"], ["m13", "Gerbang"], ["m14", "Ruang luas"], ["m15", "Minimal kelabu"], ["m16", "Rak LED"], ["m17", "Sofa lengkung"], ["r1", "Ruang tamu"], ["r3", "Sudut baca"], ["r6", "Ruang kayu"]];
+const CUT_DEF = { on: 0, k: "cosy", img: "", blur: 55, br: 50, warm: 65, lights: 50, lsz: 35, dist: 60, solo: 0, match: 1 };
+const cutApi = () => window.ED_CUT || null;
+const cutBgUrl = id => ((cutApi() || {}).bg || "../../bg/") + id + ".jpg";
+const cutP = () => ({ ...CUT_DEF, ...(S.cut || {}) });
+const cutOn = () => !!(S.cut && S.cut.on && CUT.meta);
+const bhAny = () => S.stickers.some(x => x.bh);
+const CUT_LIGHTS = (() => { let s = 7; const r = () => { s = (s + 0x6D2B79F5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const L = []; for (let i = 0; i < 70; i++) L.push([r(), r() * r() * .62 + .02, .35 + r() * .65, .35 + r() * .55, r() * 6.283, .5 + r() * .8]); return L; })();
+async function cutInit() {
+  CUT.meta = null; CUT.img = {}; CUT.key = "";
+  if (!cutApi()) { CUT.st = "none"; return; }
+  try { const r = await fetch(U("cut/cut.json"), { cache: "no-store" }); if (!r.ok) throw 0; const m = await r.json(); if (!m || !m.n) throw 0; CUT.meta = m; CUT.st = "ok"; } catch (e) { if (CUT.st !== "wait") CUT.st = "none"; }
+  if (loaded) { if (tab === "Effects" || tab === "Title" || tab === "Highlight") drawPanel(); cutDraw(); }
+}
+function cutSheet(si) {
+  const m = CUT.meta; if (!m || !m.sheets[si] || CUT.img[si]) return;
+  Object.keys(CUT.img).forEach(k => { if (Math.abs(+k - si) > 1) delete CUT.img[k]; });   /* simpan dua fail sahaja dalam memori phone */
+  const im = new Image(); im.onload = () => { if (!playing) cutDraw(); }; im.src = U(m.sheets[si]); CUT.img[si] = im;
+}
+function cutAlpha(fi) {
+  const m = CUT.meta, p = cutP(), key = fi + ":" + p.dist + ":" + p.solo; if (key === CUT.key && CUT.ac) return CUT.ac;
+  const si = Math.floor(fi / m.per), img = CUT.img[si]; if (!img || !img.complete || !img.naturalWidth) { cutSheet(si); return null; }
+  if (fi % m.per > m.per * .7) cutSheet(si + 1);
+  const k = fi % m.per, W2 = m.tw * 2, sx = (k % m.cols) * W2, sy = Math.floor(k / m.cols) * m.th;
+  if (!CUT.wc) { CUT.wc = Object.assign(document.createElement("canvas"), { width: W2, height: m.th }); CUT.wx = CUT.wc.getContext("2d", { willReadFrequently: true });
+    CUT.ac = Object.assign(document.createElement("canvas"), { width: m.tw, height: m.th }); CUT.ax = CUT.ac.getContext("2d"); CUT.aid = CUT.ax.createImageData(m.tw, m.th); }
+  CUT.wx.drawImage(img, sx, sy, W2, m.th, 0, 0, W2, m.th);
+  let src; try { src = CUT.wx.getImageData(0, 0, W2, m.th).data; } catch (e) { return null; }
+  const o = CUT.aid.data, off = (p.dist - 60) * .003 + .0228, dnk = m.dnk || 510, dx = m.tw * 4;
+  for (let y = 0, q = 0; y < m.th; y++) for (let x = 0, i = y * W2 * 4; x < m.tw; x++, q += 4, i += 4) {
+    let a = src[i] / 255;
+    if (!p.solo) { let n = ((src[i + dx] - 128) / dnk + off) / .035; n = n < 0 ? 0 : n > 1 ? 1 : n; n = (n - .35) / .5; n = n < 0 ? 0 : n > 1 ? 1 : n; if (n > a) a = n; }
+    a = (a - .05) / .9; o[q] = o[q + 1] = o[q + 2] = 255; o[q + 3] = a < 0 ? 0 : a > 1 ? 255 : a * 255; }
+  CUT.ax.putImageData(CUT.aid, 0, 0); CUT.key = key; return CUT.ac;
+}
+function cutBg(id) { if (!id) return null; let im = CUT.bg[id]; if (!im) { im = CUT.bg[id] = new Image(); im.onload = () => { if (!playing) cutDraw(); }; im.src = cutBgUrl(id); } return im.complete && im.naturalWidth ? im : null; }
+function cutLights(x, W, H, t, p) {
+  const n = Math.round(CUT_LIGHTS.length * Math.max(0, Math.min(100, p.lights)) / 100); if (!n) return;
+  if (!CUT.dot) { const c = CUT.dot = Object.assign(document.createElement("canvas"), { width: 64, height: 64 }), g = c.getContext("2d"), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, "rgba(255,196,110,1)"); gr.addColorStop(.42, "rgba(235,160,70,.85)"); gr.addColorStop(.6, "rgba(235,160,70,.3)"); gr.addColorStop(1, "rgba(235,160,70,0)"); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); }
+  const rad = (.006 + .022 * p.lsz / 100) * W * 1.9; x.globalCompositeOperation = "lighter";
+  for (let i = 0; i < n; i++) { const [lx, ly, s, a, ph, sp] = CUT_LIGHTS[i], r = Math.max(1.5, rad * s); x.globalAlpha = Math.max(0, Math.min(1, a * (.55 + .45 * Math.sin(ph + t * sp)))); x.drawImage(CUT.dot, lx * W - r, ly * H - r, r * 2, r * 2); }
+  x.globalAlpha = 1; x.globalCompositeOperation = "source-over";
+}
+function cutDraw() {
+  const cb = $("cbg"), cf = $("cfg"); if (!cb || !cf) return;
+  const m = CUT.meta, needBg = cutOn(), needFg = !!m && S.stickers.some((x, i) => x.bh && ((i === stSel && !playing) || (pos >= x.t && pos < x.t + x.d)));
+  CUT.live = needBg || (!!m && bhAny());
+  if (!needBg && !needFg) { if (!cb.hidden) cb.hidden = true; if (!cf.hidden) cf.hidden = true; return; }
+  const v = $("mv"); if (!v || v.readyState < 2) return;
+  const ac = cutAlpha(Math.max(0, Math.min(m.n - 1, Math.round(v.currentTime * m.fps))));
+  if (!ac) { cb.hidden = cf.hidden = true; return; }
+  const W = 270, H = 480, p = cutP();
+  [cb, cf].forEach(c => { if (c.width !== W) { c.width = W; c.height = H; } c.style.transform = v.style.transform; c.style.transformOrigin = v.style.transformOrigin; });
+  cf.style.filter = v.style.filter || "";
+  cb.hidden = !needBg; cf.hidden = !needFg;
+  if (needBg) {
+    const x = cb.getContext("2d"), cosy = p.k !== "img", src = cosy ? v : cutBg(p.img), br = .45 + p.br / 100 * 1.1, w = p.warm / 100;
+    x.globalCompositeOperation = "source-over"; x.globalAlpha = 1;
+    if (!src) { x.fillStyle = "#2a2622"; x.fillRect(0, 0, W, H); }
+    else { const tiny = CUT.tiny || (CUT.tiny = document.createElement("canvas")), tw = Math.max(8, Math.round(W / (cosy ? 2 + p.blur * .2 : 1 + p.blur * .07))), th = Math.round(tw * 16 / 9);
+      if (tiny.width !== tw || tiny.height !== th) { tiny.width = tw; tiny.height = th; }
+      const tx = tiny.getContext("2d"); tx.imageSmoothingEnabled = true; tx.imageSmoothingQuality = "high";
+      try { tx.drawImage(src, 0, 0, tw, th); } catch (e) {}
+      x.imageSmoothingEnabled = true; x.imageSmoothingQuality = "high"; x.drawImage(tiny, 0, 0, W, H); }
+    const base = cosy ? .7 * br : br / (1 - .2067 * w), mul = [1, 1 - .2 * w, 1 - .42 * w].map(c => c * base), over = Math.max(...mul) - 1;
+    x.globalCompositeOperation = "multiply"; x.fillStyle = `rgb(${mul.map(c => Math.round(Math.min(1, c) * 255)).join(",")})`; x.fillRect(0, 0, W, H);
+    if (over > .02) { x.globalCompositeOperation = "lighter"; x.fillStyle = `rgba(255,255,255,${Math.min(.5, over * .5).toFixed(3)})`; x.fillRect(0, 0, W, H); }
+    cutLights(x, W, H, pos, p);
+    x.globalCompositeOperation = "destination-out"; x.drawImage(ac, 0, 0, W, H); x.globalCompositeOperation = "source-over";
+  }
+  if (needFg) { const x = cf.getContext("2d"); x.globalCompositeOperation = "source-over"; x.clearRect(0, 0, W, H); try { x.drawImage(v, 0, 0, W, H); } catch (e) {}
+    x.globalCompositeOperation = "destination-in"; x.imageSmoothingEnabled = true; x.drawImage(ac, 0, 0, W, H); x.globalCompositeOperation = "source-over"; }
+}
+async function cutPrep() {
+  const api = cutApi(); if (!api) return toast("Cutout hanya dalam app Editor"); if (CUT.st === "wait") return;
+  CUT.st = "wait"; CUT.pct = 0; CUT.msg = ""; drawPanel(); const t0 = Date.now();
+  try { await api.job({ vid: window.ED_VID, base: BASE || "" }); } catch (e) { CUT.st = "err"; CUT.msg = "Tak dapat hantar ke Mac mini"; return drawPanel(); }
+  clearTimeout(CUT.pt);
+  const poll = async () => {
+    let d = null; try { d = await api.poll(t0); } catch (e) {}
+    if (d && d.at >= t0 - 2000) {
+      if (d.status === "error") { CUT.st = "err"; CUT.msg = d.msg || "Cutout gagal"; return drawPanel(); }
+      if (d.status === "sedia") { try { await api.refresh(t0); } catch (e) {} await cutInit(); if (CUT.st !== "ok") { CUT.st = "err"; CUT.msg = "Cutout siap tapi fail belum sampai. Cuba muat semula editor."; drawPanel(); } else toast("Cutout siap"); return; }
+      CUT.pct = d.pct || 0; const el = $("cutPct"); if (el) el.textContent = CUT.pct + "%"; }
+    CUT.pt = setTimeout(poll, 3000);
+  };
+  CUT.pt = setTimeout(poll, 2500);
+}
+function cutPrepRow() {
+  if (CUT.st === "ok") return "";
+  return `<div class="row cutprep">${CUT.st === "wait" ? `<button class="chip cutbusy" disabled><i class="cutspin"></i>Sediakan cutout… <b id="cutPct">${CUT.pct}%</b></button>` : `<button class="chip" data-cut="prep">Sediakan cutout (sekali untuk video ni)</button>`}${CUT.st === "err" ? `<span class="legend">${esc(CUT.msg)}</span>` : ""}</div>`;
+}
+function cutGallery() {
+  if (!cutApi()) return `<div class="row"><div class="note">Latar dan "Belakang saya" hanya dalam app Editor.</div></div>`;
+  const p = cutP(), on = !!(S.cut && S.cut.on);
+  const card = (id, nm, st, cur) => `<div class="opt"><button class="mini cutcard${id === "cosy" ? " cosy" : ""}${id === "off" ? " off" : ""}" aria-pressed="${cur}" data-cut="bg" data-id="${id}" aria-label="${esc(nm)}"${st ? ` style="${st}"` : ""}></button><h3>${esc(nm)}</h3></div>`;
+  return `${cutPrepRow()}<div class="row"><div class="grid cutgrid">${card("off", "Tiada", "", !on)}${card("cosy", "Bilik asal cosy", "", on && p.k !== "img")}${CUT_BGS.map(([id, nm]) => card(id, nm, `background-image:url(${cutBgUrl(id)})`, on && p.k === "img" && p.img === id)).join("")}</div></div>`;
+}
+function cutForm() {
+  if (!cutApi()) return ""; const p = cutP(), on = !!(S.cut && S.cut.on); if (!on && !bhAny()) return "";
+  const R = (f, lab) => `<label class="lab" for="cut_${f}">${lab}: <span id="cutV_${f}">${p[f]}</span></label><input id="cut_${f}" data-cutr="${f}" type="range" min="0" max="100" step="1" value="${p[f]}">`;
+  return `<div class="row" id="cutForm">${on ? `<span class="lab" style="font-size:14px">Latar</span>${R("blur", "Kabur")}${R("br", "Terang")}${R("warm", "Hangat")}<span class="lab" style="font-size:14px">Fairy lights</span>${R("lights", "Banyak")}${R("lsz", "Saiz")}` : ""}
+    <span class="lab" style="font-size:14px">Potongan</span>${R("dist", "Jarak kekal")}<div class="chips">${chip("Orang sahaja", !!p.solo, 'data-cut="solo"')}${on ? chip("Padan lighting", !!p.match, 'data-cut="match"') : ""}<button class="chip" data-cut="reset">Reset</button></div></div>`;
+}
+function cutClick(d) {
+  if (d.cut === "prep") return cutPrep();
+  snapshot(); const p = cutP();
+  if (d.cut === "bg") { S.cut = d.id === "off" ? { ...p, on: 0 } : d.id === "cosy" ? { ...p, on: 1, k: "cosy" } : { ...p, on: 1, k: "img", img: d.id }; if (S.cut.on && CUT.st !== "ok" && CUT.st !== "wait") cutPrep(); }
+  else if (d.cut === "solo") S.cut = { ...p, solo: p.solo ? 0 : 1 };
+  else if (d.cut === "match") S.cut = { ...p, match: p.match ? 0 : 1 };
+  else if (d.cut === "reset") S.cut = { ...CUT_DEF, on: p.on, k: p.k, img: p.img };
+  touched(); drawPanel(); cutDraw();
+}
+function cutRange(el) { const f = el.dataset.cutr; S.cut = { ...cutP(), [f]: +el.value }; const v = $("cutV_" + f); if (v) v.textContent = el.value; touched(); cutDraw(); }
+function bhToggle(w) {
+  const x = w === "hook" ? hookFx() : w === "st" ? S.stickers[stSel] : ttOf(+w.slice(2)); if (!x) return;
+  snapshot(); if (x.bh) delete x.bh; else x.bh = 1;
+  if (x.bh && CUT.st !== "ok" && CUT.st !== "wait") { if (cutApi()) cutPrep(); else toast("Belakang saya hanya dalam app Editor"); }
+  touched(); drawStickers(); drawPanel(); cutDraw();
+}
+const bhChip = (x, w) => cutApi() ? chip("Belakang saya", !!(x && x.bh), `data-bh="${w}"`) : "";
 let CAPPLAN = null, capSig = "";
 ED_READY.then(boot, e => ED_FAIL(e));
 </script>

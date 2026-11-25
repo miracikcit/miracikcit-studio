@@ -1671,6 +1671,9 @@ def studio_jobs(sheet, cfg):
             elif j["type"] == "disk_now":
                 import brlib
                 outp = brlib.job_disk_now(inp, sheet)
+            elif j["type"] in ("car_scan", "car_make", "car_text"):   # carousel gambar 3:4 dari footage (car_text sahaja guna Claude)
+                import carousel
+                outp = getattr(carousel, "job_" + j["type"])(inp, sheet, cfg, sys.modules[__name__])
             elif j["type"] in ("raw_now", "raw_back"):   # raw footage projek published: salin ke / dari PERTAMA (0 token)
                 import rawfoot
                 outp = getattr(rawfoot, "job_" + j["type"])(inp, sheet)

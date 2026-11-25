@@ -673,3 +673,21 @@ button.tpchip{cursor:pointer}.tpchip.btnx{font-weight:500}
 .pbl+.rwb{margin-top:-1px}.rwb+.stbar,.rwh{margin:4px 0 6px 15px}
 .rwf{padding:10px 0;border-top:1px solid var(--line);margin-top:10px}.rwf strong{display:block;font-size:14px;overflow-wrap:anywhere}
 .rwf .rwb,.rwf .stbar,.rwf .rwh{margin-left:0}.rwa{margin-top:8px;align-items:center;flex-wrap:wrap}
+
+/* ---------- Carousel gambar 3:4 (2026-11-25) ---------- */
+.pbbt{gap:6px}.pbbt .pbgo{flex:1 1 auto}.pbbt .pbcar{min-height:44px}
+.cargrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.carth{position:relative;padding:0;border:0;border-radius:12px;overflow:hidden;aspect-ratio:3/4;background:var(--tile);cursor:pointer;display:block}
+.carth img{width:100%;height:100%;object-fit:cover;display:block}
+.carth.on{outline:3px solid var(--c);outline-offset:-3px}
+.carth .carn{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:var(--c);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.carth i{position:absolute;left:6px;bottom:6px;font-style:normal;font-size:10px;color:#fff;background:rgba(0,0,0,.45);border-radius:999px;padding:2px 6px}
+.carbar{position:sticky;bottom:calc(84px + var(--safeB));display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:12px;padding:8px 10px;border-radius:999px;background:rgba(255,255,255,.88);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid #fff;box-shadow:0 8px 22px rgba(110,90,78,.16)}
+.carrow{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.carrow img{width:36px;height:48px;object-fit:cover;border-radius:7px;flex:none;background:var(--tile)}
+.carrow b{flex:none;width:18px;text-align:center;color:var(--c);font-weight:600}.carrow .inp{flex:1 1 auto;min-width:0;margin:0}
+.carfx{align-items:center;margin-top:6px}
+.carstrip{display:flex;gap:6px;overflow-x:auto;margin:10px 0;padding-bottom:2px}
+.carstrip img{height:180px;width:135px;object-fit:cover;border-radius:10px;flex:none;display:block;background:var(--tile)}
+.carstrip.sm{margin:8px 0 6px}.carstrip.sm img{height:64px;width:48px;border-radius:7px}
+.carbox{margin-bottom:14px}.carit{padding-top:8px;margin-top:8px;border-top:1px solid var(--line)}.carit strong{display:block;font-size:14px}

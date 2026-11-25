@@ -30,7 +30,7 @@ function pubFoot(e){const key=pubFolderKey(e),fi=folderInfo(key);const best=(S.f
   const bst=best.map(d=>{const hd=d.moved||d.location;return line(hd?'hd':'wait',`<b>Klip terbaik</b> · ${esc(d.name||'')} · ${esc(String(d.files||d.clips||'').slice(0,12))} klip <span class="pill" style="--pc:${hd?'#5A8FB5':'var(--warn)'}">${hd?'Dalam Hard Disk':'Waiting to transfer'}</span>${d.backedUp?' · Drive ✓':''}`)}).join('');
   return raw+bst+(fin?line('ok',`<b>Video final</b> · 00 · TO POST FINAL · ${fin} fail`):'')+
     `<button type="button" class="pblink" data-act="pubFolder" data-id="${esc(e.key)}">${key?'Tukar folder footage':'Pilih folder footage'}</button>`}
-V.published=()=>{const sv=sheetView();const num=e=>{const g=e.groups.find(x=>x.tab==='PRODUCTS')||e.groups.find(x=>x.tab==='NON');return g?(+g.no||0):-1};
+V.published=()=>{if(ui.carOpen&&get('carousel',ui.carOpen))return carView(get('carousel',ui.carOpen));const sv=sheetView();const num=e=>{const g=e.groups.find(x=>x.tab==='PRODUCTS')||e.groups.find(x=>x.tab==='NON');return g?(+g.no||0):-1};
   const every=publishedEntries(sv).sort((a,b)=>num(b)-num(a)||a.name.localeCompare(b.name));const k=ui.pubTab||'job',nj=every.filter(e=>pubKind(e)==='job').length;const all=every.filter(e=>pubKind(e)===k);
   const gapN=all.filter(e=>linkGaps(e)>0).length,edN=all.filter(e=>pubRedo(e).length).length;const pf=ui.pubF||'';
   const list=all.filter(e=>hit('pub',e.name)&&(pf==='link'?linkGaps(e)>0:pf==='edit'?pubRedo(e).length>0:true));
@@ -42,7 +42,7 @@ V.published=()=>{const sv=sheetView();const num=e=>{const g=e.groups.find(x=>x.t
       ${gap?`<span class="pill" style="--pc:var(--bad)">${gap} link</span>`:''}<span class="ic chev">${IC.chev}</span></div></summary>
      ${open?`${rows.length?`<p class="eyebrow pbh">Video dan link</p>${rows.map((r,i)=>{const o=subParse(r.sub);return `<div class="pbv"><span class="pbt"><b>${esc(String(r.vid||i+1))}</b> · ${esc(noEmoji(String(r.caption).split('\n')[0]).slice(0,70))}</span><span class="pbxs">${subPlats(r).map(p=>{const po=r.posted[PLAT4.indexOf(p)];return `<button type="button" class="pbx${o[p]?' ok':po?' bad':''}" data-act="pubLink" data-id="${esc(e.key)}" data-x="${r.tab||''}|${r.row}|${p}" aria-label="Link ${p}${o[p]?' ada':po?' belum ada':''}">${p}</button>`}).join('')}</span></div>`}).join('')}`:''}
       <p class="eyebrow pbh">Footage asal</p>${pubFoot(e)}
-      <div class="pbs"><button class="btn solid tab pbgo" data-act="pubStart" data-id="${esc(e.key)}">Start edit${IC.next}</button><span class="pbsn">${tok(0)} Pindah ke tab Edit sebagai video baru</span></div>`:''}</details>`}).join('')||`<div class="empty">${all.length?'Tiada padanan.':'Belum ada video settled.'}</div>`}</div>
+      <div class="pbs"><div class="btns pbbt"><button class="btn solid tab pbgo" data-act="pubStart" data-id="${esc(e.key)}">Start edit${IC.next}</button><button class="btn pbcar" data-act="carNew" data-id="${esc(e.key)}">${IC.plus}Carousel</button></div><span class="pbsn">${tok(0)} Pindah ke tab Edit sebagai video baru</span></div>`:''}</details>`}).join('')||`<div class="empty">${all.length?'Tiada padanan.':'Belum ada video settled.'}</div>`}</div>
   <p class="meta" style="margin-top:16px">Kotak platform: hijau = link ada, merah = dah posted tapi link belum. Link disimpan dalam Sheet (PRODUCTS Q, NON PRODUCT N).</p>`};
 AFTER.published=()=>document.querySelectorAll('details[data-pub]').forEach(d=>d.addEventListener('toggle',()=>{if(d.open){if(ui.openPub!==d.dataset.pub){ui.openPub=d.dataset.pub;render(true)}}else if(ui.openPub===d.dataset.pub){ui.openPub=null}}));
 const pubEntry=key=>publishedEntries(sheetView()).find(x=>x.key===key);
@@ -111,3 +111,62 @@ function rawBackBtn(key){const r=rawInfo(key),R=S.sync.rawfoot||{},c=rawCopy(key
 A.rawNow=async el=>{el.disabled=true;try{await studioJob('raw_now',{},2*60000);toast('Mac mini mula salin ke PERTAMA. Peratus naik di sini')}catch(e){el.disabled=false;toast(String((e&&(e.message||e.code))||'Mac mini tak jawab').slice(0,90))}};
 A.rawHold=el=>{const k=el.dataset.id,m=Object.assign({},S.sync.rawhold||{},{[k]:Date.now()});S.sync.rawhold=m;saveDoc('sync/rawhold',m);rawPlanSync(true);render(true);toast('Ditahan. Kiraan mula semula dari hari ni')};
 A.rawBack=async el=>{el.disabled=true;try{await studioJob('raw_back',{key:el.dataset.id},2*60000);toast('Mac mini salin balik dari PERTAMA. EDIT NOW keluar bila siap')}catch(e){el.disabled=false;toast(String((e&&(e.message||e.code))||'Mac mini tak jawab').slice(0,90))}};
+
+/* ---------- CAROUSEL gambar 3:4 (2026-11-25, Mira) ----------
+   Butang ＋ Carousel pada kad Published. Mac mini (carousel.py) kumpul gambar + frame paling tajam setiap video (0 token),
+   Mira ketik ikut turutan slide, isi teks (sendiri / caption video / Claude Sonnet L), Mac mini render 1080x1440 + watermark
+   ke 00. TO POST FINAL/<nama> carousel dan Drive. Siap = keluar dalam To Publish sampai ditanda Posted. Doc `carousel/<id>`. */
+const TOK_CAR=6000;
+const carFold=id=>'https://drive.google.com/drive/folders/'+encodeURIComponent(id);
+A.carNew=el=>{const e=pubEntry(el.dataset.id);if(!e)return;const key=pubFolderKey(e);if(!key){toast('Pilih folder footage dulu');A.pubFolder({dataset:{id:e.key}});return}
+  if(!folderInfo(key)){toast('Footage tiada di Mac mini. Salin balik dari PERTAMA dulu');return}
+  const cur=S.carousel.find(c=>c.pubKey===e.key&&!c.posted&&c.status!=='siap');if(cur){carOpen(cur.id);return}
+  const d=save('carousel',{id:'c'+uid(),title:e.name,folder:key,pubKey:e.key,status:'scan',pct:3,msg:'Menunggu Mac mini',picks:[],texts:[],caption:''});carOpen(d.id);
+  studioJob('car_scan',{id:d.id},3*60000).catch(x=>save('carousel',Object.assign({},get('carousel',d.id),{status:'error',msg:'Mac mini tak jawab. Semak Mac mini hidup.'})))};
+function carOpen(id){const d=get('carousel',id);ui.carOpen=id;ui.car={step:1,f:'',picks:(d.picks||[]).slice(),texts:(d.texts||[]).slice(),caption:d.caption||''};if(location.hash!=='#published')location.hash='#published';else render(true);window.scrollTo(0,0)}
+A.carOpen=el=>carOpen(el.dataset.id);
+A.carBack=()=>{carKeep();ui.carOpen=null;render(true)};
+function carKeep(){const c=ui.car;if(!c)return;c.picks.forEach((p,k)=>{const i=document.getElementById('carT'+k);if(i)c.texts[k]=i.value});const t=document.getElementById('carCap');if(t)c.caption=t.value}
+const carSave=(d,o)=>save('carousel',Object.assign({},d,{picks:ui.car.picks.slice(),texts:ui.car.picks.map((p,k)=>ui.car.texts[k]||''),caption:ui.car.caption||''},o||{}));
+function carView(d){carKeep();const c=ui.car||(ui.car={step:1,f:'',picks:[],texts:[],caption:''});const by={};(d.cands||[]).forEach(x=>by[x.i]=x);
+  const top=`<div class="head"><div><p class="eyebrow">Carousel · 3:4 · 1080×1440</p><h1>${esc(d.title||'Carousel')}</h1></div><div class="btns"><button class="btn sm" data-act="carBack">‹ Kembali</button></div></div>`;
+  const bar=(t,p)=>`<div class="card glass"><div class="stbar" style="--c:var(--c)"><div class="stt"><span><i class="spin"></i> ${esc(t)}</span><span>${Math.round(p||0)}%</span></div><div class="stg"><i style="width:${Math.max(3,p||0)}%"></i></div></div><p class="meta" style="margin:8px 0 0">Boleh tutup app. Mac mini teruskan sendiri.</p></div>`;
+  if(d.status==='scan'||d.status==='make'){const stale=Date.now()-(d.updated||0)>20*60000;return top+bar(d.msg||(d.status==='scan'?'Kumpul gambar':'Susun slide'),d.pct)+(stale?`<div class="btns" style="margin-top:10px"><button class="btn sm" data-act="carRetry" data-id="${esc(d.id)}">Cuba lagi</button><button class="btn sm bad" data-act="carDel" data-id="${esc(d.id)}">Buang</button></div>`:'')}
+  if(d.status==='error')return top+`<div class="card glass"><p style="margin:0;color:var(--bad)">Tak jadi: ${esc(d.msg||'')}</p><div class="btns" style="margin-top:10px"><button class="btn sm solid tab" data-act="carRetry" data-id="${esc(d.id)}">Cuba lagi</button><button class="btn sm bad" data-act="carDel" data-id="${esc(d.id)}">Buang</button></div></div>`;
+  if(d.status==='siap'){const S2=d.slides||[];return top+`<div class="card glass"><p class="eyebrow" style="margin:0">Siap · ${S2.length} slide</p><div class="carstrip">${S2.map((id,k)=>`<a href="${esc(gyDView(id))}" target="_blank" rel="noopener"><img src="${esc(gyImg(id,400))}" alt="Slide ${k+1}" loading="lazy" referrerpolicy="no-referrer"></a>`).join('')}</div>
+      <p class="meta">Fail penuh: ${esc(String(d.out||'').replace(/^(\d+)\.\s*/,'$1 · '))}. Download dari Drive untuk post.</p>
+      <div class="btns" style="flex-wrap:wrap">${d.drive?`<a class="btn solid tab" href="${esc(carFold(d.drive))}" target="_blank" rel="noopener">${IC.ext}Buka folder Drive</a>`:''}${d.caption?`<button class="btn" data-act="copy" data-x="${esc(d.caption)}">Copy caption</button>`:''}<button class="btn" data-act="carPosted" data-id="${esc(d.id)}">${d.posted?'Dah posted ✓':'Tanda Posted'}</button><button class="btn icon bad" data-act="carDel" data-id="${esc(d.id)}" aria-label="Buang">${IC.trash}</button></div></div>`}
+  /* pilih gambar */
+  if(c.step!==2){const L=(d.cands||[]).filter(x=>!c.f||x.kind===c.f);const ni=(d.cands||[]).filter(x=>x.kind==='img').length,nv=(d.cands||[]).length-ni;
+    const chip=(f,t)=>`<button type="button" class="pbf${c.f===f?' on':''}" data-act="carF" data-id="${f}">${t}</button>`;
+    return top+`<div class="pbfs">${chip('','Semua · '+(d.cands||[]).length)}${chip('img','Gambar · '+ni)}${chip('vid','Dari video · '+nv)}</div>
+      <p class="meta" style="margin:0 0 8px">Ketik ikut turutan slide. Ketik sekali lagi untuk buang.</p>
+      <div class="cargrid">${L.map(x=>{const k=c.picks.indexOf(x.i);return `<button type="button" class="carth${k>=0?' on':''}" data-act="carPick" data-id="${x.i}" aria-pressed="${k>=0}" aria-label="${x.kind==='img'?'Gambar':'Frame video'} ${esc(x.src)}"><img src="${esc(gyImg(x.thumb,400))}" alt="" loading="lazy" referrerpolicy="no-referrer">${k>=0?`<b class="carn">${k+1}</b>`:''}${x.kind==='vid'?'<i>▶</i>':''}</button>`}).join('')}</div>
+      <div class="carbar"><span class="meta">${c.picks.length} dipilih · cadangan 6 hingga 10 ${tok(0)}</span><button class="btn solid tab" data-act="carNext"${c.picks.length>=2?'':' disabled'}>Seterusnya${IC.next}</button></div>`}
+  /* teks slide */
+  return top+`<div class="card glass"><p class="eyebrow" style="margin:0 0 8px">Teks slide (boleh kosong)</p>
+    ${c.picks.map((i,k)=>`<div class="carrow"><img src="${esc(gyImg((by[i]||{}).thumb,200))}" alt="" referrerpolicy="no-referrer"><b>${k+1}</b><input class="inp" id="carT${k}" value="${esc(c.texts[k]||'')}" maxlength="120" aria-label="Teks slide ${k+1}" placeholder="${k===0?'Hook: buat orang swipe':'Satu point'}"></div>`).join('')}
+    <label class="f" style="margin-top:10px"><span>Caption posting</span><textarea class="inp" id="carCap" rows="4">${esc(c.caption||'')}</textarea></label>
+    <div class="btns carfx"><button class="btn sm" data-act="carCapUse" data-id="${esc(d.id)}">Guna caption video</button>${tok(0)}</div>
+    <div class="btns carfx"><button class="btn sm" data-act="carText" data-id="${esc(d.id)}"${ui.carBusy?' disabled':''}>${ui.carBusy?'<i class="spin"></i>Claude menulis':'Claude tulis teks + caption'}</button>${tok(TOK_CAR,'tanpa tengok gambar; guna caption / nota','Sonnet L')}</div></div>
+    <div class="carbar"><button class="btn" data-act="carStep1">‹ Tukar gambar</button><button class="btn solid tab" data-act="carMake" data-id="${esc(d.id)}">Buat carousel</button></div>`}
+A.carF=el=>{ui.car.f=el.dataset.id;render(true)};
+A.carPick=el=>{const i=+el.dataset.id,c=ui.car,k=c.picks.indexOf(i);if(k>=0){c.picks.splice(k,1);c.texts.splice(k,1)}else{if(c.picks.length>=20){toast('Paling banyak 20 slide');return}c.picks.push(i);c.texts[c.picks.length-1]=''}render(true)};
+A.carNext=()=>{ui.car.step=2;carSave(get('carousel',ui.carOpen));window.scrollTo(0,0)};
+A.carStep1=()=>{carKeep();ui.car.step=1;render(true)};
+A.carCapUse=el=>{carKeep();const d=get('carousel',el.dataset.id),e=pubEntry(d.pubKey),r=e&&pubRows(e)[0];if(!r||!r.caption){toast('Tiada caption video dalam Sheet');return}ui.car.caption=String(r.caption);render(true);toast('Caption video dimasukkan')};
+A.carText=async el=>{carKeep();const d=carSave(get('carousel',el.dataset.id));const e=pubEntry(d.pubKey),r=e&&pubRows(e)[0];ui.carBusy=1;render(true);
+  try{const o=await studioJob('car_text',{id:d.id,src:ui.car.caption||(r&&r.caption)||''},4*60000);const n=get('carousel',d.id)||{};ui.car.texts=((o&&o.texts)||n.texts||[]).slice();if(n.caption)ui.car.caption=n.caption;toast('Teks siap. Semak dan ubah kalau perlu')}
+  catch(x){toast('Claude tak jawab: '+String((x&&(x.message||x.code))||'').slice(0,80))}finally{ui.carBusy=0;const cap=document.getElementById('carCap');if(cap)cap.value=ui.car.caption||'';ui.car.picks.forEach((p,k)=>{const i=document.getElementById('carT'+k);if(i)i.value=ui.car.texts[k]||''});render(true)}};
+A.carMake=el=>{carKeep();const d=carSave(get('carousel',el.dataset.id),{status:'make',pct:3,msg:'Menunggu Mac mini'});
+  studioJob('car_make',{id:d.id},3*60000).catch(x=>save('carousel',Object.assign({},get('carousel',d.id),{status:'error',step:'make',msg:'Mac mini tak jawab. Semak Mac mini hidup.'})))};
+A.carRetry=el=>{const d=get('carousel',el.dataset.id);const mk=d.step==='make'||d.status==='make';save('carousel',Object.assign({},d,{status:mk?'make':'scan',step:'',pct:3,msg:'Menunggu Mac mini'}));
+  studioJob(mk?'car_make':'car_scan',{id:d.id},3*60000).catch(()=>toast('Mac mini tak jawab'))};
+A.carDel=el=>{const d=get('carousel',el.dataset.id);confirmBox('Buang carousel "'+(d.title||'')+'" dari senarai? Fail yang dah dibuat tak dipadam.',()=>{if(ui.carOpen===d.id)ui.carOpen=null;del('carousel',d.id);toast('Dibuang dari senarai')},'Ya, buang')};
+A.carPosted=el=>{const d=get('carousel',el.dataset.id);save('carousel',Object.assign({},d,{posted:d.posted?0:Date.now()}));toast(d.posted?'Tanda Posted dibuang':'Ditanda Posted')};
+/* To Publish: carousel yang siap dan belum posted, di bawah tajuk */
+function carReadyBox(){const L=S.carousel.filter(c=>c.status==='siap'&&!c.posted).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));if(!L.length)return '';
+  return `<div class="card glass carbox"><p class="eyebrow" style="margin:0">Carousel untuk post · ${L.length}</p>${L.map(d=>`<div class="carit"><div class="carstrip sm">${(d.slides||[]).slice(0,5).map(id=>`<img src="${esc(gyImg(id,200))}" alt="" loading="lazy" referrerpolicy="no-referrer">`).join('')}</div>
+    <strong>${esc(d.title||'Carousel')}</strong><span class="meta">${(d.slides||[]).length} slide · gambar 3:4</span>
+    <div class="btns" style="flex-wrap:wrap;margin-top:6px">${d.drive?`<a class="btn sm solid tab" href="${esc(carFold(d.drive))}" target="_blank" rel="noopener">${IC.ext}Drive</a>`:''}${d.caption?`<button class="btn sm" data-act="copy" data-x="${esc(d.caption)}">Copy caption</button>`:''}<button class="btn sm" data-act="carOpen" data-id="${esc(d.id)}">Lihat</button><button class="btn sm st-done" data-act="carPosted" data-id="${esc(d.id)}">Posted</button></div></div>`).join('')}</div>`}
+{const prevReady=V.ready;V.ready=()=>carReadyBox()+prevReady()}
