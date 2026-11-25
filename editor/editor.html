@@ -1254,6 +1254,7 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
 .blk.sfx { background: var(--mint); cursor: grab; touch-action: none; }
 .blk.sfx.sel, .blk.part.sel, .blk.stb.sel { outline: 2px solid var(--fg); outline-offset: -2px; touch-action: none; cursor: grab; }
 .blk.voice { background: var(--mint); }
+.blk.part .wvc { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }   /* wave suara VO */
 .blk.part { cursor: pointer; padding: 0 20px; }
 .blk.stb { background: var(--brownsoft); cursor: pointer; }
 .blk.off { background: repeating-linear-gradient(45deg, #5b2f2a 0 4px, #3a2422 4px 8px); color: var(--red); }
@@ -1691,7 +1692,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .spticks button[aria-pressed="true"] { color: #3fd0c0; }
 #spBtn { display: inline-grid; place-items: center; } #spBtn .ic { width: 16px; height: 16px; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=2581dec4e7">
+<link rel="stylesheet" href="../../ed-capcut.css?v=c7e0364d34">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1802,9 +1803,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=2581dec4e7"></script>
-<script src="../../../js/runtime.js?v=2581dec4e7"></script>
-<script src="../../ed-boot.js?v=2581dec4e7"></script>
+<script src="../../../js/config.js?v=c7e0364d34"></script>
+<script src="../../../js/runtime.js?v=c7e0364d34"></script>
+<script src="../../ed-boot.js?v=c7e0364d34"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -3753,8 +3754,45 @@ function paintThumbs() {
       const c = S.clips[+cv.dataset.cv]; if (!c) return;
       const g = cv.getContext("2d"), pa = proxyT(c, c.in);
       for (let x = 0; x < cv.width; x += 33) g.drawImage(tile(Math.min(D.stripN - 1, Math.floor(pa + x / pps * (c.sp || 1)))), x, 0);
+      const pk = WV.pk.p; if (pk) { const off = S.globalMute || c.muted; g.fillStyle = "rgba(8,8,12,.5)"; g.fillRect(0, 40, cv.width, 18); g.fillStyle = off ? "rgba(255,255,255,.6)" : "#7fe3d6";   /* klip mute: wave kelabu */ wvBars(g, pk, cv.width, x => pa + x / pps * (c.sp || 1), 2 / pps * (c.sp || 1), 57, 16); }
     });
+    wvPaintVo();
   }, 0);
+  wvKick();
+}
+/* Wave suara (25 Nov 2026, Mira): panduan potong. Puncak audio dikira DALAM device dari proxy.mp4 / vo.mp3 (tiada token, tiada Mac mini),
+   50 nilai sesaat, disimpan dalam memori dan localStorage (satu projek terakhir). Dilukis di bawah gambar klip dan dalam blok VO. */
+const WV = { r: 50, pk: {}, st: {} };
+function wvBars(g, pk, W, tAt, span, base, H) {
+  for (let x = 0; x < W; x += 2) { const a = Math.max(0, Math.floor(tAt(x) * WV.r)), b = Math.max(a + 1, Math.ceil((tAt(x) + span) * WV.r)); let m = 0; for (let k = a; k < b && k < pk.length; k++) if (pk[k] > m) m = pk[k];
+    const h = Math.max(1, Math.round(m / 255 * H)); g.fillRect(x, base - h, 1.4, h); }
+}
+function wvPaintVo() {
+  const pk = WV.pk.v; if (!pk || !hasVO() || isTalk()) return; const segs = voSegs();
+  document.querySelectorAll("#voTrack .part").forEach(el => { const i = +el.dataset.v, gs = segs.filter(x => x.p === i); if (!gs.length) return;
+    let cv = el.querySelector("canvas.wvc"); if (!cv) { cv = document.createElement("canvas"); cv.className = "wvc"; el.insertBefore(cv, el.firstChild); }
+    const t0 = gs[0].e, l = gs[gs.length - 1], W = Math.max(3, Math.ceil((l.e + l.b - l.a - t0) * pps)); cv.width = W; cv.height = 24; const g = cv.getContext("2d"); g.fillStyle = "rgba(6,38,43,.6)";
+    wvBars(g, pk, W, x => { const t = t0 + x / pps, s = gs.find(q => t >= q.e && t < q.e + q.b - q.a); return s ? s.a + t - s.e : -1; }, 2 / pps, 22, 20); });
+}
+const wvN = key => key === "p" ? (D.stripN || 0) : Math.round((D.voDur || 0) * 10);
+function wvKick() { if (!D || !window.BASE_OK) return; wvLoad("p", U("proxy.mp4")); if (D.voDur) wvLoad("v", U("vo.mp3")); }
+async function wvLoad(key, url) {
+  if (WV.st[key] === url) return; WV.st[key] = url; WV.pk[key] = null;
+  const lsK = "reelWv" + key; try { const j = JSON.parse(localStorage.getItem(lsK) || "null"); if (j && j.u === url && j.n === wvN(key)) { const q = Uint8Array.from(atob(j.b), ch => ch.charCodeAt(0)); WV.pk[key] = q.some(v => v > 8) ? q : null; paintThumbs(); return; } } catch (e) {}
+  await new Promise(r => setTimeout(r, 1500)); while (playing || scrubOn) await new Promise(r => setTimeout(r, 800));   /* jangan ganggu main / scrub */
+  if (WV.st[key] !== url) return;
+  try {
+    const buf = await (await fetch(url)).arrayBuffer(); let ctx = null;
+    const OC = window.OfflineAudioContext || window.webkitOfflineAudioContext; for (const sr of [8000, 22050, 44100]) { try { ctx = new OC(1, 1, sr); break; } catch (e) {} }
+    const au = await new Promise((ok, no) => { const p = ctx.decodeAudioData(buf, ok, no); if (p && p.catch) p.catch(no); });
+    if (WV.st[key] !== url) return;
+    const ch = au.getChannelData(0), step = au.sampleRate / WV.r, n = Math.ceil(ch.length / step), raw = new Float32Array(n);
+    for (let i = 0; i < n; i++) { let m = 0; const e = Math.min(ch.length, Math.floor((i + 1) * step)); for (let k = Math.floor(i * step); k < e; k += 2) { const v = ch[k] < 0 ? -ch[k] : ch[k]; if (v > m) m = v; } raw[i] = m; if (i % 2000 === 1999) await new Promise(r => setTimeout(r, 0)); }
+    const top = Array.from(raw).sort((a, b) => a - b)[Math.floor(n * .98)] || 0, pk = new Uint8Array(n); for (let i = 0; i < n; i++) pk[i] = Math.min(255, Math.round(Math.pow(Math.min(1, raw[i] / (top || 1)), .7) * 255));
+    WV.pk[key] = top > .004 && pk.some(v => v > 8) ? pk : null;   /* audio senyap sepenuhnya: tiada jalur wave */
+    try { let b = ""; for (let i = 0; i < n; i++) b += String.fromCharCode(pk[i]); localStorage.setItem(lsK, JSON.stringify({ u: url, n: wvN(key), b: btoa(b) })); } catch (e) {}
+    paintThumbs();
+  } catch (e) { WV.st[key] = url; }   /* tak dapat kira (cth tiada audio): senyap, timeline kekal macam biasa */
 }
 function voBlocks() {
   const segs = voSegs(), parts = S.vo.map((p, i) => { const g = segs.filter(x => x.p === i); return g.length ? { i, t: g[0].e, d: g[g.length - 1].e + g[g.length - 1].b - g[g.length - 1].a - g[0].e } : null; }).filter(Boolean);
@@ -4557,7 +4595,7 @@ async function boot() {
   { let st = $("fxcssS"); if (!st) { st = document.createElement("style"); st.id = "fxcssS"; document.head.appendChild(st); } st.textContent = D.fxcss || ""; }   // per-product effect colours (project.json "fxcss")
   if (PARTS && PARTS.parts.length > 1) D.series = { part: PARTS.parts.length, total: PARTS.parts.length, combined: true, n: PART + 1 };
   { const a = $("mv"), b = $("mvb"); [a, b].forEach(v => { v.src = U("proxy.mp4"); }); a.poster = U("poster.jpg"); a.style.opacity = ""; b.style.opacity = "0"; a.style.transform = b.style.transform = "";
-    stripImg.src = U("strip.jpg"); document.documentElement.style.setProperty("--poster", `url("${U("poster.jpg")}")`); }
+    window.BASE_OK = 1; WV.st = {}; WV.pk = {}; stripImg.src = U("strip.jpg"); document.documentElement.style.setProperty("--poster", `url("${U("poster.jpg")}")`); }
   S.clips = D.clips.map(c => ({ ...c, muted: !!c.muted }));
   S.bin = (D.bin || []).map(c => ({ ...c, muted: !!c.muted }));
   S.hook = D.hook || ""; S.words = (D.words || []).map(w => ({ ...w, cut: false, fixed: false }));
