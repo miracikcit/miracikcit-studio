@@ -302,20 +302,22 @@
       else if (playing) { const err = pos - disp; if (Math.abs(err) > 0.5) disp = pos; else disp += dt + err * Math.min(1, dt * 6); }   // ikut jam video dengan lembut, tanpa lompat
       else disp = pos;
       { const d = G('dr'), tr = d && d.k === 'trim';   /* 25 Nov (ikut CapCut): tarik pemegang KIRI = hujung kiri klip ikut jari (timeline dianjak), hujung kanan kekal */
-        if (tr && d.moved) { try { const c = G('S').clips[d.i], ts = $('tscroll'), sp = c.sp || 1; if (d._sl == null) d._sl = SL.get.call(ts);
+        if (tr && d.moved) { try { const c = G('S').clips[d.i], ts = $('tscroll'), sp = c.sp || 1; if (d._sl == null) { d._sl = SL.get.call(ts); const rs0 = $('rscroll'); d._slr = rs0 ? SL.get.call(rs0) : d._sl; }   /* dua scroller boleh beza beberapa px (lebar tak sama): simpan asas masing-masing */
           /* jari dekat tepi timeline: timeline bergerak sendiri dan klip terus dipanjangkan / dipendekkan (ikut CapCut). Berhenti bila footage klip dah habis. */
           { const r = ts.getBoundingClientRect(), EDGE = 44, dir = lastPX < r.left + EDGE ? -1 : lastPX > r.right - EDGE ? 1 : 0;
             if (dir) { const depth = Math.min(1, (dir < 0 ? r.left + EDGE - lastPX : lastPX - (r.right - EDGE)) / EDGE), grow = (d.side === 'l') === (dir < 0);
               const can = grow ? (d.side === 'l' ? c.in > c.srcMin + 1e-3 : c.out < c.srcMax - 1e-3) : (c.out - c.in > G('MIN_CLIP') + .02);
               if (can) { d.ax = (d.ax || 0) + dir * (90 + 260 * depth) * dt; document.dispatchEvent(new PointerEvent('pointermove', { clientX: lastPX, clientY: lastPY, bubbles: true })); } } }
-          const want = d._sl + (d.side === 'l' ? ((c.out - c.in) - (d.out - d.in)) / sp * pps : 0) + (d.ax || 0), x = Math.max(0, want); [ts, $('rscroll')].forEach(el => { if (el && Math.abs(SL.get.call(el) - x) > 0.5) setSL(el, x); });
+          const want = d._sl + (d.ax || 0), rs = $('rscroll');   /* timeline TAK dianjak semasa tarik (enjin gerakkan klip sendiri); hanya bergerak bila jari di tepi skrin (ax) */
+          [[ts, want], [rs, d._slr + (d.ax || 0)]].forEach(([el, w]) => { if (!el) return; const x = Math.max(0, w); if (Math.abs(SL.get.call(el) - x) > 0.5) setSL(el, x); });
           /* di hujung timeline scroll tak boleh pergi lagi: baki dianjak dengan transform supaya hujung klip tetap ikut jari */
           const res = Math.round(want - SL.get.call(ts)); if (res !== trimX) { trimX = res; ['inner', 'rinner'].forEach(id => { const el = $(id); if (el) { el.style.transition = ''; el.style.transform = res ? 'translateX(' + (-res) + 'px)' : ''; } }); } } catch (e) {} }
         if (!tr && trimX) { trimX = 0; ['inner', 'rinner'].forEach(id => { const el = $(id); if (el) { el.style.transition = 'transform .26s ease-out'; el.style.transform = ''; setTimeout(() => { el.style.transition = ''; }, 300); } }); }
         if (tr && scrubbing) { scrubbing = false; clearTimeout(endTm); eng('scrubOn = false; vsWant = null'); }   /* pemegang disentuh semasa timeline masih meluncur: tamatkan scrub, jangan lompat balik */
         /* semasa tarik, mesej panjang video (#lenbar) boleh muncul / hilang dan tolak timeline naik turun di bawah jari: kunci tingginya sampai jari dilepas */
         if (tr && !trimOn) { const lb = $('lenbar'); if (lb) { const h = lb.offsetHeight; if (h) { lb.style.height = h + 'px'; lb.style.overflow = 'hidden'; } else lb.style.display = 'none'; } }
-        if (tr) trimOn = 1; else if (trimOn) { trimOn = 0; glide = t + 280; const lb = $('lenbar'); if (lb) { lb.style.height = ''; lb.style.overflow = ''; lb.style.display = ''; } } }   /* lepas jari: timeline meluncur balik ke playhead, bukan melompat */
+        if (tr) trimOn = 1; else if (trimOn) { trimOn = 0;   /* lepas jari: timeline TAK bergerak; playhead kekal di tengah dan gambar tunjuk saat di bawah playhead (macam CapCut) */
+          try { window.__edSeek = Math.max(0, SL.get.call($('tscroll')) / pps); eng('seek(window.__edSeek)'); disp = G('pos'); } catch (e) {} const lb = $('lenbar'); if (lb) { lb.style.height = ''; lb.style.overflow = ''; lb.style.display = ''; } } }   /* lepas jari: timeline meluncur balik ke playhead, bukan melompat */
       const cw = sc.clientWidth; off = cw / 2;   /* Fasa 2 (24 Nov, Mira): playhead ikut CapCut, tetap di tengah */
       if (!scrubbing && !finger && !phDrag) {
         [$('tscroll'), $('rscroll')].forEach(el => { if (!el) return; const w = el.clientWidth || cw; const max = Math.max(0, el.scrollWidth - w);

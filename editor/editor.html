@@ -1696,7 +1696,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .spticks button[aria-pressed="true"] { color: #3fd0c0; }
 #spBtn { display: inline-grid; place-items: center; } #spBtn .ic { width: 16px; height: 16px; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=359d993880">
+<link rel="stylesheet" href="../../ed-capcut.css?v=c36d23133c">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1807,9 +1807,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=359d993880"></script>
-<script src="../../../js/runtime.js?v=359d993880"></script>
-<script src="../../ed-boot.js?v=359d993880"></script>
+<script src="../../../js/config.js?v=c36d23133c"></script>
+<script src="../../../js/runtime.js?v=c36d23133c"></script>
+<script src="../../ed-boot.js?v=c36d23133c"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -3955,12 +3955,20 @@ function undoStep(dir) {
 }
 /* 24 Nov 2026 (Mira): bunyi (SFX) melekat pada footage. Sebelum setiap ubahan, setiap bunyi ingat fail + saat footage di bawahnya;
    lepas klip dipotong / dibuang / disusun, bunyi pindah ikut saat footage tu (bukan kekal pada saat timeline lama). */
+/* 25 Nov 2026 (Mira): bukan bunyi sahaja. Sticker, effect (termasuk gambar) dan zoom pun melekat pada footage, dalam semua jenis projek,
+   supaya bila klip dipotong / dipendekkan / dibuang semuanya kekal atas footage yang sama dan tak lari dari satu sama lain (macam CapCut).
+   Projek bercakap (talk): sticker dah diurus oleh syncStickers(). Yang kekal pada masa asal: benda di saat 0 (hook / tajuk pembuka), end card,
+   dan benda yang footagenya dah dibuang. Kalau fail yang sama ada dalam dua klip, klip asal (id sama) diutamakan. */
 const SFXA = new WeakMap(); let sfxSig = "";
-function sfxPin() { sfxSig = clipSigOf(); (S.sfx || []).forEach(x => { const l = locate(x.t), c = S.clips[l.i]; SFXA.set(x, c ? { f: c.file, s: l.t } : null); }); }
+const pinList = () => [...(S.sfx || []), ...(S.zooms || []), ...(isTalk() ? [] : (S.stickers || []).filter(x => !x.hl && !x.k.startsWith("e-endc")))];   /* x.hl = sticker milik Highlight: ia ikut perkataan caption, bukan footage */
+const pinSigOf = () => S.clips.map(c => c.id + ":" + c.file + ":" + c.in + ":" + c.out + ":" + (c.sp || 1)).join("|");   /* termasuk kelajuan: tukar kelajuan klip pun anjak footage selepasnya */
+function sfxPin() { if (sfxSig && sfxSig !== pinSigOf()) sfxFlow();   /* ubahan klip yang belum dialirkan (cth slider kelajuan diseret): alirkan dulu, baru ingat semula */
+  sfxSig = pinSigOf(); const T = total(); pinList().forEach(x => { const l = locate(x.t), c = S.clips[l.i]; SFXA.set(x, c && x.t > .05 && x.t < T ? { f: c.file, id: c.id, s: l.t } : null); }); }
 function sfxFlow() {
-  if (!sfxSig || sfxSig === clipSigOf()) return; sfxSig = clipSigOf();
-  (S.sfx || []).forEach(x => { const a = SFXA.get(x); if (!a) return; let st = 0, hit = null;
-    for (const c of S.clips) { const d = cLen(c); if (c.file === a.f && a.s >= c.in - .001 && a.s < c.out + .001) { hit = st + Math.min(d, Math.max(0, a.s - c.in) / (c.sp || 1)); break; } st += d; }
+  if (!sfxSig || sfxSig === pinSigOf()) return; sfxSig = pinSigOf();
+  pinList().forEach(x => { const a = SFXA.get(x); if (!a) return; let st = 0, hit = null, any = null;
+    for (const c of S.clips) { const d = cLen(c); if (c.file === a.f && a.s >= c.in - .001 && a.s < c.out + .001) { const t = st + Math.min(d, Math.max(0, a.s - c.in) / (c.sp || 1)); if (c.id === a.id) { hit = t; break; } if (any == null) any = t; } st += d; }
+    if (hit == null) hit = any;
     if (hit != null) x.t = +hit.toFixed(2); else x.t = +Math.min(x.t, Math.max(0, total() - .3)).toFixed(2); });
 }
 let nameN = 0;
@@ -4267,6 +4275,16 @@ document.addEventListener("pointermove", e => {
   vSeek(proxyT(c, dr.side === "l" ? c.in : c.out - .04));   /* gambar ikut pemegang sepantas video boleh cari frame */
   pos = startOf(dr.i) + (dr.side === "l" ? 0 : cLen(c) - .02); curIdx = dr.i;
   dr.el.style.width = cLen(c) * pps + "px";
+  /* 25 Nov 2026 (Mira, tepat macam CapCut): tarik pemegang KIRI = KLIP yang bergerak, bukan timeline. Hujung kiri klip (dan klip-klip sebelum dia)
+     ikut jari; hujung kanan, klip selepasnya, pembaris dan trek lain langsung tak bergerak. Dibuat serentak dengan lebar (bukan frame kemudian) supaya licin. */
+  if (dr.side === "l" && document.documentElement.classList.contains("pwa")) { const sh = (cLen(c) - (dr.out - dr.in) / (c.sp || 1)) * pps, row = dr.el.parentElement, first = row.querySelector(".clip");
+    if (first) first.style.marginLeft = -sh + "px"; row.querySelectorAll(".jn").forEach(j => { if (+j.dataset.jn <= dr.i) j.style.transform = `translateX(${-sh}px)`; }); }
+  /* blok bunyi / sticker / effect / zoom yang melekat pada footage ikut bergerak SEMASA tarik (bukan melompat bila jari dilepas):
+     pemegang kiri = yang sebelum klip ikut klip-klip sebelum; pemegang kanan = yang selepas klip ikut klip-klip selepas. */
+  if (document.documentElement.classList.contains("pwa")) {
+    if (!dr.fol) { const S0 = startOf(dr.i), E0 = S0 + (dr.out - dr.in) / (c.sp || 1), pick = (q, arr, key) => [...document.querySelectorAll(q)].filter(el => { const x = arr[+el.dataset[key]]; return x && SFXA.get(x) && (dr.side === "l" ? x.t < S0 - .001 : x.t >= E0 - .001); });
+      dr.fol = [...pick(".blk.stb", S.stickers, "sb"), ...pick(".blk.sfx", S.sfx, "s"), ...pick(".blk.zm", S.zooms, "z")]; }
+    const fx = (cLen(c) - (dr.out - dr.in) / (c.sp || 1)) * pps * (dr.side === "l" ? -1 : 1); dr.fol.forEach(el => { el.style.transform = fx ? `translateX(${fx}px)` : ""; }); }
   { const cv = dr.el.querySelector("canvas.thumbs"); if (cv) { cv.width = Math.max(1, Math.ceil(cLen(c) * pps)); paintClip(cv, c); }
     const cl = dr.el.querySelector(".clen"); if (cl) cl.textContent = cLen(c).toFixed(1) + "s"; }
   drawLen(); const ph = $("ph"); if (ph) ph.style.transform = `translateX(${pos * pps}px)`;
