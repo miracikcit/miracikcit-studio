@@ -24,4 +24,4 @@ function edDone(e){return edMulti(e)?edPub(e)>=+e.videos:!!(e.final||/siap/i.tes
 const multiKey=key=>S.editor.some(e=>e.folder===key&&edMulti(e)&&!edDone(e));
 function edFinal(key){return S.editor.some(e=>e.folder===key&&edDone(e))}
 /* Video yang baru masuk 00. TO POST FINAL (3 hari), untuk jalur "Baru siap render" */
-function freshFinals(){const files=((S.sync.topost||{}).files)||[];return files.filter(f=>(f.mtime||0)>Date.now()-3*DAY).sort((a,b)=>b.mtime-a.mtime)}
+function freshFinals(){const files=((S.sync.topost||{}).files)||[];return files.filter(f=>(f.mtime||0)>Date.now()-1*DAY).sort((a,b)=>b.mtime-a.mtime)}

@@ -20,15 +20,17 @@ function schedPrio(g){/* deadline sample paling dekat dulu */
 /* Pelan penuh: kekalkan slot Tetap/Scheduled/Auto yang masih akan datang, isi baris lain ke slot kosong seterusnya. */
 function schedPlan(groups,now){now=now||new Date();const today=ymd(now),nowT=pad(now.getHours())+':'+pad(now.getMinutes());
   const slots=schedSlots(),sales={},cre=slots.filter(s=>s.k==='C');SCHED_ACC.forEach(a=>sales[a]=slots.filter(s=>s.k==='J'&&s.a===a));
-  const out=new Map(),occ=new Map(),last={},prodDay=new Set();const later=(d,t)=>d>today||(d===today&&t>nowT);
+  const out=new Map(),occ=new Map(),last={},prodDay=new Set(),moved=new Map();const later=(d,t)=>d>today||(d===today&&t>nowT);
   const rows=[];groups.forEach(g=>g.rows.forEach(r=>{if(g.tab==='PRODUCTS'&&!r.vid)return;rows.push(r)}));
   const pkey=r=>r.tab==='NON'?'':nrm(r.group.name);
-  const put=(r,v)=>{out.set(schKey(r),v);if(v.date&&v.time){occ.set(v.date+'|'+v.time+'|'+v.acc,r);const p=pkey(r);if(p){prodDay.add(p+'|'+v.acc+'|'+v.date);if(!last[p]||last[p]<v.date)last[p]=v.date}}};
+  const put=(r,v)=>{if(moved.has(schKey(r)))v.moved=moved.get(schKey(r));out.set(schKey(r),v);if(v.date&&v.time){occ.set(v.date+'|'+v.time+'|'+v.acc,r);const p=pkey(r);if(p){prodDay.add(p+'|'+v.acc+'|'+v.date);if(!last[p]||last[p]<v.date)last[p]=v.date}}};
   const base=r=>({acc:r.sch.acc,kind:r.tab==='NON'?'Creative':'Jualan',prod:r.tab==='NON'?r.group.name:r.group.name});
   const todo=[];
   rows.forEach(r=>{const s=r.sch,st=s.status;
     if(isSettled(r)){put(r,Object.assign(base(r),{date:s.date,time:s.time,status:'Posted'}));return}
     if(/^excluded$/i.test(st)){put(r,Object.assign(base(r),{date:'',time:'',status:'Excluded'}));return}
+    /* 25 Nov (Mira): tarikh dah lepas dan belum settled = masuk semula barisan, dapat slot kosong seterusnya */
+    if(s.date&&s.date<today){moved.set(schKey(r),s.date);todo.push(r);return}
     if(s.date&&s.time&&(schFixed(st)||(/^auto$/i.test(st)&&later(s.date,s.time)))){put(r,Object.assign(base(r),{date:s.date,time:s.time,acc:s.acc,status:schFixed(st)?st.charAt(0).toUpperCase()+st.slice(1).toLowerCase():'Auto'}));return}
     todo.push(r)});
   /* barisan setiap produk */
@@ -48,7 +50,7 @@ function schedPlan(groups,now){now=now||new Date();const today=ymd(now),nowT=pad
 
 /* Amaran + stok: slot kosong, kuota akaun, belum schedule dalam 3 hari, produk kurang dari 3 video setiap akaun */
 function schedWarn(plan,groups,now){now=now||new Date();const today=ymd(now),slots=schedSlots();const by=new Map();
-  plan.forEach((v,k)=>{if(v.date&&v.time&&v.status!=='Posted')by.set(v.date+'|'+v.time+'|'+v.acc,Object.assign({k},v))});
+  plan.forEach((v,k)=>{if(v.date&&v.time)by.set(v.date+'|'+v.time+'|'+v.acc,Object.assign({k},v))});
   const days=[];let fullUntil=null,gap=false;
   for(let d=0;d<14;d++){const date=addDays(today,d);const empty=slots.filter(s=>!by.has(date+'|'+s.t+'|'+s.a)&&(d>0||s.t>pad(now.getHours())+':'+pad(now.getMinutes())));
     const quota={};SCHED_ACC.forEach(a=>{const need=slots.filter(s=>s.a===a).length;quota[a]={need,have:need-empty.filter(s=>s.a===a).length}});
@@ -70,7 +72,8 @@ async function autoSched(force){if(schedBusy||mode!=='live'||!MCP||!sheetRaw.PRO
       schedProg={pct:Math.round(ti/tabs.length*100),txt:'Kemas kini jadual dalam Sheet'};
       if(changed){const c0=String.fromCharCode(65+t.sc),c1=String.fromCharCode(65+t.sc+5);await sheetWrite(`${t.q}!${c0}5:${c1}${last}`,vals);
         vals.forEach((nx,i)=>{const a=raw[i+4]=(raw[i+4]||[]).slice();nx.forEach((x,j)=>a[t.sc+j]=x)})}}
-    if(n){render();toast('Jadual posting dikemas kini: '+n+' video')}}
+    let mv=0;groups.forEach(g=>g.rows.forEach(r=>{const v=plan.get(schKey(r));if(v&&v.moved&&v.date){const id=rmKey(r);const rm=get('readymeta',id)||{id};if(rm.moved!==v.moved||rm.movedTo!==v.date){save('readymeta',Object.assign({},rm,{moved:v.moved,movedTo:v.date}));mv++}}}));
+    if(n){render();toast(mv?mv+' missed video'+(mv>1?'s':'')+' moved to a new date':'Jadual posting dikemas kini: '+n+' video')}}
   catch(e){toast('Tak dapat tulis jadual ke Sheet')}finally{schedBusy=false;schedProg=null}}
 
 /* ---------- Pelan produksi (24 Nov, peringkat 3) ----------
@@ -82,7 +85,7 @@ function prodPlan(now){now=now||new Date();const today=ymd(now);const groups=par
   const plan=schedPlan(groups,now),W=schedWarn(plan,groups,now),slots=schedSlots();
   const cap={},cre={};for(let d=0;d<75;d++){const date=addDays(today,d);cap[date]={};SCHED_ACC.forEach(a=>cap[date][a]=0);cre[date]=0}
   for(let d=0;d<75;d++){const date=addDays(today,d);const nowT=pad(now.getHours())+':'+pad(now.getMinutes());
-    slots.forEach(s=>{if(d===0&&s.t<=nowT)return;let used=false;plan.forEach(v=>{if(v.date===date&&v.time===s.t&&v.acc===s.a&&v.status!=='Posted')used=true});if(used)return;if(s.k==='C')cre[date]++;else cap[date][s.a]++})}
+    slots.forEach(s=>{if(d===0&&s.t<=nowT)return;let used=false;plan.forEach(v=>{if(v.date===date&&v.time===s.t&&v.acc===s.a)used=true});if(used)return;if(s.k==='C')cre[date]++;else cap[date][s.a]++})}
   const isVO=it=>/VO|VLOG/i.test(String(it.folder||''));
   const due=it=>it.sample&&it.sample.postBy||it.postDate||'';
   const up=S.items.filter(it=>['toshoot','shot','toedit'].includes(it.stage));

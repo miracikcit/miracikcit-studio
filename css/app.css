@@ -539,3 +539,12 @@ button.tpchip{cursor:pointer}.tpchip.btnx{font-weight:500}
 .tpacts .tt{background:var(--tt-p);color:var(--tt-t)}.tpacts .ig{background:var(--ig-p);color:var(--ig-t)}.tpacts .fb{background:var(--fb-p);color:var(--fb-t)}
 .tpc .btn.shopee{background:rgba(250,205,180,.75);color:#8A3A18}
 .tp .eyebrow{color:var(--muted)}
+
+/* 25 Nov (Mira): SV dalam kad posting, tanda dipindah, tiada fail, slot dah settled */
+.tp{--sv-p:#F6D2B8;--sv-t:#8A3A18}
+.tptk .sv[aria-pressed=true]{background:var(--sv-p);color:var(--sv-t)}
+.tpmv{--pc:#C0392B;font-size:9.5px;font-weight:600}
+.tpcell .tpmv{display:inline-block;margin:3px 0 0;padding:1px 6px}
+.tpnf{display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:9px;font-size:10.5px;color:var(--muted);border:1px dashed rgba(120,100,90,.35)}
+.tpok{position:absolute;top:5px;right:6px;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:#CFE6D2;color:#2F6B3C}
+.tpacts a.btn{text-decoration:none;background:rgba(255,255,255,.7);color:var(--ink,#4a3b33);border:1px solid rgba(255,255,255,.9)}

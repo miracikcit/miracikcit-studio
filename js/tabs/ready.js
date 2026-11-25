@@ -21,10 +21,10 @@ V.ready=()=>{const sv=sheetView();const items=appReady(sv);
     ${g.tab==='PRODUCTS'&&!g.shopee?`<div class="btns" style="margin-top:8px;flex-wrap:nowrap"><input class="inp" id="rs-${g.start}" data-lk="${g.start}|s" value="${esc(sug?sug.shopee:'')}" placeholder="Paste link Shopee di sini" inputmode="url"><button class="btn solid shopee" data-act="lkSave" data-id="${g.start}">Simpan</button></div>`:''}
     ${rows.map(({r,d})=>{const rm=get('readymeta',rmKey(r))||{};const done=isPub(r);const k=schKey(r);const v=plan.get(k)||{};const exc=v.status==='Excluded';const cp=capParts(r.caption);
       const late=!exc&&v.date&&v.status!=='Scheduled'&&!r.sched.some(Boolean)&&dayDiff(ymd(new Date()),v.date)<=3;const f=rowFile(r,sv);return `<div class="vid" id="rv-${r.tab}-${r.row}">
-      <div class="rowh" style="align-items:center;gap:6px"><div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-width:0">${tpLine(k,v,late)}${exc||!v.acc?'':tpWho(v.acc)}</div><div style="flex:none">${chk(exc,'schExc',k,'Excluded')}</div></div>
+      <div class="rowh" style="align-items:center;gap:6px"><div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-width:0">${tpLine(k,v,late)}${exc||!v.acc?'':tpWho(v.acc)}${exc?'':tpMoved(r,v)}</div><div style="flex:none">${chk(exc,'schExc',k,'Excluded')}</div></div>
       <div class="tptitle">${r.vid?'VID '+esc(r.vid)+' · ':''}${esc(noEmoji(String(r.caption).split('\n')[0]))}${done?` <span class="pill">All posted, tick Settled</span>`:''}</div>
-      <div class="tpacts"><button class="fb" data-act="cap" data-x="${r.tab}|${r.row}|fb">${IC.copy}FB</button><button class="ig" data-act="cap" data-x="${r.tab}|${r.row}|ig">${IC.copy}IG</button><button class="tt" data-act="cap" data-x="${r.tab}|${r.row}|tt">${IC.copy}TikTok</button>${cp.tags?`<button data-act="copy" data-x="${esc(cp.tags)}">#Tag</button>`:''}${f&&f.drive?dlBtn(f,rm.downloaded,rmKey(r),'dl'):''}</div>
-      <div class="rowh" style="margin-top:6px;align-items:center"><span class="eyebrow" style="margin:0">Scheduled</span><div style="flex:0 0 150px">${tpTicks(r)}</div></div></div>`}).join('')}</div>`}).join('')||(items.length?'':`<div class="empty">All videos settled.</div>`)}</div>
+      <div class="tpacts"><button class="fb" data-act="cap" data-x="${r.tab}|${r.row}|fb">${IC.copy}FB</button><button class="ig" data-act="cap" data-x="${r.tab}|${r.row}|ig">${IC.copy}IG</button><button class="tt" data-act="cap" data-x="${r.tab}|${r.row}|tt">${IC.copy}TikTok</button>${cp.tags?`<button data-act="copy" data-x="${esc(cp.tags)}">#Tag</button>`:''}${f?dlBtn(f,rm.downloaded,rmKey(r),'dl'):`<span class="tpnf">No video file</span>`}</div>
+      <div class="rowh" style="margin-top:6px;align-items:center"><span class="eyebrow" style="margin:0">Scheduled</span><div style="flex:0 0 196px">${tpTicks(r,1)}</div></div></div>`}).join('')}</div>`}).join('')||(items.length?'':`<div class="empty">All videos settled.</div>`)}</div>
   ${itemReady(items)}
   ${sv.unmatched.length?`<p class="eyebrow" style="margin-top:22px">Ada dalam folder, tiada dalam sheet · ${sv.unmatched.length}</p><div class="list">${sv.unmatched.map(f=>`<div class="card glass"><div class="rowh"><div><h3>${esc(f.name.replace(/\.(mp4|mov|m4v)$/i,'').replace(/_FINAL$/i,'').replace(/[_-]+/g,' '))}</h3><div class="meta">${esc(f.name)}</div></div><button class="btn sm" data-act="filePub" data-x="${esc(f.name)}">${IC.check}Published</button></div>${trk(deadline(f.mtime,7),'Publish dalam 1 minggu')}</div>`).join('')}</div>`:''}
 </div>`};
@@ -44,7 +44,7 @@ function dlBtn(f,done,id,act){
   if(q)return `<button class="btn sm" disabled ${a}>Memuat ${q.pct||0}%</button>`;
   const drv='https://drive.google.com/file/d/'+encodeURIComponent(f.drive)+'/view';
   /* 24 Nov (Mira): buang Download / Muat dalam app, guna butang Drive sahaja */
-  return `<a class="btn sm ${done?'':'solid tab'}" href="${esc(drv)}" target="_blank" rel="noopener" data-drv="1" ${a}>${done?IC.check:IC.ext}Drive</a>`}
+  return `<a class="btn sm ${done?'':'solid tab'}" href="${esc(drv)}" target="_blank" rel="noopener" data-drv="1" ${a}>${done?IC.check:IC.dl}Download</a>`}
 /* Buka di Drive: link biasa (app Google Drive terbuka sendiri). Tanda Downloaded tanpa halang link. */
 document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('a[data-drv]');if(el)setTimeout(()=>dlMark(el),300)});
 function dlMark(el){const id=el.dataset.id;
