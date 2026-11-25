@@ -1231,24 +1231,80 @@ def _watch_fin(sheet, vid, logf, limit=900):
             return
 
 
+OWN_DIR = "R3 OWN EDITS"            # 25 Nov 2026 (Mira): video yang dimuat naik dari phone melalui kotak New Video disimpan di sini
+WHOLE_CAP, WHOLE_TOTAL = 300.0, 900.0   # "Seluruh klip": paling panjang 5 minit setiap klip, 15 minit semua sekali (selebihnya 6 s pertama)
+
+
+def _ed_step(sheet, vid, pct, step):
+    """Peratus dan langkah semasa untuk kad Editor (Mira nak % pada setiap tunggu)."""
+    try:
+        cur = sheet.call("dget", path="edpwa/" + vid).get("doc") or {}
+        if cur.get("status") == "proses":
+            cur.update({"pct": int(pct), "step": step, "updated": int(time.time() * 1000)})
+            sheet.call("dset", path="edpwa/" + vid, data=cur)
+    except Exception:
+        pass
+
+
 def run_ed_new(inp, sheet, cfg):
-    """Kad Home 'Edit sendiri': sediakan Editor PWA dari folder footage TANPA Claude (0 token).
-    Semua klip video dalam folder jadi klip timeline (6 s pertama, boleh panjangkan hingga 12 s), make_page.py buat proxy,
-    edpwa.py muat naik ke Drive. Jalan dalam thread; status dalam doc edpwa/<id> (proses -> sedia / error)."""
+    """Kotak New Video / kad 'Edit sendiri': sediakan Editor PWA TANPA Claude (0 token).
+    Dua sumber: (a) folder footage sedia ada {stage, item}; (b) video dari phone {files:[{id,name}]} yang dah dimuat naik ke Drive
+    (ustart/uchunk): dimuat turun ke CLAUDE EDITS/R3 OWN EDITS/<nama>/, salinan Drive dibuang.
+    Setiap video jadi klip timeline: 6 s pertama (lalai) atau seluruh klip (whole). make_page.py buat proxy, edpwa.py muat naik ke Drive.
+    Jalan dalam thread; status dalam doc edpwa/<id> (proses + pct + step -> sedia / error)."""
     root = os.path.expanduser("~/Desktop/WORK 2026/CLAUDE EDITS")
-    stage, item = _safe_name(inp.get("stage")), _safe_name(inp.get("item"))
-    folder = os.path.join(root, stage, item)
-    if not stage or not item or not os.path.isdir(folder):
-        raise RuntimeError("Folder tak dijumpai: %s/%s" % (stage, item))
-    title = str(inp.get("name") or item)[:60]
+    up = [f for f in (inp.get("files") or []) if isinstance(f, dict) and f.get("id")]
+    whole = bool(inp.get("whole"))
+    if up:
+        title = str(inp.get("name") or "Video baru").strip()[:60] or "Video baru"
+        name, base, k = _safe_name(title), os.path.join(root, OWN_DIR), 2
+        folder = os.path.join(base, name)
+        while os.path.isdir(folder) and os.listdir(folder):   # nama dah dipakai: tambah nombor, jangan campur footage dua video
+            folder = os.path.join(base, "%s %d" % (name, k)); k += 1
+        os.makedirs(folder, exist_ok=True)
+    else:
+        stage, item = _safe_name(inp.get("stage")), _safe_name(inp.get("item"))
+        folder = os.path.join(root, stage, item)
+        if not stage or not item or not os.path.isdir(folder):
+            raise RuntimeError("Folder tak dijumpai: %s/%s" % (stage, item))
+        title = str(inp.get("name") or item)[:60]
     out = os.path.join(folder, "editor", "sendiri")
     sys.path.insert(0, HOME)
     import edpwa
     vid = edpwa.vid_of(out)
     now = int(time.time() * 1000)
-    sheet.call("dset", path="edpwa/" + vid, data={"title": title, "status": "proses", "src": "sendiri", "created": now, "updated": now, "files": {}})
-    threading.Thread(target=_ed_new_run, args=(sheet, folder, out, vid, title, cfg), daemon=True).start()
+    sheet.call("dset", path="edpwa/" + vid, data={"title": title, "status": "proses", "src": "sendiri", "created": now, "updated": now, "files": {},
+                                                  "pct": 2, "step": "Mac mini terima video" if up else "Baca folder footage", "from": "phone" if up else "folder"})
+    threading.Thread(target=_ed_new_run, args=(sheet, folder, out, vid, title, cfg, up, whole), daemon=True).start()
     return {"vid": vid}
+
+
+def _ed_fetch(sheet, vid, folder, up):
+    """Muat turun video phone dari Drive ke folder projek (sama cara footin.py), buang salinan Drive. 2% -> 40%."""
+    import base64
+    for k, f in enumerate(up, 1):
+        fn = re.sub(r'[\\/:*?"<>|]+', "_", os.path.basename(str(f.get("name") or "video.mov"))) or "video.mov"
+        if not fn.lower().endswith((".mp4", ".mov", ".m4v")):
+            fn += ".mov"
+        dst = os.path.join(folder, "%02d_%s" % (k, fn))   # nombor di depan: susunan timeline ikut susunan Mira pilih
+        start, total = 0, None
+        with open(dst + ".part", "wb") as fh:
+            while total is None or start < total:
+                r = sheet.call("dchunk", id=f["id"], start=start, len=15000000)
+                total = r["total"]
+                b = base64.b64decode(r["b64"])
+                if not b:
+                    break
+                fh.write(b)
+                start += len(b)
+                _ed_step(sheet, vid, 2 + 38 * ((k - 1) + start / max(total, 1)) / len(up), "Muat turun video %d daripada %d" % (k, len(up)))
+        if start < (total or 1):
+            raise RuntimeError("Muat turun tak lengkap: " + fn)
+        os.replace(dst + ".part", dst)
+        try:
+            sheet.call("dtrash", id=f["id"])
+        except Exception:
+            pass
 
 
 def _ed_words(folder, clips, handle, cfg):
@@ -1267,7 +1323,7 @@ def _ed_words(folder, clips, handle, cfg):
                 continue
             offsets[f] = round(cum, 3)
             cum += float(c.get("dur", c["out"])) + 1.0
-            span = min(float(c.get("dur", c["out"])), 45.0)   # dengar 45 s pertama setiap klip
+            span = min(float(c.get("dur", c["out"])), max(45.0, float(c["out"])))   # dengar 45 s pertama setiap klip; "Seluruh klip" = dengar semua yang masuk timeline
             wav = os.path.join(tmp, "a.wav")
             r = subprocess.run([ffmpeg, "-v", "error", "-y", "-i", os.path.join(folder, f), "-t", f"{span:.2f}", "-vn", "-ac", "1", "-ar", "16000", wav],
                                capture_output=True, timeout=300)
@@ -1291,7 +1347,7 @@ def _ed_words(folder, clips, handle, cfg):
     return words, offsets
 
 
-def _ed_new_run(sheet, folder, out, vid, title, cfg=None):
+def _ed_new_run(sheet, folder, out, vid, title, cfg=None, up=None, whole=False):
     def fail(msg):
         log.warning("Edit sendiri gagal (%s): %s", vid, msg)
         try:
@@ -1301,6 +1357,9 @@ def _ed_new_run(sheet, folder, out, vid, title, cfg=None):
         except Exception:
             pass
     try:
+        if up:
+            _ed_fetch(sheet, vid, folder, up)
+        _ed_step(sheet, vid, 42, "Baca video")
         ext = (".mp4", ".mov", ".m4v")
         files = sorted(f for f in os.listdir(folder) if f.lower().endswith(ext) and not f.startswith("."))
         if not files:   # footage dalam subfolder satu tingkat
@@ -1309,7 +1368,7 @@ def _ed_new_run(sheet, folder, out, vid, title, cfg=None):
         if not files:
             return fail("Tiada video dalam folder ni")
         ffprobe = find_tool("ffprobe") or "ffprobe"
-        clips = []
+        clips, budget = [], WHOLE_TOTAL
         for f in files[:30]:
             r = subprocess.run([ffprobe, "-v", "error", "-show_entries", "format=duration", "-of", "default=nw=1:nk=1", os.path.join(folder, f)],
                                capture_output=True, text=True, timeout=60)
@@ -1318,18 +1377,22 @@ def _ed_new_run(sheet, folder, out, vid, title, cfg=None):
             except ValueError:
                 continue
             if d >= 0.5:
-                clips.append({"file": f, "in": 0, "out": round(min(d, 6.0), 2), "dur": round(d, 3)})
+                o = min(d, 6.0)
+                if whole and budget > 6.0:
+                    o = min(d, WHOLE_CAP, budget); budget -= o
+                clips.append({"file": f, "in": 0, "out": round(o, 2), "dur": round(d, 3)})
         if not clips:
             return fail("Video tak dapat dibaca")
         os.makedirs(out, exist_ok=True)
         pj = os.path.join(out, "project.json")
         proj = {"title": title, "src": "../..", "clips": [{k: c[k] for k in ("file", "in", "out")} for c in clips], "handle": 6.0}
         try:   # caption: transkrip suara (kalau ada) supaya tab Caption terus boleh guna
+            _ed_step(sheet, vid, 48, "Dengar suara untuk caption")
             words, offsets = _ed_words(folder, clips, 6.0, cfg or {})
             talky = sum(1 for c in clips if c.get("speech")) >= max(1, round(len(clips) * 0.6))
             # mod talking-head: editor potong sendiri ikut ayat (klip tanpa suara tak masuk), jadi hanya bila kebanyakan klip ada suara
             if len(words) >= 3 and talky:
-                proj["clips"] = [{"file": c["file"], "in": 0, "out": round(min(c["dur"], 30.0), 2)} for c in clips]
+                proj["clips"] = [{"file": c["file"], "in": 0, "out": round(c["out"] if whole else min(c["dur"], 30.0), 2)} for c in clips]
                 proj["handle"] = 10.0
                 json.dump({"words": words}, open(os.path.join(out, "words.json"), "w"), ensure_ascii=False)
                 proj.update({"talk": True, "words": "words.json", "offsets": offsets})
@@ -1338,9 +1401,11 @@ def _ed_new_run(sheet, folder, out, vid, title, cfg=None):
         json.dump(proj, open(pj, "w"), ensure_ascii=False, indent=1)
         tpl = os.path.expanduser("~/.claude/assets/reel-page-template/make_page.py")
         env = dict(os.environ, EDPWA="0")
+        _ed_step(sheet, vid, 60, "Sediakan video untuk editor")
         r = subprocess.run([sys.executable, tpl, pj, out], capture_output=True, text=True, timeout=3600, env=env)
         if r.returncode != 0:
             return fail("make_page: " + (r.stderr or r.stdout)[-250:])
+        _ed_step(sheet, vid, 85, "Hantar ke editor")
         r = subprocess.run([sys.executable, os.path.join(HOME, "edpwa.py"), out, "--title", title], capture_output=True, text=True, timeout=3600)
         if r.returncode != 0:
             return fail("edpwa: " + (r.stderr or r.stdout)[-250:])
