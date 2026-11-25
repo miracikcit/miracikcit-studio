@@ -59,7 +59,7 @@ function sorterCard(){if(!sorterRaw||!sorterRaw.length)return '';
   const rows=folders.filter(f=>f.review>0).sort((a,b)=>b.review-a.review).slice(0,6);
   return `<div class="rbox glass cc" style="--c:#8676BE;cursor:default"><div class="rowh" style="align-items:center"><div style="min-width:0"><h2>Footage baru dari phone</h2><div class="meta">Belum disemak${checkMe?' · '+checkMe+' dalam Check Me':''} · ${esc(cell(1,1))}</div></div><b class="rn">${toReview}</b></div>
    ${rows.slice(0,3).map(f=>`<div class="ccr"><div class="rowh"><span class="ccn">${esc(f.label.replace(/^[^\w]+\s*/,''))}</span><span class="pill" style="--pc:var(--warn)">${f.review} semak</span></div></div>`).join('')}
-   ${meter(cell(3,1)||'Hard disk',cell(3,2),cell(3,3))}${meter('iCloud',cell(4,2),cell(4,3))}
+   ${meter(cell(3,1)||'Hard disk',cell(3,2),cell(3,3))}${meter('iCloud',cell(4,2),cell(4,3))}${sorterPersonal(+cell(4,2)||0,+cell(4,3)||0)}
    ${/^https?:\/\//.test(link)?`<a class="ccmore" href="${esc(link)}" target="_blank" rel="noopener" style="text-decoration:none">Buka folder &amp; semak (Wi-Fi rumah) ${IC.next}</a>`:''}${ongoingSlot()}</div>`}
 /* Ongoing projects (WORK SORTER): status dari Mac (koleksi workprojects). Gambar kekal dalam Mac; butang buka page sorter untuk edit. */
 function ongoingSlot(){const L=(S.workprojects||[]).slice().sort((a,b)=>(b.updated||0)-(a.updated||0));if(!L.length)return '';
@@ -168,3 +168,14 @@ function autoSheet(){if(mode!=='live'||!sheetRaw.PRODUCTS||Date.now()-autoSheetA
 /* Lagi: semua alat dan rekod yang jarang guna */
 V.lagi=()=>{const sv=sheetView();const t=(k,num,lab,icon)=>{const c=TAB[k].c;return `<button class="hbox glass mini" style="--c:${c}" data-act="go" data-id="${k}">${icon?`<b style="display:flex;color:${c}">${IC[icon].replace('<svg ','<svg style="width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round" ')}</b>`:`<b>${num}</b>`}<span class="l">${lab}</span></button>`};
   return head('Alat dan rekod')+`<div class="mgrid">${t('inspiration',S.inspo.length+S.gaya.length,'Copy Style')}${t('media-kit',3,'Media Kit')}${t('footage',S.footage.length,'Footage library')}${t('caption',0,'Caption','caption')}${t('threads',0,'Threads','threads')}${t('transcribe',0,'Transcribe','transcribe')}${t('shot',byStage('shot').length,'Shot')}${t('ideas',byStage('ideas').length,'Ideas')}</div>`};
+
+/* 2026-11-25 (Mira): gambar peribadi. Kad beritahu bila patut sort (iCloud 80% ke atas, atau 30 hari sejak Start sort terakhir)
+   dan butang Start sort: Mac mini buka semula app Footage Sorter dengan -autoStart (sumber ikut tetapan app: iCloud Photos,
+   langkau 30 hari terakhir; hasil ke PERTAMA › PHOTOS). 0 token. Mira yang tekan, app tak mula sendiri. */
+function sorterPersonal(used,total){const run=(S.sync.sorterrun||{}).at||0,days=run?Math.floor((Date.now()-run)/DAY):null,pct=total?Math.round(used/total*100):0;
+  const why=[pct>=80?'iCloud '+pct+'% penuh':'',days===null?'belum pernah Start sort dari sini':days>=30?days+' hari sejak sort terakhir':''].filter(Boolean);const due=why.length>0;const busy=ui.sorterBusy;
+  return `<div class="srp"><div class="rowh" style="align-items:center"><div style="min-width:0"><b>Gambar peribadi</b><span class="meta" style="display:block">${due?esc(why.join(' · ')):'Sort terakhir '+(days===0?'hari ni':days+' hari lepas')}</span></div>${due?`<span class="pill" style="--pc:var(--bad)">Masa untuk sort</span>`:''}</div>
+    <div class="btns" style="margin-top:8px;align-items:center"><button class="btn sm${due?' solid tab':''}" data-act="sorterStart"${busy?' disabled':''}>${busy?'<i class="spin"></i>Buka Footage Sorter':'Start sort'}</button>${tok(0)}</div></div>`}
+A.sorterStart=()=>confirmBox('Mula sort gambar sekarang? Mac mini buka semula app Footage Sorter dan mula susun ke PERTAMA. Pastikan PERTAMA disambung.',async()=>{ui.sorterBusy=1;render();
+  try{await studioJob('sorter_start',{},2*60000);const d={at:Date.now()};S.sync.sorterrun=d;saveDoc('sync/sorterrun',d);toast('Footage Sorter mula sort di Mac mini. Yang tak pasti masuk Check Me')}
+  catch(e){toast(String((e&&(e.message||e.code))||'Mac mini tak jawab').slice(0,90))}finally{ui.sorterBusy=0;render()}},'Ya, mula');

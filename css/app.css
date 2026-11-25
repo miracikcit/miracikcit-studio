@@ -691,3 +691,4 @@ button.tpchip{cursor:pointer}.tpchip.btnx{font-weight:500}
 .carstrip img{height:180px;width:135px;object-fit:cover;border-radius:10px;flex:none;display:block;background:var(--tile)}
 .carstrip.sm{margin:8px 0 6px}.carstrip.sm img{height:64px;width:48px;border-radius:7px}
 .carbox{margin-bottom:14px}.carit{padding-top:8px;margin-top:8px;border-top:1px solid var(--line)}.carit strong{display:block;font-size:14px}
+.srp{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}.srp b{font-weight:500}

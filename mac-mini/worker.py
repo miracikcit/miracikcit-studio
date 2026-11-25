@@ -1065,6 +1065,27 @@ def open_claude_session(cwd, title, prompt, slug, cfg, model=None, effort=None, 
     return logf
 
 
+def run_sorter_start():
+    """Mula sort dalam app Footage Sorter: tutup app (kalau terbuka) dan buka semula dengan -autoStart, cara yang sama
+    dengan butang Start dalam app. Sumber dan hard disk ikut tetapan app. Hanya bila Mira tekan Start sort dalam Studio."""
+    app = "/Applications/Footage Sorter.app"
+    if not os.path.isdir(app):
+        raise RuntimeError("App Footage Sorter tiada dalam Mac mini")
+    if not os.path.ismount("/Volumes/PERTAMA"):
+        raise RuntimeError("Sambung PERTAMA ke Mac mini dulu")
+    subprocess.run(["/usr/bin/osascript", "-e", 'tell application "Footage Sorter" to quit'], capture_output=True, text=True, timeout=30)
+    for _ in range(20):
+        if subprocess.run(["/usr/bin/pgrep", "-x", "FootageSorter"], capture_output=True).returncode != 0:
+            break
+        time.sleep(0.5)
+    else:
+        raise RuntimeError("Footage Sorter sedang sibuk dan tak dapat ditutup. Cuba lagi sekejap")
+    r = subprocess.run(["/usr/bin/open", "-a", app, "--args", "-autoStart", "YES"], capture_output=True, text=True, timeout=30)
+    if r.returncode != 0:
+        raise RuntimeError("Tak dapat buka Footage Sorter: " + (r.stderr or "")[-160:])
+    return {"started": True}
+
+
 def run_edit_now(inp, sheet, cfg):
     """Buka sesi Claude Code baru dalam Terminal Mac mini: folder utama, Opus 5.5 medium, Remote Control hidup,
     terus jalan /edit-reel <no>/<projek>. Mira kawal dari app Claude di phone."""
@@ -1671,6 +1692,8 @@ def studio_jobs(sheet, cfg):
             elif j["type"] == "disk_now":
                 import brlib
                 outp = brlib.job_disk_now(inp, sheet)
+            elif j["type"] == "sorter_start":   # kad Home gambar peribadi: Mira tekan Start sort (0 token)
+                outp = run_sorter_start()
             elif j["type"] in ("car_scan", "car_make", "car_text"):   # carousel gambar 3:4 dari footage (car_text sahaja guna Claude)
                 import carousel
                 outp = getattr(carousel, "job_" + j["type"])(inp, sheet, cfg, sys.modules[__name__])
@@ -1696,6 +1719,9 @@ def studio_jobs(sheet, cfg):
                 outp = run_ed_new(inp, sheet, cfg)
             elif j["type"] == "ed_draft":
                 outp = run_ed_draft(inp, sheet, cfg)
+            elif j["type"] == "ed_cut":   # cutout: tukar latar + "Belakang saya" dalam Editor PWA (0 token)
+                import edcut
+                outp = edcut.run(inp, sheet, cfg, sys.modules[__name__])
             elif j["type"] == "ed_foot":   # footage dari folder lain untuk Editor PWA (0 token)
                 import edfoot
                 outp = edfoot.run(inp, sheet, cfg, sys.modules[__name__])
