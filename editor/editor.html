@@ -1692,7 +1692,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .spticks button[aria-pressed="true"] { color: #3fd0c0; }
 #spBtn { display: inline-grid; place-items: center; } #spBtn .ic { width: 16px; height: 16px; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=c7e0364d34">
+<link rel="stylesheet" href="../../ed-capcut.css?v=bff1c43e88">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1803,9 +1803,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=c7e0364d34"></script>
-<script src="../../../js/runtime.js?v=c7e0364d34"></script>
-<script src="../../ed-boot.js?v=c7e0364d34"></script>
+<script src="../../../js/config.js?v=bff1c43e88"></script>
+<script src="../../../js/runtime.js?v=bff1c43e88"></script>
+<script src="../../ed-boot.js?v=bff1c43e88"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -1827,7 +1827,8 @@ let wdT = -1, wdN = 0, wdKick = 0, wdRaf = 0, wdSmpT = 0;   /* p10 */
 function diagSample(tag) { const m = $("mv"); if (!m) return; DIAG.smp = DIAG.smp || []; if (DIAG.smp.length < 60) DIAG.smp.push([Math.round(performance.now() - T0), tag || "", +m.currentTime.toFixed(2), m.paused ? 1 : 0, m.seeking ? 1 : 0, m.readyState, wdRaf, +pos.toFixed(2)]); wdRaf = 0; }
 let wdSeekSince = 0;   /* p13 */
 setInterval(() => { if (playing) { diagSample(); if (performance.now() - wdSmpT > 8000) { wdSmpT = performance.now(); sendDiag(); } }
-  else { const m = $("mv"); if (m && m.seeking) { if (!wdSeekSince) wdSeekSince = performance.now(); else if (performance.now() - wdSeekSince > 1200) { wdSeekSince = 0; diagSample("reload-p"); wdReload(m, m.currentTime); clearTimeout(diagT); diagT = setTimeout(sendDiag, 1500); } } else wdSeekSince = 0; } }, 1000);
+  else { const m = $("mv"), n = performance.now();   /* 25 Nov: seret lama = "seeking" sentiasa hidup; itu BUKAN tersangkut. Tersangkut = tiada seek baru diminta 1.2 s tapi masih mencari. */
+    if (m && m.seeking && !scrubOn && !dr && n - lastSeekSet > 1200) { if (!wdSeekSince) wdSeekSince = n; else if (n - wdSeekSince > 1200) { wdSeekSince = 0; diagSample("reload-p"); wdReload(m, m.currentTime); clearTimeout(diagT); diagT = setTimeout(sendDiag, 1500); } } else wdSeekSince = 0; } }, 1000);
 ["waiting", "stalled", "suspend", "seeking", "seeked", "playing", "pause"].forEach(ev => document.addEventListener(ev, e => { if (e.target && e.target.tagName === "VIDEO") { DIAG.ev = DIAG.ev || {}; const k = (e.target.id || "v") + ":" + ev; DIAG.ev[k] = (DIAG.ev[k] || 0) + 1; } }, true));
 function wdReload(v, t) {   /* p12: seek tersangkut, muat semula video dan sambung pada masa t */
   DIAG.rl = (DIAG.rl || 0) + 1; try { v.pause(); } catch (e) {}
@@ -3274,11 +3275,34 @@ function vSeek(t) {
   vsWant = null; if (Math.abs(v.currentTime - t) > .012) { try { v.currentTime = t; } catch (e) {} vsAt = lastSeekSet = n; }
 }
 document.addEventListener("seeked", e => { if (e.target && e.target.id === "mv" && vsWant != null && !playing) vSeek(vsWant); }, true);
-function scrubSet(on) { on = !!on; if (scrubOn === on) return; scrubOn = on; if (!on) { vsWant = null; seek(pos); drawStickers(); } }
+function scrubSet(on) {
+  on = !!on; if (scrubOn === on) return; scrubOn = on;
+  if (on) { scDir = 0; scRev = 0; const b = $("mvb");   /* iPhone: video yang tak pernah main tiada frame; mulakan sekejap (senyap) supaya ia boleh tunggu di klip sebelah */
+    if (b && !b.dataset.pr && b.readyState < 2) { b.dataset.pr = "1"; b.muted = true; const q = b.play(); if (q && q.then) q.then(() => { if (!playing) b.pause(); }, () => {}); } }
+  else { vsWant = null; seek(pos); drawStickers(); }
+}
+/* Seret merentas klip (25 Nov 2026): klip sebelah biasanya jauh dalam proxy, jadi seek pertama ke situ lambat (video "tersangkut" di sambungan).
+   Video kedua (tersembunyi) tunggu di hujung klip yang sedang dihampiri; bila jari melintas, dua video bertukar terus dan seek seterusnya dekat sahaja. */
+let scDir = 0, scRev = 0;
+function scrubPark(i, lt) {
+  const b = $("mvb"), c = S.clips[i]; if (!b || !c || b.seeking || !b.paused) return;
+  const fwd = scDir ? scDir > 0 : lt >= (c.in + c.out) / 2, n = S.clips[fwd ? i + 1 : i - 1]; if (!n) return;
+  const want = fwd ? proxyT(n, n.in) : proxyT(n, n.out - .04);
+  if (Math.abs(b.currentTime - want) > .04) { try { b.currentTime = want; } catch (e) {} }
+}
+function scrubSwap(t) {
+  const a = $("mv"), b = $("mvb"); if (!b || b.seeking || !b.paused || b.readyState < 2) return false;
+  const db = Math.abs(b.currentTime - t); if (db > 1.5 || db >= Math.abs(a.currentTime - t)) return false;
+  a.id = "mvb"; b.id = "mv"; b.style.opacity = ""; a.style.opacity = "0"; a.muted = true; a.removeAttribute("poster"); a.style.filter = "";
+  lastGrade = ""; vsWant = null; vsAt = 0; glDirty = 6; DIAG.ss = (DIAG.ss || 0) + 1; return true;
+}
 function seek(p) {
-  pos = Math.max(0, Math.min(p, endT())); lastPos = pos;   // up to the end of the 2 s end card
-  const l = locate(Math.min(pos, total() - .04)); curIdx = l.i;
-  if (l.i >= 0) { const v = $("mv"), t = proxyT(S.clips[l.i], l.t); if (scrubOn || dr) vSeek(t); else if (vsWant = null, Math.abs(v.currentTime - t) > .03) { v.currentTime = t; lastSeekSet = performance.now(); } }
+  { const np = Math.max(0, Math.min(p, endT())); if (scrubOn && np !== pos) { const d = np - pos;   /* arah seret; pusing balik dikira hanya selepas 0.12 s gerakan, supaya jari yang bergetar tak buat video kedua berulang-alik */
+      if (!scDir || (d > 0) === (scDir > 0)) { scDir = d > 0 ? 1 : -1; scRev = 0; } else if ((scRev += Math.abs(d)) > .12) { scDir = -scDir; scRev = 0; } } pos = np; } lastPos = pos;   // up to the end of the 2 s end card
+  const l = locate(Math.min(pos, total() - .04)), was = curIdx; curIdx = l.i;
+  if (l.i >= 0) { let v = $("mv"); const t = proxyT(S.clips[l.i], l.t);
+    if (scrubOn) { if (l.i !== was && scrubSwap(t)) v = $("mv"); vSeek(t); scrubPark(l.i, l.t); }
+    else if (dr) vSeek(t); else if (vsWant = null, Math.abs(v.currentTime - t) > .03) { v.currentTime = t; lastSeekSet = performance.now(); } }
   if (hasVO() && !scrubOn) { const vo = $("vo"), segs = voSegs(), t = editToVo(pos, segs); if (Math.abs(vo.currentTime - t) > .03) vo.currentTime = t; vo.muted = !segs.some(g => pos >= g.e && pos < g.e + g.b - g.a); }
   if (playing) bgmSync(); setVideoMute(); drawHead();
 }
@@ -3327,9 +3351,11 @@ function tick(now) {
   const l = locate(pos), c = S.clips[l.i];
   if (c) {
     const want = proxyT(c, l.t);
-    if (l.i !== curIdx && swapTo(l.i, want)) { /* switched to the pre-seeked second video: no pause */ }
+    if (l.i !== curIdx && !v.seeking && Math.abs(v.currentTime - want) < .12 && (c.sp || 1) === v.playbackRate && $("mvb").paused) {   /* klip seterusnya bersambung terus dalam proxy: biar video jalan, jangan sentuh */
+      if (DIAG.sw.length < 40) DIAG.sw.push([Math.round(now - T0), l.i, "flow", +(v.currentTime - want).toFixed(2)]); curIdx = l.i; setVideoMute(); }
+    else if (l.i !== curIdx && swapTo(l.i, want)) { /* switched to the pre-seeked second video: no pause */ }
     else if (l.i !== curIdx || (Math.abs(v.currentTime - want) > .8 && now - lastVS > 1500)) { curIdx = l.i; v.currentTime = want; lastVS = now; setVideoMute(); }
-    preloadNext(l.i, (c.out - l.t) / (c.sp || 1));
+    preloadNext(l.i, (c.out - l.t) / (c.sp || 1), now, Math.abs(v.currentTime - want) < .07); preLat(now);
     if (swapAt && v.currentTime > swapCT + .01) { if (DIAG.sw.length < 40) DIAG.sw.push(["run", Math.round(now - swapAt)]); swapAt = 0; }
   }
   fireSfx(lastPos, pos); lastPos = pos;
@@ -3342,7 +3368,7 @@ function playLog(x) { DIAG.pl = DIAG.pl || []; if (DIAG.pl.length < 30) DIAG.pl.
 function start() {
   if (!S.clips.length) return;
   clearTimeout(window._spp); clearTimeout(window._jp);   /* p25: pemasa pratonton lama tak boleh hentikan main yang baru */
-  stallT = 0; kickAt = 0; scrubOn = false; vsWant = null;
+  stallT = 0; kickAt = 0; scrubOn = false; vsWant = null; pre = null;
   if (pos >= endT() - .05) pos = 0;
   seek(pos); lastPos = pos;
   playing = true; setPlayBtn();
@@ -3355,23 +3381,29 @@ function start() {
 }
 /* Smooth clip changes: a second, hidden copy of the proxy waits at the start of the next clip.
    At the cut the two swap ids, so every $("mv") call keeps pointing at the visible one. */
-let swapAt = 0, swapCT = 0, rollBias = .2;  /* how late this device starts a video; learned at each cut */
-function preloadNext(i, left) {
+let swapAt = 0, swapCT = 0, rollBias = .2, pre = null;  /* rollBias = berapa saat device ni perlukan untuk mula gerakkan video selepas play(); diukur terus pada setiap sambungan */
+const flowJoin = i => { const c = S.clips[i], n = S.clips[i + 1]; return !!(c && n) && (c.sp || 1) === (n.sp || 1) && Math.abs(proxyT(c, c.out) - proxyT(n, n.in)) < .1; };
+function preLat(now) {
+  if (!pre) return; const ct = pre.el.currentTime;
+  if (ct > pre.c + .012) { const m = (now - pre.t) / 1000 - (ct - pre.c) / (pre.el.playbackRate || 1); rollBias = Math.min(.6, Math.max(.03, rollBias * .5 + Math.max(0, m) * .5)); DIAG.lat = +rollBias.toFixed(3); pre = null; }
+  else if (now - pre.t > 1500) pre = null;
+}
+/* 25 Nov 2026: video tersembunyi SENTIASA menunggu tepat di frame pertama klip seterusnya (tak di-seek lagi sebelum main).
+   Ia dimulakan rollBias saat sebelum sambungan. Kalau device lambat mula, yang nampak ialah frame pertama klip baru (betul), bukan video utama yang di-seek sambil main. */
+function preloadNext(i, left, now, sync) {
   const b = $("mvb"), n = S.clips[i + 1]; if (!b || !n) return;
   const want = proxyT(n, n.in), nsp = n.sp || 1; if (b.playbackRate !== nsp) b.playbackRate = nsp;   /* p25 */
-  if (playing && left < .5) {
-    /* start the hidden copy early (muted) so it is already running at the cut; iPhone needs ~0.1-0.3 s to start a video */
-    if (b.paused) { try { b.currentTime = Math.max(0, want - (left - rollBias) * nsp); } catch (e) {} b.muted = true; const p = b.play(); if (p && p.catch) p.catch(() => {}); }
+  if (playing && left < rollBias + .05) {
+    if (b.paused && !b.seeking && !(sync && flowJoin(i)) && Math.abs(b.currentTime - want) < .06) { b.muted = true; pre = { el: b, t: now || performance.now(), c: b.currentTime }; const p = b.play(); if (p && p.catch) p.catch(() => {}); }
   } else if (!b.paused) { b.pause(); }
   else if (!b.seeking && Math.abs(b.currentTime - want) > .04) { try { b.currentTime = want; } catch (e) {} }
 }
 function swapTo(i, want) {
   const a = $("mv"), b = $("mvb"); if (!b) return false;
-  const run = !b.paused && b.readyState >= 2 && Math.abs(b.currentTime - want) < .3, idle = b.paused && !b.seeking && b.readyState >= 2 && Math.abs(b.currentTime - want) < .12;
+  const near = !b.seeking && b.readyState >= 2 && b.currentTime > want - .06 && b.currentTime < want + .7 * (b.playbackRate || 1), run = near && !b.paused, idle = near && b.paused;
   if (DIAG.sw.length < 40) DIAG.sw.push([Math.round(performance.now() - T0), i, run ? "run" : idle ? "idle" : "miss", b.readyState, b.paused ? 0 : 1, +(b.currentTime - want).toFixed(2)]);
-  if (run) rollBias = Math.min(.6, Math.max(0, rollBias + (want - b.currentTime)));
-  if (!run && !idle) return false;
-  if (idle) { b.muted = true; const p = b.play(); if (p && p.catch) p.catch(() => {}); }
+  if (!near) return false;
+  if (idle) { b.muted = true; pre = { el: b, t: performance.now(), c: b.currentTime }; const p = b.play(); if (p && p.catch) p.catch(() => {}); }
   a.id = "mvb"; b.id = "mv"; b.style.opacity = ""; a.style.opacity = "0"; a.pause(); a.muted = true; a.removeAttribute("poster");
   a.style.filter = ""; curIdx = i; lastGrade = ""; setVideoMute(); swapAt = performance.now(); swapCT = b.currentTime; return true;
 }
