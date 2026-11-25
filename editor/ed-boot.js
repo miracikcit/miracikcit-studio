@@ -269,7 +269,10 @@
   /* playhead tetap di tengah: #inner dan #rinner ada margin 50% (CSS), jadi scrollLeft = masa × pps.
      Enjin juga cuba scroll timeline semasa main (drawHead) — tulisan tu diabaikan supaya tak bergegar; hanya ed-boot yang scroll.
      Semasa main, kedudukan dilicinkan setiap frame (pos enjin bergerak berperingkat). */
-  let snapAt = null, snapT = 0, lastSeek = 0, touchSc = null, touchAt = 0, seekT = 0, pinch = null, own = false, disp = 0, lastT = 0, off = null, phDrag = null;   /* 24 Nov: off = jarak playhead dari kiri timeline (px); tak lagi tetap di tengah */
+  let snapT = 0, touchSc = null, seekT = 0, pinch = null, own = false, disp = 0, lastT = 0, off = null, phDrag = null;
+  /* 25 Nov: scrub licin. scrubbing = jari / momentum sedang gerakkan timeline; satu seek setiap frame (enjin tunggu video siap cari frame). */
+  let scrubbing = false, finger = false, wheelAt = 0, endTm = 0, sent = -1, prevD = null, edgeL = null, phX = {};
+  const eng = s => { try { return (0, eval)(s); } catch (e) {} };   /* 24 Nov: off = jarak playhead dari kiri timeline (px); tak lagi tetap di tengah */
   const SL = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollLeft');
   function lock(sc) {
     if (sc.dataset.lk) return; sc.dataset.lk = '1';
@@ -278,19 +281,34 @@
   function setSL(sc, x) { own = true; SL.set.call(sc, x); own = false; }
   // tab Cut: timeline penuh (#tscroll). Tab lain: hanya trek tab tu di bawah pembaris (#rscroll), trek video disorok.
   const scroller = () => (H.classList.contains('edsheet') ? $('rscroll') : $('tscroll'));
+  function flash() { try { if (navigator.vibrate) navigator.vibrate(8); } catch (x) {} H.classList.add('edsnap'); clearTimeout(snapT); snapT = setTimeout(() => H.classList.remove('edsnap'), 260); }
+  function scrubStart() {
+    scrubbing = true; sent = -1; prevD = null; if (G('playing')) eng('stop()');
+    edgeL = null; try { const S = G('S'), st = G('startOf'); edgeL = S.clips.map((c, i) => st(i)); edgeL.push(G('total()')); } catch (e) {}
+    eng('scrubSet(1)');
+  }
+  function scrubEnd() {
+    if (!scrubbing) return; scrubbing = false; clearTimeout(endTm);
+    const pps = G('pps');   /* lepas jari: kalau dalam 3 px dari hujung klip, duduk tepat di situ (semasa seret tak melekat) */
+    if (pps && edgeL) { const thr = 3 / pps, hit = edgeL.find(e => Math.abs(e - disp) < thr); if (hit != null && hit !== disp) { disp = hit; flash(); } }
+    window.__edSeek = disp; eng('seek(window.__edSeek); scrubSet(0)');
+  }
   function follow(t) {
     const pps = G('pps'), pos = G('pos'), playing = G('playing'), sc = scroller();
     const dt = lastT ? Math.min(0.1, (t - lastT) / 1000) : 0; lastT = t;
     if (sc && pps && pos != null) {
-      if (playing) { disp += dt; if (Math.abs(disp - pos) > 0.15) disp = pos; } else disp = pos;
+      if (scrubbing && playing) { scrubbing = false; clearTimeout(endTm); }
+      if (scrubbing) { if (disp !== sent) { sent = disp; window.__edSeek = disp; eng('seek(window.__edSeek)'); } }   // gambar ikut jari, satu seek setiap frame
+      else if (playing) { const err = pos - disp; if (Math.abs(err) > 0.5) disp = pos; else disp += dt + err * Math.min(1, dt * 6); }   // ikut jam video dengan lembut, tanpa lompat
+      else disp = pos;
       const cw = sc.clientWidth; off = cw / 2;   /* Fasa 2 (24 Nov, Mira): playhead ikut CapCut, tetap di tengah */
-      if (playing && (off < 8 || off > cw - 8)) off = cw / 2;          // main semasa playhead di luar skrin: bawa balik ke tengah
-      if (Date.now() - touchAt > 900 && !phDrag) {
+      if (!scrubbing && !finger && !phDrag) {
         [$('tscroll'), $('rscroll')].forEach(el => { if (!el) return; const w = el.clientWidth || cw; const max = Math.max(0, el.scrollWidth - w);
           const x = Math.max(0, Math.min(max, disp * pps + w / 2 - off)); if (Math.abs(SL.get.call(el) - x) > 0.5) setSL(el, x); });
       }
       [['edph', $('tscroll')], ['edph2', $('rscroll')]].forEach(([id, el]) => { const ph = $(id); if (!ph || !el) return; const w = el.clientWidth;
-        const x = w / 2 + disp * pps - SL.get.call(el); ph.style.left = (el.offsetLeft + x) + 'px'; ph.style.visibility = x < -2 || x > w + 2 ? 'hidden' : ''; });
+        const x = scrubbing && el === touchSc ? w / 2 : w / 2 + disp * pps - SL.get.call(el), L = Math.round((el.offsetLeft + x) * 4) / 4, vis = x < -2 || x > w + 2 ? 'hidden' : '';
+        const o = phX[id] || (phX[id] = {}); if (o.l !== L) { o.l = L; ph.style.left = L + 'px'; } if (o.v !== vis) { o.v = vis; ph.style.visibility = vis; } });
     }
     requestAnimationFrame(follow);
   }
@@ -309,21 +327,21 @@
     });
     [tsc, rsc].forEach(sc => {
       lock(sc);
-      const mark = () => { touchAt = Date.now(); touchSc = sc; };
+      const mark = () => { touchSc = sc; };
       ['touchstart', 'touchmove', 'pointerdown', 'wheel'].forEach(ev => sc.addEventListener(ev, mark, { passive: true }));
+      sc.addEventListener('wheel', () => { wheelAt = Date.now(); }, { passive: true });
+      const arm = () => { clearTimeout(endTm); endTm = setTimeout(() => { if (finger) return; scrubEnd(); }, 140); };
+      const fin = e => { finger = e.touches.length > 0; if (!finger && scrubbing) arm(); };
+      ['touchstart', 'touchend', 'touchcancel'].forEach(ev => sc.addEventListener(ev, fin, { passive: true }));
+      sc.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { finger = true; const up = () => { finger = false; removeEventListener('pointerup', up, true); if (scrubbing) arm(); }; addEventListener('pointerup', up, true); } }, { passive: true });
       sc.addEventListener('scroll', () => {
-        if (Date.now() - touchAt > 900 || sc !== touchSc) return;   // scroll oleh program, bukan jari
-        touchAt = Date.now();
-        const other = sc === tsc ? rsc : tsc; setSL(other, SL.get.call(sc));
-        const pps = G('pps'); if (!pps) return;   /* Fasa 2: seret timeline = scrub video (playhead tetap di tengah) */
-        disp = Math.max(0, SL.get.call(sc) / pps);
-        { /* 24 Nov: snap ke hujung klip (dalam 7 px) + getaran halus di phone yang benarkan (iPhone Safari tak benarkan getaran dari web) */
-          const S = G('S'), st = G('startOf'); let hit = null;
-          if (S && st) { const thr = 7 / pps; for (let i = 0; i <= S.clips.length; i++) { let e; try { e = i < S.clips.length ? st(i) : G('total()'); } catch (x) { break; } if (Math.abs(e - disp) < thr) { hit = e; break; } if (e > disp + thr) break; } }
-          if (hit != null) { disp = hit; if (snapAt !== hit) { snapAt = hit; try { if (navigator.vibrate) navigator.vibrate(8); } catch (x) {} H.classList.add('edsnap'); clearTimeout(snapT); snapT = setTimeout(() => H.classList.remove('edsnap'), 260); } } else snapAt = null; }
-        if (G('playing')) { try { (0, eval)('stop()'); } catch (e2) {} }
-        const go = () => { lastSeek = Date.now(); try { window.__edSeek = disp; (0, eval)('seek(window.__edSeek); drawStickers && drawStickers();'); } catch (e2) {} };
-        clearTimeout(seekT); if (Date.now() - lastSeek > 70) go(); else seekT = setTimeout(go, 80);
+        if (sc !== touchSc || G('dr')) return;
+        if (!scrubbing) { if (!finger && Date.now() - wheelAt > 250) return; scrubStart(); }   // scroll oleh program, bukan jari
+        const x = SL.get.call(sc), other = sc === tsc ? rsc : tsc; if (Math.abs(SL.get.call(other) - x) > 0.5) setSL(other, x);
+        const pps = G('pps'); if (!pps) return;   /* seret timeline = scrub video; playhead tetap di tengah, video ikut jari tepat (tak melekat di hujung klip) */
+        disp = Math.max(0, x / pps);
+        if (edgeL && prevD != null && prevD !== disp) { const a = Math.min(prevD, disp), b = Math.max(prevD, disp); if (edgeL.some(e => e > a && e <= b)) flash(); }   // lalu hujung klip: kelip kuning + getaran (di phone yang benarkan)
+        prevD = disp; arm();
       }, { passive: true });
       sc.addEventListener('touchstart', e => { if (e.touches.length === 2) { const z = $('zoom'); pinch = { d: Math.abs(e.touches[0].clientX - e.touches[1].clientX) || 1, z: +(z && z.value) || 25 }; } }, { passive: true });
       sc.addEventListener('touchmove', e => {

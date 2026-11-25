@@ -1691,7 +1691,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .spticks button[aria-pressed="true"] { color: #3fd0c0; }
 #spBtn { display: inline-grid; place-items: center; } #spBtn .ic { width: 16px; height: 16px; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=83980a19f9">
+<link rel="stylesheet" href="../../ed-capcut.css?v=2581dec4e7">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1802,9 +1802,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=83980a19f9"></script>
-<script src="../../../js/runtime.js?v=83980a19f9"></script>
-<script src="../../ed-boot.js?v=83980a19f9"></script>
+<script src="../../../js/config.js?v=2581dec4e7"></script>
+<script src="../../../js/runtime.js?v=2581dec4e7"></script>
+<script src="../../ed-boot.js?v=2581dec4e7"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -3264,12 +3264,21 @@ document.addEventListener("input", e => {
   b.addEventListener("pointerdown", e => { e.preventDefault(); e.stopPropagation(); try { b.setPointerCapture(e.pointerId); } catch (x) {} set(true); });
   ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => b.addEventListener(ev, e => { e.stopPropagation(); set(false); }));
   ["click", "contextmenu"].forEach(ev => b.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); })); }
+/* Scrub licin (25 Nov 2026): SATU seek pada satu masa. Kalau video masih mencari frame, simpan sasaran TERBARU sahaja dan hantar sebaik "seeked".
+   Seek bertindan (cara lama: setiap 70 / 120 ms tanpa tunggu) buat iPhone tersangkut lalu melompat. Semasa scrub, VO tak di-seek; ia disamakan bila scrub tamat. */
+let scrubOn = false, vsWant = null, vsAt = 0;
+function vSeek(t) {
+  const v = $("mv"), n = performance.now();
+  if (v.seeking && n - vsAt < 350) { vsWant = t; return; }
+  vsWant = null; if (Math.abs(v.currentTime - t) > .012) { try { v.currentTime = t; } catch (e) {} vsAt = lastSeekSet = n; }
+}
+document.addEventListener("seeked", e => { if (e.target && e.target.id === "mv" && vsWant != null && !playing) vSeek(vsWant); }, true);
+function scrubSet(on) { on = !!on; if (scrubOn === on) return; scrubOn = on; if (!on) { vsWant = null; seek(pos); drawStickers(); } }
 function seek(p) {
   pos = Math.max(0, Math.min(p, endT())); lastPos = pos;   // up to the end of the 2 s end card
   const l = locate(Math.min(pos, total() - .04)); curIdx = l.i;
-  const nowT = performance.now(), hold = dr && nowT - lastSeekSet < 120;
-  if (l.i >= 0 && !hold) { const v = $("mv"), t = proxyT(S.clips[l.i], l.t); if (Math.abs(v.currentTime - t) > .03) { v.currentTime = t; lastSeekSet = nowT; } }
-  if (hasVO()) { const vo = $("vo"), segs = voSegs(), t = editToVo(pos, segs); if (Math.abs(vo.currentTime - t) > .03) vo.currentTime = t; vo.muted = !segs.some(g => pos >= g.e && pos < g.e + g.b - g.a); }
+  if (l.i >= 0) { const v = $("mv"), t = proxyT(S.clips[l.i], l.t); if (scrubOn || dr) vSeek(t); else if (vsWant = null, Math.abs(v.currentTime - t) > .03) { v.currentTime = t; lastSeekSet = performance.now(); } }
+  if (hasVO() && !scrubOn) { const vo = $("vo"), segs = voSegs(), t = editToVo(pos, segs); if (Math.abs(vo.currentTime - t) > .03) vo.currentTime = t; vo.muted = !segs.some(g => pos >= g.e && pos < g.e + g.b - g.a); }
   if (playing) bgmSync(); setVideoMute(); drawHead();
 }
 
@@ -3332,7 +3341,7 @@ function playLog(x) { DIAG.pl = DIAG.pl || []; if (DIAG.pl.length < 30) DIAG.pl.
 function start() {
   if (!S.clips.length) return;
   clearTimeout(window._spp); clearTimeout(window._jp);   /* p25: pemasa pratonton lama tak boleh hentikan main yang baru */
-  stallT = 0; kickAt = 0;
+  stallT = 0; kickAt = 0; scrubOn = false; vsWant = null;
   if (pos >= endT() - .05) pos = 0;
   seek(pos); lastPos = pos;
   playing = true; setPlayBtn();
@@ -4171,7 +4180,7 @@ document.addEventListener("pointermove", e => {
   if (dr.side === "l") c.in = Math.max(c.srcMin, Math.min(c.out - MIN_CLIP, dr.in + ds * (c.sp || 1)));
   else c.out = Math.min(c.srcMax, Math.max(c.in + MIN_CLIP, dr.out + ds * (c.sp || 1)));
   sel = dr.i;
-  const tn = performance.now(); if (tn - lastSeekSet > 120) { $("mv").currentTime = proxyT(c, dr.side === "l" ? c.in : c.out - .04); lastSeekSet = tn; }
+  vSeek(proxyT(c, dr.side === "l" ? c.in : c.out - .04));   /* gambar ikut pemegang sepantas video boleh cari frame */
   pos = startOf(dr.i) + (dr.side === "l" ? 0 : cLen(c) - .02); curIdx = dr.i;
   dr.el.style.width = cLen(c) * pps + "px";
   drawLen(); const ph = $("ph"); if (ph) ph.style.transform = `translateX(${pos * pps}px)`;
