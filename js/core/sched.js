@@ -30,7 +30,7 @@ function schedPlan(groups,now){now=now||new Date();const today=ymd(now),nowT=pad
     if(isSettled(r)){put(r,Object.assign(base(r),{date:s.date,time:s.time,status:'Posted'}));return}
     if(/^excluded$/i.test(st)){put(r,Object.assign(base(r),{date:'',time:'',status:'Excluded'}));return}
     /* 25 Nov (Mira): tarikh dah lepas dan belum settled = masuk semula barisan, dapat slot kosong seterusnya */
-    if(s.date&&s.date<today){moved.set(schKey(r),s.date);todo.push(r);return}
+    if(s.date&&s.date<today&&!r.sched.some(Boolean)){moved.set(schKey(r),s.date);todo.push(r);return}
     if(s.date&&s.time&&(schFixed(st)||(/^auto$/i.test(st)&&later(s.date,s.time)))){put(r,Object.assign(base(r),{date:s.date,time:s.time,acc:s.acc,status:schFixed(st)?st.charAt(0).toUpperCase()+st.slice(1).toLowerCase():'Auto'}));return}
     todo.push(r)});
   /* barisan setiap produk */

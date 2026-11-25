@@ -567,3 +567,20 @@ button.tpchip{cursor:pointer}.tpchip.btnx{font-weight:500}
 .hplg{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px}
 .hpmore{font:inherit;background:none;border:0;cursor:pointer;width:100%;color:var(--muted)}
 .hphd:focus-visible,.hprow:focus-visible,.hpmore:focus-visible{outline:2px solid #C98F66;outline-offset:2px}
+
+/* 25 Nov petang (Mira): butang video bulat di atas, Copy dan Sched satu grid (TT, IG, FB sebaris atas bawah), kad lebih padat */
+.tptop{flex:none;display:flex;align-items:center;gap:10px}
+.tpvb{width:34px;height:34px;flex:none;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:16px;line-height:1;text-decoration:none;background:linear-gradient(#F6D2B0,#E3A97E);border:1px solid rgba(255,255,255,.95);box-shadow:0 0 0 3px rgba(227,169,126,.3),0 3px 8px rgba(120,70,30,.22)}
+.tpvb.done{background:linear-gradient(#DDEFDF,#BFDDC4);box-shadow:0 0 0 3px rgba(120,180,130,.28)}
+.tpvb:focus-visible{outline:2px solid #C98F66;outline-offset:3px}
+.tpgrid{display:grid;grid-template-columns:auto repeat(4,minmax(0,1fr));gap:4px;align-items:center;margin-top:6px}
+.tpgrid .tpacts,.tpgrid .tptk{display:contents}
+.tpgrid .tpacts button{justify-content:center;padding:0 4px;min-width:0}
+.tpgl{font-size:8.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding-right:4px}
+.tpc{padding:9px 11px}.tpc .vid{padding-top:7px;margin-top:7px}.tpc .tptitle{margin-top:4px}
+.tpc .tpnf{height:22px;font-size:10px;padding:0 8px;border-radius:999px}
+
+/* 25 Nov malam (Mira): Excluded sebelah akaun, @miracikcit hijau mint, tiada video = ❌ dalam bulat, SV oren */
+.tpwho.m{background:rgba(190,232,212,.85);color:#1F5E48}
+.tpvb.off{background:rgba(255,255,255,.55);box-shadow:none;border:1px dashed rgba(120,100,90,.4);font-size:13px}
+.tp{--sv-p:#FFB36B;--sv-t:#7A3300}
