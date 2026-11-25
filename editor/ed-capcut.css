@@ -358,6 +358,7 @@ html.pwa .handle.l { left: -16px; border-radius: 7px 0 0 7px; } html.pwa .handle
 html.pwa .handle::before { content: ""; position: absolute; top: 0; bottom: 0; }
 html.pwa .handle.l::before { left: -12px; right: -5px; } html.pwa .handle.r::before { right: -12px; left: -5px; }
 html.pwa .handle::after { content: ""; position: absolute; left: 7px; top: 50%; width: 2px; height: 16px; margin-top: -8px; border-radius: 1px; background: #06262b; }
+html.pwa .clen { left: 5px; top: 4px; font-size: 11px; } html.pwa .clen.jl { left: 27px; } html.pwa .clip.sel .spb { right: 5px; top: 24px; }
 html.pwa .jn.adjl { margin-left: 5px; } html.pwa .jn.adjr { margin-left: -23px; }
 html.pwa .jn { top: 0; margin-top: 1px; width: 18px; height: 18px; margin-left: -9px; border-radius: 6px; } html.pwa .jn .ic { width: 11px; height: 11px; }
 html.pwa.edsnap .edph { background: #ffd24a; box-shadow: 0 0 10px #ffd24a; } html.pwa.edsnap .edph::before { background: #ffd24a; }

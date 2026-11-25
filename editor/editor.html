@@ -1238,6 +1238,8 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
 .thumbs { position: absolute; inset: 0; width: 100%; height: 100%; }
 .cname { position: absolute; left: 4px; bottom: 2px; font: 600 10px var(--display); color: #fff; text-shadow: 0 1px 2px #000; white-space: nowrap; pointer-events: none; }
 .clip.muted .cname { color: var(--red); }
+.clen { position: absolute; left: 20px; top: 3px; z-index: 3; padding: 1px 5px; border-radius: 5px; background: rgba(0,0,0,.6); color: #fff; font: 700 10px var(--display); font-variant-numeric: tabular-nums; pointer-events: none; white-space: nowrap; }   /* panjang klip yang dipilih; berubah semasa pemegang ditarik */
+.clip.sel .spb { left: auto; right: 20px; }
 .handle { position: absolute; top: 0; bottom: 0; width: 16px; background: var(--brown); touch-action: none; cursor: ew-resize; display: none; align-items: center; justify-content: center; color: var(--fg); font: 700 13px var(--display); }
 .clip.sel .handle { display: flex; }
 .handle.l { left: 0; }
@@ -1694,7 +1696,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .spticks button[aria-pressed="true"] { color: #3fd0c0; }
 #spBtn { display: inline-grid; place-items: center; } #spBtn .ic { width: 16px; height: 16px; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=6cdc3110c3">
+<link rel="stylesheet" href="../../ed-capcut.css?v=359d993880">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1805,9 +1807,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=6cdc3110c3"></script>
-<script src="../../../js/runtime.js?v=6cdc3110c3"></script>
-<script src="../../ed-boot.js?v=6cdc3110c3"></script>
+<script src="../../../js/config.js?v=359d993880"></script>
+<script src="../../../js/runtime.js?v=359d993880"></script>
+<script src="../../ed-boot.js?v=359d993880"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -3735,7 +3737,7 @@ function drawTimeline() {
   const otherPick = voSel >= 0 || stSel >= 0 || sfxSel >= 0 || jnSel >= 0;
   const video = S.clips.map((c, i) => {
     const d = cLen(c);
-    return `<div class="clip${i === sel && !otherPick ? " sel" : ""}${c.muted ? " muted" : ""}" data-c="${i}" style="width:${d * pps}px"><canvas class="thumbs" data-cv="${i}" width="${Math.ceil(d * pps)}" height="58"></canvas><span class="cname">${esc(c.name)}${c.muted ? " · mute" : ""}</span>${c.sp && c.sp !== 1 ? `<span class="spb">${spTxt(c.sp)}</span>` : ""}<div class="handle l" data-h="l">‹</div><div class="handle r" data-h="r">›</div></div>`;
+    return `<div class="clip${i === sel && !otherPick ? " sel" : ""}${c.muted ? " muted" : ""}" data-c="${i}" style="width:${d * pps}px"><canvas class="thumbs" data-cv="${i}" width="${Math.ceil(d * pps)}" height="58"></canvas><span class="cname">${esc(c.name)}${c.muted ? " · mute" : ""}</span>${c.sp && c.sp !== 1 ? `<span class="spb">${spTxt(c.sp)}</span>` : ""}${i === sel && !otherPick ? `<span class="clen${i && d * pps >= 56 && cLen(S.clips[i - 1]) * pps >= 56 ? " jl" : ""}">${d.toFixed(1)}s</span>` : ""}<div class="handle l" data-h="l">‹</div><div class="handle r" data-h="r">›</div></div>`;
   }).join("") + (tab === "Potong" ? S.clips.map((c, i) => i && (i === jnSel || Math.min(cLen(c), cLen(S.clips[i - 1])) * pps >= 24) ? `<button class="jn${i === jnSel ? " on" : jnKind(i) !== "cut" ? " set" : ""}${!otherPick && (i === sel || i === sel + 1) ? (Math.min(cLen(c), cLen(S.clips[i - 1])) * pps < 56 ? " adjn" : i === sel ? " adjl" : " adjr") : ""}" data-jn="${i}" style="left:${(startOf(i) * pps).toFixed(1)}px" aria-label="Transition"><svg class="ic"><use href="#i-trans"/></svg></button>` : "").join("") : "");   /* p24 */
   const E = endT(), bl = (t, d, cls, txt, extra = "") => `<div class="blk ${cls}" ${extra} style="left:${t * pps}px;width:${Math.max(d * pps, 3)}px">${txt}</div>`;
   const rows = [];
@@ -3772,27 +3774,37 @@ function drawTimeline() {
 }
 const stripImg = new Image(); stripImg.onload = () => paintThumbs();
 const tiles = {}; let paintQueued = false;
-function tile(f) {
-  if (tiles[f]) return tiles[f];
+/* 25 Nov 2026 (Mira, ikut CapCut): jalur gambar baru = 4 gambar sesaat dalam grid (data.json stripFps / stripCols), supaya petak dalam klip berbeza bila timeline dizoom.
+   Projek lama (1 gambar sesaat, satu baris) kekal jalan: stripFps tiada = 1, stripCols tiada = satu baris. tile(f) kekal terima SAAT proxy. */
+const stripF = () => (D && D.stripFps) || 1;
+function tileI(i) {
+  if (tiles[i]) return tiles[i];
   const c = document.createElement("canvas"); c.width = 33; c.height = 58;
-  const sw = stripImg.naturalWidth / D.stripN;
-  c.getContext("2d").drawImage(stripImg, f * sw, 0, sw, stripImg.naturalHeight, 0, 0, 33, 58);
-  return tiles[f] = c;
+  const n = D.stripN * stripF(), cols = D.stripCols || n, rows = Math.ceil(n / cols), sw = stripImg.naturalWidth / cols, sh = stripImg.naturalHeight / rows;
+  c.getContext("2d").drawImage(stripImg, (i % cols) * sw, Math.floor(i / cols) * sh, sw, sh, 0, 0, 33, 58);
+  return tiles[i] = c;
 }
+function tile(f) { return tileI(Math.round(f * stripF())); }
 function paintThumbs() {
   if (paintQueued || !D || !stripImg.complete || !stripImg.naturalWidth) return;
   paintQueued = true;
   setTimeout(() => {
     paintQueued = false;
     document.querySelectorAll("canvas[data-cv]").forEach(cv => {
-      const c = S.clips[+cv.dataset.cv]; if (!c) return;
-      const g = cv.getContext("2d"), pa = proxyT(c, c.in);
-      for (let x = 0; x < cv.width; x += 33) g.drawImage(tile(Math.min(D.stripN - 1, Math.floor(pa + x / pps * (c.sp || 1)))), x, 0);
-      const pk = WV.pk.p; if (pk) { const off = S.globalMute || c.muted; g.fillStyle = "rgba(8,8,12,.5)"; g.fillRect(0, 40, cv.width, 18); g.fillStyle = off ? "rgba(255,255,255,.6)" : "#7fe3d6";   /* klip mute: wave kelabu */ wvBars(g, pk, cv.width, x => pa + x / pps * (c.sp || 1), 2 / pps * (c.sp || 1), 57, 16); }
+      const c = S.clips[+cv.dataset.cv]; if (c) paintClip(cv, c);
     });
     wvPaintVo();
   }, 0);
   wvKick();
+}
+/* 25 Nov 2026 (Mira, ikut CapCut): petak gambar dilekat pada MASA SUMBER, bukan pada hujung kiri klip. Jadi bila pemegang ditarik,
+   gambar tak meregang atau bertukar di tempat: frame baru TERBUKA di hujung yang ditarik, dan Mira nampak berapa banyak footage dimasukkan. */
+function paintClip(cv, c) {
+  if (!D || !stripImg.complete || !stripImg.naturalWidth) return;
+  const g = cv.getContext("2d"), sp = c.sp || 1, pa = proxyT(c, c.in), span = 33 / pps * sp;
+  for (let k = Math.floor(c.in / span + 1e-6); k * span < c.out; k++) { const t = Math.max(c.srcMin, Math.min(c.srcMax - .01, k * span + span / 2));
+    g.drawImage(tileI(Math.max(0, Math.min(D.stripN * stripF() - 1, Math.floor(proxyT(c, t) * stripF())))), Math.round((k * span - c.in) / sp * pps), 0); }
+  const pk = WV.pk.p; if (pk) { const off = S.globalMute || c.muted; g.fillStyle = "rgba(8,8,12,.5)"; g.fillRect(0, 40, cv.width, 18); g.fillStyle = off ? "rgba(255,255,255,.6)" : "#7fe3d6";   /* klip mute: wave kelabu */ wvBars(g, pk, cv.width, x => pa + x / pps * sp, 2 / pps * sp, 57, 16); }
 }
 /* Wave suara (25 Nov 2026, Mira): panduan potong. Puncak audio dikira DALAM device dari proxy.mp4 / vo.mp3 (tiada token, tiada Mac mini),
    50 nilai sesaat, disimpan dalam memori dan localStorage (satu projek terakhir). Dilukis di bawah gambar klip dan dalam blok VO. */
@@ -4217,7 +4229,7 @@ document.addEventListener("pointermove", e => {
   if (!dr) return;
   if (dr.k === "ph") return movePh(e);
   markMoved();
-  const ds = (e.clientX - (dr.x || 0)) / pps;
+  const ds = (e.clientX - (dr.x || 0) + (dr.ax || 0)) / pps;   /* dr.ax = anjakan tambahan bila timeline bergerak sendiri di tepi skrin (lapisan PWA) */
   if (dr.k === "hlpos") { const r = $("stage").getBoundingClientRect(), nx = +Math.max(.05, Math.min(.95, dr.x0 + (e.clientX - dr.ox) / r.width)).toFixed(4), ny = +Math.max(.05, Math.min(.95, dr.y0 + (e.clientY - dr.oy) / r.height)).toFixed(4);
     S.hlx = S.hlx || {}; S.hlx[dr.id] = { ...(S.hlx[dr.id] || {}), x: nx, y: ny }; dr.el.style.left = nx * 100 + "%"; dr.el.style.top = ny * 100 + "%"; return; }
   if (dr.k === "zm") { const z = S.zooms[dr.i]; z.t = +Math.max(0, Math.min(total() - .3, dr.t + ds)).toFixed(2); dr.el.style.left = z.t * pps + "px"; return; }
@@ -4255,6 +4267,8 @@ document.addEventListener("pointermove", e => {
   vSeek(proxyT(c, dr.side === "l" ? c.in : c.out - .04));   /* gambar ikut pemegang sepantas video boleh cari frame */
   pos = startOf(dr.i) + (dr.side === "l" ? 0 : cLen(c) - .02); curIdx = dr.i;
   dr.el.style.width = cLen(c) * pps + "px";
+  { const cv = dr.el.querySelector("canvas.thumbs"); if (cv) { cv.width = Math.max(1, Math.ceil(cLen(c) * pps)); paintClip(cv, c); }
+    const cl = dr.el.querySelector(".clen"); if (cl) cl.textContent = cLen(c).toFixed(1) + "s"; }
   drawLen(); const ph = $("ph"); if (ph) ph.style.transform = `translateX(${pos * pps}px)`;
   const cu = $("cUse"); if (cu) cu.textContent = cLen(c).toFixed(1) + " s";
 });
@@ -4629,7 +4643,7 @@ async function boot() {
   { let st = $("fxcssS"); if (!st) { st = document.createElement("style"); st.id = "fxcssS"; document.head.appendChild(st); } st.textContent = D.fxcss || ""; }   // per-product effect colours (project.json "fxcss")
   if (PARTS && PARTS.parts.length > 1) D.series = { part: PARTS.parts.length, total: PARTS.parts.length, combined: true, n: PART + 1 };
   { const a = $("mv"), b = $("mvb"); [a, b].forEach(v => { v.src = U("proxy.mp4"); }); a.poster = U("poster.jpg"); a.style.opacity = ""; b.style.opacity = "0"; a.style.transform = b.style.transform = "";
-    window.BASE_OK = 1; WV.st = {}; WV.pk = {}; stripImg.src = U("strip.jpg"); document.documentElement.style.setProperty("--poster", `url("${U("poster.jpg")}")`); }
+    window.BASE_OK = 1; WV.st = {}; WV.pk = {}; for (const k in tiles) delete tiles[k]; stripImg.src = U("strip.jpg"); document.documentElement.style.setProperty("--poster", `url("${U("poster.jpg")}")`); }
   S.clips = D.clips.map(c => ({ ...c, muted: !!c.muted }));
   S.bin = (D.bin || []).map(c => ({ ...c, muted: !!c.muted }));
   S.hook = D.hook || ""; S.words = (D.words || []).map(w => ({ ...w, cut: false, fixed: false }));

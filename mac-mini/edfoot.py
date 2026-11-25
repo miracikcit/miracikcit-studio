@@ -177,12 +177,12 @@ def _add(inp, sheet, cfg, W, vid, doc):
             raise RuntimeError("proxy: " + (r.stderr or "")[-200:])
         strip_n = int(M.duration(Path(outp))) + 1
         strip = os.path.join(tmp, "strip.jpg")
-        subprocess.run([ffmpeg, "-v", "error", "-y", "-i", outp, "-vf", f"fps=1,scale=48:85,tile={strip_n}x1", "-frames:v", "1", "-q:v", "6", strip], check=True, timeout=600)
+        subprocess.run([ffmpeg, "-v", "error", "-y", "-i", outp, "-vf", f"fps=4,scale=48:85,tile=40x{-(-strip_n * 4 // 40)}", "-frames:v", "1", "-q:v", "6", strip], check=True, timeout=600)
         shutil.copy(proxy, os.path.join(tmp, "proxy.old.mp4"))   # salinan keselamatan sampai semua siap
         shutil.move(outp, proxy)
         shutil.move(strip, os.path.join(pdir, "strip.jpg"))
         data["bin"] = (data.get("bin") or []) + new
-        data["stripN"] = strip_n
+        data["stripN"] = strip_n; data["stripFps"] = 4; data["stripCols"] = 40   # 25 Nov: jalur gambar 4 sesaat dalam grid, sama dengan make_page.py
         json.dump(data, open(os.path.join(pdir, "data.json"), "w"), ensure_ascii=False)
         r = subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "edpwa.py"), doc["dir"]] + (["--project", doc["project"]] if doc.get("project") else []),
                            capture_output=True, text=True, timeout=3600)
