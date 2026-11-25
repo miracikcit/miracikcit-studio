@@ -13,7 +13,7 @@ V['to-shoot']=()=>{if(!ui.shootTab){try{ui.shootTab=localStorage.getItem('ms:sho
     const left=it.shootDate?Math.ceil((new Date(it.shootDate+'T00:00:00')-Date.now())/DAY):null;const col=left===null?'var(--muted)':left>7?'var(--ok)':left>=0?'var(--warn)':'var(--bad)';
     const badge=it.sample&&!sampleDone(it)?smpBadge(it):`<div class="smpb" style="--pc:${col}">${left!==null?`<span class="pill">${left>0?left+' hari lagi':left===0?'Hari ni':'Lewat '+(-left)+' hari'}</span>`:''}<button class="smpd" data-act="tsDate" data-id="${it.id}">${it.shootDate?'Shoot '+dmy(it.shootDate):'Set tarikh shoot'}</button></div>`;
     return `<div class="card glass tsc"><div class="rowh" style="align-items:flex-start;gap:10px"><div style="min-width:0"><h3>${esc(it.title||'Nota')} ${jobPill(it)}</h3><div class="meta">${esc([it.sample?'Sample '+smpPlat(it.sample.plat):'',it.sample&&it.sample.price?'RM '+it.sample.price:'',it.brand,it.nota?'ada nota':''].filter(Boolean).join(' · '))}</div></div>${badge}</div>
-    <div class="tsx">${accSel(`id="ac-${it.id}" data-col="items" data-id="${it.id}" data-f="account"`,it.account||'','Akaun')}${it.sample?smpListing(it):''}${notaBtn(it,it.sample?'smpNotaBtn':'nota')}</div>${prodLine(it)}
+    <div class="tsx">${accSel(`id="ac-${it.id}" data-col="items" data-id="${it.id}" data-f="account"`,it.account||'','Akaun')}${it.sample?smpListing(it):''}${notaBtn(it,it.sample?'smpNotaBtn':'nota')}${tsMic(it)}</div>${prodLine(it)}
     <div class="tsm">${footBtn(it)}<button class="btn icon sm" data-act="tsEdit" data-id="${it.id}" aria-label="Edit">${IC.edit}</button><button class="btn icon sm bad" data-act="delItem" data-id="${it.id}" aria-label="Padam">${IC.trash}</button></div>${fuStatus(it)}</div>`}).join('')||`<div class="empty">Tiada job menunggu. Tambah sample, atau job dari tab Projects.</div>`}</div>`};
 A.tsDate=el=>{const it=get('items',el.dataset.id);modal(`<h2>Tarikh shoot</h2><p class="meta">${esc(it.title||'')}</p><label class="f"><span>Tarikh</span><input type="date" class="inp" id="tsD" value="${esc(it.shootDate||'')}"></label><div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="tsDateSave" data-id="${it.id}">Simpan</button></div>`,TAB['to-shoot'].c)};
 A.tsDateSave=el=>{const it=get('items',el.dataset.id);save('items',Object.assign({},it,{shootDate:($('#tsD')||{}).value||''}));closeModal();toast('Tarikh disimpan')};
@@ -24,7 +24,7 @@ A.toShot=el=>moveItem(get('items',el.dataset.id),'shot',{shotAt:ymd(new Date())}
    semua butang di baris bawah. Idea kekal senarai ringkas. */
 function creCard(it){const left=it.shootDate?Math.ceil((new Date(it.shootDate+'T00:00:00')-Date.now())/DAY):null;const col=left===null?'#999':left>7?'var(--ok)':left>=0?'var(--warn)':'var(--bad)';
   const meta=[it.nota?'ada nota':'',noEmoji(it.details||((it.src&&it.src.text)||'')).slice(0,140)].filter(Boolean).join(' · ');
-  return `<div class="card glass tsc crc"><div class="crp"><span class="pill" style="--pc:#9A4F5D">Creative</span><button class="pill crd" style="--pc:${col}" data-act="tsDate" data-id="${it.id}">${it.shootDate?'Shoot '+dmy(it.shootDate)+(left>0?' · '+left+' hari lagi':left===0?' · hari ni':' · lewat '+(-left)+' hari'):'Set tarikh shoot'}</button>${accSel(`id="ac-${it.id}" data-col="items" data-id="${it.id}" data-f="account"`,it.account||'','Akaun')}</div>
+  return `<div class="card glass tsc crc"><div class="crp"><span class="pill" style="--pc:#9A4F5D">Creative</span><button class="pill crd" style="--pc:${col}" data-act="tsDate" data-id="${it.id}">${it.shootDate?'Shoot '+dmy(it.shootDate)+(left>0?' · '+left+' hari lagi':left===0?' · hari ni':' · lewat '+(-left)+' hari'):'Set tarikh shoot'}</button>${accSel(`id="ac-${it.id}" data-col="items" data-id="${it.id}" data-f="account"`,it.account||'','Akaun')}${tsMic(it)}</div>
     <h3>${esc(it.title||'Tanpa tajuk')}</h3>${meta?`<div class="meta">${esc(meta)}</div>`:''}${fuStatus(it)}
     <div class="crm">${footBtn(it)}${notaBtn(it,'nota')}<button class="btn icon sm" data-act="tsEdit" data-id="${it.id}" aria-label="Edit">${IC.edit}</button><button class="btn icon sm bad" data-act="delItem" data-id="${it.id}" aria-label="Padam">${IC.trash}</button></div></div>`}
 function creList(cre,ideas){
@@ -45,16 +45,17 @@ function tsForm(it){const job=it.kind?it.kind==='job':isJob(it);
     <label class="f"><span>Bayaran (RM, kosong = tanpa bayaran)</span><input class="inp" id="tfP" inputmode="decimal" value="${esc(it.paid&&it.paid!==true?String(it.paid):'')}" ${it.sample?'placeholder="Sample"':''}></label></div>
    <label class="f"><span>Tarikh shoot</span><input type="date" class="inp" id="tfD" value="${esc(it.shootDate||'')}"></label>
    <label class="f"><span>Akaun</span>${accSel('id="tfA"',it.account||'')}</label>
+   ${tsVoBtn(!!it.vo,'tfVo','')}
    <label class="f"><span>Folder footage (kalau dah upload di Mac mini)</span>${fuSel('tfF',it.folder||'',false,it.title)}</label>
    <label class="f"><span>Details (lokasi, props, point penting, link)</span><textarea class="inp" id="tfX" rows="5">${esc(it.details||'')}</textarea></label>
    <div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="tfSave" data-id="${esc(it.id||'')}" data-stage="${esc(it.stage||'toshoot')}">Simpan</button></div>`,TAB['to-shoot'].c);
-  ui.tfKind=job?'job':'creative'}
+  ui.tfKind=job?'job':'creative';ui.tfVo=!!it.vo}
 A.tfKind=el=>{ui.tfKind=el.dataset.id;document.querySelectorAll('#modal .seg button').forEach(b=>b.classList.toggle('on',b.dataset.id===ui.tfKind));const j=$('#tfJob');if(j)j.hidden=ui.tfKind!=='job'};
 A.tfSave=el=>{const id=el.dataset.id,old=id?get('items',id):{created:Date.now(),stage:el.dataset.stage||'toshoot',stageAt:{toshoot:Date.now()},src:{type:'text',text:''}};const v=s=>(($(s)||{}).value||'').trim();
   const title=v('#tfT');if(!title){toast('Tulis tajuk dulu');return}
-  const pay=v('#tfP'),o=Object.assign({},old,{title,kind:ui.tfKind,shootDate:v('#tfD'),account:v('#tfA'),details:v('#tfX'),folder:v('#tfF')});
+  const pay=v('#tfP'),o=Object.assign({},old,{title,kind:ui.tfKind,shootDate:v('#tfD'),account:v('#tfA'),details:v('#tfX'),folder:v('#tfF'),vo:!!ui.tfVo});
   if(ui.tfKind==='job'){o.brand=v('#tfB');o.paid=pay?(+pay||pay):(old.sample?old.paid:false)}
-  if(!id)o.id='c'+Date.now().toString(36);save('items',o);closeModal();toast('Disimpan')};
+  if(!id)o.id='c'+Date.now().toString(36);save('items',o);tsVoSync(o,!!old.vo);closeModal();toast(o.vo&&!old.vo?'Disimpan. Peringatan VO masuk tab VO':'Disimpan')};
 
 /* UPLOAD FOOTAGE (2026-11-23, Mira): pilih folder dalam CLAUDE EDITS, pilih video dari phone, upload terus ke Drive
    (8 MB sekeping, bar %), Mac mini pindah ke folder tu (job foot_in) dan pautkan folder ke kad. */
@@ -91,7 +92,7 @@ function fuBody(){const u=ui.fu,it=get('items',u.id);if(!it)return '';
     ${opt('up',IC.up,'Upload dari iPhone','Pilih video dari Photos. Mac mini pindahkan ke folder.')}
     ${opt('pick',IC.footage,'Pilih folder dari CLAUDE EDITS','Footage dah ada di Mac mini. Pautkan sahaja.')}
     ${opt('new',IC.plus,'Buat folder baru','Dalam folder utama 21, 22, 23 dan seterusnya.')}</div>
-    <div class="fubody">${body}</div><div class="btns" style="justify-content:space-between;align-items:center;margin-top:10px">${tok(0)}<button class="btn" data-act="closeModal">Tutup</button></div>`}
+    <div class="fubody">${body}</div>${tsVoBtn(!!it.vo,'fuVo',it.id)}<div class="btns" style="justify-content:space-between;align-items:center;margin-top:10px">${tok(0)}<button class="btn" data-act="closeModal">Tutup</button></div>`}
 const fuKeep=()=>{const u=ui.fu;if(!u)return;const n=$('#fuN');if(n)u.name=n.value;const f=$('#fuF');if(f)u.sel=f.value};
 A.fuOpen=el=>{const it=get('items',el.dataset.id);if((ui.fuUp||{})[it.id]){toast('Upload sedang berjalan');return}
   ui.fu={id:it.id,mode:it.folder?'up':'',main:fuGuess(it),name:fuSafe(it.title),sel:it.folder||''};modal(fuBody(),TAB['to-shoot'].c)};
@@ -101,11 +102,11 @@ function fuFiles(done){const inp=document.createElement('input');inp.type='file'
 A.fuPick=el=>{const it=get('items',el.dataset.id),v=($('#fuF')||{}).value||'';if(!v){toast('Pilih folder dulu');return}
   const stage=v.split('/')[0],name=v.split('/').slice(1).join('/');fuFiles(fs=>{closeModal();fuRun(it,stage,name,fs)})};
 A.fuLink=el=>{const it=get('items',el.dataset.id),v=($('#fuF')||{}).value||'';if(!v){toast('Pilih folder dulu');return}
-  save('items',Object.assign({},it,{folder:v}));closeModal();toast('Folder dipaut ke kad')};
+  tsVoSync(save('items',Object.assign({},it,{folder:v})),!!it.vo);closeModal();toast('Folder dipaut ke kad')};
 function fuNewVals(){fuKeep();const u=ui.fu,name=fuSafe(u.name);if(!u.main){toast('Pilih folder utama dulu');return null}if(!name){toast('Tulis nama folder');return null}
   if(fuFolders().some(o=>nrm(o.v)===nrm(u.main+'/'+name))){toast('Folder ni dah ada. Guna "Pilih folder dari CLAUDE EDITS"');return null}return {stage:u.main,name}}
 A.fuNew=async el=>{const it=get('items',el.dataset.id),v=fuNewVals();if(!v)return;const b=el;b.disabled=true;b.innerHTML='<i class="spin"></i>Buat folder';
-  try{const r=await studioJob('mkfolder',{stage:v.stage,name:v.name},2*60000);save('items',Object.assign({},get('items',it.id),{folder:v.stage+'/'+((r&&r.name)||v.name)}));closeModal();toast('Folder dibuat: '+fuMainL(v.stage)+' › '+((r&&r.name)||v.name))}
+  try{const r=await studioJob('mkfolder',{stage:v.stage,name:v.name},2*60000);{const c=get('items',it.id);tsVoSync(save('items',Object.assign({},c,{folder:v.stage+'/'+((r&&r.name)||v.name)})),!!c.vo)}closeModal();toast('Folder dibuat: '+fuMainL(v.stage)+' › '+((r&&r.name)||v.name))}
   catch(e){b.disabled=false;b.textContent='Buat folder sahaja';toast('Tak dapat buat folder: '+String((e&&(e.message||e.code))||'semak Mac mini hidup').slice(0,80))}};
 A.fuNewUp=el=>{const it=get('items',el.dataset.id),v=fuNewVals();if(!v)return;fuFiles(fs=>{closeModal();fuRun(it,v.stage,v.name,fs)})};
 async function fuRun(it,stage,name,fs){const b64=blob=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]||'');r.onerror=rej;r.readAsDataURL(blob)});
@@ -129,3 +130,24 @@ function footBtn(it,compact){const n=footCount(it),busy=(ui.fuUp||{})[it.id];
   if(!n)return `<button class="btn sm${compact?'':' solid tab tsgrow'}" data-act="fuOpen" data-id="${it.id}" aria-label="Upload footage">${IC.up}${compact?'':'Footage'}</button>`;
   return `<button class="btn sm st-done${compact?'':' tsgrow'}" data-act="fuOpen" data-id="${it.id}" title="Tambah lagi footage">${IC.check}${compact?n:'Footage · '+n}</button><button class="btn sm solid tab" data-act="tsToEdit" data-id="${it.id}">Ke Edit${IC.next}</button>`}
 A.tsToEdit=el=>{const it=get('items',el.dataset.id);moveItem(it,'toedit',{folder:(it.folder||'').split('/')[0],shotAt:ymd(new Date())})};
+
+/* 2026-11-25 (Mira): butang VO pada Tambah creative dan helaian Footage. Ditanda = mic bulat pada kad (merah = belum rakam,
+   hijau = VO dah ada) dan kad tu masuk senarai tab VO sebagai peringatan (doc vo/<voId>, status perlu, from:'shoot').
+   VO ikut folder footage kalau dah dipaut (supaya fail masuk <projek>/VO dan padan dengan mic di tab Edit); kalau belum, ikut tajuk. */
+const TS_MIC=IC.mic.replace('<svg ','<svg style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8" ');
+function tsVoRef(it){const [st,...r]=String(it.folder||'').split('/'),sub=r.join('/');return it.folder&&sub?{folder:st,sub}:{folder:'',sub:fuSafe(it.title)}}
+const tsVoHas=d=>!!d&&(((d.vos||[]).some(v=>v.status==='siap'))||d.status==='siap');
+function tsMic(it){if(!it.vo)return '';const ref=tsVoRef(it),d=get('vo',voId(ref.sub))||(it.voRef&&get('vo',it.voRef)),has=tsVoHas(d);
+  return `<button class="micb crmic ${has?'ok':'need'}" data-act="tsVoGo" data-id="${it.id}" aria-label="${has?'VO dah ada':'Perlu rakam VO'}">${TS_MIC}</button>`}
+const tsVoBtn=(on,act,id)=>`<button type="button" class="vot${on?' on':''}" data-act="${act}" data-id="${esc(id)}" aria-pressed="${on}"><i>${TS_MIC}</i><span><b>Perlu VO</b><small>${on?'Ditanda. Ada dalam tab VO sebagai peringatan.':'Tanda kalau video ni guna voiceover.'}</small></span><em>${on?IC.check:''}</em></button>`;
+/* Samakan doc VO dengan kad: buat bila ditanda, pindah bila folder berubah, buang bila tanda dibuka (kalau belum ada rakaman) */
+function tsVoSync(it,was){const ref=tsVoRef(it),id=voId(ref.sub);const empty=d=>!(d.vos||[]).length&&!d.take&&!(d.points||[]).length;
+  if(!it.vo){if(was){[id,it.voRef].filter(Boolean).forEach(k=>{const d=get('vo',k);if(d&&d.from==='shoot'&&empty(d))del('vo',k)});if(it.voRef)save('items',Object.assign({},get('items',it.id),{voRef:''}),true)}return}
+  const cur=get('vo',id),old=it.voRef&&it.voRef!==id?get('vo',it.voRef):null;
+  if(cur)save('vo',Object.assign({},cur,{folder:cur.folder||ref.folder,sub:cur.sub||ref.sub,status:cur.status==='buang'?'perlu':cur.status}),true);
+  else save('vo',Object.assign({points:[]},old||{},{id,folder:ref.folder,sub:ref.sub,status:(old&&old.status!=='buang'&&old.status)||'perlu',from:(old&&old.from)||'shoot',item:it.id}),true);
+  if(old&&(!cur||empty(old)))del('vo',old.id);
+  if(it.voRef!==id)save('items',Object.assign({},get('items',it.id),{voRef:id}),true);render()}
+A.tfVo=el=>{ui.tfVo=!ui.tfVo;el.outerHTML=tsVoBtn(ui.tfVo,'tfVo','')};
+A.fuVo=el=>{fuKeep();const it=get('items',el.dataset.id);const o=save('items',Object.assign({},it,{vo:!it.vo}));tsVoSync(o,!!it.vo);modal(fuBody(),TAB['to-shoot'].c);toast(o.vo?'Ditanda perlu VO. Ada dalam tab VO':'Tanda VO dibuang')};
+A.tsVoGo=el=>{const it=get('items',el.dataset.id);tsVoSync(it,true);const ref=tsVoRef(it);ui.voOpen=voId(ref.sub);location.hash='#vo'};
