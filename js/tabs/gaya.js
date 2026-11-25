@@ -23,7 +23,7 @@ function csLib(no){const mine=S.gaya.filter(g=>csDone(g)&&(!no||g.fold===no||g.f
     looks:mine.flatMap(g=>(g.looks||[]).map((l,i)=>({l,i,g})).filter(x=>x.l.saved&&(x.l.st==='lulus'||x.l.st==='semak')))}}
 const csLoad=(txt,pct)=>`<div class="csload" role="status"><i class="f" style="width:${Math.max(3,Math.min(100,pct||0))}%"></i><span class="spin"></span><span>${esc(txt)} · ${Math.round(pct||0)}%</span></div>`;
 const csProg=(txt,pct)=>`<div class="csprog" role="status"><span class="spin"></span><span>${esc(txt)}</span><span class="t"><i style="width:${Math.max(3,Math.min(100,pct||0))}%"></i></span><b>${Math.round(pct||0)}%</b></div>`;
-function gyKeep(){if(!$('#gyL'))return;ui.gyDraft=Object.assign({},ui.gyDraft,{link:$('#gyL').value})}
+function gyKeep(){if(!$('#gyL'))return;ui.gyDraft=Object.assign({},ui.gyDraft,{link:$('#gyL').value},$('#gyN')?{note:$('#gyN').value}:{})}
 /* Upload terus ke Drive: Apps Script buka sesi resumable, phone hantar 8 MB setiap kali (tiada token Claude). */
 A.gyUpload=el=>{const rid=(el&&el.dataset&&el.dataset.id)||'';pickFile('video/*',async f=>{gyKeep();if(rid)ui.gyDraft=Object.assign({},ui.gyDraft,{retry:rid});if(f.size>500*1048576){toast('Video lebih 500 MB. Potong dulu atau guna link');return}
   ui.gyUp={name:f.name,pct:0};render(true);
@@ -52,9 +52,10 @@ function csHas(g){const tp=g.tpl||(((g.card||{}).beats||[]).length?{slots:g.card
   return {tips:(g.tips||[]).length>0,rupa:(g.looks||[]).length>0,template:!!tp,tp}}
 function csFoldRow(g){const cur=csFoldOf(g);const F=csFolds();const sug=g.folderSug;const show=[...new Set([cur,sug].filter(x=>x&&x!=='*'))];
   return `<div class="csfold"><span class="lb">Simpan ke library folder</span><div class="cs">${show.map(no=>`<button type="button" class="chip${cur===no?' on':''}" data-act="csFold" data-id="${esc(g.id)}" data-x="${esc(no)}">${esc(csFoldName(no))}${no===sug?' · cadangan':''}</button>`).join('')}<button type="button" class="chip${cur==='*'?' on':''}" data-act="csFold" data-id="${esc(g.id)}" data-x="*">Semua folder</button>${F.length?`<button type="button" class="chip" data-act="csFoldPick" data-id="${esc(g.id)}">Folder lain</button>`:''}</div></div>`}
+const csTipTxt=t=>`${t.bila?`<i class="cstb">Bila</i> ${esc(t.bila)} <i class="cstb">Buat</i> `:''}${esc(t.t)}`;
 function csTips(g){const T=g.tips||[];const grp=[...new Set(T.map(t=>t.g||'Editing'))];const n=T.filter(t=>t.on!==false).length;const sv=T.filter(t=>t.saved).length;const f=csFoldOf(g);
   const dirty=T.some(t=>!!t.saved!==(t.on!==false));
-  return grp.map(k=>`<p class="csgrp">${esc(k)}</p>${T.map((t,i)=>(t.g||'Editing')===k?`<label class="cstip"><input type="checkbox" data-act="csTip" data-id="${esc(g.id)}" data-x="${i}"${t.on!==false?' checked':''}><span>${esc(t.t)}</span></label>`:'').join('')}`).join('')+
+  return grp.map(k=>`<p class="csgrp">${esc(k)}</p>${T.map((t,i)=>(t.g||'Editing')===k?`<div class="cstl"><label class="cstip"><input type="checkbox" data-act="csTip" data-id="${esc(g.id)}" data-x="${i}"${t.on!==false?' checked':''}><span>${csTipTxt(t)}</span></label><button type="button" class="csmini" data-act="csTipEdit" data-id="${esc(g.id)}" data-x="${i}" aria-label="Ubah tip">${IC.edit}</button><button type="button" class="csmini" data-act="csTipDel" data-id="${esc(g.id)}" data-x="${i}" aria-label="Buang tip">×</button></div>`:'').join('')}`).join('')+
    csFoldRow(g)+(sv&&!dirty?`<div class="csok">${IC.check}${sv} tips dalam library ${esc(csFoldName(f))}</div>`:`<button type="button" class="csbtn solid" data-act="csTipSave" data-id="${esc(g.id)}"${n&&f?'':' disabled'}>${f?`Simpan ${n} tips ke ${esc(csFoldName(f))}`:'Pilih folder dulu'}</button>`)}
 function csLooks(g){const L=g.looks||[];const pick=L.filter(l=>l.on!==false&&!l.saved).length;const build=L.filter(l=>l.st==='bina');const f=csFoldOf(g);
   const tile=(l,i)=>{const st=l.st;return `<label class="cslook${l.on!==false||l.saved?' on':''}">${l.saved?'':`<input type="checkbox" data-act="csLook" data-id="${esc(g.id)}" data-x="${i}"${l.on!==false?' checked':''} aria-label="${esc(l.name)}">`}
@@ -88,19 +89,85 @@ function gyCard(g){
     ${say?`<p class="cssay"><b>${esc(say)}</b>${cnt}</p>`:''}
     ${tab==='tips'?csTips(g):tab==='rupa'?csLooks(g):tab==='template'?csTpl(g):`<p class="csmeta">Tiada apa yang jelas boleh diambil dari video ni.</p>`}
     ${avail.length>1?`<div class="csmore"><span>Ambil juga:</span>${avail.filter(k=>k!==tab).map(k=>`<button type="button" class="csbtn" data-act="csTab" data-id="${esc(g.id)}" data-x="${k}">${CS_KIND[k]}</button>`).join('')}</div>`:''}
+    ${csFixRow(g)}
     ${ui.gyOpen===g.id?`<div class="csdet">${gyResipi(g)}</div>`:''}</div>`}
 
-function gyView(){const d=ui.gyDraft||{};const F=csFolds();const f=ui.csF||'';
-  const all=S.gaya.slice().sort((a,b)=>(b.created||0)-(a.created||0));
+/* 2026-11-25 (Mira): Claude tak meneka lagi. Sebelum scan Mira tick apa nak diambil (want: template / rupa / tips) + nota pilihan.
+   Library ada tiga rak tetap (ui.csShelf: '' = hasil scan, tpl, rupa, tips). Tip = {id,g,bila,t,lvl wajib|cuba,used,hit,miss}. */
+const CS_WANT=[['template','Template','Susunan video: babak, masa, shot'],['rupa','Rupa','Font, caption, tajuk, transition, effect'],['tips','Tips','Pengajaran: hook, rentak, ayat, muzik']];
+function csWantGet(){if(ui.csWant)return ui.csWant;let w=[];try{w=JSON.parse(localStorage.getItem('ms:csWant')||'[]')}catch(e){}return ui.csWant=w.filter(k=>CS_WANT.some(x=>x[0]===k))}
+A.csWant=el=>{gyKeep();const w=csWantGet(),k=el.dataset.x;ui.csWant=w.includes(k)?w.filter(x=>x!==k):CS_WANT.map(x=>x[0]).filter(x=>x===k||w.includes(x));try{localStorage.setItem('ms:csWant',JSON.stringify(ui.csWant))}catch(e){}render(true)};
+const TOK_FIX=6000,TOK_CHAT=30000;
+function csFixRow(g){const fx=g.fix||{};const busy=fx.st==='proses'&&Date.now()-(fx.at||0)<10*60000;const chat=isUrl(g.chat);
+  return `<div class="csfix">${busy?csProg('Claude betulkan ikut nota',50):`<button type="button" class="csbtn" data-act="csFix" data-id="${esc(g.id)}">Betulkan dengan nota</button>${tok(TOK_FIX,'Claude baca hasil scan + nota, tanpa tonton video','Sonnet L')}`}
+    ${chat?`<a class="csbtn csa" href="${esc(g.chat)}" target="_blank" rel="noopener">${IC.ext}Buka chat</a>`:''}<button type="button" class="csbtn" data-act="csChat" data-id="${esc(g.id)}"${ui.csChat===g.id?' disabled':''}>${ui.csChat===g.id?'<i class="spin"></i>Buka sesi':chat?'Chat baru':'Chat Claude'}</button>${tok(TOK_CHAT,'buka sesi Terminal; tambah beberapa ribu setiap soalan','Sonnet M')}</div>
+    ${fx.st==='error'?`<p class="cserr">Betulkan tak jadi: ${esc(fx.msg||'')}</p>`:''}${g.chatSt&&!chat&&Date.now()-(g.chatAt||0)<20*60000?`<p class="csmeta">Chat: ${esc(g.chatSt)}</p>`:''}`}
+A.csFix=el=>{const g=get('gaya',el.dataset.id);modal(`<h2>Betulkan dengan nota</h2><p class="meta">${esc(g.name||'')}. Claude baca hasil scan sahaja, bukan video.</p>
+  <label class="f"><span>Apa nak dibetulkan</span><textarea class="inp" id="csFx" rows="3" maxlength="500" placeholder="cth: aku nak font dia, bukan susunan"></textarea></label>
+  <div class="btns" style="justify-content:flex-end;align-items:center">${tok(TOK_FIX,'','Sonnet L')}<button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="csFixGo" data-id="${esc(g.id)}">Hantar</button></div>`,TAB.inspiration.c)};
+A.csFixGo=el=>{const g=get('gaya',el.dataset.id),nota=(($('#csFx')||{}).value||'').trim();if(!nota){toast('Tulis nota dulu');return}closeModal();
+  save('gaya',Object.assign({},g,{fix:{st:'proses',at:Date.now()}}));
+  studioJob('gaya_fix',{id:g.id,nota},3*60000).catch(e=>{save('gaya',Object.assign({},get('gaya',g.id),{fix:{st:'error',at:Date.now(),msg:'Mac mini tak jawab'}}))})};
+A.csChat=async el=>{const id=el.dataset.id;ui.csChat=id;render();
+  try{await studioJob('gaya_chat',{id},3*60000);toast('Sesi Claude dibuka di Mac mini. Butang Buka chat keluar sekejap lagi')}
+  catch(e){toast('Tak dapat buka sesi: '+String((e&&(e.message||e.code))||'semak Mac mini hidup').slice(0,80))}finally{ui.csChat=null;render()}};
+/* Tip: ubah sendiri (0 token) */
+const CS_GRP=['Hook','Editing','Caption','Cerita','Audio','CTA'];
+function csTipForm(title,t,attrs){modal(`<h2>${title}</h2>
+  <label class="f"><span>Kategori</span><select class="inp" id="ctG">${[...new Set(CS_GRP.concat(t.g||[]))].map(k=>`<option${k===(t.g||'Editing')?' selected':''}>${esc(k)}</option>`).join('')}</select></label>
+  <label class="f"><span>Bila (keadaan, cth "vlog tempat")</span><input class="inp" id="ctB" value="${esc(t.bila||'')}" maxlength="60" placeholder="semua video"></label>
+  <label class="f"><span>Buat (satu ayat arahan)</span><textarea class="inp" id="ctT" rows="3" maxlength="220">${esc(t.t||'')}</textarea></label>
+  <div class="btns" style="justify-content:flex-end;align-items:center">${tok(0)}<button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="csTipOk" ${attrs}>Simpan</button></div>`,TAB.inspiration.c)}
+const csTipSet=(g,i,fn)=>csPut(g,{tips:(g.tips||[]).map((t,k)=>k===i?fn(t):t).filter(Boolean)});
+A.csTipEdit=el=>{const g=get('gaya',el.dataset.id),i=+el.dataset.x;csTipForm('Ubah tip',(g.tips||[])[i]||{},`data-id="${esc(g.id)}" data-x="${i}"`)};
+A.csTipDel=el=>{const g=get('gaya',el.dataset.id),i=+el.dataset.x;confirmBox('Buang tip ni?',()=>{csTipSet(g,i,()=>null);toast('Tip dibuang')},'Ya, buang')};
+A.csTipNew=()=>csTipForm('Tip sendiri',{g:'Hook'},`data-k="${esc(ui.csF||'*')}"`);
+A.csTipOk=el=>{const v={g:$('#ctG').value,bila:$('#ctB').value.trim(),t:$('#ctT').value.trim()};if(!v.t){toast('Tulis apa yang perlu dibuat');return}closeModal();
+  if(el.dataset.id){csTipSet(get('gaya',el.dataset.id),+el.dataset.x,t=>Object.assign({},t,v));toast('Tip dikemas kini');return}
+  const fold=el.dataset.k||'*',id='own-'+(fold==='*'?'all':fold),g=get('gaya',id)||{id,name:'Tip sendiri',own:true,status:'simpan',fold,tips:[]};
+  const lvl=csLib(fold==='*'?'':fold).tips.filter(t=>t.lvl!=='cuba').length<CS_MAXW?'wajib':'cuba';
+  csPut(g,{tips:(g.tips||[]).concat(Object.assign({id:'t'+uid(),on:true,saved:true,lvl},v))});toast('Tip disimpan ke library '+csFoldName(fold)+' ('+(lvl==='wajib'?'Wajib':'Cuba')+')')};
+/* Rak library */
+const CS_MAXW=7;
+const csTipRefs=no=>S.gaya.filter(g=>csDone(g)&&(!no||g.fold===no||g.fold==='*')).flatMap(g=>(g.tips||[]).map((t,i)=>({t,i,g})).filter(x=>x.t.saved));
+A.csShelf=el=>{gyKeep();ui.csShelf=el.dataset.x;ui.csG='';render(true)};
+A.csG=el=>{ui.csG=el.dataset.x;render(true)};
+A.csLvl=el=>{const g=get('gaya',el.dataset.id),i=+el.dataset.x,t=(g.tips||[])[i];if(!t)return;const up=t.lvl==='cuba';
+  if(up&&csTipRefs(g.fold==='*'?'':g.fold).filter(x=>x.t.lvl!=='cuba').length>=CS_MAXW){toast('Dah ada '+CS_MAXW+' tip Wajib. Turunkan satu dulu');return}
+  csTipSet(g,i,x=>Object.assign({},x,{lvl:up?'wajib':'cuba'}))};
+A.csUnsave=el=>{const g=get('gaya',el.dataset.id),k=el.dataset.k,i=+el.dataset.x;confirmBox('Keluarkan dari library?',()=>{
+  if(k==='tpl')csPut(g,{tpl:Object.assign({},g.tpl,{saved:false})});else if(k==='look')csPut(g,{looks:g.looks.map((l,j)=>j===i?Object.assign({},l,{saved:false,st:'',on:false}):l)});else csTipSet(g,i,g.own?()=>null:t=>Object.assign({},t,{saved:false,on:false}));toast('Dikeluarkan dari library')},'Ya, keluarkan')};
+function csShelfView(f){const k=ui.csShelf,lib=csLib(f);
+  if(k==='tips'){const R=csTipRefs(f);const grp=[...new Set(R.map(x=>x.t.g||'Editing'))];const gsel=grp.includes(ui.csG)?ui.csG:'';const nw=R.filter(x=>x.t.lvl!=='cuba').length;
+    const L=R.filter(x=>!gsel||(x.t.g||'Editing')===gsel).sort((a,b)=>(a.t.lvl==='cuba')-(b.t.lvl==='cuba'));
+    return `<div class="cschips">${`<button type="button" class="chip${!gsel?' on':''}" data-act="csG" data-x="">Semua · ${R.length}</button>`+grp.map(x=>`<button type="button" class="chip${gsel===x?' on':''}" data-act="csG" data-x="${esc(x)}">${esc(x)} · ${R.filter(y=>(y.t.g||'Editing')===x).length}</button>`).join('')}</div>
+    <p class="csmeta">${nw} / ${CS_MAXW} tip Wajib. Wajib = Claude mesti ikut dan lapor. Cuba = pakai bila sesuai.</p>
+    ${L.map(({t,i,g})=>`<div class="cstp${t.lvl==='cuba'?'':' w'}"><div class="cstph"><button type="button" class="cslv" data-act="csLvl" data-id="${esc(g.id)}" data-x="${i}" aria-label="Tukar tahap">${t.lvl==='cuba'?'Cuba':'Wajib'}</button><span class="cstg">${esc(t.g||'Editing')}</span><span class="csmeta">${t.used?`dipakai ${t.used}× · kena ${t.hit||0}`:esc(g.own?'tip sendiri':g.name||'')}</span></div>
+      <p>${t.bila?`<b>Bila:</b> ${esc(t.bila)}<br>`:''}<b>Buat:</b> ${esc(t.t)}</p>
+      <div class="cstpa"><button type="button" class="csmini" data-act="csTipEdit" data-id="${esc(g.id)}" data-x="${i}" aria-label="Ubah tip">${IC.edit}</button><button type="button" class="csmini" data-act="csUnsave" data-id="${esc(g.id)}" data-k="tip" data-x="${i}" aria-label="Keluarkan dari library">×</button></div></div>`).join('')||'<div class="csempty">Belum ada tip dalam library folder ni.</div>'}
+    <div class="csfix"><button type="button" class="csbtn" data-act="csTipNew">${IC.plus}Tip sendiri</button>${tok(0)}</div>`}
+  if(k==='tpl')return lib.tpls.map(g=>`<details class="cscard cstd"><summary><span class="csname">${esc(g.name||'Template')}</span><span class="csmeta">${(g.tpl.slots||[]).length} bahagian${g.info&&g.info.dur?' · '+Math.round(g.info.dur)+' saat':''}${(g.used||[]).length?' · dipakai '+g.used.length+' kali':''} · ${esc(csFoldName(csFoldOf(g)))}</span></summary>
+      <div class="csslots">${(g.tpl.slots||[]).map((x,i)=>`<div class="csslot"><i>${i+1}</i><div>${x.name?`<b>${esc(x.name)}</b>`:''}<span>${esc(x.d||'')}</span></div>${x.b>0?`<time>${+x.a}–${+x.b} s</time>`:''}</div>`).join('')}</div>
+      <div class="csrow"><span style="flex:1"></span><button type="button" class="chip" data-act="csUnsave" data-id="${esc(g.id)}" data-k="tpl">Keluarkan dari library</button></div></details>`).join('')||'<div class="csempty">Belum ada template dalam library folder ni.</div>';
+  const TY=[['caption','Caption'],['tajuk','Tajuk'],['transition','Transition'],['effect','Effect']];
+  return TY.map(([ty,lb])=>{const L=lib.looks.filter(x=>(x.l.type||'effect')===ty);return L.length?`<p class="csgrp">${lb} · ${L.length}</p><div class="cslooks">${L.map(x=>`<div class="cslook on"><div class="tile t-${esc(ty)}"><span>${ty==='caption'?'Aa':ty==='tajuk'?'Tajuk':ty==='transition'?'⇄':'✦'}</span></div><b>${esc(x.l.name)}</b><span class="d">${esc(x.l.d||'')}</span>
+      <div class="lkact">${x.l.sample?`<a class="chip" href="${esc(gyDView(x.l.sample))}" target="_blank" rel="noopener">▶ Contoh</a>`:''}<span class="lkst${x.l.st==='lulus'?' ok':''}">${x.l.st==='lulus'?'Lulus':'Belum lulus'}</span><button type="button" class="chip" data-act="csUnsave" data-id="${esc(x.g.id)}" data-k="look" data-x="${x.i}">Buang</button></div></div>`).join('')}</div>`:''}).join('')||'<div class="csempty">Belum ada rupa dalam library folder ni.</div>'}
+function gyView(){const d=ui.gyDraft||{};const F=csFolds();const f=ui.csF||'';const want=csWantGet();const sh=ui.csShelf||'';
+  const all=S.gaya.filter(g=>!g.own).sort((a,b)=>(b.created||0)-(a.created||0));
   const run=all.filter(g=>g.status==='scan'||g.status==='error');const done=all.filter(csDone);
   const shown=done.filter(g=>!f||csFoldOf(g)===f||g.fold==='*'||!csFoldOf(g));const lib=csLib(f);
-  const withN=new Set(done.map(csFoldOf));
-  return `<div class="cs"><div class="cshead"><p class="cseye">${f?'Library '+esc(csFoldName(f)):'Semua library'} · ${lib.tips.length} tips · ${lib.looks.length} rupa · ${lib.tpls.length} template</p><h1>Copy Style</h1></div>
+  const withN=new Set(done.map(csFoldOf));const est=want.length>=3?30000:want.length===2?22000:15000;
+  const seg=(k,t)=>`<button type="button" class="${sh===k?'on':''}" data-act="csShelf" data-x="${k}">${t}</button>`;
+  return `<div class="cs"><div class="cshead"><p class="cseye">${f?'Library '+esc(csFoldName(f)):'Semua library'}</p><h1>Copy Style</h1></div>
   <div class="cschips" aria-label="Library ikut folder"><button type="button" class="chip${!f?' on':''}" data-act="csF" data-x="">Semua</button>${F.map(x=>`<button type="button" class="chip${f===x.no?' on':''}${withN.has(x.no)?'':' dim'}" data-act="csF" data-x="${esc(x.no)}">${esc(x.short)}</button>`).join('')}</div>
-  <div>${ui.gyUp?csLoad('Upload '+ui.gyUp.name,ui.gyUp.pct):`<div class="cspaste"><input id="gyL" aria-label="Paste link video" value="${esc(d.link||'')}" placeholder="Paste link video" inputmode="url" autocapitalize="off" autocorrect="off" enterkeyhint="send"><button type="button" class="go" data-act="gySend" aria-label="Hantar"${ui.gyBusy?' disabled':''}>${ui.gyBusy?'<i class="spin"></i>':CS_GO}</button></div>`}
-    <div class="cssub"><span>TikTok, IG, FB, Threads, Drive ${tok(TOK.gaya,'Claude tonton video sekali')}</span><span><button type="button" data-act="gyPaste">Paste</button> · <button type="button" data-act="gyUpload">Upload video</button></span></div></div>
+  <div class="csseg" role="tablist">${seg('','Scan · '+(shown.length+run.length))}${seg('tpl','Template · '+lib.tpls.length)}${seg('rupa','Rupa · '+lib.looks.length)}${seg('tips','Tips · '+lib.tips.length)}</div>
+  ${sh?csShelfView(f):`<div>${ui.gyUp?csLoad('Upload '+ui.gyUp.name,ui.gyUp.pct):`<div class="cspaste"><input id="gyL" aria-label="Paste link video" value="${esc(d.link||'')}" placeholder="Paste link video" inputmode="url" autocapitalize="off" autocorrect="off" enterkeyhint="send"><button type="button" class="go" data-act="gySend" aria-label="Scan"${ui.gyBusy?' disabled':''}>${ui.gyBusy?'<i class="spin"></i>':CS_GO}</button></div>`}
+    <div class="cssub"><span>TikTok, IG, FB, Threads, Drive</span><span><button type="button" data-act="gyPaste">Paste</button> · <button type="button" data-act="gyUpload">Upload video</button></span></div>
+    <p class="cswl">Aku nak ambil apa?</p><div class="cswant">${CS_WANT.map(([k,t,dd])=>`<button type="button" class="cswt${want.includes(k)?' on':''}" data-act="csWant" data-x="${k}" aria-pressed="${want.includes(k)}"><b>${t}</b><small>${dd}</small></button>`).join('')}</div>
+    <input class="csnin" id="gyN" value="${esc(d.note||'')}" maxlength="200" aria-label="Apa yang aku suka dalam video ni" placeholder="Apa yang aku suka (pilihan), cth: cara tukar shot ikut beat">
+    <div class="csnote">${tok(est,'Claude tonton video sekali; kurang kalau tick satu sahaja','Opus L')}<span>${want.length?'Claude cari '+want.map(k=>CS_KIND[k]).join(' + ')+' sahaja.':'Tick sekurang-kurangnya satu.'}</span></div></div>
   ${run.map(gyCard).join('')}
-  ${shown.map(gyCard).join('')||(run.length?'':`<div class="csempty">${done.length?'Belum ada style dalam library folder ni.':'Belum ada style. Paste link video yang kau suka di atas.'}</div>`)}
+  ${shown.map(gyCard).join('')||(run.length?'':`<div class="csempty">${done.length?'Belum ada style dalam library folder ni.':'Belum ada style. Paste link video yang kau suka di atas.'}</div>`)}`}
   <button type="button" class="cslink" data-act="inSeg" data-x="board">Board screenshot (${S.inspo.length})</button></div>`}
 A.inSeg=el=>{gyKeep();ui.inSeg=el.dataset.x;render(true)};
 function inSegs(){return `<div class="seg" style="margin-bottom:14px"><button type="button" data-act="inSeg" data-x="resipi">‹ Copy Style</button><button type="button" class="on">Board</button></div>`}
@@ -111,7 +178,8 @@ A.csFold=el=>{const g=get('gaya',el.dataset.id);closeModal();csPut(g,{fold:el.da
 A.csFoldPick=el=>{const g=get('gaya',el.dataset.id);modal(`<h2>Simpan ke library folder</h2><div class="rspick">${csFolds().map(x=>`<button type="button" class="rsfold" data-act="csFold" data-id="${esc(g.id)}" data-x="${esc(x.no)}"><b>${esc(x.name)}</b>${csFoldOf(g)===x.no?'<span class="meta">dipilih</span>':''}</button>`).join('')}</div><div class="btns" style="justify-content:flex-end;margin-top:12px"><button class="btn" data-act="closeModal">Batal</button></div>`)};
 const csEnsureFold=g=>g.fold?{}:{fold:csFoldOf(g)};
 A.csTip=el=>{const g=get('gaya',el.dataset.id);const i=+el.dataset.x;csPut(g,{tips:(g.tips||[]).map((t,k)=>k===i?Object.assign({},t,{on:t.on===false}):t)})};
-A.csTipSave=el=>{const g=get('gaya',el.dataset.id);const tips=(g.tips||[]).map(t=>Object.assign({},t,{saved:t.on!==false}));csPut(g,Object.assign({tips,status:'simpan'},csEnsureFold(g)));toast(tips.filter(t=>t.saved).length+' tips disimpan ke library '+csFoldName(csFoldOf(g)))};
+A.csTipSave=el=>{const g=get('gaya',el.dataset.id);const fo=csFoldOf(g);let nw=csTipRefs(fo==='*'?'':fo).filter(x=>x.g.id!==g.id&&x.t.lvl!=='cuba').length;
+  const tips=(g.tips||[]).map(t=>{const sv=t.on!==false;const o=Object.assign({},t,{saved:sv,id:t.id||'t'+uid()});if(sv&&!o.lvl){o.lvl=nw<CS_MAXW?'wajib':'cuba'}if(sv&&o.lvl!=='cuba')nw++;return o});csPut(g,Object.assign({tips,status:'simpan'},csEnsureFold(g)));toast(tips.filter(t=>t.saved).length+' tips disimpan ke library '+csFoldName(csFoldOf(g)))};
 A.csLook=el=>{const g=get('gaya',el.dataset.id);const i=+el.dataset.x;csPut(g,{looks:(g.looks||[]).map((l,k)=>k===i?Object.assign({},l,{on:l.on===false}):l)})};
 A.csLookSave=el=>{const g=get('gaya',el.dataset.id);const idx=(g.looks||[]).map((l,i)=>l.on!==false&&!l.saved?i:-1).filter(i=>i>=0);if(!idx.length)return;
   confirmBox('Bina '+idx.length+' rupa? Mac mini buka sesi Claude untuk bina contoh 2 saat.',async()=>{closeModal();
@@ -132,13 +200,14 @@ A.csDet=el=>{closeModal();ui.gyOpen=ui.gyOpen===el.dataset.id?null:el.dataset.id
 A.gyPaste=async()=>{try{const t=(await navigator.clipboard.readText()||'').trim();const m=t.match(/https?:\/\/\S+/);if(!m){toast('Tiada link dalam clipboard. Copy link video dulu');return}$('#gyL').value=m[0];gyKeep();toast('Link ditampal. Tekan anak panah')}
   catch(e){toast('Tekan lama dalam kotak dan pilih Paste');$('#gyL')&&$('#gyL').focus()}};
 A.gySend=()=>{gyKeep();const d=ui.gyDraft||{};const link=((String(d.link||'').match(/https?:\/\/\S+/)||[])[0]||'').trim();if(!isUrl(link)){toast('Paste link dulu (mula dengan https://)');return}
+  const want=csWantGet();if(!want.length){toast('Tick dulu apa nak diambil: Template, Rupa atau Tips');return}
   if(!d.up&&S.gaya.some(g=>g.link===link&&g.status!=='error')){toast('Link ni dah ada dalam senarai');return}
   const old=d.retry&&get('gaya',d.retry);const id=old?old.id:'g'+uid();
-  save('gaya',Object.assign({},old||{},{id,link,note:'',fx:[],tags:(old&&old.tags)||[],status:'scan',step:'download',pct:3,msg:'Menunggu Mac mini'},ui.csF&&!(old&&old.fold)?{fold:ui.csF}:{},d.up?{upload:d.up.id,srcName:d.up.name}:{}));
+  save('gaya',Object.assign({},old||{},{id,link,note:String(d.note||'').trim().slice(0,200),want,fx:[],tags:(old&&old.tags)||[],status:'scan',step:'download',pct:3,msg:'Menunggu Mac mini'},ui.csF&&!(old&&old.fold)?{fold:ui.csF}:{},d.up?{upload:d.up.id,srcName:d.up.name}:{}));
   ui.gyDraft={};ui.gyBusy=1;render(true);
   studioJob('gaya_scan',{id},3*60000).then(()=>toast('Mac mini mula download. Peratus naik pada kad')).catch(e=>{toast('Mac mini tak jawab: '+String((e&&e.message)||'').slice(0,80));save('gaya',Object.assign({},get('gaya',id),{status:'error',step:'download',msg:'Mac mini tak jawab. Semak Mac mini hidup, kemudian tekan Cuba lagi.'}))})
    .finally(()=>{ui.gyBusy=0;render()})};
-A.gyRetry=el=>{closeModal();const g=get('gaya',el.dataset.id);save('gaya',Object.assign({},g,{status:'scan',step:'download',pct:3,msg:'Menunggu Mac mini'}));
+A.gyRetry=el=>{closeModal();const g=get('gaya',el.dataset.id);save('gaya',Object.assign({},g,(g.want||[]).length||!csWantGet().length?{}:{want:csWantGet()},{status:'scan',step:'download',pct:3,msg:'Menunggu Mac mini'}));
   studioJob('gaya_scan',{id:g.id},3*60000).catch(e=>toast('Mac mini tak jawab: '+String((e&&e.message)||'').slice(0,80)))};
 A.gyDel=el=>{const g=get('gaya',el.dataset.id);
   const inUse=S.gaya.some(x=>x.id!==g.id&&(x.refs||[]).some(r=>g.scan&&r.scan===g.scan));

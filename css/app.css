@@ -626,3 +626,34 @@ button.tpchip{cursor:pointer}.tpchip.btnx{font-weight:500}
 .pbsn{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center}
 .pill.rdp{--pc:var(--warn);margin-bottom:4px}
 .esnota{width:100%;box-sizing:border-box;font:inherit;font-size:16px;line-height:1.4;border:1.5px solid var(--ln,rgba(46,39,35,.15));border-radius:16px;padding:10px 14px;background:#fff;color:inherit;resize:vertical}
+
+/* ---------- Copy Style v2: pilih dulu apa nak ambil, rak library, tip Bila / Buat, betulkan (2026-11-25) ---------- */
+.csseg{display:flex;gap:2px;background:#fff;border:1px solid var(--ln);border-radius:999px;padding:3px}
+.csseg button{flex:1 1 0;min-width:0;border:0;background:transparent;border-radius:999px;min-height:36px;font:600 10.5px var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--mut);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
+.csseg button.on{background:var(--acc);color:#fff}
+.cswl{font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);margin:14px 2px 6px}
+.cswant{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.cswt{font:inherit;text-align:left;border:1.5px solid var(--ln);border-radius:16px;background:#fff;padding:10px;cursor:pointer;color:var(--ink);min-height:74px;display:flex;flex-direction:column;gap:3px}
+.cswt b{font-size:14px;font-weight:600}.cswt small{font-size:11px;line-height:1.25;color:var(--mut)}
+.cswt.on{border-color:var(--acc);background:#EFE4D6;box-shadow:inset 0 0 0 1px var(--acc)}
+.csnin{width:100%;box-sizing:border-box;margin:8px 0;font:inherit;font-size:16px;border:1px solid var(--ln);border-radius:14px;padding:10px 14px;background:#fff;color:var(--ink)}
+.cstl{display:flex;align-items:center;gap:4px}.cstl .cstip{flex:1 1 auto;min-width:0}
+.cstb{font-style:normal;font-size:9.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
+.csmini{flex:none;width:32px;height:32px;border-radius:50%;border:1px solid var(--ln);background:#fff;color:var(--mut);cursor:pointer;font:500 16px var(--font);display:inline-flex;align-items:center;justify-content:center;padding:0}
+.csmini svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.csfix{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding-top:10px;border-top:1px solid #EFE7DE}
+.csfix .csbtn{min-height:36px;display:inline-flex;align-items:center;gap:6px;text-decoration:none}.csfix .csbtn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8}
+.csfix .csprog{flex:1 1 100%}
+.cstp{background:#fff;border:1px solid var(--ln);border-radius:18px;padding:12px 14px;position:relative}
+.cstp.w{border-color:#C9B8A6}
+.cstph{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px;padding-right:72px}
+.cslv{font:600 9.5px var(--font);letter-spacing:.13em;text-transform:uppercase;border-radius:999px;border:1px solid var(--ln);background:var(--soft);color:var(--mut);min-height:26px;padding:0 10px;cursor:pointer}
+.cstp.w .cslv{background:var(--acc);border-color:var(--acc);color:#fff}
+.cstg{font-size:9.5px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;background:#E8EDD8;color:#44512A;border-radius:999px;padding:4px 9px}
+.cstp p{margin:0;font-size:14px;line-height:1.4}.cstp p b{font-weight:600}
+.cstpa{position:absolute;top:9px;right:10px;display:flex;gap:4px}
+.cstd summary{list-style:none;cursor:pointer;display:flex;flex-direction:column;gap:2px}.cstd summary::-webkit-details-marker{display:none}
+.tprep{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.tpri{background:rgba(255,255,255,.6);border:1px solid var(--line);border-radius:14px;padding:9px 11px;margin:6px 0}
+.tpri p{margin:0 0 7px;font-size:13px;line-height:1.35}.tpri p span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.tpr0{margin:8px 0 0}

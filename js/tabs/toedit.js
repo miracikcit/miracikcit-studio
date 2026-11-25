@@ -21,7 +21,7 @@ V['to-edit']=()=>{const te=S.sync.toedit;const folders=toEditFolders();const fse
     ${trk(r.d,r.t)}
     ${brSteps(r,e)}
     <div class="btns tem" style="margin-top:12px">${edBtns(r,e,busy,off)}${r.kind==='f'||r.kind==='r'?`<button class="btn icon sm" data-act="peek" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}" aria-label="Lihat footage" title="Lihat footage">${IC.footage}</button>`:''}<button class="btn icon sm bad" data-act="${r.kind==='f'?'fHide':r.kind==='r'?'redoDel':'delItem'}" data-id="${esc(r.kind==='r'?r.rid:r.key)}" aria-label="Buang">${IC.trash}</button></div>
-    ${edNote(r,e)}</div>`}).join('')||`<div class="empty">${te?'Tiada video tunggu edit.':'Belum sync. Tekan Sync folder di Home.'}</div>`}</div>`};
+    ${edNote(r,e)}${tipRep(e)}</div>`}).join('')||`<div class="empty">${te?'Tiada video tunggu edit.':'Belum sync. Tekan Sync folder di Home.'}</div>`}</div>`};
 /* Butang kad: belum mula = EDIT NOW; dah tekan = link terus ke chat Claude (Remote Control) atau status */
 function edBtns(r,e,busy,off){if(r.kind==='r'&&!r.clips)return `<button class="btn sm edgo" disabled>Footage tiada di Mac mini</button>`;
   /* 23 Nov: EDIT NOW tak lagi tunggu semua B-roll disemak; Claude guna klip Final yang dah ada */
@@ -71,3 +71,19 @@ function redoRows(){return S.redo.filter(x=>!redoDone(x)).map(x=>{const [st,...r
   return {kind:'r',rid:x.id,key:x.folder+'#r'+x.n,round:x.n,stage:st,no:fno(st),name:nm,title:x.title,clips:fi?(fi.clips||0)+(fi.images||0):0,
     sub:[st.replace(/^\d+\.\s*/,'')+' › '+nm,fi?(fi.clips||0)+' klip'+(fi.images?' + '+fi.images+' gambar':''):'folder tak dijumpai',used.length?'dah dibuat: '+used.join(', '):''].filter(Boolean).join(' · '),start:x.at||x.created}})}
 A.redoDel=el=>{const x=get('redo',el.dataset.id);if(!x)return;confirmBox('Buang kad "'+(x.title||'')+' · video baru #'+x.n+'"? Footage tak disentuh.',()=>{del('redo',x.id);toast('Dibuang')},'Ya, buang')};
+
+/* 2026-11-25 (Mira): cara Claude belajar ikut tips. Sesi edit tulis doc tipsrep/<id tracker> {items[{id,tip,pakai,cara,ans}]}
+   (gaya.py report). Mira jawab Kena / Tak kena; kiraan disimpan pada tip (used, hit, miss) dan tahap berubah sendiri:
+   tak kena 2 kali = turun ke Cuba, kena 3 kali = naik ke Wajib (kalau belum cukup 7). */
+function tipFind(id){for(const g of S.gaya){const T=g.tips||[];for(let i=0;i<T.length;i++)if(T[i].id===id||g.id+':'+i===id)return {g,i,t:T[i]}}return null}
+function tipRep(e){if(!e)return '';const d=get('tipsrep',e.id);if(!d||!(d.items||[]).length)return '';const open=d.items.map((x,i)=>({x,i})).filter(o=>!o.x.ans);
+  if(!open.length)return `<p class="meta tpr0">Laporan tips: semua ${d.items.length} dah dijawab.</p>`;
+  return `<div class="tprep"><p class="eyebrow">Laporan tips · ${open.length} belum dijawab</p>${open.map(({x,i})=>{const f=tipFind(x.id);const txt=x.tip||(f&&f.t.t)||'';
+    return `<div class="tpri"><p><b>${x.pakai?'✓ Dipakai':'✕ Tak dipakai'}:</b> ${esc(txt)}${x.cara?`<span>${esc(x.cara)}</span>`:''}</p><div class="btns">${x.pakai?`<button class="btn sm st-done" data-act="tipAns" data-id="${esc(e.id)}" data-x="${i}" data-k="kena">Kena</button><button class="btn sm" data-act="tipAns" data-id="${esc(e.id)}" data-x="${i}" data-k="tak">Tak kena</button>`:`<button class="btn sm" data-act="tipAns" data-id="${esc(e.id)}" data-x="${i}" data-k="ok">Okay</button><button class="btn sm" data-act="tipAns" data-id="${esc(e.id)}" data-x="${i}" data-k="patut">Patut pakai</button>`}</div></div>`}).join('')}<p class="meta">${tok(0)} Jawapan kau ubah tahap tip (Wajib / Cuba) sendiri.</p></div>`}
+A.tipAns=el=>{const d=get('tipsrep',el.dataset.id);if(!d)return;const i=+el.dataset.x,k=el.dataset.k,x=d.items[i];if(!x)return;
+  save('tipsrep',Object.assign({},d,{items:d.items.map((y,j)=>j===i?Object.assign({},y,{ans:k}):y)}));
+  const f=tipFind(x.id);if(!f||k==='ok')return;const t=Object.assign({},f.t);const fo=f.g.fold==='*'?'':f.g.fold;const room=()=>csTipRefs(fo).filter(r=>r.t.lvl!=='cuba').length<CS_MAXW;
+  if(k==='kena'){t.used=(t.used||0)+1;t.hit=(t.hit||0)+1;if(t.lvl==='cuba'&&t.hit>=3&&room()){t.lvl='wajib';toast('Tip naik ke Wajib')}}
+  else if(k==='tak'){t.used=(t.used||0)+1;t.miss=(t.miss||0)+1;if(t.lvl!=='cuba'&&t.miss>=2){t.lvl='cuba';toast('Tip turun ke Cuba')}}
+  else if(k==='patut'){if(t.lvl==='cuba'&&room()){t.lvl='wajib';toast('Tip dinaikkan ke Wajib')}}
+  save('gaya',Object.assign({},f.g,{tips:f.g.tips.map((y,j)=>j===f.i?t:y)}))};

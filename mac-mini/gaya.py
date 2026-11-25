@@ -8,7 +8,7 @@ Mira tekan suka (status `simpan`, like 1) atau tak suka (like -1). Link post tek
 (kind `teks`). Video yang dimuat turun dibuang sebaik scan siap; thumbnail, sheet dan preview kecil sahaja disimpan
 dalam Drive FOOTAGE/GAYA/<id>.
 """
-import base64, html, json, sys, logging, os, re, shutil, subprocess, tempfile, threading, time, urllib.request
+import base64, html, json, sys, logging, os, random, re, shutil, subprocess, tempfile, threading, time, urllib.request
 
 log = logging.getLogger("worker")
 HOME = os.path.dirname(os.path.abspath(__file__))
@@ -38,6 +38,7 @@ Data yang Mac mini dah ukur (tepat, guna terus):
 {data}
 
 Nota Mira: {note}
+{want}
 Tag yang Mira pilih: {tags}
 Tag sedia ada: {alltags}
 
@@ -64,7 +65,7 @@ Balas JSON sahaja:
  "match":null atau {{"id":"id resipi sedia ada","name":"nama","pct":0-100,"why":"apa yang sama"}},
  "guess":{{"kind":"tips | rupa | template (SATU: apa yang paling berbaloi diambil dari video ni)",
           "say":"satu ayat pendek untuk Mira, mula dengan 'Video ni ...', cth 'Video ni orang ajar cara tulis hook.'"}},
- "tips":[{{"g":"Hook | Editing | Caption | Cerita | Audio | CTA","t":"satu ayat arahan pendek yang boleh terus dipakai masa edit"}}],
+ "tips":[{{"g":"Hook | Editing | Caption | Cerita | Audio | CTA","bila":"bila tip ni dipakai, 2-6 perkataan (cth 'vlog tempat', 'ada harga', 'semua video')","t":"apa perlu dibuat: satu ayat arahan pendek yang boleh terus dipakai masa edit"}}],
  "looks":[{{"type":"caption | tajuk | transition | effect","name":"nama 2 perkataan","d":"apa nampak, paling banyak 8 perkataan",
            "at":"masa contoh","recipe":"cara bina semula: font percuma, saiz (% tinggi skrin), warna hex, latar / outline, posisi (% dari atas), animasi (jenis, ms, ease)"}}],
  "template":null atau {{"slots":[{{"name":"nama bahagian pendek","a":saat mula,"b":saat tamat,"d":"apa isi: jenis shot, berapa shot, panjang shot, teks"}}],
@@ -406,11 +407,32 @@ def analyse(src, tmp, cfg, fx, worker, prog=lambda p, m: None):
 
 
 # ---------------------------------------------------------------- Claude
-def _ask(cfg, worker, tmp, prompt, read=True):
+WANT_TXT = {"template": "template (susunan video)", "rupa": "rupa (looks: font, caption, tajuk, transition, effect)", "tips": "tips (pengajaran)"}
+
+
+def _want(doc):
+    """Mira tick dulu apa yang dia nak ambil (2026-11-25): Claude tak perlu meneka lagi."""
+    return [k for k in ("template", "rupa", "tips") if k in (doc.get("want") or [])]
+
+
+def _want_txt(doc):
+    w = _want(doc)
+    if not w:
+        return ""
+    skip = [k for k in ("template", "rupa", "tips") if k not in w]
+    return ("MIRA DAH PILIH apa yang dia nak ambil dari video ni: " + ", ".join(WANT_TXT[k] for k in w) + ". Ini arahan, bukan tekaan. "
+            f"guess.kind mesti \"{w[0]}\". Isi bahagian yang dipilih dengan teliti dan lengkap. "
+            + ("Bahagian yang TAK dipilih biar kosong: " + ", ".join({"template": "template null", "rupa": "looks []", "tips": "tips []"}[k] for k in skip) + ". " if skip else "")
+            + ("Tips: kalau orang dalam video tak mengajar apa-apa, tulis tips dari CARA video ni dibuat (hook, rentak, teks, muzik, penutup) yang boleh ditiru. " if "tips" in w else "")
+            + ("Template: WAJIB isi walaupun video orang bercakap. " if "template" in w else "")
+            + ("Rupa: tulis rupa teks / transition / effect yang nampak walaupun ringkas, dengan resipi lengkap. " if "rupa" in w else ""))
+
+
+def _ask(cfg, worker, tmp, prompt, read=True, model=None, effort=None):
     cli = worker.find_tool("claude", [cfg.get("claude_cli")])
     if not cli:
         raise RuntimeError("Claude Code tak dijumpai dalam Mac mini.")
-    cmd = [cli, "-p", prompt, "--model", cfg.get("gaya_model", "claude-opus-5-5"), "--effort", cfg.get("gaya_effort", "low")]
+    cmd = [cli, "-p", prompt, "--model", model or cfg.get("gaya_model", "claude-opus-5-5"), "--effort", effort or cfg.get("gaya_effort", "low")]
     cmd += ["--tools", "Read", "--allowedTools", "Read", "--add-dir", tmp] if read else ["--tools", ""]
     cmd += ["--system-prompt", worker.AI_SYSTEM, "--no-session-persistence", "--output-format", "json", "--setting-sources", "",
             "--disable-slash-commands", "--strict-mcp-config", "--exclude-dynamic-system-prompt-sections"]
@@ -446,7 +468,7 @@ def _claude(cfg, worker, tmp, scan, strips, data, doc, existing, alltags, extra=
               for s in strips]
     ex = "\n".join(f"- {g['id']}: {g.get('name')} [{', '.join(g.get('tags') or [])}] {(g.get('card') or {}).get('summary', '')}"
                    for g in existing) or "(belum ada)"
-    prompt = PROMPT.format(files="\n".join(files), data=json.dumps(data, ensure_ascii=False), note=doc.get("note") or "-",
+    prompt = PROMPT.format(files="\n".join(files), data=json.dumps(data, ensure_ascii=False), note=doc.get("note") or "-", want=_want_txt(doc),
                            tags=", ".join(doc.get("tags") or []) or "-", alltags=", ".join(alltags), existing=ex,
                            folders=_folders(worker))
     return _ask(cfg, worker, tmp, prompt)
@@ -459,14 +481,18 @@ def _folders(worker):
         return "-"
 
 
+def _tid():
+    return "t" + "".join(random.choice("abcdefghijklmnopqrstuvwxyz0123456789") for _ in range(8))
+
+
 def _extras(card, doc):
     """Bahagian Copy Style: tekaan, tips, rupa, template, cadangan folder. Pilihan Mira yang sedia ada tak ditindih."""
     def s(v, n=400):
         return str(v or "").strip()[:n]
     g = card.get("guess") if isinstance(card.get("guess"), dict) else {}
     kind = s(g.get("kind"), 12).lower()
-    tips = [{"g": s(t.get("g"), 20) or "Editing", "t": s(t.get("t"), 220), "on": True}
-            for t in (card.get("tips") or []) if isinstance(t, dict) and s(t.get("t"))][:8]
+    tips = [{"id": _tid(), "g": s(t.get("g"), 20) or "Editing", "bila": s(t.get("bila"), 60), "t": s(t.get("t") or t.get("buat"), 220), "on": True}
+            for t in (card.get("tips") or []) if isinstance(t, dict) and s(t.get("t") or t.get("buat"))][:8]
     looks = [{"type": s(l.get("type"), 12).lower() or "effect", "name": s(l.get("name"), 40) or "Rupa", "d": s(l.get("d"), 90),
               "at": s(l.get("at"), 30), "recipe": s(l.get("recipe"), 900), "on": True}
              for l in (card.get("looks") or []) if isinstance(l, dict)][:4]
@@ -481,7 +507,11 @@ def _extras(card, doc):
         tpl = {"slots": [{"name": s(x.get("name"), 40), "a": num(x.get("a")), "b": num(x.get("b")), "d": s(x.get("d"), 200)}
                          for x in tp["slots"] if isinstance(x, dict)][:8],
                "need": [{"n": int(num(x.get("n"))), "what": s(x.get("what"), 40)} for x in (tp.get("need") or []) if isinstance(x, dict)][:4]}
-    if kind not in ("tips", "rupa", "template") or not {"tips": tips, "rupa": looks, "template": tpl}[kind]:
+    want = _want(doc)
+    if want:                                         # Mira dah pilih: buang bahagian lain, buka pada pilihan pertama yang ada isi
+        tips, looks, tpl = (tips if "tips" in want else []), (looks if "rupa" in want else []), (tpl if "template" in want else None)
+        kind = next((k for k in want if {"tips": tips, "rupa": looks, "template": tpl}[k]), want[0])
+    elif kind not in ("tips", "rupa", "template") or not {"tips": tips, "rupa": looks, "template": tpl}[kind]:
         kind = "tips" if tips else "template" if tpl else "rupa" if looks else "template"
     m = re.search(r"\d{2}", s(card.get("folder"), 20))
     out = {"guess": {"kind": kind, "say": s(g.get("say"), 200)}, "folderSug": m.group(0) if m else ""}
@@ -539,7 +569,7 @@ def _scan(sheet, cfg, up, worker, gid):
             if post:                                 # post teks (Threads dsb.): teks sahaja
                 _merge(sheet, path, {"step": step, "msg": "Analysing: Claude baca post", "pct": 60})
                 card, usage = _ask(cfg, worker, tmp, TEXT_PROMPT.format(link=doc["link"], text=post["text"],
-                                   note=doc.get("note") or "-", alltags=", ".join(alltags), folders=_folders(worker)), read=False)
+                                   note=doc.get("note") or "-", want=_want_txt(doc), alltags=", ".join(alltags), folders=_folders(worker)), read=False)
                 fid = thumb_id = None
                 if post.get("thumb"):
                     fid = sheet.call("dpath", base="studio", path=["FOOTAGE", "GAYA", gid], share=True)["id"]
@@ -620,12 +650,19 @@ def _auto_edit(sheet, cfg, worker, gid):
         _merge(sheet, "gaya/" + gid, {"useFor": None, "autoErr": str(e)[:200]})
 
 
+MAX_WAJIB = 7
+
+
 def library(sheet, no):
     """Semua yang Mira simpan untuk folder utama `no` (termasuk 'Semua folder' = '*')."""
     docs = [dict(x["d"], id=x["p"].split("/", 1)[1]) for x in sheet.call("pull", since=0).get("docs", [])
             if x["p"].startswith("gaya/") and x.get("d")]
     mine = [g for g in docs if str(g.get("fold") or "") in (str(no), "*")]
-    tips = [{"g": t.get("g"), "t": t.get("t"), "from": g.get("name")} for g in mine for t in (g.get("tips") or []) if t.get("saved")]
+    tips = [{"id": t.get("id") or f"{g['id']}:{i}", "g": t.get("g"), "bila": t.get("bila") or "", "buat": t.get("t"), "t": t.get("t"),
+             "tahap": "cuba" if t.get("lvl") == "cuba" else "wajib", "from": g.get("name")}
+            for g in mine for i, t in enumerate(g.get("tips") or []) if t.get("saved")]
+    for t in [t for t in tips if t["tahap"] == "wajib"][MAX_WAJIB:]:   # had tip wajib setiap folder, supaya betul-betul diikut
+        t["tahap"] = "cuba"
     return docs, mine, tips
 
 
@@ -633,7 +670,7 @@ def brief(sheet, no, style):
     """Arahan gaya untuk satu sesi edit: template (susunan), rupa (teks / effect), tips folder."""
     docs, mine, tips = library(sheet, no)
     by = {g["id"]: g for g in docs}
-    out = {"folder": str(no), "tips": tips,
+    out = {"folder": str(no), "tips": [t for t in tips if t["tahap"] == "wajib"], "tips_cuba": [t for t in tips if t["tahap"] == "cuba"],
            "peraturan": "Tiru gaya dan susunan sahaja. JANGAN salin ayat, skrip, muzik, logo atau footage video rujukan. "
                         "Watermark, 9:16, safe zone, end card dan opening / ending berbeza kekal ikut peraturan Mira."}
     g = by.get(str((style or {}).get("tpl") or ""))
@@ -686,6 +723,117 @@ def job_look_build(inp, sheet, cfg, worker):
     return {"ok": True}
 
 
+FIX_MODEL, FIX_EFFORT = "claude-sonnet-5-5", "low"
+CHAT_MODEL, CHAT_EFFORT = "claude-sonnet-5-5", "medium"
+FIX_PROMPT = """Kau editor video Reels untuk @miracikcit. Ini HASIL SCAN satu video rujukan (dah dianalisis; kau TAK perlu tengok video).
+Mira nak hasil ni dibetulkan ikut nota dia. Ubah hanya apa yang nota minta; yang lain kekal sama.
+
+Hasil scan sekarang (JSON):
+{cur}
+
+Ringkasan video (untuk rujukan): {card}
+
+NOTA MIRA: {nota}
+
+Balas JSON sahaja, bentuk yang sama:
+{{"guess":{{"kind":"tips | rupa | template","say":"satu ayat pendek untuk Mira"}},
+ "tips":[{{"g":"Hook | Editing | Caption | Cerita | Audio | CTA","bila":"bila tip ni dipakai, 2-6 perkataan","t":"apa perlu dibuat, satu ayat arahan"}}],
+ "looks":[{{"type":"caption | tajuk | transition | effect","name":"nama 2 perkataan","d":"apa nampak, paling banyak 8 perkataan","at":"masa contoh","recipe":"cara bina semula"}}],
+ "template":null atau {{"slots":[{{"name":"nama bahagian","a":saat mula,"b":saat tamat,"d":"apa isi"}}],"need":[{{"n":bilangan,"what":"jenis shot"}}]}}}}
+Tulis dalam Bahasa Melayu. Jangan salin ayat asal video."""
+
+
+def fix_merge(doc, card):
+    """Gabung hasil 'Betulkan dengan nota' ke doc: bahagian baru ganti cadangan lama; tip / rupa yang tak berubah kekal
+    id, simpanan, tahap dan kiraan. Nota Mira boleh minta bahagian yang dulu tak ditick, jadi `want` tak dipakai di sini."""
+    new = _extras(card, {})
+    old_t = {(t.get("t") or "").strip(): t for t in doc.get("tips") or []}
+    for t in new.get("tips") or []:
+        o = old_t.get((t.get("t") or "").strip())
+        if o:
+            t.update({k: o[k] for k in ("id", "on", "saved", "lvl", "used", "hit", "miss") if k in o})
+    old_l = {l.get("name"): l for l in doc.get("looks") or []}
+    for l in new.get("looks") or []:
+        o = old_l.get(l.get("name"))
+        if o:
+            l.update({k: o[k] for k in ("on", "saved", "st", "pct", "sample", "built") if k in o})
+    if new.get("tpl") and (doc.get("tpl") or {}).get("saved"):
+        new["tpl"]["saved"] = True
+    new.pop("folderSug", None)
+    return new
+
+
+def _fix(sheet, cfg, worker, gid, nota):
+    path = "gaya/" + gid
+    try:
+        doc = sheet.call("dget", path=path).get("doc") or {}
+        c = doc.get("card") or {}
+        cur = {"guess": doc.get("guess"), "tips": [{k: t.get(k) for k in ("g", "bila", "t")} for t in doc.get("tips") or []],
+               "looks": [{k: l.get(k) for k in ("type", "name", "d", "at", "recipe")} for l in doc.get("looks") or []],
+               "template": {k: (doc.get("tpl") or {}).get(k) for k in ("slots", "need")} if doc.get("tpl") else None}
+        brief_card = {k: c.get(k) for k in ("summary", "hook", "cut", "text", "font", "transition", "audio", "cta", "length", "message", "beats") if c.get(k)}
+        prompt = FIX_PROMPT.format(cur=json.dumps(cur, ensure_ascii=False), card=json.dumps(brief_card, ensure_ascii=False)[:6000], nota=nota)
+        with tempfile.TemporaryDirectory() as tmp:
+            card, usage = _ask(cfg, worker, tmp, prompt, read=False, model=cfg.get("fix_model", FIX_MODEL), effort=cfg.get("fix_effort", FIX_EFFORT))
+        _merge(sheet, path, dict(fix_merge(doc, card), fix={"st": "siap", "at": int(time.time() * 1000), "nota": nota[:200], "usage": usage}))
+        log.info("Gaya %s dibetulkan dengan nota (%s token)", gid, usage)
+    except Exception as e:
+        log.exception("Betulkan gaya %s gagal", gid)
+        try:
+            _merge(sheet, path, {"fix": {"st": "error", "at": int(time.time() * 1000), "msg": str(e)[:200]}})
+        except Exception:
+            pass
+    finally:
+        _running.discard("fix:" + gid)
+
+
+def job_gaya_fix(inp, sheet, cfg, worker):
+    """Betulkan dengan nota: Claude Sonnet (low) baca hasil scan yang tersimpan + nota Mira, tanpa tonton video."""
+    gid, nota = str(inp.get("id") or ""), re.sub(r"\s+", " ", str(inp.get("nota") or "")).strip()[:500]
+    if not re.match(r"^[a-z0-9-]{4,40}$", gid) or not nota:
+        raise RuntimeError("nota kosong atau id tak sah")
+    with _lock:
+        if "fix:" + gid in _running:
+            return {"started": False}
+        _running.add("fix:" + gid)
+    _merge(sheet, "gaya/" + gid, {"fix": {"st": "proses", "at": int(time.time() * 1000)}})
+    threading.Thread(target=_fix, args=(sheet, cfg, worker, gid, nota), daemon=True).start()
+    return {"started": True}
+
+
+def job_gaya_chat(inp, sheet, cfg, worker):
+    """Chat Claude: buka Terminal Mac mini (Sonnet medium, Remote Control) yang dah tahu hasil scan ni. Hanya bila Mira tekan."""
+    gid = str(inp.get("id") or "")
+    if not re.match(r"^[a-z0-9-]{4,40}$", gid):
+        raise RuntimeError("id gaya tak sah")
+    doc = sheet.call("dget", path="gaya/" + gid).get("doc") or {}
+    name = re.sub(r"[^\w .&+-]", "", str(doc.get("name") or "Style"))[:30] or "Style"
+    os.makedirs(CACHE, exist_ok=True)
+    prompt = (f"CHAT COPY STYLE \"{name}\". Mira nak tanya atau ubah hasil scan satu video rujukan. "
+              f"Baca dulu: python3 ~/MiracikcitTranscribe/studio.py get gaya/{gid} (guess, tips, looks, tpl, card). "
+              "Jawab pendek dalam Bahasa Melayu, langkah demi langkah. Kalau Mira minta ubah, tulis balik bahagian yang berubah sahaja dengan "
+              f"python3 ~/MiracikcitTranscribe/studio.py merge gaya/{gid} '<json>' dan kekalkan medan id / saved / lvl / on setiap tip dan rupa. "
+              f"JANGAN buka frame video kecuali Mira kata 'tonton semula'; frame scan ada dalam ~/MiracikcitTranscribe/gaya_cache/{gid}/ (kalau masih ada). "
+              "Jangan salin ayat, skrip, muzik atau footage video asal. Mula dengan satu ayat: apa yang ada dalam hasil scan ni, kemudian tunggu soalan Mira.")
+    logf = worker.open_claude_session(CACHE, "Copy Style · " + name, prompt, "gaya-chat-" + gid, cfg,
+                                      model=cfg.get("chat_model", CHAT_MODEL), effort=cfg.get("chat_effort", CHAT_EFFORT), settings=False)
+    _merge(sheet, "gaya/" + gid, {"chat": "", "chatSt": "Sesi dibuka", "chatAt": int(time.time() * 1000)})
+    put = lambda f: _merge(sheet, "gaya/" + gid, {k: v for k, v in (("chat", f.get("chat")), ("chatSt", f.get("status"))) if v})
+    threading.Thread(target=worker._watch_session, args=(sheet, "", logf), kwargs={"put": put}, daemon=True).start()
+    return {"opened": True}
+
+
+def tips_report(sheet, ed_id, items):
+    """Sesi edit lapor tip mana dipakai: doc tipsrep/<ed_id>. Mira jawab Kena / Tak kena dalam tab Edit."""
+    if not re.match(r"^[a-z0-9-]{4,60}$", ed_id) or not isinstance(items, list):
+        raise RuntimeError("laporan tak sah")
+    out = [{"id": str(x.get("id") or "")[:60], "tip": str(x.get("tip") or "")[:220], "pakai": bool(x.get("pakai")), "cara": str(x.get("cara") or "")[:220]}
+           for x in items if isinstance(x, dict) and (x.get("id") or x.get("tip"))][:20]
+    now = int(time.time() * 1000)
+    sheet.call("dset", path="tipsrep/" + ed_id, data={"items": out, "at": now, "created": now, "updated": now})
+    return len(out)
+
+
 def job_gaya_scan(inp, sheet, cfg, up, worker):
     gid = str(inp.get("id") or "")
     if not re.match(r"^[a-z0-9-]{4,40}$", gid):
@@ -717,6 +865,9 @@ def _cli(argv):
     import worker
     cfg = worker.load_cfg()
     sheet = worker.Sheet(cfg)
+    if argv[0] == "report":                         # gaya.py report <ed_id> '<json senarai>'
+        print("OK", tips_report(sheet, argv[1], json.loads(argv[2])))
+        return
     gid, i = argv[1], int(argv[2])
     doc = sheet.call("dget", path="gaya/" + gid).get("doc") or {}
     looks = doc.get("looks") or []

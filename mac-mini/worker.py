@@ -1041,9 +1041,10 @@ def run_mkfolder(inp, sheet):
     return {"name": name}
 
 
-def open_claude_session(cwd, title, prompt, slug, cfg):
+def open_claude_session(cwd, title, prompt, slug, cfg, model=None, effort=None, settings=True):
     """Buka satu sesi Claude Code dalam Terminal Mac mini (Remote Control hidup) dengan prompt diberi."""
-    ensure_edit_settings(cwd)
+    if settings:
+        ensure_edit_settings(cwd)
     cli = find_tool("claude", [cfg.get("claude_cli")])
     if not cli:
         raise RuntimeError("Claude Code tak dijumpai dalam Mac mini.")
@@ -1052,9 +1053,11 @@ def open_claude_session(cwd, title, prompt, slug, cfg):
     os.makedirs(d, exist_ok=True)
     slug = re.sub(r"[^A-Za-z0-9]+", "-", slug)[:60]
     cmdf, logf = os.path.join(d, slug + ".command"), os.path.join(d, slug + ".log")
+    if os.path.exists(logf):
+        os.remove(logf)
     with open(cmdf, "w", encoding="utf-8") as fh:
         fh.write("#!/bin/zsh -l\n# Dibuat oleh Miracikcit Studio\n" f"cd {q(cwd)} || exit 1\n"
-                 f"exec /usr/bin/script -q {q(logf)} {q(cli)} --model {EDIT_MODEL} --effort {EDIT_EFFORT} -n {q(title)} --remote-control {q(title)} {q(prompt)}\n")
+                 f"exec /usr/bin/script -q {q(logf)} {q(cli)} --model {model or EDIT_MODEL} --effort {effort or EDIT_EFFORT} -n {q(title)} --remote-control {q(title)} {q(prompt)}\n")
     os.chmod(cmdf, 0o755)
     r = subprocess.run(["/usr/bin/open", "-a", "Terminal", cmdf], capture_output=True, text=True, timeout=30)
     if r.returncode != 0:
@@ -1095,6 +1098,10 @@ def run_edit_now(inp, sheet, cfg):
     gid, gname = str(style.get("tpl") or ""), ""
     import gaya
     br = gaya.brief(sheet, no, style)               # skrin Edit Style: template + rupa pilihan Mira + tips folder
+    if br.get("tips") or br.get("tips_cuba"):
+        br["laporan"] = ("tips = WAJIB dipakai; tips_cuba = pakai bila sesuai. Lepas draf siap, lapor setiap tip (wajib dan cuba) sekali: "
+                         f"python3 ~/MiracikcitTranscribe/gaya.py report {ed_id} "
+                         "'[{\"id\":\"<id tip>\",\"tip\":\"<ayat tip>\",\"pakai\":true,\"cara\":\"di mana / macam mana dipakai, atau kenapa tak dipakai\"}]'")
     if jenis:
         br["jenis_video"] = {"nama": jenis[0], "cara": jenis[1]}
     if nota:
@@ -1102,7 +1109,7 @@ def run_edit_now(inp, sheet, cfg):
     if rnd:
         br["video_baru"] = {"nombor": rnd, "arahan": "Footage ni dah ada video yang published. Buat video BARU dengan gaya lain. "
                             "JANGAN ubah, ganti atau padam video lama dan fail finalnya. Opening dan ending mesti berbeza dari semua video lama projek ni."}
-    if br.get("tips") or br.get("template") or br.get("rupa") or jenis or nota or rnd:
+    if br.get("tips") or br.get("tips_cuba") or br.get("template") or br.get("rupa") or jenis or nota or rnd:
         br["updated"] = int(time.time() * 1000)
         sheet.call("dset", path="editstyle/" + ed_id, data=br)
         gname = re.sub(r"[^\w .&+-]", "", str((br.get("template") or {}).get("nama") or ""))[:40]
@@ -1110,7 +1117,7 @@ def run_edit_now(inp, sheet, cfg):
         prompt = (f"/edit-reel {no}/{name}" + (f" tiru \"{gname}\"" if gname else "") + f" (tracker Studio: editor/{ed_id}). "
                   f"EDIT STYLE: baca python3 ~/MiracikcitTranscribe/studio.py get editstyle/{ed_id} dulu. "
                   "template = susunan video yang mesti diikut, rupa = rupa teks / effect yang mesti dipakai (guna kod_siap kalau ada), "
-                  "tips = peraturan tambahan folder ni. Tiru gaya dan susunan sahaja, JANGAN salin ayat, skrip, muzik atau footage video asal."
+                  "tips = peraturan folder ni yang WAJIB diikut, tips_cuba = pakai bila sesuai; ikut medan laporan lepas draf siap. Tiru gaya dan susunan sahaja, JANGAN salin ayat, skrip, muzik atau footage video asal."
                   + (" jenis_video = jenis post yang Mira nak (ikut cara tu)." if jenis else "")
                   + (" nota_mira = arahan Mira untuk video ni, utamakan." if nota else "")
                   + (f" VIDEO BARU #{rnd}: baca video_baru. Semak hook dan penutup video lama projek ni dulu supaya tak berulang; "
@@ -1531,10 +1538,11 @@ def _ed_draft_run(sheet, vid, doc):
 _ANSI = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(\x07|\x1b\\)|\x1b[()][A-Z0-9]|[\x00-\x08\x0b-\x1f]")
 
 
-def _watch_session(sheet, ed_id, logf, limit=900):
+def _watch_session(sheet, ed_id, logf, limit=900, put=None):
     """Baca skrin sesi EDIT NOW: simpan link chat Remote Control ke tracker (butang Buka chat dalam Studio),
     atau tanda status kalau sesi tunggu jawapan di Mac mini (persediaan pertama kali / Trust folder / log masuk)."""
     end, last = time.time() + limit, ""
+    put = put or (lambda f: _ed_merge(sheet, ed_id, f))
     while time.time() < end:
         time.sleep(4)
         try:
@@ -1545,17 +1553,17 @@ def _watch_session(sheet, ed_id, logf, limit=900):
         txt = _ANSI.sub("", raw)
         m = m or re.search(r"https://claude\.ai/code/[A-Za-z0-9_\-]+", txt)
         if m:
-            _ed_merge(sheet, ed_id, {"chat": m.group(0), "status": "Sesi jalan"})
+            put({"chat": m.group(0), "status": "Sesi jalan"})
             return
         tail = txt[-3000:].lower()
         st = ("Perlu persediaan di Mac mini" if "text style" in tail or "choose the text" in tail else
               "Perlu jawab Trust di Mac mini" if "trust" in tail and "folder" in tail else
               "Perlu log masuk di Mac mini" if "log in" in tail or "login" in tail else "")
         if st and st != last:
-            _ed_merge(sheet, ed_id, {"status": st})
+            put({"status": st})
             last = st
     if not last:
-        _ed_merge(sheet, ed_id, {"status": "Sesi dibuka (tiada link)"})
+        put({"status": "Sesi dibuka (tiada link)"})
 
 
 def _ed_merge(sheet, ed_id, fields):
@@ -1672,6 +1680,9 @@ def studio_jobs(sheet, cfg):
             elif j["type"] == "gaya_del":
                 import gaya
                 outp = gaya.job_gaya_del(inp, sheet)
+            elif j["type"] in ("gaya_fix", "gaya_chat"):   # Copy Style: Betulkan dengan nota (Sonnet low) / Chat Claude (Sonnet medium)
+                import gaya
+                outp = getattr(gaya, "job_" + j["type"])(inp, sheet, cfg, sys.modules[__name__])
             elif j["type"] in ("vo_take", "vo_save", "vo_final", "vo_del"):
                 import vo
                 outp = getattr(vo, "job_" + j["type"])(inp, sheet, cfg, sys.modules[__name__])
