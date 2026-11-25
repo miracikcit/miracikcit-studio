@@ -655,14 +655,38 @@ def framed(path, kind, inner_w, window=None, aspect=None, seed=0, protect="perso
     return El(card, prot), info
 
 
-def popout(path, kind, inner_w, aspect, seed=0, outline=11, head_frac=0.17):
-    """Pop-out zoom: orang dipotong dan keluar dari atas bingkai (kepala di luar bingkai)."""
+def loose_mask(m, frac):
+    """Cutout 'longgar': bentuk licin yang lebih besar dari badan (termasuk sedikit latar).
+    Tepi jadi tajam & licin, dan celah kecil (lengan yang rembg terlepas) tertutup."""
+    bb = m.point(lambda v: 255 if v > 128 else 0).getbbox()
+    bh = bb[3] - bb[1]
+    L = max(6, int(bh * frac))                 # jarak dari badan
+    K = max(9, int(bh * frac * 2.6)) | 1       # tutup celah antara bahagian badan
+    a = (np.asarray(m) > 128).astype(np.uint8)
+    pad = K + L
+    a = cv2.copyMakeBorder(a, pad, pad, pad, pad, cv2.BORDER_CONSTANT, 0)
+    a = cv2.morphologyEx(a, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (K, K)))
+    a = cv2.dilate(a, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * L + 1, 2 * L + 1)))
+    ff = a.copy()                              # isi lubang
+    cv2.floodFill(ff, np.zeros((ff.shape[0] + 2, ff.shape[1] + 2), np.uint8), (0, 0), 1)
+    a = a | (1 - ff)
+    a = cv2.GaussianBlur(a.astype(np.float32), (0, 0), L * 0.8)
+    a = (a > 0.5).astype(np.uint8) * 255
+    a = a[pad:-pad, pad:-pad]
+    return Image.fromarray(a).filter(ImageFilter.GaussianBlur(1.0))
+
+
+def popout(path, kind, inner_w, aspect, seed=0, outline=11, head_frac=0.17, loose=0.0):
+    """Pop-out zoom: orang dipotong dan keluar dari atas bingkai (kepala di luar bingkai).
+    loose > 0 : cutout longgar (contoh 0.035 = jarak ~3.5% tinggi badan dari tepi badan)."""
     win = popout_window(path, aspect, head_frac=head_frac)
     el, info = framed(path, kind, inner_w, window=win, aspect=aspect, seed=seed, protect="all")
     s, ox, oy, box = info["s"], info["ox"], info["oy"], info["box"]
     im = photo(path)
     m, _ = person_mask(path)
-    bx0, by0, bx1, by1 = person_bbox(path)
+    if loose:
+        m = loose_mask(m, loose)
+    bx0, by0, bx1, by1 = m.point(lambda v: 255 if v > 128 else 0).getbbox()
     # kedudukan subjek dalam koordinat elemen
     sx0, sy0 = ox + bx0 * s, oy + by0 * s
     sx1 = ox + bx1 * s
@@ -998,29 +1022,31 @@ def build(n, P):
                 crop=(0, 0, hw, max(int(hh * 0.25), int(top_people * 0.92)))),
           ox(0) + 690, H / 2, shadow=0.22, avoid=False)
     if n > 1:
-        c.put(scene(pops[0], 560, 1000, seed=5, crop=_side_crop(pops[0])).rotate(3),
-              ox(1) + 120, 560, shadow=0.22, avoid=False)
+        c.put(scene(pops[1], 560, 1000, seed=5, crop=_side_crop(pops[1])).rotate(3),
+              ox(1) + 90, 560, shadow=0.22, avoid=False)
     c.deco(lace(700, 70).rotate(-90), ox(0) + 40, 760, shadow=0.15, blur=6)
-    c.put(popout(hero, "print", 760, aspect=0.86, seed=2, head_frac=0.34).rotate(-3), ox(0) + 530, 735,
+    c.put(popout(hero, "print", 760, aspect=0.86, seed=2, head_frac=0.34, loose=0.035, outline=13).rotate(-3),
+          ox(0) + 530, 735,
           shadow=0.35, blur=20, name="hero")
     c.deco(washi(200, seed=1).rotate(-35), ox(0) + 205, 205, shadow=0.1, blur=5)
     c.deco(washi(200, color=SAGE, seed=2).rotate(30), ox(0) + 860, 1260, shadow=0.1, blur=5)
     c.deco(sparkle(34), ox(0) + 950, 150, shadow=0)
     c.deco(sparkle(22), ox(0) + 1010, 230, shadow=0)
 
-    # ===== SLIDE 2 : couple pop-out dari polaroid =====
+    # ===== SLIDE 2 : adik-beradik keluar dari skrin telefon =====
     if n > 1:
-        c.put(polaroid(pol[0], 330, seed=4).rotate(-8), ox(1) + 185, 1145, shadow=0.3, name="pol0")
-        c.put(popout(pops[0], "polaroid", 600, aspect=0.9, seed=6, head_frac=0.3).rotate(4),
-              ox(1) + 610, 700, shadow=0.35, blur=20, name="couple")
-        c.deco(small_heart(26).rotate(12), ox(1) + 960, 300, shadow=0.2, blur=5)
-        c.deco(small_heart(18).rotate(-15), ox(1) + 1005, 370, shadow=0.2, blur=5)
-        c.deco(sticker_heart_button(40).rotate(-10), ox(1) + 200, 140, shadow=0.25, blur=8)
+        c.put(polaroid(pol[2], 330, seed=10).rotate(-6), ox(1) + 905, 1120, shadow=0.3, name="pol2")
+        ph = popout(pops[1], "phone", 480, aspect=0.62, seed=11, head_frac=0.22, outline=10)
+        c.put(ph.rotate(4), ox(1) + 590, 690, shadow=0.38, blur=20, name="phone")
+        c.deco(paper_clip(170, color=(170, 182, 192)).rotate(18), ox(1) + 930, 140, shadow=0.25, blur=6,
+               off=(5, 7))
+        c.deco(sparkle(30), ox(1) + 250, 1250, shadow=0)
 
     # ===== SLIDE 3 : foto besar + bulatan zoom si kecil =====
     if n > 2:
-        if n > 3:  # latar rumah kaca merentas garis 3 -> 4
-            c.put(scene(scenes[1], 640, 1050, seed=7).rotate(-2), ox(3) + 20, 640, shadow=0.22, avoid=False)
+        if n > 3:  # latar dinding pokok (gambar couple) merentas garis 3 -> 4
+            c.put(scene(pops[0], 560, 1000, seed=5, crop=_side_crop(pops[0])).rotate(3),
+                  ox(3) + 60, 560, shadow=0.22, avoid=False)
         c.put(polaroid(pol[1], 330, seed=8).rotate(7), ox(2) + 880, 250, shadow=0.3, name="pol1")
         # jalur foto koyak (latar tanpa orang dari gambar zoom) merentas garis 2 -> 3
         c.put(scene(zoom, 560, 300, fy=0.55, seed=15, crop=_side_crop(zoom)).rotate(-4), ox(2) - 30, 1180,
@@ -1029,14 +1055,14 @@ def build(n, P):
               ox(2) + 520, 690, shadow=0.32, blur=18, name="zoom")
         c.deco(washi(210, color=SAGE, seed=3).rotate(-6), ox(2) + 120, 120, shadow=0.1, blur=5)
 
-    # ===== SLIDE 4 : adik-beradik keluar dari skrin telefon =====
+    # ===== SLIDE 4 : couple pop-out dari polaroid =====
     if n > 3:
-        c.put(polaroid(pol[2], 330, seed=10).rotate(-6), ox(3) + 905, 1120, shadow=0.3, name="pol2")
-        ph = popout(pops[1], "phone", 480, aspect=0.62, seed=11, head_frac=0.22, outline=10)
-        c.put(ph.rotate(4), ox(3) + 560, 690, shadow=0.38, blur=20, name="phone")
-        c.deco(paper_clip(170, color=(170, 182, 192)).rotate(18), ox(3) + 930, 140, shadow=0.25, blur=6,
-               off=(5, 7))
-        c.deco(sparkle(30), ox(3) + 250, 1250, shadow=0)
+        c.put(polaroid(pol[0], 330, seed=4).rotate(-8), ox(3) + 185, 1145, shadow=0.3, name="pol0")
+        c.put(popout(pops[0], "polaroid", 600, aspect=0.9, seed=6, head_frac=0.3).rotate(4),
+              ox(3) + 610, 700, shadow=0.35, blur=20, name="couple")
+        c.deco(small_heart(26).rotate(12), ox(3) + 960, 300, shadow=0.2, blur=5)
+        c.deco(small_heart(18).rotate(-15), ox(3) + 1005, 370, shadow=0.2, blur=5)
+        c.deco(sticker_heart_button(40).rotate(-10), ox(3) + 260, 140, shadow=0.25, blur=8)
 
     # ===== SLIDE 5 : kenangan lain + cutout melintas garis =====
     if n > 4:
