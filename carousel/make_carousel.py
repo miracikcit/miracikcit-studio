@@ -1057,12 +1057,13 @@ def build(n, P):
 
     # ===== SLIDE 4 : couple pop-out dari polaroid =====
     if n > 3:
-        c.put(polaroid(pol[0], 330, seed=4).rotate(-8), ox(3) + 185, 1145, shadow=0.3, name="pol0")
-        c.put(popout(pops[0], "polaroid", 600, aspect=0.9, seed=6, head_frac=0.3).rotate(4),
-              ox(3) + 610, 700, shadow=0.35, blur=20, name="couple")
+        c.put(popout(pops[0], "polaroid", 600, aspect=0.9, seed=6, head_frac=0.3, loose=0.03,
+                     outline=12).rotate(4), ox(3) + 650, 760, shadow=0.35, blur=20, name="couple")
+        # polaroid anak-anak di atas (lapisan paling atas supaya jelas)
+        c.put(polaroid(pol[0], 340, seed=4).rotate(-7), ox(3) + 230, 330, shadow=0.32, name="pol0")
         c.deco(small_heart(26).rotate(12), ox(3) + 960, 300, shadow=0.2, blur=5)
         c.deco(small_heart(18).rotate(-15), ox(3) + 1005, 370, shadow=0.2, blur=5)
-        c.deco(sticker_heart_button(40).rotate(-10), ox(3) + 260, 140, shadow=0.25, blur=8)
+        c.deco(sticker_heart_button(40).rotate(-10), ox(3) + 150, 1180, shadow=0.25, blur=8)
 
     # ===== SLIDE 5 : kenangan lain + cutout melintas garis =====
     if n > 4:
