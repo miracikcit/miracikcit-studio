@@ -23,7 +23,7 @@ V['to-edit']=()=>{const te=S.sync.toedit;const folders=toEditFolders();const fse
     <div class="btns tem" style="margin-top:12px">${edBtns(r,e,busy,off)}${r.kind==='f'||r.kind==='r'?`<button class="btn icon sm" data-act="peek" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}" aria-label="Lihat footage" title="Lihat footage">${IC.footage}</button>`:''}<button class="btn icon sm bad" data-act="${r.kind==='f'?'fHide':r.kind==='r'?'redoDel':'delItem'}" data-id="${esc(r.kind==='r'?r.rid:r.key)}" aria-label="Buang">${IC.trash}</button></div>
     ${edNote(r,e)}${tipRep(e)}</div>`}).join('')||`<div class="empty">${te?'Tiada video tunggu edit.':'Belum sync. Tekan Sync folder di Home.'}</div>`}</div>`};
 /* Butang kad: belum mula = EDIT NOW; dah tekan = link terus ke chat Claude (Remote Control) atau status */
-function edBtns(r,e,busy,off){if(r.kind==='r'&&!r.clips)return `<button class="btn sm edgo" disabled>Footage tiada di Mac mini</button>`;
+function edBtns(r,e,busy,off){if(r.kind==='r'&&!r.clips)return rawBackBtn(String(r.key).replace(/#r\d+$/,''));
   /* 23 Nov: EDIT NOW tak lagi tunggu semua B-roll disemak; Claude guna klip Final yang dah ada */
   const now=`<button class="btn sm${e?'':' solid tab'} edgo" data-act="esOpen" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}"${r.round?` data-r="${r.round}"`:''}${busy||off||!r.stage||esScan(r.key)?' disabled':''}>${esScan(r.key)?'<i class="spin"></i>Analysing '+Math.round(esScan(r.key).pct||0)+'%':busy?'<i class="spin"></i>'+esc(busy):e?'Buka sesi baru':'▶ EDIT NOW'}</button>${tok(TOK.edit,'satu sesi edit Claude, ikut panjang video',TOKM.edit)}`;
   if(!e)return now;const st=e.status||'';const stuck=/perlu|tiada link/i.test(st);

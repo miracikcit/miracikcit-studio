@@ -24,8 +24,8 @@ const pubRedo=e=>S.redo.filter(x=>x.pubKey===e.key&&!redoDone(x));
 function pubFoot(e){const key=pubFolderKey(e),fi=folderInfo(key);const best=(S.footage||[]).filter(d=>/TO HARD DRIVE/i.test(d.folder||d.clips||'')&&(pMatch(d.product,e.name)||pMatch(d.name,e.name)));
   const fin=(((S.sync.topost||{}).files)||[]).filter(x=>{const t=nrm(String(x.name||'').split(/[_-]+/)[0]),k=nrm(e.name);return t.length>=4&&(k.startsWith(t)||t.startsWith(k))}).length;
   const line=(c,h)=>`<p class="pbl"><i class="pbdot ${c}"></i><span>${h}</span></p>`;
-  const raw=fi?line('ok',`<b>Mac mini</b> · ${esc(folderLabel(key))} · ${fi.clips||0} klip${fi.images?' + '+fi.images+' gambar':''}`)
-    :key?line('bad',`<b>Mac mini</b> · ${esc(folderLabel(key))} · folder tak dijumpai`)
+  const raw=fi?line('ok',`<b>Mac mini</b> · ${esc(folderLabel(key))} · ${fi.clips||0} klip${fi.images?' + '+fi.images+' gambar':''}`)+rawBar(key)
+    :key?line('bad',`<b>Mac mini</b> · ${esc(folderLabel(key))} · folder tak dijumpai`)+rawBar(key)
     :line('bad','<b>Folder footage belum dipaut</b>');
   const bst=best.map(d=>{const hd=d.moved||d.location;return line(hd?'hd':'wait',`<b>Klip terbaik</b> · ${esc(d.name||'')} · ${esc(String(d.files||d.clips||'').slice(0,12))} klip <span class="pill" style="--pc:${hd?'#5A8FB5':'var(--warn)'}">${hd?'Dalam Hard Disk':'Waiting to transfer'}</span>${d.backedUp?' · Drive ✓':''}`)}).join('');
   return raw+bst+(fin?line('ok',`<b>Video final</b> · 00 · TO POST FINAL · ${fin} fail`):'')+
@@ -72,3 +72,42 @@ A.pubStart=el=>{const e=pubEntry(el.dataset.id);if(!e)return;const key=pubFolder
   const n=Math.max(e.vids,...S.redo.filter(x=>x.pubKey===e.key).map(x=>x.n||0))+1;
   save('redo',{id:'r'+uid(),title:e.name,folder:key,n,pubKey:e.key,kind:pubKind(e),at:Date.now()});
   toast('Video baru #'+n+' masuk tab Edit. Tekan EDIT NOW di sana');location.hash='#to-edit'};
+
+/* ---------- RAW FOOTAGE (2026-11-25, Mira: "Ya auto buang") ----------
+   App tulis pelan `sync/rawplan` {folders:{<kunci folder>:{since, hold, names}}}: hanya folder yang SEMUA produknya dah published.
+   Mac mini (rawfoot.py) salin video ke PERTAMA › RAW FOOTAGE, buang dari Mac 30 hari selepas salinan lengkap, dan tulis
+   status `sync/rawfoot`. `hold` = footage masih diguna (kad Shoot / Edit / Video baru), kiraan berhenti. `sync/rawhold` = "tahan 30 hari lagi". */
+function rawPlan(){const sv=sheetView();if(!sv||!S.sync.toedit)return null;const by={},old=((S.sync.rawplan||{}).folders)||{},hd=S.sync.rawhold||{};
+  publishedEntries(sv).filter(e=>e.groups.some(g=>g.tab==='PRODUCTS'||g.tab==='NON')).forEach(e=>{const key=pubFolderKey(e);if(!key||!/^[2-4]\d\. [^\/]+\/[^\/]+$/.test(key))return;
+    const o=by[key]||(by[key]={names:[],since:0,open:false});o.names.push(e.name);if(e.vids<e.total)o.open=true;
+    pubRows(e).forEach(r=>{const t=r.sch&&r.sch.date?Date.parse(r.sch.date+'T00:00:00'):0;if(t>o.since)o.since=t})});
+  const live=new Set(toEditFolders().map(f=>f.key)),out={};
+  Object.keys(by).sort().forEach(key=>{const o=by[key],[st,nm]=key.split('/');
+    const hold=o.open||live.has(key)||S.redo.some(x=>x.folder===key&&!redoDone(x))||S.editor.some(t=>t.folder&&(t.folder===key||t.folder.startsWith(key+'#r'))&&!edDone(t))
+      ||S.items.some(it=>['toshoot','shot','toedit'].includes(it.stage)&&(it.folder===key||(it.folder===st&&pMatch(it.title,nm))));
+    out[key]={since:Math.max(o.since||(old[key]||{}).since||Date.now(),hd[key]||0),hold:!!hold,names:o.names.slice(0,12)}});
+  return out}
+function rawPlanSync(force){if(mode!=='live'||!DB)return;const p=rawPlan();if(!p)return;const cur=((S.sync.rawplan||{}).folders)||{};
+  if(!force&&JSON.stringify(p)===JSON.stringify(cur))return;const doc={folders:p,updated:Date.now()};S.sync.rawplan=doc;saveDoc('sync/rawplan',doc)}
+const rawInfo=key=>(((S.sync.rawfoot||{}).folders)||{})[key]||null;
+function rawCopy(key){const c=(S.sync.rawfoot||{}).copy||{};return c.running&&c.key===key?c:null}
+function rawBar(key){const r=rawInfo(key);if(!r||r.state==='none')return '';const keep=(S.sync.rawfoot||{}).keepDays||30,c=rawCopy(key);
+  const pill=(t,col)=>`<span class="pill" style="--pc:${col}">${t}</span>`,HD=pill('Dalam Hard Disk','#5A8FB5');
+  const prog=c?`<div class="stbar" style="--c:var(--warn)"><div class="stt"><span><i class="spin"></i> ${c.kind==='back'?'Salin balik dari PERTAMA':'Salin ke PERTAMA'} (${c.done}/${c.total})</span><span>${c.total?Math.round(c.done/c.total*100):0}%</span></div><div class="stg"><i style="width:${Math.max(3,c.total?c.done/c.total*100:5)}%"></i></div></div>`:'';
+  if(r.state==='hdonly')return `<div class="rwb">${HD}<span class="meta">${r.gone} video · dah dibuang dari Mac</span></div>${prog}`;
+  if(r.state==='wait')return `<div class="rwb">${pill('Waiting to transfer','var(--warn)')}<span class="meta">${r.disk}/${r.n} video dalam PERTAMA · Mac tak buang selagi belum disalin</span></div>${prog}`;
+  const col=r.left<=5?'var(--bad)':r.left<=12?'var(--warn)':'var(--ok)';
+  return `<div class="rwb">${HD}<span class="meta">${r.n} video disalin</span></div>${r.hold?`<p class="meta rwh">Kiraan berhenti: footage ni masih diguna.</p>`:`<div class="stbar" style="--c:${col}"><div class="stt"><span>Dibuang dari Mac dalam</span><span>${r.left} hari</span></div><div class="stg"><i style="width:${Math.max(3,Math.round(r.left/keep*100))}%"></i></div></div>`}${prog}`}
+/* Footage library › Lokasi: satu folder untuk satu kumpulan, dengan semua produk yang lahir darinya */
+function rawGroups(){const R=S.sync.rawfoot||{},F=R.folders||{},keys=Object.keys(F).filter(k=>F[k].state!=='none').sort();if(!keys.length)return '';
+  return `<div class="card glass rwg" style="margin-bottom:14px"><p class="eyebrow" style="margin:0">Raw footage projek published · ${keys.length}</p>
+    <p class="meta" style="margin:4px 0 0">Disalin ke PERTAMA › RAW FOOTAGE, kemudian dibuang dari Mac ${R.keepDays||30} hari selepas salinan lengkap. ${R.mounted?'PERTAMA disambung.':'PERTAMA belum disambung.'}</p>
+    ${keys.map(k=>{const r=F[k];const busy=(R.copy||{}).running;return `<div class="rwf"><strong>${esc(folderLabel(k))}</strong><span class="meta">${r.state==='hdonly'?r.gone:r.n} video · ${gb(r.state==='hdonly'?r.goneSize:r.size)}${(r.names||[]).length?' · untuk '+esc(r.names.join(', ')):''}</span>${rawBar(k)}
+      <div class="btns rwa">${r.state==='wait'?`<button class="btn sm" data-act="rawNow"${R.mounted&&!busy?'':' disabled'}>${R.mounted?'Simpan ke PERTAMA sekarang':'Sambung PERTAMA dulu'}</button>`:''}${r.state==='hd'&&!r.hold?`<button class="btn sm" data-act="rawHold" data-id="${esc(k)}">Tahan ${R.keepDays||30} hari lagi</button>`:''}${r.state==='hdonly'?rawBackBtn(k):''}${tok(0)}</div></div>`}).join('')}</div>`}
+function rawBackBtn(key){const r=rawInfo(key),R=S.sync.rawfoot||{},c=rawCopy(key);
+  if(c)return `<button class="btn sm st-run edgo" disabled><i class="spin"></i>Salin balik ${c.total?Math.round(c.done/c.total*100):0}%</button>`;
+  if(!r||r.state!=='hdonly')return `<button class="btn sm edgo" disabled>Footage tiada di Mac mini</button>`;
+  return R.mounted?`<button class="btn sm solid tab edgo" data-act="rawBack" data-id="${esc(key)}"${(R.copy||{}).running?' disabled':''}>Salin balik dari PERTAMA</button>`:`<button class="btn sm edgo" disabled>Sambung PERTAMA dulu</button>`}
+A.rawNow=async el=>{el.disabled=true;try{await studioJob('raw_now',{},2*60000);toast('Mac mini mula salin ke PERTAMA. Peratus naik di sini')}catch(e){el.disabled=false;toast(String((e&&(e.message||e.code))||'Mac mini tak jawab').slice(0,90))}};
+A.rawHold=el=>{const k=el.dataset.id,m=Object.assign({},S.sync.rawhold||{},{[k]:Date.now()});S.sync.rawhold=m;saveDoc('sync/rawhold',m);rawPlanSync(true);render(true);toast('Ditahan. Kiraan mula semula dari hari ni')};
+A.rawBack=async el=>{el.disabled=true;try{await studioJob('raw_back',{key:el.dataset.id},2*60000);toast('Mac mini salin balik dari PERTAMA. EDIT NOW keluar bila siap')}catch(e){el.disabled=false;toast(String((e&&(e.message||e.code))||'Mac mini tak jawab').slice(0,90))}};

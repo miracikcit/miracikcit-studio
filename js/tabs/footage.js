@@ -72,7 +72,7 @@ function ftDiskView(){const st=S.sync.storage||{};const root=((st.disk||{}).path
       ${l==null?`<p class="meta" style="margin:4px 0 0;font-size:11px">Mac dah kosong, simpan dalam PERTAMA sahaja</p>`:`<div class="stbar" style="--c:${col};margin-top:6px"><div class="stt"><span>Dibuang dari Mac dalam</span><span>${l} hari</span></div><div class="stg"><i style="width:${Math.max(3,pct)}%"></i></div></div>${d.disk<d.n&&l<=5?`<p class="meta" style="margin:2px 0 0;font-size:11px;color:var(--bad)">Belum masuk PERTAMA: Mac tak buang selagi belum disalin</p>`:''}`}</div>
       ${d.driveFolder?`<a class="btn icon sm" href="https://drive.google.com/drive/folders/${encodeURIComponent(d.driveFolder)}" target="_blank" rel="noopener" aria-label="Buka folder Drive" title="Buka folder dalam Google Drive">${IC.ext}</a>`:''}</div>`};
   const best=S.footage.filter(f=>(f.status==='stok'||!f.status)&&((f.files||[]).length||+f.clips));
-  return `<div class="card glass"><p class="eyebrow" style="margin:0">📂 ${esc(root)}</p>
+  return rawGroups()+`<div class="card glass"><p class="eyebrow" style="margin:0">📂 ${esc(root)}</p>
     <p class="meta" style="margin:8px 0 0"><b>B-ROLL LIBRARY</b> · simpanan tetap dalam PERTAMA</p>
     ${folders.map(place).join('')||'<p class="meta">Belum ada klip Final.</p>'}
     ${best.length?`<p class="meta" style="margin:14px 0 0"><b>KLIP TERBAIK</b></p>${best.map(f=>`<div class="brrow"><div style="flex:1;min-width:0"><strong>📁 ${esc(f.name)}</strong><span class="meta" style="display:block">${(f.files||[]).length||+f.clips||0} klip · ${gb(f.size)}</span></div>${f.backedUp?chip(true,'Drive'):''}</div>`).join('')}`:''}

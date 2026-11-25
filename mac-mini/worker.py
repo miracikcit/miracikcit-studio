@@ -1671,6 +1671,9 @@ def studio_jobs(sheet, cfg):
             elif j["type"] == "disk_now":
                 import brlib
                 outp = brlib.job_disk_now(inp, sheet)
+            elif j["type"] in ("raw_now", "raw_back"):   # raw footage projek published: salin ke / dari PERTAMA (0 token)
+                import rawfoot
+                outp = getattr(rawfoot, "job_" + j["type"])(inp, sheet)
             elif j["type"] == "gaya_scan":
                 import gaya
                 outp = gaya.job_gaya_scan(inp, sheet, cfg, drive_upload, sys.modules[__name__])
@@ -1775,6 +1778,11 @@ def main():
             brlib.quick(sheet)          # kiraan B-roll, library, ruang, hard disk (thread sendiri, tiada token)
         except Exception as e:
             log.warning("brlib gagal: %s", e)
+        try:
+            import rawfoot
+            rawfoot.quick(sheet)        # raw footage projek published: salin ke PERTAMA, buang dari Mac lepas 30 hari (thread sendiri)
+        except Exception as e:
+            log.warning("rawfoot gagal: %s", e)
         try:
             push_scan(sheet)
         except Exception as e:

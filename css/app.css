@@ -667,3 +667,9 @@ button.tpchip{cursor:pointer}.tpchip.btnx{font-weight:500}
 .vot.on{border-color:#d33;background:#FCEFEE}.vot.on i{background:#d33;color:#fff}.vot.on em{background:#d33;border-color:#d33}
 .crc .crp .crmic{margin-left:auto}
 .tsx .crmic{width:26px;height:26px}.tsx .crmic svg{width:14px!important;height:14px!important}
+
+/* ---------- Raw footage: status hard disk + slider hari (2026-11-25) ---------- */
+.rwb{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 2px 15px}
+.pbl+.rwb{margin-top:-1px}.rwb+.stbar,.rwh{margin:4px 0 6px 15px}
+.rwf{padding:10px 0;border-top:1px solid var(--line);margin-top:10px}.rwf strong{display:block;font-size:14px;overflow-wrap:anywhere}
+.rwf .rwb,.rwf .stbar,.rwf .rwh{margin-left:0}.rwa{margin-top:8px;align-items:center;flex-wrap:wrap}
