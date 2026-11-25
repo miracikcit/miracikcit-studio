@@ -61,17 +61,17 @@ A.prodTog=()=>{ui.prodOpen=!ui.prodOpen;render(true)};
 
 /* ---------- Peringkat 4: kad Home + Google Calendar ---------- */
 const schStockCol=n=>n>=5?'#7A4E2D':n>=2?'#D1A23A':'#C0392B';
-function schedHome(){if(!sheetRaw.PRODUCTS)return '';const J=jadualRows();if(!J)return '';const W=schedWarn(J.plan,J.groups);const today=ymd(new Date());
-  const days=W.fullUntil?dayDiff(today,W.fullUntil)+1:0;const col=schStockCol(days);
-  const strip=W.days.map(d=>{const need=SCHED_ACC.reduce((n,a)=>n+d.quota[a].need,0),have=SCHED_ACC.reduce((n,a)=>n+d.quota[a].have,0);const c=have>=need?'#7A4E2D':have>0?'#D1A23A':'#C0392B';
-    return `<i title="${esc(schDayLbl(d.date))}: ${have}/${need}" style="background:${c}"></i>`}).join('');
-  const late=W.soon.length,P=prodPlanC();const urg=P?Object.values(P.res).filter(p=>p.urgent||p.late).length:0;
-  const rows=`<div class="schstrip">${strip}</div><div class="meta" style="display:flex;justify-content:space-between;margin-top:4px"><span>Hari ni</span><span>14 hari</span></div>`+
-    ccRow('Stok cukup',days?'sampai '+schDayLbl(W.fullUntil).split(' · ')[1]:'kurang sehari',col,Math.min(100,days/14*100))+
-    (late?ccRow('Belum Scheduled (3 hari)',late+' video','#C0392B',100):'')+
-    (urg?ccRow('Perlu shoot / edit segera',urg+' job','#C0392B',100):'')+
-    (P&&P.moreProducts?ccRow('Untuk penuhkan 14 hari',P.moreProducts+' produk lagi','#D1A23A',0):'');
-  return ccard('ready','Jadual posting',days+' hari stok · 9 posting sehari',days,rows).replace('<div class="ccmore">',`<div style="margin-top:6px">${tok(0)}</div><div class="ccmore">`)}
+function schedHome(){if(!sheetRaw.PRODUCTS)return '';const groups=parseSheet();if(!groups)return '';const plan=schedPlan(groups);const W=schedWarn(plan,groups);const now=new Date(),today=ymd(now),nowT=pad(now.getHours())+':'+pad(now.getMinutes());
+  const emp=W.days.slice(0,7).reduce((a,d)=>a+d.empty.length,0);const at={};groups.forEach(g=>g.rows.forEach(r=>{const v=plan.get(schKey(r));if(v&&v.date===today&&v.time)at[v.time+'|'+v.acc]={r,v}}));
+  const slots=schedSlots();const accs=SCHED_ACC.map(a=>`<div class="hpacc"><b>@${esc(a)}</b><span>${slots.filter(s=>s.a===a).map(s=>{const o=at[s.t+'|'+a];const c=o?(o.v.status==='Posted'||tpDone(o.r)?'ok':'wait'):s.t<=nowT?'past':'em';return `<i class="${c}">${c==='ok'?'✓ ':''}${timeLbl(s.t)}</i>`}).join('')}</span></div>`).join('');
+  const strip=W.days.map(d=>{const need=SCHED_ACC.reduce((n,a)=>n+d.quota[a].need,0),have=SCHED_ACC.reduce((n,a)=>n+d.quota[a].have,0);return `<i class="${have>=need?'f':have>0?'h':'e'}" title="${esc(tpDayLbl(d.date))}: ${have}/${need}"></i>`}).join('');
+  const P=prodPlanC();const urg=P?Object.values(P.res).filter(p=>p.urgent||p.late).length:0;
+  const chips=[W.short.length?`<span class="tpchip w"><b>${W.short.length}</b> product${W.short.length>1?'s':''} short</span>`:'',urg?`<span class="tpchip w"><b>${urg}</b> job${urg>1?'s':''} to shoot / edit now</span>`:'',P&&P.moreProducts?`<span class="tpchip">Need <b>${P.moreProducts}</b> more product${P.moreProducts>1?'s':''}</span>`:''].join('');
+  return `<div class="card glass tp hpc"><button type="button" class="hphd" data-act="go" data-id="ready"><b class="tpn hpn ${emp?'bad':'good'}">${emp}</b><span><strong>Posting Schedule</strong><em>empty slot${emp===1?'':'s'} in the next 7 days</em></span></button>
+   <p class="eyebrow" style="margin:2px 0 5px">${esc(tpDayLbl(today))}</p>${accs}
+   <p class="eyebrow" style="margin:10px 0 5px">Stock · 14 days</p><div class="hpstock">${strip}</div>
+   <div class="hplg"><span>Today</span><span>${W.fullUntil?'Full until '+esc(tpDayLbl(W.fullUntil).replace(/^.*· /,'')):'Full: under a day'}</span><span>${esc(tpDayLbl(addDays(today,13)).replace(/^\w+ /,''))}</span></div>
+   ${chips?`<div class="tpchips">${chips}</div>`:''}<button type="button" class="ccmore hpmore" data-act="go" data-id="ready">Open schedule ${IC.next}</button></div>`}
 
 /* Calendar: slot posting 7 hari ke depan (tajuk ada masa + akaun) dan deadline Shoot by / Edit by. noRemind = tiada notifikasi. */
 let schCalBusy=false,schCalAt=0;
@@ -112,11 +112,13 @@ function tpLine(k,v,late){if(v.status==='Excluded')return `<span class="pill">Po
 function tpWeek(plan,groups){const today=ymd(new Date());const by={};
   (groups||[]).forEach(g=>g.rows.forEach(r=>{const v=plan.get(schKey(r));if(!v||!v.date||v.status==='Excluded')return;(by[v.date]=by[v.date]||[]).push({r,v,g})}));
   return Array.from({length:7},(_,i)=>{const date=addDays(today,i);return {date,rows:by[date]||[]}})}
+function tpCal(wk,act){const today=ymd(new Date());
+  return wk.map(({date,rows})=>{const x=new Date(date+'T00:00:00');const t=rows.length,done=rows.filter(tpFin).length;
+    const dots=TP_PL.map(([,i,c])=>{const k=rows.filter(o=>o.v.status==='Posted'||tpOn(o.r,i)).length;return `<u class="${t&&k===t?'on':k?'half':''}" style="--pc:var(--${c})"></u>`}).join('');
+    return `<button type="button" class="tpd${date===today?' today':''}${t?'':' none'}" data-act="${act||'tpDay'}" data-id="${date}" aria-label="${tpDayLbl(date)}, ${t?done+' of '+t+' videos scheduled':'no video'}"><span>${TP_DOW[x.getDay()]}</span><b>${x.getDate()}</b><i>${dots}</i><em>${t?done+'/'+t:'none'}</em></button>`}).join('')}
 function tpTop(plan,groups,ready,nNew){const W=schedWarn(plan,groups);const wk=tpWeek(plan,groups);const today=ymd(new Date());
   const n=ready.filter(r=>{const v=plan.get(schKey(r))||{};return v.status!=='Excluded'&&!tpDone(r)}).length;
-  const cal=wk.map(({date,rows})=>{const x=new Date(date+'T00:00:00');const t=rows.length,done=rows.filter(tpFin).length;
-    const dots=TP_PL.map(([,i,c])=>{const k=rows.filter(o=>o.v.status==='Posted'||tpOn(o.r,i)).length;return `<u class="${t&&k===t?'on':k?'half':''}" style="--pc:var(--${c})"></u>`}).join('');
-    return `<button type="button" class="tpd${date===today?' today':''}${t?'':' none'}" data-act="tpDay" data-id="${date}" aria-label="${tpDayLbl(date)}, ${t?done+' of '+t+' videos scheduled':'no video'}"><span>${TP_DOW[x.getDay()]}</span><b>${x.getDate()}</b><i>${dots}</i><em>${t?done+'/'+t:'none'}</em></button>`}).join('');
+  const cal=tpCal(wk);
   const emp=W.days.slice(0,7).reduce((a,d)=>a+d.empty.length,0);const chips=[];
   if(emp)chips.push(`<span class="tpchip w">⚠ <b>${emp}</b> empty slot${emp>1?'s':''}</span>`);
   chips.push(`<span class="tpchip">Stock ${W.fullUntil?'until <b>'+esc(tpDayLbl(W.fullUntil).replace(/^.*· /,''))+'</b>':'<b>under a day</b>'}</span>`);
@@ -139,3 +141,18 @@ function tpFlash(c){if(!c)return;c.scrollIntoView({behavior:'smooth',block:'cent
 A.tpJump=el=>{const c=document.getElementById(el.dataset.id);if(c)tpFlash(c);else toast('Posting card not found')};
 A.tpDay=el=>{const c=document.getElementById(el.dataset.id==='new'?'tpnew':'tpd-'+el.dataset.id);if(c)c.scrollIntoView({behavior:'smooth',block:'start'});else toast('No video on this day')};
 A.tpShort=el=>toast('Under 3 videos per account: '+el.dataset.x);
+
+/* 25 Nov (Mira): kad Home baru. Kad 1 To Publish (nombor, kalendar 7 hari, 3 video seterusnya, cip). Kad 2 Posting Schedule
+   (slot kosong 7 hari, slot hari ni setiap akaun, stok 14 hari, amaran). Ganti kad lama dan schedHome lama. 0 token. */
+function homePub(){const sv=sheetView();const groups=parseSheet();if(!sv||!groups)return '';const plan=schedPlan(groups);const wk=tpWeek(plan,groups);
+  const open=sv.ready.map(r=>({r,v:plan.get(schKey(r))||{}})).filter(o=>o.v.status!=='Excluded'&&!tpDone(o.r));const n=open.length;
+  const nx=open.filter(o=>o.v.date).sort((a,b)=>(a.v.date+a.v.time).localeCompare(b.v.date+b.v.time)).slice(0,3);
+  const mv=open.filter(o=>tpMoved(o.r,o.v)).length,nw=freshFinals().length,gone=sv.ready.filter(r=>!rowFile(r,sv)).length;
+  const rows=nx.map(({r,v})=>`<button type="button" class="hprow" data-act="tpGo" data-id="rv-${r.tab}-${r.row}"><span class="tm">${esc(tpDayLbl(v.date).replace(/ · .*$/,'').replace(/^(\w{3}) \d.*$/,'$1'))} · ${timeLbl(v.time)}</span><span class="nm"><b>${esc(r.group.name)}</b><i>@${esc(v.acc||'')}${r.vid?' · VID '+esc(r.vid):''}</i></span><span class="hpdots">${TP_PL.map(([,i,c])=>`<u class="${tpOn(r,i)?'on':''}" style="--pc:var(--${c})"></u>`).join('')}</span></button>`).join('');
+  const chips=[mv?`<span class="tpchip w"><b>${mv}</b> missed · moved</span>`:'',nw?`<span class="tpchip ok"><b>${nw}</b> new today</span>`:'',gone?`<span class="tpchip"><b>${gone}</b> video file removed</span>`:''].join('');
+  return `<div class="card glass tp hpc"><button type="button" class="hphd" data-act="go" data-id="ready"><b class="tpn${n?'':' zero'}">${n}</b><span><strong>To Publish</strong><em>video${n===1?'':'s'} to schedule</em></span></button>
+   <div class="tpgrid">${tpCal(wk,'tpGoDay')}</div>
+   ${rows?`<p class="eyebrow" style="margin:10px 0 5px">Schedule these next</p>${rows}`:`<p class="meta" style="margin:10px 0 0">Nothing waiting. All videos scheduled.</p>`}
+   ${chips?`<div class="tpchips">${chips}</div>`:''}<button type="button" class="ccmore hpmore" data-act="go" data-id="ready">Open To Publish ${IC.next}</button></div>`}
+A.tpGo=el=>{const id=el.dataset.id;go('ready');setTimeout(()=>tpFlash(document.getElementById(id)),450)};
+A.tpGoDay=el=>{const id='tpd-'+el.dataset.id;go('ready');setTimeout(()=>{const c=document.getElementById(id);if(c)c.scrollIntoView({behavior:'smooth',block:'start'})},450)};

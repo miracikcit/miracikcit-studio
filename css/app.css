@@ -548,3 +548,22 @@ button.tpchip{cursor:pointer}.tpchip.btnx{font-weight:500}
 .tpnf{display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:9px;font-size:10.5px;color:var(--muted);border:1px dashed rgba(120,100,90,.35)}
 .tpok{position:absolute;top:5px;right:6px;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:#CFE6D2;color:#2F6B3C}
 .tpacts a.btn{text-decoration:none;background:rgba(255,255,255,.7);color:var(--ink,#4a3b33);border:1px solid rgba(255,255,255,.9)}
+
+/* 25 Nov (Mira): kad Home To Publish + Posting Schedule */
+.hpc{margin-top:14px;padding:14px;border-radius:26px}
+.hphd{font:inherit;color:var(--ink);background:none;border:0;padding:0 0 10px;display:flex;align-items:center;gap:13px;width:100%;text-align:left;cursor:pointer}
+.hphd .tpn{width:54px;height:54px;font-size:26px;margin:4px}
+.hphd strong{display:block;font-size:15px;font-weight:600;letter-spacing:.18em;text-transform:uppercase}.hphd em{font-style:normal;font-size:12.5px;color:var(--muted)}
+.hpn::after{display:none}.hpn.bad{background:rgba(247,217,212,.95);color:#A93226;box-shadow:0 0 0 5px rgba(247,217,212,.5)}.hpn.good{background:#CFE6D2;color:#2F6B3C;box-shadow:0 0 0 5px rgba(207,230,210,.5)}
+.hprow{font:inherit;color:var(--ink);width:100%;text-align:left;cursor:pointer;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.9);border-radius:14px;padding:7px 10px;margin-top:5px}
+.hprow .tm{flex:none;width:86px;font-size:11.5px;font-weight:700;color:var(--pcht)}
+.hprow .nm{flex:1;min-width:0}.hprow .nm b{display:block;font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hprow .nm i{font-style:normal;font-size:11px;color:var(--muted);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hpdots{display:flex;gap:3px;flex:none}.hpdots u{width:8px;height:8px;border-radius:50%;background:#CFC6BE;display:block}.hpdots u.on{background:var(--pc)}
+.tpchip.ok{background:#CFE6D2;border-color:transparent;color:#2F6B3C}
+.hpacc{display:grid;grid-template-columns:112px 1fr;align-items:center;gap:8px;margin-top:5px}.hpacc>b{font-size:11.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hpacc span{display:flex;gap:4px;flex-wrap:wrap}.hpacc i{font-style:normal;font-size:10.5px;border-radius:8px;padding:3px 6px;font-variant-numeric:tabular-nums}
+.hpacc .ok{background:#CFE6D2;color:#2F6B3C}.hpacc .wait{background:var(--pch);color:var(--pcht)}.hpacc .em{border:1px dashed var(--bad);color:var(--bad)}.hpacc .past{background:rgba(255,255,255,.5);color:var(--muted);text-decoration:line-through}
+.hpstock{display:grid;grid-template-columns:repeat(14,1fr);gap:3px}.hpstock i{height:12px;border-radius:4px;display:block}.hpstock .f{background:#8FC79A}.hpstock .h{background:#E3C27A}.hpstock .e{background:#E39A90}
+.hplg{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px}
+.hpmore{font:inherit;background:none;border:0;cursor:pointer;width:100%;color:var(--muted)}
+.hphd:focus-visible,.hprow:focus-visible,.hpmore:focus-visible{outline:2px solid #C98F66;outline-offset:2px}
