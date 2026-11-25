@@ -271,7 +271,7 @@
      Semasa main, kedudukan dilicinkan setiap frame (pos enjin bergerak berperingkat). */
   let snapT = 0, touchSc = null, seekT = 0, pinch = null, own = false, disp = 0, lastT = 0, off = null, phDrag = null;
   /* 25 Nov: scrub licin. scrubbing = jari / momentum sedang gerakkan timeline; satu seek setiap frame (enjin tunggu video siap cari frame). */
-  let scrubbing = false, finger = false, wheelAt = 0, endTm = 0, sent = -1, prevD = null, edgeL = null, phX = {};
+  let scrubbing = false, finger = false, wheelAt = 0, endTm = 0, sent = -1, prevD = null, edgeL = null, phX = {}, trimOn = 0, glide = 0;
   const eng = s => { try { return (0, eval)(s); } catch (e) {} };   /* 24 Nov: off = jarak playhead dari kiri timeline (px); tak lagi tetap di tengah */
   const SL = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollLeft');
   function lock(sc) {
@@ -301,10 +301,16 @@
       if (scrubbing) { if (disp !== sent) { sent = disp; window.__edSeek = disp; eng('seek(window.__edSeek)'); } }   // gambar ikut jari, satu seek setiap frame
       else if (playing) { const err = pos - disp; if (Math.abs(err) > 0.5) disp = pos; else disp += dt + err * Math.min(1, dt * 6); }   // ikut jam video dengan lembut, tanpa lompat
       else disp = pos;
+      { const d = G('dr'), tr = d && d.k === 'trim';   /* 25 Nov (ikut CapCut): tarik pemegang KIRI = hujung kiri klip ikut jari (timeline dianjak), hujung kanan kekal */
+        if (tr && d.side === 'l' && d.moved) { try { const c = G('S').clips[d.i], ts = $('tscroll'); if (d._sl == null) d._sl = SL.get.call(ts);
+          const x = Math.max(0, d._sl + ((c.out - c.in) - (d.out - d.in)) / (c.sp || 1) * pps); [ts, $('rscroll')].forEach(el => { if (el && Math.abs(SL.get.call(el) - x) > 0.5) setSL(el, x); }); } catch (e) {} }
+        if (tr && scrubbing) { scrubbing = false; clearTimeout(endTm); eng('scrubOn = false; vsWant = null'); }   /* pemegang disentuh semasa timeline masih meluncur: tamatkan scrub, jangan lompat balik */
+        if (tr) trimOn = 1; else if (trimOn) { trimOn = 0; glide = t + 280; } }   /* lepas jari: timeline meluncur balik ke playhead, bukan melompat */
       const cw = sc.clientWidth; off = cw / 2;   /* Fasa 2 (24 Nov, Mira): playhead ikut CapCut, tetap di tengah */
       if (!scrubbing && !finger && !phDrag) {
         [$('tscroll'), $('rscroll')].forEach(el => { if (!el) return; const w = el.clientWidth || cw; const max = Math.max(0, el.scrollWidth - w);
-          const x = Math.max(0, Math.min(max, disp * pps + w / 2 - off)); if (Math.abs(SL.get.call(el) - x) > 0.5) setSL(el, x); });
+          let x = Math.max(0, Math.min(max, disp * pps + w / 2 - off)); const cur = SL.get.call(el); if (t < glide && Math.abs(x - cur) > 1) x = cur + (x - cur) * Math.min(1, dt * 14);
+          if (Math.abs(cur - x) > 0.5) setSL(el, x); });
       }
       [['edph', $('tscroll')], ['edph2', $('rscroll')]].forEach(([id, el]) => { const ph = $(id); if (!ph || !el) return; const w = el.clientWidth;
         const x = scrubbing && el === touchSc ? w / 2 : w / 2 + disp * pps - SL.get.call(el), L = Math.round((el.offsetLeft + x) * 4) / 4, vis = x < -2 || x > w + 2 ? 'hidden' : '';
@@ -325,12 +331,15 @@
       ph.addEventListener('pointermove', mv);
       ['pointerup', 'pointercancel'].forEach(ev => ph.addEventListener(ev, () => { phDrag = null; }));
     });
+    const arm = () => { clearTimeout(endTm); endTm = setTimeout(() => { if (finger) return; scrubEnd(); }, 140); };
+    /* 25 Nov: lepas tarik pemegang klip, enjin lukis semula timeline pada pointerup, jadi touchend hilang (elemen dah dibuang) dan "finger" tersangkut hidup:
+       timeline berhenti ikut playhead sampai sentuhan seterusnya. pointerup (fasa capture, sebelum lukis semula) sentiasa sampai. */
+    addEventListener('pointerup', e => { if (e.pointerType !== 'mouse' && finger) { finger = false; if (scrubbing) arm(); } }, true);
     [tsc, rsc].forEach(sc => {
       lock(sc);
       const mark = () => { touchSc = sc; };
       ['touchstart', 'touchmove', 'pointerdown', 'wheel'].forEach(ev => sc.addEventListener(ev, mark, { passive: true }));
       sc.addEventListener('wheel', () => { wheelAt = Date.now(); }, { passive: true });
-      const arm = () => { clearTimeout(endTm); endTm = setTimeout(() => { if (finger) return; scrubEnd(); }, 140); };
       const fin = e => { finger = e.touches.length > 0; if (!finger && scrubbing) arm(); };
       ['touchstart', 'touchend', 'touchcancel'].forEach(ev => sc.addEventListener(ev, fin, { passive: true }));
       sc.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { finger = true; const up = () => { finger = false; removeEventListener('pointerup', up, true); if (scrubbing) arm(); }; addEventListener('pointerup', up, true); } }, { passive: true });

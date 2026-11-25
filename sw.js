@@ -1,5 +1,5 @@
 /* Simpan app dalam phone supaya boleh dibuka tanpa internet. Data sendiri disimpan oleh runtime.js. */
-const V = '2026.11.25-5';
+const V = '2026.11.25-6';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-180.png'];
 const SHELL = 'studio-' + V, SC = self.registration.scope, NET_MS = 3000;
 /* Fasa 1B: precache shell Studio + editor. Senarai fail dibaca dari HTML sendiri (index.html guna ?v=<versi>, editor.html guna ?v=<hash isi>),

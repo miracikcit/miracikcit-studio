@@ -1650,6 +1650,8 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .jn { position: absolute; top: 50%; z-index: 4; width: 22px; height: 22px; margin: -11px 0 0 -11px; padding: 0; border: 0; border-radius: 7px; background: #fff; color: #111; display: grid; place-items: center; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.45); }
 .jn::before { content: ""; position: absolute; inset: -7px -5px; }
 .jn .ic { width: 13px; height: 13px; }
+/* 25 Nov 2026 (Mira): butang transition di hujung klip yang DIPILIH dulu menutup pemegang klip, jadi pemegang tak boleh ditarik. Ia dialih ke klip sebelah; klip sempit = sorok. */
+.jn.adjl { margin-left: -27px; } .jn.adjr { margin-left: 5px; } .jn.adjl::before, .jn.adjr::before { inset: -3px; } .jn.adjn { display: none; }
 .jn.set { background: #111; color: #3fd0c0; box-shadow: inset 0 0 0 1.5px #3fd0c0; }
 .jn.on { background: #3fd0c0; color: #062421; box-shadow: 0 0 0 3px rgba(63,208,192,.3); }
 .jnbar { align-items: center; }
@@ -1692,7 +1694,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .spticks button[aria-pressed="true"] { color: #3fd0c0; }
 #spBtn { display: inline-grid; place-items: center; } #spBtn .ic { width: 16px; height: 16px; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=bff1c43e88">
+<link rel="stylesheet" href="../../ed-capcut.css?v=6cdc3110c3">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1803,9 +1805,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=bff1c43e88"></script>
-<script src="../../../js/runtime.js?v=bff1c43e88"></script>
-<script src="../../ed-boot.js?v=bff1c43e88"></script>
+<script src="../../../js/config.js?v=6cdc3110c3"></script>
+<script src="../../../js/runtime.js?v=6cdc3110c3"></script>
+<script src="../../ed-boot.js?v=6cdc3110c3"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -3734,7 +3736,7 @@ function drawTimeline() {
   const video = S.clips.map((c, i) => {
     const d = cLen(c);
     return `<div class="clip${i === sel && !otherPick ? " sel" : ""}${c.muted ? " muted" : ""}" data-c="${i}" style="width:${d * pps}px"><canvas class="thumbs" data-cv="${i}" width="${Math.ceil(d * pps)}" height="58"></canvas><span class="cname">${esc(c.name)}${c.muted ? " · mute" : ""}</span>${c.sp && c.sp !== 1 ? `<span class="spb">${spTxt(c.sp)}</span>` : ""}<div class="handle l" data-h="l">‹</div><div class="handle r" data-h="r">›</div></div>`;
-  }).join("") + (tab === "Potong" ? S.clips.map((c, i) => i && (i === jnSel || Math.min(cLen(c), cLen(S.clips[i - 1])) * pps >= 24) ? `<button class="jn${i === jnSel ? " on" : jnKind(i) !== "cut" ? " set" : ""}" data-jn="${i}" style="left:${(startOf(i) * pps).toFixed(1)}px" aria-label="Transition"><svg class="ic"><use href="#i-trans"/></svg></button>` : "").join("") : "");   /* p24 */
+  }).join("") + (tab === "Potong" ? S.clips.map((c, i) => i && (i === jnSel || Math.min(cLen(c), cLen(S.clips[i - 1])) * pps >= 24) ? `<button class="jn${i === jnSel ? " on" : jnKind(i) !== "cut" ? " set" : ""}${!otherPick && (i === sel || i === sel + 1) ? (Math.min(cLen(c), cLen(S.clips[i - 1])) * pps < 56 ? " adjn" : i === sel ? " adjl" : " adjr") : ""}" data-jn="${i}" style="left:${(startOf(i) * pps).toFixed(1)}px" aria-label="Transition"><svg class="ic"><use href="#i-trans"/></svg></button>` : "").join("") : "");   /* p24 */
   const E = endT(), bl = (t, d, cls, txt, extra = "") => `<div class="blk ${cls}" ${extra} style="left:${t * pps}px;width:${Math.max(d * pps, 3)}px">${txt}</div>`;
   const rows = [];
   const hxI = S.stickers.findIndex(x => x.k.startsWith("e-hook") && !x.hl);

@@ -347,12 +347,18 @@ html.pwa .ccdsheet .x { min-height: 44px; border: 0; background: none; color: va
 html.pwa #panel .preset { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 html.pwa.edcmp .stage::after { content: "ASAL"; position: absolute; left: 8px; top: 8px; z-index: 9; padding: 4px 9px; border-radius: 8px; background: rgba(0,0,0,.6); color: #fff; font: 800 11px var(--display); letter-spacing: .1em; }
 /* 25 Nov (Mira): pemegang klip nipis warna teal supaya tak keliru dengan playhead putih; kawasan sentuh kekal lebar (28 px ke dalam klip) */
-html.pwa .handle { width: 12px; background: #58c7d6; color: transparent; font-size: 0; z-index: 3; }
+/* 25 Nov (Mira, ikut CapCut): pemegang duduk DI LUAR klip yang dipilih, menindih klip sebelah; hujung dalam pemegang = titik potong.
+   Kawasan sentuh 33 px (12 px ke luar, 5 px ke dalam). Butang transition di hujung klip yang dipilih dialih ke DALAM klip supaya tak tutup pemegang. */
+html.pwa .clip.sel { overflow: visible; outline: 2px solid #58c7d6; outline-offset: -2px; }
+html.pwa .clip.sel .thumbs { border-radius: 4px; }
+html.pwa .clip.sel::before { content: ""; position: absolute; inset: 0; z-index: 2; border-top: 2px solid #58c7d6; border-bottom: 2px solid #58c7d6; pointer-events: none; }
+html.pwa .clip.sel .cname { max-width: calc(100% - 8px); overflow: hidden; text-overflow: ellipsis; }
+html.pwa .handle { width: 16px; background: #58c7d6; color: transparent; font-size: 0; z-index: 3; box-shadow: 0 0 0 1px rgba(0,0,0,.35); }
+html.pwa .handle.l { left: -16px; border-radius: 7px 0 0 7px; } html.pwa .handle.r { right: -16px; border-radius: 0 7px 7px 0; }
 html.pwa .handle::before { content: ""; position: absolute; top: 0; bottom: 0; }
-html.pwa .handle.l::before { left: 0; right: -16px; } html.pwa .handle.r::before { right: 0; left: -16px; }
-html.pwa .handle::after { content: ""; position: absolute; left: 5px; top: 50%; width: 2px; height: 14px; margin-top: -7px; border-radius: 1px; background: #06262b; }
-html.pwa .handle.l { border-radius: 6px 0 0 6px; } html.pwa .handle.r { border-radius: 0 6px 6px 0; }
-html.pwa .clip.sel { outline: 2px solid #58c7d6; outline-offset: -2px; }
+html.pwa .handle.l::before { left: -12px; right: -5px; } html.pwa .handle.r::before { right: -12px; left: -5px; }
+html.pwa .handle::after { content: ""; position: absolute; left: 7px; top: 50%; width: 2px; height: 16px; margin-top: -8px; border-radius: 1px; background: #06262b; }
+html.pwa .jn.adjl { margin-left: 5px; } html.pwa .jn.adjr { margin-left: -23px; }
 html.pwa .jn { top: 0; margin-top: 1px; width: 18px; height: 18px; margin-left: -9px; border-radius: 6px; } html.pwa .jn .ic { width: 11px; height: 11px; }
 html.pwa.edsnap .edph { background: #ffd24a; box-shadow: 0 0 10px #ffd24a; } html.pwa.edsnap .edph::before { background: #ffd24a; }
 
