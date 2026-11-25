@@ -584,3 +584,5 @@ button.tpchip{cursor:pointer}.tpchip.btnx{font-weight:500}
 .tpwho.m{background:rgba(190,232,212,.85);color:#1F5E48}
 .tpvb.off{background:rgba(255,255,255,.55);box-shadow:none;border:1px dashed rgba(120,100,90,.4);font-size:13px}
 .tp{--sv-p:#FFB36B;--sv-t:#7A3300}
+.tpbr{flex-basis:100%;height:0}   /* 25 Nov malam (Mira): baris 1 tarikh, baris 2 akaun + Excluded */
+.tpvb{width:44px;height:44px;font-size:21px;margin-right:14px}.tpvb.off{font-size:16px}   /* 25 Nov malam (Mira): bulat video lebih besar, jauh sikit dari tepi kanan */
