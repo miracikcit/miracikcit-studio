@@ -1735,6 +1735,9 @@ def studio_jobs(sheet, cfg):
             elif j["type"] == "folder_peek":   # gambar grid footage folder edit (tab Edit, 0 token)
                 import peek
                 outp = peek.run(inp, sheet, sys.modules[__name__])
+            elif j["type"] in ("air_wait", "air_ignore"):   # footage melalui AirDrop dari kad Shoot / Home (0 token)
+                import airdrop
+                outp = (airdrop.job_wait if j["type"] == "air_wait" else airdrop.job_ignore)(inp, sheet, sys.modules[__name__])
             elif j["type"] == "mkfolder":
                 outp = run_mkfolder(inp, sheet)
             elif j["type"] == "jobparse":
@@ -1812,6 +1815,11 @@ def main():
             rawfoot.quick(sheet)        # raw footage projek published: salin ke PERTAMA, buang dari Mac lepas 30 hari (thread sendiri)
         except Exception as e:
             log.warning("rawfoot gagal: %s", e)
+        try:
+            import airdrop
+            airdrop.quick(sheet, sys.modules[__name__])   # AirDrop dalam Downloads -> folder kad (thread sendiri)
+        except Exception as e:
+            log.warning("airdrop gagal: %s", e)
         try:
             push_scan(sheet)
         except Exception as e:
