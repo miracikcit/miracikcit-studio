@@ -136,6 +136,13 @@
     poll: async since => { const j = await studioCall('pull', { since: since - 1 }); return ((j.docs || []).find(x => x.p === 'edfoot/' + VID) || {}).d || null; },
     refresh: async since => { const j = await studioCall('pull', { since: (since || Date.now()) - 1 }); const d = ((j.docs || []).find(x => x.p === 'edpwa/' + VID) || {}).d; const man = d && d.files ? d : await manifest(); window.ED_MAN = man; await toSW(LOCAL ? await manifest() : man); }
   };
+  /* 26 Nov 2026: cutout (tukar latar + "Belakang saya"). Mac mini job ed_cut, status doc edcut/<id>; gambar latar dalam editor/bg/ */
+  window.ED_CUT = {
+    bg: new URL('../../bg/', location.href).href,
+    job: input => studioCall('job_add', { type: 'ed_cut', input }),
+    poll: async since => { const j = await studioCall('pull', { since: since - 1 }); return ((j.docs || []).find(x => x.p === 'edcut/' + VID) || {}).d || null; },
+    refresh: since => window.ED_FOOT.refresh(since)
+  };
   window.ED_FAIL = e => {
     const b = document.getElementById('boot');
     if (b) { b.hidden = false; b.innerHTML = 'Editor tak dapat dibuka: ' + String((e && e.message) || e) + '<br><a href="../../../#editor">Balik ke Studio</a>'; }
