@@ -49,7 +49,7 @@ async function initSheet(){
     render()},{refetchInterval:60000}));
   MCP.watchTool(GS,'get_values',{spreadsheetId:SHEET_ID,range:JOBS_RANGE},ev=>{if(ev.type==='data'){jobsRaw=(ev.result.payload||{}).values||[];jobsFromSheet()}},{refetchInterval:60000});
   MCP.watchTool(GS,'get_values',{spreadsheetId:SHEET_ID,range:TR_RANGE},ev=>{if(ev.type==='data')trOnData((ev.result.payload||{}).values||[])},{refetchInterval:20000});
-  MCP.watchTool(GS,'get_values',{spreadsheetId:SHEET_ID,range:'SORTER!A1:D80'},ev=>{if(ev.type==='data'){sorterRaw=(ev.result.payload||{}).values||[];if(ui.view==='home')render()}},{refetchInterval:120000});
+  MCP.watchTool(GS,'get_values',{spreadsheetId:SHEET_ID,range:'SORTER!A1:D80'},ev=>{if(ev.type==='data'){sorterRaw=(ev.result.payload||{}).values||[];if(ui.view==='home'||ui.view==='lagi')render()}},{refetchInterval:120000});
   loadCal()}
 async function sheetWrite(range,values){if(!MCP)throw {code:'off'};await MCP.callTool(GS,'update_values',{spreadsheetId:SHEET_ID,range,values});MCP.invalidate(GS,'get_values').catch(()=>{})}
 async function sheetTick(tab,row,kind,idx){

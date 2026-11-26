@@ -25,12 +25,11 @@ function edSelfHome(){
   /* 26 Nov (Mira): dulu kad "Edit sendiri". Sekarang senarai SEMUA video dalam app Editor (belum final / published), pautan terus ke
      app Editor (editor/?app=1), bukan tab Editor Studio. */
   const L=(S.edpwa||[]).filter(e=>!e.pub&&e.final!=='siap'&&(e.status!=='error'||Date.now()-(e.updated||0)<2*864e5)).sort((a,b)=>(b.updated||0)-(a.updated||0));
-  const row=e=>{const d=e.draft||{};const [pill,col,pct]=e.status==='proses'?['Disediakan '+Math.round(e.pct||0)+'%','var(--warn)',Math.max(4,e.pct||0)]:e.status==='error'?['Ralat','var(--bad)',0]:d.status==='proses'?['Render draf','var(--warn)',60]:d.id?['Draf sedia','#4E9B63',100]:['Sedia edit','var(--c)',100];
+  const row=e=>{const d=e.draft||{};const [pill,col]=e.status==='proses'?['Disediakan '+Math.round(e.pct||0)+'%','var(--warn)']:e.status==='error'?['Ralat','var(--bad)']:d.status==='proses'?['Render draf','var(--warn)']:d.id?['Draf sedia','var(--ok)']:['Sedia edit','var(--c)'];
     const ok=e.status!=='proses'&&e.status!=='error';
-    return `<${ok?`a href="editor/?app=1&v=${encodeURIComponent(e.id)}" style="display:block;text-decoration:none;color:inherit"`:'div'} class="ccr" style="--sc:${col}"><div class="rowh"><span class="ccn">${esc(e.title||e.id)}</span><span class="pill" style="--pc:${col}">${esc(pill)}</span></div><div class="bar"><i style="width:${pct}%"></i></div>${e.status==='error'?`<div class="meta" style="font-size:11px;margin-top:3px">${esc(String(e.msg||'').slice(0,80))}</div>`:''}</${ok?'a':'div'}>`};
-  return `<div class="rbox glass cc" style="--c:${TAB.editor.c};cursor:default"><div class="rowh" style="align-items:center"><div style="min-width:0"><h2>Editor</h2><div class="meta">Video yang sedang diedit · tekan untuk buka</div></div><b class="rn">${L.length}</b></div>
-   ${L.slice(0,5).map(row).join('')||'<p class="meta" style="margin:8px 0 0">Tiada video dalam Editor.</p>'}${L.length>5?`<p class="meta" style="margin:6px 0 0">+${L.length-5} lagi</p>`:''}
-   <a class="ccmore" href="editor/?app=1" style="cursor:pointer;text-decoration:none;color:inherit">Semua video dan New Video ${IC.next}</a></div>`}
+    return hpRow(agoFmt(e.updated||e.created||Date.now()),e.title||e.id,e.status==='error'?String(e.msg||'').slice(0,60):e.src==='sendiri'?'Edit sendiri':'Dari Claude',hpPill(pill,col),ok?{href:'editor/?app=1&v='+encodeURIComponent(e.id)}:null)};
+  return hpCard('editor',L.length,'Editor','video sedang diedit · tekan untuk buka',L.slice(0,5).map(row).join('')+(L.length>5?`<p class="meta" style="margin:6px 0 0">+${L.length-5} lagi</p>`:'')||'<p class="meta" style="margin:4px 0 0">Tiada video dalam Editor.</p>','')
+    .replace(/<\/div>$/,`<a class="ccmore hpmore" href="editor/?app=1" style="text-decoration:none">Semua video dan New Video ${IC.next}</a></div>`)}
 A.edSelfNew=()=>{const st=((S.sync.toedit||{}).stages)||[];
   const opts=st.flatMap(s=>(s.items||[]).filter(i=>i.clips>0).map(i=>`<option value="${esc(s.name+'|'+i.name)}">${esc(s.name.replace(/^\d+\.\s*/,''))} / ${esc(i.name)} (${i.clips} klip)</option>`)).join('');
   if(!opts){toast('Tiada folder footage. Tekan Sync dalam tab Edit dulu');return}

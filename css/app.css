@@ -714,3 +714,12 @@ button.tpchip{cursor:pointer}.tpchip.btnx{font-weight:500}
 .edpart .ccn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* 26 Nov: +N footage baru untuk projek Editor (kad Shoot, baris Edit) */
 .edxb{margin-top:8px}.edxb .meta{margin:0 0 6px}.edxb .btns{gap:6px}
+/* 26 Nov malam: Home seragam ikut kad Posting Schedule, kotak kecil ikon sahaja, kalendar bulanan */
+.hgx{grid-template-rows:auto auto auto auto}.hgx .hbox.big2{grid-column:1 / span 2;grid-row:2 / span 3}
+.hbox.hmi{align-items:center;justify-content:center;text-align:center;gap:6px}.hbox.hmi b{display:grid;place-items:center;color:var(--c)}.hbox.hmi b svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}.hbox.hmi span.l{margin-top:0}
+.hpc .tpn svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+a.hprow.hpx{text-decoration:none}.hprow.hpx .pill{flex:none}.hpx .tm{width:72px}
+.hpcd{background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.9)}.hpcd.past{opacity:.6}.hpcd.sel{outline:2px solid #C98F66;outline-offset:1px;opacity:1}.hpcd.today{background:var(--rose);color:#fff;opacity:1}
+.hpcd i{height:6px}.hpdot{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none}
+.hpcl{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:11px;color:var(--muted)}.hpcl span{display:flex;align-items:center;gap:5px}
+.hgx .edbox .edl{justify-content:center;gap:9px}

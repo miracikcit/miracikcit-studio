@@ -21,16 +21,27 @@ async function autoCal(){if(calAutoBusy||mode!=='live'||calState!=='ok'||!MCP)re
       if(ex)await MCP.callTool(GC,'update_event',Object.assign({eventId:ex.id},p));else await MCP.callTool(GC,'create_event',p);n++}}
   catch(e){}finally{calAutoBusy=false}
   if(n){toast(n+' deadline dimasukkan ke Google Calendar');loadCal()}}
-function calHTML(){const c=ui.cal||(ui.cal={y:new Date().getFullYear(),m:new Date().getMonth()});const days=new Date(c.y,c.m+1,0).getDate();const off=new Date(c.y,c.m,1).getDay();const pre=c.y+'-'+pad(c.m+1)+'-';
-  const evs=calEvents.filter(e=>e.date.startsWith(pre)).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));const by={};evs.forEach(e=>(by[e.date]=by[e.date]||[]).push(e));const td=ymd(new Date());
-  let cells='';for(let i=0;i<off;i++)cells+='<span></span>';
-  for(let d=1;d<=days;d++){const k=pre+pad(d);cells+=`<button type="button" class="cd${k===td?' today':''}" data-act="evAdd" data-id="${k}" aria-label="${d} ${BULAN[c.m]}"><b>${d}</b><i>${(by[k]||[]).slice(0,3).map(e=>`<u style="background:${ACC_COL[e.account]||'var(--rose)'}"></u>`).join('')}</i></button>`}
-  const note=calState==='err'?`<p class="meta" style="color:var(--bad)">Google Calendar tak dapat dibaca. Semak connector Google Calendar dalam Settings, lepas tu tekan Sync.</p>`:calState==='off'?`<p class="meta">Google Calendar tak bersambung dalam paparan ni.</p>`:calState==='loading'?`<p class="meta">Sedang baca Google Calendar.</p>`:'';
-  return `<div class="card big glass" style="--c:#B0937B;margin-top:14px"><div class="rowh" style="align-items:center"><p class="eyebrow" style="margin:0">Senarai posting · ${BULAN[c.m]} ${c.y}</p>
-    <div class="btns" style="flex-wrap:nowrap;gap:6px"><button class="btn icon sm" data-act="calNav" data-x="-1" aria-label="Bulan lepas">${IC.back}</button><button class="btn icon sm" data-act="calNav" data-x="1" aria-label="Bulan depan">${IC.next}</button><button class="btn icon sm" data-act="evAdd" data-id="${td.startsWith(pre)?td:pre+'01'}" aria-label="Tambah posting">${IC.plus}</button></div></div>${note}
-
-   ${evs.map(e=>`<button type="button" class="evrow" data-act="evEdit" data-id="${esc(e.id)}"><span class="evd"><b>${+e.date.slice(8)}</b>${HARI[new Date(e.date+'T00:00:00').getDay()].slice(0,3)}</span><span style="min-width:0;flex:1"><strong>${esc(e.title)}</strong><span class="meta" style="display:block">${esc([e.time,e.note.split('\n')[0]].filter(Boolean).join(' · '))}</span></span>${accPill(e.account)}</button>`).join('')||`<p class="meta" style="margin:0">Tiada posting bulan ni. Tekan + untuk tambah.</p>`}
-   <p class="meta" style="margin:12px 0 0">Hanya event yang ada tanda ${MARK} dipaparkan, jadi event peribadi tak masuk. Event yang kau buat dari sini ditanda sendiri.</p></div>`}
+/* 26 Nov malam (Mira): kalendar bulanan penuh dengan titik warna akaun. Tekan hari = senarai video posting hari tu terbuka di bawah
+   (dari jadual posting Sheet + event Google Calendar bertanda yang bukan slot jadual). Rupa sama dengan kad Posting Schedule. */
+function calPosts(pre){const out={};const add=(d,o)=>(out[d]=out[d]||[]).push(o);
+  try{const groups=parseSheet();if(groups){const plan=schedPlan(groups);groups.forEach(g=>g.rows.forEach(r=>{const v=plan.get(schKey(r));if(!v||!v.date||!v.date.startsWith(pre)||v.status==='Excluded')return;
+    add(v.date,{t:v.time||'',acc:v.acc||'',name:r.group.name+(r.vid?' · VID '+r.vid:''),sub:[v.kind,v.acc?'@'+v.acc:''].filter(Boolean).join(' · '),done:v.status==='Posted'||tpDone(r),id:'rv-'+r.tab+'-'+r.row})}))}}catch(e){}
+  calEvents.filter(e=>e.date.startsWith(pre)&&!/Ref: (post|shoot|edit)-/.test(e.note||'')).forEach(e=>add(e.date,{t:e.time||'',acc:e.account||'',name:e.title,sub:e.account?'@'+e.account:'Google Calendar',ev:e.id}));
+  Object.values(out).forEach(L=>L.sort((a,b)=>a.t.localeCompare(b.t)));return out}
+function calHTML(){const c=ui.cal||(ui.cal={y:new Date().getFullYear(),m:new Date().getMonth()});const days=new Date(c.y,c.m+1,0).getDate();const off=(new Date(c.y,c.m,1).getDay()+6)%7;const pre=c.y+'-'+pad(c.m+1)+'-';
+  const by=calPosts(pre),td=ymd(new Date()),sel=ui.calDay&&ui.calDay.startsWith(pre)?ui.calDay:null;const total=Object.values(by).reduce((a,L)=>a+L.length,0);
+  let cells=['Isn','Sel','Rab','Kha','Jum','Sab','Ahd'].map(d=>`<span class="dow">${d}</span>`).join('');for(let i=0;i<off;i++)cells+='<span></span>';
+  for(let d=1;d<=days;d++){const k=pre+pad(d),L=by[k]||[];cells+=`<button type="button" class="cd hpcd${k===td?' today':''}${k===sel?' sel':''}${k<td?' past':''}" data-act="calDay" data-id="${k}" aria-label="${d} ${BULAN[c.m]}, ${L.length} posting" aria-expanded="${k===sel}"><b>${d}</b><i>${L.slice(0,4).map(o=>`<u style="background:${o.done?'var(--ok)':ACC_COL[o.acc]||'var(--rose)'}"></u>`).join('')}</i></button>`}
+  const L=sel?by[sel]||[]:[];
+  const drop=sel?`<div class="hpday"><p class="eyebrow" style="margin:10px 0 5px">${esc(HARI[new Date(sel+'T00:00:00').getDay()])}, ${+sel.slice(8)} ${BULAN[c.m]} · ${L.length} posting</p>
+    ${L.map(o=>hpRow(o.t?timeLbl(o.t):'Sepanjang hari',o.name,o.sub,o.done?hpPill('✓ Posted','var(--ok)'):`<u class="hpdot" style="background:${ACC_COL[o.acc]||'var(--rose)'}"></u>`,o.ev?{'data-act':'evEdit','data-id':o.ev}:{'data-act':'tpGo','data-id':o.id})).join('')||'<p class="meta" style="margin:4px 0 0">Tiada posting hari ni.</p>'}
+    <button type="button" class="ccmore hpmore" data-act="evAdd" data-id="${sel}">${IC.plus} Tambah posting hari ni</button></div>`:'';
+  const note=calState==='err'?`<p class="meta" style="color:var(--bad);margin:0 0 6px">Google Calendar tak dapat dibaca; jadual dari Sheet masih dipaparkan.</p>`:'';
+  const lg=Object.entries(ACC_COL).map(([a,col])=>`<span><u class="hpdot" style="background:${col}"></u>@${esc(a)}</span>`).join('')+`<span><u class="hpdot" style="background:var(--ok)"></u>Posted</span>`;
+  return `<div class="card glass tp hpc" style="--c:#B0937B"><div class="hphd" style="cursor:default"><b class="tpn hpn${total?'':' zero'}">${total}</b><span style="flex:1;min-width:0"><strong>Kalendar</strong><em>posting ${BULAN[c.m]} ${c.y}</em></span>
+    <span class="btns" style="flex-wrap:nowrap;gap:6px"><button class="btn icon sm" data-act="calNav" data-x="-1" aria-label="Bulan lepas">${IC.back}</button><button class="btn icon sm" data-act="calNav" data-x="1" aria-label="Bulan depan">${IC.next}</button></span></div>
+   ${note}<div class="calg">${cells}</div>${drop}<div class="hpcl">${lg}</div></div>`}
+A.calDay=el=>{ui.calDay=ui.calDay===el.dataset.id?null:el.dataset.id;render(true);const d=document.querySelector('.hpday');if(d)d.scrollIntoView({block:'nearest',behavior:'smooth'})};
 function evForm(ev){modal(`<h2>${ev.id?'Edit posting':'Posting baru'}</h2><label class="f"><span>Tajuk</span><input class="inp" id="evT" value="${esc(ev.title||'')}" placeholder="cth. Tjean VID 1"></label>
   <div class="row2"><label class="f"><span>Tarikh</span><input type="date" class="inp" id="evD" value="${esc(ev.date||'')}"></label><label class="f"><span>Masa</span><input type="time" class="inp" id="evM" value="${esc(ev.time||'')}"></label></div>
   <label class="f"><span>Akaun</span>${accSel('id="evA"',ev.account||'')}</label><label class="f"><span>Nota</span><textarea class="inp" id="evN" rows="2">${esc(ev.note||'')}</textarea></label>
@@ -102,24 +113,28 @@ V.home=()=>{
   const urgent=sv?sv.ready.map(r=>({r,d:deadline(rowStart(r,sv),7)})).sort((a,b)=>(a.d?a.d.left:99)-(b.d?b.d.left:99)).slice(0,3):[];
   const box=(k,num,lab)=>{const t=TAB[k];return `<button class="hbox glass" style="--c:${t.c}" data-act="go" data-id="${k}"><b>${num!==undefined?num:n[k]}</b><span class="l">${lab||navLabel(t.l)}</span></button>`};
   const icn=k=>IC[k].replace('<svg ','<svg style="width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round" ');
-  const mini=(k,num,lab,icon)=>{const t=TAB[k];return `<button class="hbox glass mini" style="--c:${t.c}" data-act="go" data-id="${k}">${icon?`<b style="display:flex;color:${t.c}">${icn(icon)}</b>`:`<b>${num}</b>`}<span class="l">${lab}</span></button>`};
   const ed=TAB.editor;const cp=confirmedList(sv);
-  return `<div class="head"><div><p class="eyebrow">${hr<12?'Selamat pagi':hr<18?'Selamat petang':'Selamat malam'}, Mira</p><h1>Home</h1></div><button class="btn sm" data-act="syncReq">${IC.copy}Sync folder</button></div>
+  const mini=k=>{const t=TAB[k];return `<button class="hbox glass mini hmi" style="--c:${t.c}" data-act="go" data-id="${k}"><b>${t.ic}</b><span class="l">${k==='footage'?'Footage':navLabel(t.l)}</span></button>`};
+  const tall=(k,num,lab)=>{const t=TAB[k];return `<button class="hbox glass" style="--c:${t.c}" data-act="go" data-id="${k}"><b>${num}</b><span class="l">${lab}</span></button>`};
+  /* 26 Nov malam (Mira): kotak atas = nombor; baris kecil = ikon sahaja (ikut tab paling selalu dibuka); Shot dibuang, VO masuk kotak atas.
+     Susunan kad: To Publish, Posting Schedule, VO, Projects, Editor, Perlu shoot, kemudian yang lain. Semua kad guna rupa Posting Schedule (hpCard). */
+  return `<div class="head"><div><p class="eyebrow">${hr<12?'Selamat pagi':hr<18?'Selamat petang':'Selamat malam'}, Mira</p><h1>Home</h1></div></div>
   ${sheetNote()}
-  ${airHome()}
-  ${busyHome()}
-  <div class="hgrid">
-   ${box('links',projCount(),'Projects')}${box('to-shoot')}${box('to-edit',n.shot+n['to-edit'])}
+  <div class="hgrid hgx">
+   ${box('links',projCount(),'Projects')}${box('to-shoot')}${tall('vo',voPending().length,'VO')}
    <button class="hbox big2 edbox glass" style="--c:${ed.c}" data-act="go" data-id="editor"><span class="edn"><b>${n.editor}</b><span class="l">Editor</span></span><span class="edl">${eds.slice(0,6).map(e=>`<span class="edr"><span>${esc(shortName(e.name))}</span><i style="--pc:${/draf|sedia|semak/i.test(e.status||'')?'var(--warn)':'var(--c)'}">${esc(edMulti(e)?edFinN(e)+'/'+edTot(e):edShort(e.status))}</i></span>`).join('')||'<span>Tiada projek berjalan</span>'}${eds.length>6?`<span>+${eds.length-6} lagi</span>`:''}</span></button>
-   ${box('ready')}${box('published')}
+   ${box('to-edit',n.shot+n['to-edit'])}${box('ready')}${box('published')}
   </div>
-  <div class="mgrid">${(u=>[['ideas',mini('ideas',n.ideas,'Ideas')],['threads',mini('threads',0,'Threads','threads')],['inspiration',mini('inspiration',n.inspiration,'Copy Style')],['media-kit',mini('media-kit',n['media-kit'],'Media Kit')],['footage',mini('footage',(S.brlib||[]).reduce((a,d)=>a+(d.clips||[]).length,0)||S.footage.length+S.broll.length,'Footage library')],['shot',mini('shot',n.shot,'Shot')],['caption',mini('caption',0,'Caption','caption')],['transcribe',mini('transcribe',0,'Transcribe','transcribe')]].map((x,i)=>[x[1],u[x[0]]||0,i]).sort((a,b)=>b[1]-a[1]||a[2]-b[2]).map(x=>x[0]).join(''))(tabUse())}</div>
-  ${shootHome()}
-  ${edSelfHome()}
+  <div class="mgrid">${(u=>['ideas','threads','inspiration','media-kit','footage','caption','transcribe'].map((k,i)=>[k,u[k]||0,i]).sort((a,b)=>b[1]-a[1]||a[2]-b[2]).map(x=>mini(x[0])).join(''))(tabUse())}</div>
   ${homePub()}
   ${schedHome()}
-  ${ccard('links','Projects','Sample dan paid job ikut deadline',projCount(),projItems().filter(o=>!o.done).sort((a,b)=>String(a.date).localeCompare(String(b.date))).slice(0,4).map(projRow).join('')||'<p class="meta" style="margin:8px 0 0">Tiada projek menunggu.</p>')}
   ${voAlert()}
+  ${hpCard('links',projItems().filter(o=>!o.done).length,'Projects','sample dan paid job ikut deadline',projItems().filter(o=>!o.done).sort((a,b)=>String(a.date).localeCompare(String(b.date))).slice(0,4).map(projHp).join('')||'<p class="meta" style="margin:4px 0 0">Tiada projek menunggu.</p>','Buka Projects')}
+  ${edSelfHome()}
+  ${shootHome()}
+  ${storeWarnHome()}
+  ${airHome()}
+  ${busyHome()}
   ${brHome()}
   ${calHTML()}`};
 /* Kad B-roll (bawah Footage perlu semak), design sama macam kad Home lain: swipe terus dari sini. */
@@ -161,11 +176,21 @@ const ccRow=(name,pill,col,pct)=>`<div class="ccr" style="--sc:${col}"><div clas
 /* 26 Nov (Mira): kotak kecil Home ikut tab yang paling selalu dibuka (kiraan dalam phone ni sahaja, localStorage tabUse).
    Kad "Footage baru dari phone" (Footage Sorter) dibuang dari Home; ganti dengan senarai video perlu shoot. */
 function tabUse(){try{return JSON.parse(localStorage.getItem('tabUse')||'{}')||{}}catch(e){return {}}}
+/* Kad Home seragam (rupa Posting Schedule): bulatan nombor + tajuk huruf besar + baris .hprow + "Buka" di bawah */
+function hpCard(k,num,title,sub,body,more,tone){return `<div class="card glass tp hpc" style="--c:${TAB[k]?TAB[k].c:'var(--rose)'}"><button type="button" class="hphd" data-act="go" data-id="${k}"><b class="tpn hpn${num?(tone?' '+tone:''):' zero'}">${num}</b><span><strong>${esc(title)}</strong><em>${esc(sub)}</em></span></button>${body}${more?`<button type="button" class="ccmore hpmore" data-act="go" data-id="${k}">${esc(more)} ${IC.next}</button>`:''}</div>`}
+function hpRow(left,name,sub,right,attrs){return `<${attrs&&attrs.href?'a':'button type="button"'} class="hprow hpx" ${attrs?Object.entries(attrs).map(([k,v])=>`${k}="${esc(v)}"`).join(' '):''}><span class="tm">${left}</span><span class="nm"><b>${esc(name)}</b>${sub?`<i>${esc(sub)}</i>`:''}</span>${right||''}</${attrs&&attrs.href?'a':'button'}>`}
+const hpPill=(t,c)=>`<span class="pill" style="--pc:${c}">${esc(t)}</span>`;
+function projHp(o){const d=o.kind==='sample'?(o.it.sample||{}).postBy:(jobNext(o.j)||{}).date;const left=d?daysTo(d):null;const col=left===null?'var(--muted)':left>7?'var(--ok)':left>=3?'var(--warn)':'var(--bad)';
+  return hpRow(left===null?'·':left<0?'Lewat '+(-left)+'h':left===0?'Hari ni':left+' hari',o.name,o.kind==='sample'?'Sample':'Paid job',hpPill(o.kind==='sample'?(JSTEPS[o.step+1]||'Siap'):((jobNext(o.j)||{}).label||'Job'),col),{'data-act':'go','data-id':'links'})}
+/* Storan: tunjuk hanya bila hampir penuh (lebih 85%) */
+function storeWarnHome(){if(!sorterRaw||!sorterRaw.length)return '';const v=sorterRaw,cell=(r,c)=>String(((v[r]||[])[c])??'').trim();
+  const L=[[cell(3,1)||'Hard disk',+cell(3,2)||0,+cell(3,3)||0],['iCloud',+cell(4,2)||0,+cell(4,3)||0]].filter(x=>x[2]&&x[1]/x[2]>.85);if(!L.length)return '';
+  return `<div class="banner glass" style="margin-top:14px">${L.map(x=>`<b>${esc(x[0])}</b> ${Math.round(x[1]/x[2]*100)}% penuh (${x[1]} / ${x[2]>=1000?(x[2]/1000).toFixed(1)+' TB':x[2]+' GB'})`).join(' · ')}. Kosongkan sikit, atau Sort gambar peribadi dalam Lagi.</div>`}
 function shootHome(){const key=it=>it.sample?it.sample.postBy:String(it.shootDate||'9');const L=byStage('toshoot').sort((a,b)=>key(a).localeCompare(key(b)));
   const row=it=>{const d=it.sample?it.sample.postBy:it.shootDate,left=/^\d{4}-\d\d-\d\d$/.test(String(d||''))?daysTo(d):null;
     const col=left===null?'var(--muted)':left>7?'var(--ok)':left>=3?'var(--warn)':'var(--bad)';
-    return ccRow(shortName(it.title||'Tanpa tajuk')+(footCount(it)?' · ada footage':''),left===null?(isJob(it)?'Job':'Creative'):left>0?left+' hari lagi':left===0?'Hari ni':'Lewat '+(-left)+' hari',col,left===null?0:Math.max(6,Math.min(100,100-left*7)))};
-  return ccard('to-shoot','Perlu shoot','Ikut tarikh paling hampir',L.length,L.slice(0,5).map(row).join('')+(L.length>5?`<p class="meta" style="margin:6px 0 0">+${L.length-5} lagi</p>`:'')||'<p class="meta" style="margin:8px 0 0">Tiada video menunggu shoot.</p>')}
+    return hpRow(left===null?'·':left>0?left+' hari':left===0?'Hari ni':'Lewat '+(-left)+'h',it.title||'Tanpa tajuk',[isJob(it)?'Job':'Creative',footCount(it)?'ada footage':''].filter(Boolean).join(' · '),hpPill(left===null?'Tiada tarikh':left<0?'Lewat':left<=2?'Segera':'Shoot',col),{'data-act':'go','data-id':'to-shoot'})};
+  return hpCard('to-shoot',L.length,'Perlu shoot','ikut tarikh paling hampir',L.slice(0,5).map(row).join('')+(L.length>5?`<p class="meta" style="margin:6px 0 0">+${L.length-5} lagi</p>`:'')||'<p class="meta" style="margin:4px 0 0">Tiada video menunggu shoot.</p>','Buka Shoot','bad')}
 A.go=el=>{try{const u=tabUse(),k=el.dataset.id;u[k]=(u[k]||0)+1;localStorage.setItem('tabUse',JSON.stringify(u))}catch(e){}go(el.dataset.id)};
 /* Folder di Mac mini diimbas sendiri oleh worker setiap 5 minit. Butang ni minta imbasan sekarang. */
 A.syncReq=async()=>{toast('Mac mini sedang imbas folder');try{const r=await studioJob('scan',{},3*60000);toast('Siap: '+(r.topost||0)+' video, '+(r.toedit||0)+' folder edit')}catch(e){toast(e&&e.code==='unavailable'?'Tiada internet':'Mac mini tak jawab. Semak Mac mini hidup')}};
@@ -197,7 +222,8 @@ function autoSheet(){if(mode!=='live'||!sheetRaw.PRODUCTS||Date.now()-autoSheetA
 
 /* Lagi: semua alat dan rekod yang jarang guna */
 V.lagi=()=>{const sv=sheetView();const t=(k,num,lab,icon)=>{const c=TAB[k].c;return `<button class="hbox glass mini" style="--c:${c}" data-act="go" data-id="${k}">${icon?`<b style="display:flex;color:${c}">${IC[icon].replace('<svg ','<svg style="width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round" ')}</b>`:`<b>${num}</b>`}<span class="l">${lab}</span></button>`};
-  return head('Alat dan rekod')+`<div class="mgrid">${t('inspiration',S.inspo.length+S.gaya.length,'Copy Style')}${t('media-kit',3,'Media Kit')}${t('footage',S.footage.length,'Footage library')}${t('caption',0,'Caption','caption')}${t('threads',0,'Threads','threads')}${t('transcribe',0,'Transcribe','transcribe')}${t('shot',byStage('shot').length,'Shot')}${t('ideas',byStage('ideas').length,'Ideas')}</div>`};
+  return head('Alat dan rekod')+`<div class="mgrid">${t('inspiration',S.inspo.length+S.gaya.length,'Copy Style')}${t('media-kit',3,'Media Kit')}${t('footage',S.footage.length,'Footage')}${t('caption',0,'Caption','caption')}${t('threads',0,'Threads','threads')}${t('transcribe',0,'Transcribe','transcribe')}${t('ideas',byStage('ideas').length,'Ideas')}</div>
+  ${(()=>{const v=sorterRaw||[],cell=(r,c)=>String(((v[r]||[])[c])??'').trim();return `<div class="card glass tp hpc" style="--c:#8676BE"><div class="hphd" style="cursor:default"><b class="tpn hpn zero">${IC.footage}</b><span><strong>Sort gambar peribadi</strong><em>Footage Sorter di Mac mini · iCloud ke PERTAMA</em></span></div>${sorterPersonal(+cell(4,2)||0,+cell(4,3)||0)}</div>`})()}`};
 
 /* 2026-11-25 (Mira): gambar peribadi. Kad beritahu bila patut sort (iCloud 80% ke atas, atau 30 hari sejak Start sort terakhir)
    dan butang Start sort: Mac mini buka semula app Footage Sorter dengan -autoStart (sumber ikut tetapan app: iCloud Photos,

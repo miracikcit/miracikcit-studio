@@ -64,8 +64,8 @@ function voReview(d){const segs=d.take.segs||[],gap=d.gap||'tiada';let lastG=-1;
     <div class="btns" style="margin-top:14px"><button class="btn" data-act="voPlayAll" data-id="${esc(d.id)}">▶ Dengar semua</button><button class="btn solid tab" data-act="voSave" data-id="${esc(d.id)}">${IC.check}HANTAR</button></div></div>`}
 /* home: kad VO perlu dirakam (ganti peringatan harian) */
 function voAlert(){const l=voPending();if(!l.length)return '';
-  return `<button class="card big glass" style="--c:${TAB.vo.c};margin-top:14px;text-align:left;width:100%" data-act="go" data-id="vo"><div class="rowh" style="align-items:center"><h2 style="margin:0">🎙 VO perlu dirakam</h2><b class="bigno" style="font-size:40px">${l.length}</b></div>
-  ${l.slice(0,4).map(d=>`<div class="rowh" style="margin-top:8px"><span>${esc(d.sub||d.id)}</span>${voPill(d)}</div>`).join('')}</button>`}
+  return hpCard('vo',l.length,'VO','perlu dirakam',l.slice(0,4).map(d=>hpRow('🎙',d.sub||d.id,d.target?d.target+' saat':'',voPill(d),{'data-act':'voOpenHome','data-id':d.id})).join('')+(l.length>4?`<p class="meta" style="margin:6px 0 0">+${l.length-4} lagi</p>`:''),'Buka VO','bad')}
+A.voOpenHome=el=>{ui.voOpen=el.dataset.id;go('vo')};
 A.voOpen=el=>{ui.voOpen=el.dataset.id;render(true);window.scrollTo(0,0)};
 A.voBack=()=>{if(voRec.mr||VR.on){toast('Tekan FINAL atau Batal dulu');return}ui.voOpen=null;render(true)};
 A.voEditPts=el=>{const d=voList().find(x=>x.id===el.dataset.id);if(!d)return;
