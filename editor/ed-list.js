@@ -22,7 +22,7 @@
   /* ---- data ---- */
   const trackOf = pw => { const n = nrm(pw.title || ''); const d = String(pw.dir || '').toLowerCase(); return T.tracker.find(e => (e.folder && d.includes(String(e.folder).toLowerCase())) || (n.length >= 4 && nrm(e.name || '').length >= 4 && (n.includes(nrm(e.name)) || nrm(e.name).includes(n)))) || null; };
   function items() {
-    const out = T.edpwa.filter(e => !e.pub && (e.status !== 'error' || Date.now() - (e.updated || 0) < 2 * 864e5)).map(pw => ({ k: 'p:' + pw.id, pw, e: trackOf(pw), name: pw.title || pw.id, own: pw.src === 'sendiri', at: pw.updated || 0 }));
+    const out = T.edpwa.filter(e => !e.pub && !e.hidden && (e.status !== 'error' || Date.now() - (e.updated || 0) < 2 * 864e5)).map(pw => ({ k: 'p:' + pw.id, pw, e: trackOf(pw), name: pw.title || pw.id, own: pw.src === 'sendiri', at: pw.updated || 0 }));
     T.wait.filter(w => Date.now() - w.at < 15 * 6e4 && !T.edpwa.some(x => x.src === 'sendiri' && (x.created || 0) > w.at - 6e4 && nrm(x.title || '') === nrm(w.name)))
       .forEach(w => out.push({ k: 'w:' + w.at, pw: { status: 'proses', pct: 1, step: 'Menunggu Mac mini' }, e: null, name: w.name, own: true, at: w.at }));
     const q = T.q.trim().toLowerCase();
@@ -80,7 +80,9 @@
   function sheetMenu() { const it = items().find(x => x.k === T.menu); if (!it) { T.menu = null; return ''; } const s = stat(it), e = it.e, du = draftUrl(it);
     return `<div class="el-dim" data-act="menuClose"></div><div class="el-sheet" role="dialog" aria-modal="true" aria-label="${esc(it.name)}"><div class="hd"><b>${esc(it.name)}</b><button class="el-ib" data-act="menuClose" aria-label="Tutup">${IC.x}</button></div>
       <span class="el-meta">${esc([s.t, s.sub, e && e.style].filter(Boolean).join(' · '))}</span>
-      <div class="el-acts">${ready(it) ? `<a class="el-btn go" href="./?v=${encodeURIComponent(it.pw.id)}">${IC.cut}Buka editor</a>` : ''}${du ? `<a class="el-btn" href="${du}" target="_blank" rel="noopener">${IC.play}Tengok draf</a>` : ''}${e && isUrl(e.chat) ? `<a class="el-btn" href="${esc(e.chat)}" target="_blank" rel="noopener">Chat Claude</a>` : ''}</div></div>`; }
+      <div class="el-acts">${ready(it) ? `<a class="el-btn go" href="./?v=${encodeURIComponent(it.pw.id)}">${IC.cut}Buka editor</a>` : ''}${du ? `<a class="el-btn" href="${du}" target="_blank" rel="noopener">${IC.play}Tengok draf</a>` : ''}${e && isUrl(e.chat) ? `<a class="el-btn" href="${esc(e.chat)}" target="_blank" rel="noopener">Chat Claude</a>` : ''}</div>
+      ${it.pw.id ? (T.delAsk === it.k ? `<div class="el-del"><span class="el-meta">Buang ${esc(it.name)} dari senarai Editor? Footage asal tak disentuh.</span><div class="el-acts"><button class="el-btn bad" data-act="delGo" data-k="${esc(it.k)}">Ya, buang</button><button class="el-btn" data-act="delNo">Batal</button></div></div>`
+        : `<div class="el-acts"><button class="el-btn bad" data-act="delAsk" data-k="${esc(it.k)}">Buang projek</button></div>`) : ''}</div>`; }
   function render(force) {
     if (!root) return; const ae = document.activeElement;
     if (!force && ae && root.contains(ae) && /^(INPUT|SELECT)$/.test(ae.tagName)) { pending = true; return; }
@@ -109,7 +111,14 @@
   A.filt = el => { T.F = el.dataset.f; render(true); };
   A.search = () => { T.qOpen = !T.qOpen; if (!T.qOpen) T.q = ''; render(true); const i = $('#elQ'); if (i) i.focus(); };
   A.menu = el => { T.menu = el.dataset.k; render(true); };
-  A.menuClose = () => { T.menu = null; render(true); };
+  A.menuClose = () => { T.menu = null; T.delAsk = null; render(true); };
+  /* 26 Nov (Mira): buang projek yang tak nak. Doc edpwa ditanda hidden (hilang dari senarai di semua phone); fail Drive dan footage kekal. */
+  A.delAsk = el => { T.delAsk = el.dataset.k; render(true); };
+  A.delNo = () => { T.delAsk = null; render(true); };
+  A.delGo = async el => { const it = items().find(x => x.k === el.dataset.k); if (!it || !it.pw.id) return; el.disabled = true;
+    try { const db = await claude.use('db'); const d = Object.assign({}, it.pw, { hidden: true, hiddenAt: Date.now() }); delete d.id; await db.doc('edpwa/' + it.pw.id).set(d);
+      T.menu = null; T.delAsk = null; toast(it.name + ' dibuang dari senarai'); render(true); }
+    catch (e) { el.disabled = false; toast('Tak dapat buang. Cuba lagi'); } };
   A.nwOpen = () => { T.menu = null; T.nw = { src: 'phone', files: [], urls: [], name: '', whole: true, up: null }; render(true); };
   A.nwClose = () => { if (!T.nw || T.nw.up) return; free(); T.nw = null; render(true); };
   A.nwSrc = el => { if (!T.nw || T.nw.up) return; keep(); T.nw.src = el.dataset.s; render(true); };

@@ -63,6 +63,7 @@ body:has(#main .edlist) .toast{background:#f3f1ee;color:#111}
 .el-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}
 .el-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 13px;border-radius:12px;border:1px solid var(--el-line);background:var(--el-panel2);color:var(--ink);font-size:12.5px;font-weight:700;text-decoration:none;white-space:nowrap;cursor:pointer}
 .el-btn.go{background:var(--el-teal);border-color:var(--el-teal);color:var(--el-ink)}
+.el-btn.bad{color:var(--el-bad);border-color:color-mix(in srgb,var(--el-bad) 45%,transparent)}.el-del{display:grid;gap:8px;margin-top:10px}
 .el-btn svg{width:15px;height:15px}
 
 .el-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}

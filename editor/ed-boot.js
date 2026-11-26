@@ -422,7 +422,7 @@
     $('ccBig').addEventListener('pointerdown', e => e.stopPropagation());
     $('ccBig').onclick = e => { e.stopPropagation(); e.preventDefault(); const on = H.classList.toggle('edbig'); $('ccBig').setAttribute('aria-pressed', on); window.dispatchEvent(new Event('resize')); };
     /* ===== Fasa 2 (24 Nov 2026, Mira lulus lakaran v2): tepi kanan (DONE, masa, simpan, besarkan, main), MORE, lompat ‹ ›, + footage ===== */
-    sc.insertAdjacentHTML('beforeend', `<div class="ccside" id="ccSide"><button type="button" class="ccdone" id="ccDone">DONE</button><span class="cctc2" id="ccTc2">0:00</span><span class="ccsv" id="ccSv" role="status"></span><span class="sp"></span></div>
+    sc.insertAdjacentHTML('beforeend', `<div class="ccside" id="ccSide"><div class="ccrow"><a class="ccback" href="${edApp ? '../../' : '../../../#editor'}" aria-label="${edApp ? 'Balik ke senarai projek' : 'Balik ke Studio'}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a><button type="button" class="ccdone" id="ccDone">DONE</button></div><span class="cctc2" id="ccTc2">0:00</span><span class="ccsv" id="ccSv" role="status"></span><span class="sp"></span></div>
       <button type="button" class="ccmore" id="ccMore" aria-haspopup="true" aria-expanded="false">MORE</button>`);
     $('ccSide').append($('ccBig'), $('ccPlay2'));
     const toSiap = () => { if (!goTab('Siap') && window.toast) toast('Butang render ada pada video terakhir projek ni'); };
