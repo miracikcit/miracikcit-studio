@@ -1102,6 +1102,23 @@
 .zhud .cr.a { left: 5cqw; top: 32cqw; border-width: .4cqw 0 0 .4cqw; } .zhud .cr.b { right: 5cqw; top: 32cqw; border-width: .4cqw .4cqw 0 0; }
 .zhud .cr.c { left: 5cqw; bottom: 46cqw; border-width: 0 0 .4cqw .4cqw; } .zhud .cr.d { right: 5cqw; bottom: 46cqw; border-width: 0 .4cqw .4cqw 0; }
 
+/* ---- p32 (26 Nov 2026, Mira): effect p31 boleh diubah dalam editor (warna ke-3 --c3, lebar, saiz teks, bucu, celah) + transition Portal gelang. Sama untuk editor dan render. ---- */
+.e-cboard { width: calc(var(--w, 78) * 1cqw); border-radius: calc(var(--rd, 4.5) * 1cqw); background: var(--c3, #22252b); }
+.e-cboard .qct b { background: var(--c3, #22252b); color: var(--c1); } .e-cboard .qlb { background: var(--c3, #22252b); }
+.e-cboard .qhd { font-size: calc(2.3cqw * var(--fs, 100) / 100); color: color-mix(in srgb, var(--c1) 62%, transparent); } .e-cboard .qbar { background: color-mix(in srgb, var(--c1) 16%, transparent); } .e-cboard .qck { border-color: color-mix(in srgb, var(--c1) 40%, transparent); } .e-cboard .qph { background: color-mix(in srgb, var(--c1) 20%, transparent); } .e-cboard .qrw { font-size: calc(4.4cqw * var(--fs, 100) / 100); }
+.e-apptake { height: calc(var(--ht, 96) * 1cqw); background: var(--c3, #f3efe4); }
+.e-apptake h5 { font-size: calc(6cqw * var(--fs, 100) / 100); } .e-apptake .qin { font-size: calc(3.6cqw * var(--fs, 100) / 100); }
+.e-notewall .qn { width: calc(var(--nw, 28) * 1cqw); background: var(--c1, #f3efe4); color: var(--c2, #1b1b1b); font-size: calc(3.9cqw * var(--fs, 100) / 100); }
+.e-notewall .qk { background: var(--c3, #121214); color: #fff; font-size: calc(2.9cqw * var(--fs, 100) / 100); }
+.e-notewall .qc, .e-notewall .qs { background: #fff; color: #1b1b1b; font-size: calc(2.7cqw * var(--fs, 100) / 100); }
+.e-clipwall { gap: calc(var(--gp, 5) * .1cqw); background: var(--c1, #0d0d10); } .e-clipwall .qc { border-radius: calc(var(--rd, 0) * 1cqw); }
+.e-orbit.v-phone .oj { border-color: var(--c1); }
+.zhud .zp b { color: var(--zc, #ff8a4c); } .zhud .zp .z3 { color: #fff; }
+.ptl { position: absolute; inset: 0; z-index: 6; pointer-events: none; container-type: inline-size; overflow: hidden; }
+.ptl[hidden] { display: none; }
+.ptl .ptc { position: absolute; left: 50cqw; top: 74.67cqw; width: calc(var(--r, 0) * 1cqw); height: calc(var(--r, 0) * 1cqw); translate: -50% -50%; border-radius: 50%; overflow: hidden; background: #000; box-shadow: 0 0 0 1cqw var(--pc, #fff), 0 0 0 2.4cqw color-mix(in srgb, var(--pc, #fff) 35%, transparent), 0 0 9cqw 3cqw rgba(0,0,0,.5); }
+.ptl .ptc > * { position: absolute; left: 50%; top: 50%; width: 100cqw; height: 177.78cqw; max-width: none; translate: -50cqw -74.67cqw; object-fit: cover; transform-origin: 50cqw 74.67cqw; scale: var(--ps, 1); }
+
 /* Layout: desktop keeps video + panel on top, timeline below. On a phone: video and tabs stay stuck at the top, timeline comes right under the video, panel last. The Caption tab keeps its panel above the timeline. Look follows Cikcit Studio: warm light theme by the owner's choice. */
 :root {
   --bg: #faf7f4; --panel: #ffffff; --panel2: #f3eeea; --line: #ece5df;
@@ -1825,6 +1842,8 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .stk.sel .e-nil { border-color: rgba(255,255,255,.75); }
 .mini.ecard .e-orbit { --rx: 34cqw; }
 .jnm .jo.j-portal { opacity: 1; background: radial-gradient(circle at 50% 45%, transparent 30%, #000 31%); animation: jnPortal 2s linear infinite; }
+.jnm .jo.j-portalr { opacity: 1; background: radial-gradient(circle at 50% 45%, transparent 26%, #fff 27%, #fff 31%, transparent 32%); animation: jnPortalR 2s ease-in infinite; }
+@keyframes jnPortalR { 0%, 20% { transform: scale(.02); } 80%, 100% { transform: scale(5); } }
 @keyframes jnPortal { 0%, 30% { transform: scale(4); } 50% { transform: scale(.02); } 70%, 100% { transform: scale(4); } }
 
 /* ---- p30: bar kumpulan effect dua baris ---- */
@@ -1833,7 +1852,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .catbar.two .cr + .cr { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--gline); }
 .catbar .cat.sub { font-size: 12px; padding: 5px 11px; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=a4e5a062fb">
+<link rel="stylesheet" href="../../ed-capcut.css?v=3eb8b6dedb">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1898,6 +1917,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
           <div class="cap" id="cap" hidden></div>
           <div class="tx" id="tx"></div>
           <div class="zhud" id="zhud" hidden></div>
+          <div class="ptl" id="ptl" hidden><div class="ptc"><video id="ptv" muted playsinline preload="auto" aria-hidden="true"></video></div></div>
           <img class="wm" src="watermark.png" alt="Watermark MIRACIKCIT">
         </div>
         <div class="sidectl" id="sidectl">
@@ -1947,9 +1967,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=a4e5a062fb"></script>
-<script src="../../../js/runtime.js?v=a4e5a062fb"></script>
-<script src="../../ed-boot.js?v=a4e5a062fb"></script>
+<script src="../../../js/config.js?v=3eb8b6dedb"></script>
+<script src="../../../js/runtime.js?v=3eb8b6dedb"></script>
+<script src="../../ed-boot.js?v=3eb8b6dedb"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -2058,7 +2078,8 @@ const OPTS = {
     { id: "paper", n: "Paper slides in", d: "Kertas lalu setiap potongan." },
     { id: "whip", n: "Whip pan", d: "Sapu laju ke klip baru." },
     { id: "zoomin", n: "Zoom-through", d: "Terjah masuk setiap potongan." },
-    { id: "portal", n: "Zoom portal", d: "Bukaan bulat tutup, kemudian buka ke klip baru." }
+    { id: "portal", n: "Zoom portal", d: "Bukaan bulat tutup, kemudian buka ke klip baru." },
+    { id: "portalr", n: "Portal gelang", d: "Bulatan bergelang membesar, klip baru nampak di dalamnya." }
   ]
 };
 /* Text animations. Same values as FX in render_draft.py. u: w moves each word, c each letter. f: where it starts (o opacity, x, y px on a 1080 frame, s scale, r degrees, b blur). */
@@ -2145,12 +2166,15 @@ const FX5 = ["e-cpop", "e-storm", "e-chat", "e-wall", "e-pcutout", "e-fesc", "e-
 const NOTE_SLOTS = [[4, 2, -4, "p"], [36, 0, 2, "k"], [68, 4, 3, "p"], [8, 20, 2, "c"], [40, 17, -2, "p"], [70, 22, -3, "s"], [2, 39, -3, "k"], [34, 36, 3, "p"], [66, 41, 2, "c"], [20, 56, -2, "p"]];
 const orbPic = x => x.var === "gambar" || x.var === "phone";
 const FX5_R = { "e-pcutout": [["ow", "Tebal garis", 0, 100, 5, 50, "%"], ["wob", "Goyang", 0, 100, 5, 50, "%"]], "e-fesc": [["fy", "Tinggi frame", 15, 70, 1, 42, "%"], ["fm", "Tepi frame", 0, 25, 1, 8, "%"]],
+  "e-cboard": [["w", "Lebar papan", 50, 96, 1, 78, ""], ["fs", "Saiz teks", 70, 150, 5, 100, "%"], ["rd", "Bucu", 0, 10, .5, 4.5, ""]], "e-apptake": [["ht", "Tinggi skrin", 70, 130, 2, 96, ""], ["fs", "Saiz teks", 70, 150, 5, 100, "%"]],
+  "e-notewall": [["nw", "Lebar kad", 20, 40, 1, 28, ""], ["fs", "Saiz teks", 70, 150, 5, 100, "%"]], "e-clipwall": [["gp", "Celah", 0, 30, 1, 5, ""], ["rd", "Bucu", 0, 6, .5, 0, ""]],   /* p32: empat ni dihantar sebagai --medan dalam fx5Vars (FX5_RV) */
   "e-orbit": [["rx", "Lebar pusingan", 15, 48, 1, 34, ""], ["ry", "Condong", 0, 14, 1, 5, ""], ["spd", "Laju", 10, 80, 2, 32, ""]] };   /* slider tambahan: [medan, label, min, max, langkah, lalai, unit] */
-const FX5_CL = { "e-chat": ["Warna kiri", "Warna kanan"], "e-wall": ["Warna frame", ""], "e-pcutout": ["Warna kertas", "Warna garis"], "e-fesc": ["Warna latar", "Warna frame"], "e-orbit": ["Warna pil", "Warna teks"] };
+const FX5_RV = ["e-cboard", "e-apptake", "e-notewall", "e-clipwall"];
+const FX5_CL = { "e-cboard": ["Warna teks", "Warna aksen", "Warna papan"], "e-apptake": ["Warna teks", "Warna label", "Warna latar"], "e-notewall": ["Warna kertas", "Warna teks", "Warna kad gelap"], "e-clipwall": ["Warna celah", ""], "e-chat": ["Warna kiri", "Warna kanan"], "e-wall": ["Warna frame", ""], "e-pcutout": ["Warna kertas", "Warna garis", "Warna blok"], "e-fesc": ["Warna latar", "Warna frame"], "e-orbit": ["Warna pil", "Warna teks"] };
 const FX5_VAR = { "e-pcutout": [["", "Bintik"], ["polos", "Polos"], ["kolaj", "Kolaj"]], "e-fesc": [["", "Biasa"], ["reels", "Reels"]], "e-orbit": [["", "Pil"], ["teks", "Teks sahaja"], ["gambar", "Gambar"], ["phone", "Kad phone"]], "e-chat": [["", "Chat"], ["komen", "Komen"]], "e-wall": [["", "Frame putih"], ["pola", "Polaroid"], ["tiada", "Tanpa frame"]], "e-cpop": [["", "Gelap"], ["cerah", "Cerah"], ["tiada", "Tanpa kad"]], "e-storm": [["", "Bold"], ["serif", "Serif"], ["marker", "Marker"]] };
 const FX5_COL = ["#ffffff", "#14141a", "#ffd447", "#35d6c3", "#ff8fa3", "#b9a7ff", "#ffb86b", "#7ee08a"];
 const fx5Col = c => /^#[0-9a-f]{3,8}$/i.test(c || "") ? c : "";
-const fx5Vars = x => `${fx5Col(x.c1) ? `--c1:${x.c1};` : ""}${fx5Col(x.c2) ? `--c2:${x.c2};` : ""}${x.bo != null ? `--bo:${(Math.max(0, Math.min(100, +x.bo)) / 100).toFixed(2)};` : ""}`;
+const fx5Vars = x => `${fx5Col(x.c1) ? `--c1:${x.c1};` : ""}${fx5Col(x.c2) ? `--c2:${x.c2};` : ""}${x.bo != null ? `--bo:${(Math.max(0, Math.min(100, +x.bo)) / 100).toFixed(2)};` : ""}${fx5Col(x.c3) ? `--c3:${x.c3};` : ""}${FX5_RV.includes(x.k) ? FX5_R[x.k].map(q => x[q[0]] != null && isFinite(+x[q[0]]) ? `--${q[0]}:${+x[q[0]]};` : "").join("") : ""}`;
 function fx5(x, url) {
   const k = x.k; if (!FX5.includes(k)) return null;
   const it = x.items || [], e = esc, gap = +x.gap || FX5_GAP[k], st = fx5Vars(x), v = x.var ? " v-" + String(x.var).replace(/[^a-z]/g, "") : "", d = n => `--d:${n.toFixed(2)}s`;
@@ -2164,7 +2188,7 @@ function fx5(x, url) {
   if (k === "e-notewall") return `<div class="e-notewall${v}" style="${st}">${it.slice(0, 10).map((t, i) => { const q = NOTE_SLOTS[i]; return `<span class="eu qn q${q[3]}" style="${d(i * gap)};left:${q[0]}cqw;top:${q[1]}cqw;rotate:${q[2]}deg">${e(t)}</span>`; }).join("")}</div>`;
   if (k === "e-clipwall") return `<div class="e-clipwall${v}" style="${st}">${Array.from({ length: 9 }, (_, i) => `<span class="eu qc qc${i}" style="${d(i * gap)}"><img src="${pc(i)}" alt=""></span>`).join("")}</div>`;
   if (k === "e-pcutout" && x.var === "kolaj") { const ch = [...(x.text || "")]; return ch.length ? `<div class="e-ransom">${ch.map((c, i) => c === " " ? `<span class="qsp"></span>` : `<span class="eu qr qr${i % 5}" style="${d(.1 + i * .12)}">${e(c)}</span>`).join("")}<i class="eu qov" style="${d(.2 + ch.length * .12)}"></i></div>` : `<div class="e-nil"></div>`; }
-  if (k === "e-fesc" && x.var === "reels") return `<div class="e-reels" style="--fy:${x.fy ?? 42};--fm:${x.fm ?? 8}"><i class="qh"></i><i class="qc"></i><i class="qs"></i><b>miracikcit</b><u></u></div>`;
+  if (k === "e-fesc" && x.var === "reels") return `<div class="e-reels" style="--fy:${x.fy ?? 42};--fm:${x.fm ?? 8}"><i class="qh"></i><i class="qc"></i><i class="qs"></i><b>${e(x.a || "miracikcit")}</b><u></u></div>`;
   if (k === "e-pcutout") return x.text ? `<div class="e-pcl eu" style="${d(.1)}">${e(x.text)}</div>` : `<div class="e-nil"></div>`;
   if (k === "e-fesc") return `<div class="e-nil"></div>`;
   if (k === "e-orbit") { const n = Math.max(1, Math.min(5, orbPic(x) ? Math.max(3, (x.photos || []).length) : it.length)), T = (x.spd ?? 32) / 10;   /* x._half: "of" depan sahaja, "ob" belakang sahaja (dua lapisan bila cutout ada), tiada = semua */
@@ -2175,7 +2199,7 @@ function fx5Form(x) {
   const sw = (f, lab) => `<span class="lab">${lab}</span><div class="chips fx5c">${FX5_COL.map(c => `<button class="chip e5sw" aria-pressed="${(x[f] || "").toLowerCase() === c}" data-e5c="${f}" data-v="${c}" aria-label="Warna ${c}"><i style="background:${c}"></i></button>`).join("")}<label class="chip e5sw pk" aria-label="Warna lain"><input type="color" data-e5p="${f}" value="${/^#[0-9a-f]{6}$/i.test(x[f] || "") ? x[f] : "#ffffff"}"></label><button class="chip" data-e5c="${f}" data-v="">Asal</button></div>`;
   const R = (f, lab, min, max, step, v, tx) => `<label class="lab" for="e5_${f}">${lab}: <span id="e5V_${f}">${tx}</span></label><input id="e5_${f}" data-e5r="${f}" type="range" min="${min}" max="${max}" step="${step}" value="${v}">`;
   const vars = FX5_VAR[x.k] || [], chat = x.k === "e-chat", gap = +x.gap || FX5_GAP[x.k], bo = x.bo ?? (x.k === "e-cpop" ? 55 : 100), cl = FX5_CL[x.k];
-  if (cl) return `${vars.length ? `<span class="lab">Gaya</span><div class="chips">${vars.map(([id, nm]) => chip(nm, (x.var || "") === id, `data-e5v="${id}"`)).join("")}</div>` : ""}${x.k === "e-orbit" && orbPic(x) ? `<span class="lab">Pilih gambar</span><div class="phgrid">${(D.photos || []).map(p => `<button data-eph="${p.id}" aria-pressed="${(x.photos || []).includes(p.id)}" aria-label="${esc(p.n)}"><img src="${photoUrl(p.id)}" alt="" loading="lazy"></button>`).join("")}</div>` : ""}${sw("c1", cl[0])}${cl[1] ? sw("c2", cl[1]) : ""}${chat ? R("bo", "Latar (legap)", 0, 100, 5, bo, bo + "%") : ""}${(FX5_R[x.k] || []).map(([f, lab, mn, mx, stp, df, u]) => R(f, lab, mn, mx, stp, x[f] ?? df, (x[f] ?? df) + u)).join("")}${FX5_GAP[x.k] ? R("gap", "Jarak masa", 5, 120, 5, Math.round(gap * 100), gap.toFixed(2) + " s") : ""}`;
+  if (cl) return `${vars.length ? `<span class="lab">Gaya</span><div class="chips">${vars.map(([id, nm]) => chip(nm, (x.var || "") === id, `data-e5v="${id}"`)).join("")}</div>` : ""}${x.k === "e-orbit" && orbPic(x) ? `<span class="lab">Pilih gambar</span><div class="phgrid">${(D.photos || []).map(p => `<button data-eph="${p.id}" aria-pressed="${(x.photos || []).includes(p.id)}" aria-label="${esc(p.n)}"><img src="${photoUrl(p.id)}" alt="" loading="lazy"></button>`).join("")}</div>` : ""}${x.k === "e-fesc" && x.var === "reels" ? `<label class="lab" for="ef-a">Nama akaun</label><input id="ef-a" data-ef="a" type="text" value="${esc(x.a || "miracikcit")}">` : ""}${sw("c1", x.k === "e-orbit" && x.var === "phone" ? "Warna bingkai" : cl[0])}${cl[1] && !(x.k === "e-orbit" && x.var === "phone") ? sw("c2", cl[1]) : ""}${cl[2] && (x.k !== "e-pcutout" || x.var === "kolaj") ? sw("c3", cl[2]) : ""}${chat ? R("bo", "Latar (legap)", 0, 100, 5, bo, bo + "%") : ""}${(FX5_R[x.k] || []).map(([f, lab, mn, mx, stp, df, u]) => R(f, lab, mn, mx, stp, x[f] ?? df, (x[f] ?? df) + u)).join("")}${FX5_GAP[x.k] ? R("gap", "Jarak masa", 5, 120, 5, Math.round(gap * 100), gap.toFixed(2) + " s") : ""}`;
   return `${vars.length ? `<span class="lab">Gaya</span><div class="chips">${vars.map(([id, nm]) => chip(nm, (x.var || "") === id, `data-e5v="${id}"`)).join("")}</div>` : ""}${sw("c1", chat ? "Warna kiri" : x.k === "e-wall" ? "Warna frame" : "Warna teks")}${x.k === "e-wall" ? "" : sw("c2", chat ? "Warna kanan" : "Warna aksen")}${x.k === "e-cpop" || chat ? R("bo", "Latar (legap)", 0, 100, 5, bo, bo + "%") : ""}${R("gap", "Jarak masa", 5, 120, 5, Math.round(gap * 100), gap.toFixed(2) + " s")}`;
 }
 /* p16: review effects (stars, score ring, poll, save, price tag, stamp). Same markup in render_draft.py fx4_html() */
@@ -3065,7 +3089,8 @@ const zmDef = k => ZOOMS.find(x => x[0] === k) || ZOOMS[0];
 const zmLen = z => ({ push: 1.4, pull: 1.2, digital: 1.1, vertigo: 1.75, through: .5, shake: .4, snap: .95, dolly: 1.8, snapb: .9, digicam: 1.6, throughb: .55 })[z.k] || .45;
 /* p31: kabur (px pada 1080), kilat putih dan skrin kamera untuk zoom baru. MESTI sama dengan cabang snapb / digicam / throughb dalam render_draft.py */
 const zmTri = (d, a, b) => d <= a || d >= b ? 0 : 1 - Math.abs(2 * (d - a) / (b - a) - 1);
-const zmBlur = (z, d) => z.k === "snapb" ? Math.max(14 * zmTri(d, 0, .1), 10 * zmTri(d, .7, .82)) : z.k === "digicam" ? 12 * zmTri(d, 1.34, 1.54) : z.k === "throughb" ? 30 * zmTri(d, 0, .5) : 0;
+const ZMB = ["snapb", "digicam", "throughb"];   /* p32: zoom yang ada kabur; z.bl = kuat kabur % (lalai 100), z.c = warna nombor skrin kamera */
+const zmBlur = (z, d) => (z.bl ?? 100) / 100 * (z.k === "snapb" ? Math.max(14 * zmTri(d, 0, .1), 10 * zmTri(d, .7, .82)) : z.k === "digicam" ? 12 * zmTri(d, 1.34, 1.54) : z.k === "throughb" ? 30 * zmTri(d, 0, .5) : 0);
 const zmFlash = (z, d) => z.k === "throughb" ? .7 * zmTri(d, .1, .42) : 0;
 const zhudZ = (z, n) => (n > 2 ? 1 : 1 + ((+z.z || 1.9) - 1) * (n + 1) / 3).toFixed(1) + "×";
 const zhudHTML = z => `<span class="rec"><i></i>REC</span><span class="zp">${[0, 1, 2, 3].map(n => `<b class="z${n}">${zhudZ(z, n)}</b>`).join("")}</span><span class="tm">00:42:16</span><i class="cr a"></i><i class="cr b"></i><i class="cr c"></i><i class="cr d"></i>`;
@@ -3088,7 +3113,7 @@ function zmScale(z, d) { const Z = +z.z || 1.15, e = x => 1 - Math.pow(1 - Math.
   return d < .06 ? 1 + (Z - 1) * d / .06 : 1 + (Z - 1) * (1 - e((d - .06) / .39)); }
 function zmOrigin(z) { return z.oy != null ? `50% ${Math.max(5, Math.min(90, +z.oy))}%` : ""; }   /* p28: fokus zoom atas / bawah (render: transformOrigin #cam) */
 /* p24: transition ikut sambungan (butang .jn dalam trek video, panel pilih dalam tab Cut) */
-const TRD = { dip: .16, flash: .2, push: .3, paper: .36, whip: .26, zoomin: .3, portal: .5 };
+const TRD = { dip: .16, flash: .2, push: .3, paper: .36, whip: .26, zoomin: .3, portal: .5, portalr: .6 };
 const portalBg = r => `radial-gradient(circle at 50% 42%, transparent ${(r * 110).toFixed(2)}cqw, #000 ${(r * 110 + .6).toFixed(2)}cqw)`;   /* p29: bukaan bulat, sama dalam render (#tx --r) */
 const jnKind = i => (S.clips[i] && S.clips[i].tr) || S.style.trans || "cut", jnDur = i => +(S.clips[i] && S.clips[i].trd) || TRD[jnKind(i)] || .3;
 function jnPlay() { const i = jnSel; if (!(i > 0) || !S.clips[i]) return; if (playing) stop(); const t = startOf(i); seek(Math.max(0, t - .8)); start(); clearTimeout(window._jp); window._jp = setTimeout(() => { if (playing) stop(); }, (Math.min(.8, t) + jnDur(i) + .9) * 1000); }
@@ -3096,7 +3121,7 @@ function jnPanel() {
   const cur = jnKind(jnSel), D = jnDur(jnSel), ic = n => `<svg class="ic"><use href="#i-${n}"/></svg>`;
   return `<div class="catbar jnbar"><span class="cat" aria-pressed="true">${ic("trans")}</span><span class="jsp"></span><button class="cat" data-jall="1" aria-label="Guna untuk semua sambungan" title="Guna untuk semua sambungan">${ic("rows")}</button><button class="cat" data-jdel="1" aria-label="Buang transition" title="Buang transition">${ic("del")}</button></div>
     <div class="grid jngrid">${OPTS.trans.filter(o => ok("trans:" + o.id) || cur === o.id).map(o => `<div class="opt"><button class="mini jnm" aria-pressed="${cur === o.id}" data-jtr="${o.id}" aria-label="${esc(o.n)}"><i class="ja"></i><i class="jb j-${o.id}"></i><i class="jo j-${o.id}"></i></button><h3>${esc(o.n)}</h3></div>`).join("")}</div>
-    ${cur !== "cut" ? `<div class="row jnrow"><input id="jnD" type="range" min="10" max="80" step="2" value="${Math.round(D * 100)}" aria-label="Panjang transition"><span class="jnv" id="jnDV">${D.toFixed(2)} s</span></div>` : ""}`;
+    ${cur !== "cut" ? `<div class="row jnrow"><input id="jnD" type="range" min="10" max="80" step="2" value="${Math.round(D * 100)}" aria-label="Panjang transition"><span class="jnv" id="jnDV">${D.toFixed(2)} s</span></div>` : ""}${cur === "portalr" ? `<div class="row"><span class="lab">Warna gelang</span><div class="chips fx5c">${FX5_COL.map(c => `<button class="chip e5sw" aria-pressed="${((S.clips[jnSel] || {}).trc || "#ffffff").toLowerCase() === c}" data-jtc="${c}" aria-label="Warna ${c}"><i style="background:${c}"></i></button>`).join("")}<label class="chip e5sw pk" aria-label="Warna lain"><input type="color" id="jnC" value="${/^#[0-9a-f]{6}$/i.test((S.clips[jnSel] || {}).trc || "") ? S.clips[jnSel].trc : "#ffffff"}"></label></div></div>` : ""}`;
 }
 /* p25: panel kelajuan klip (tab Cut). spToggle() dipanggil oleh butang #spBtn dan bar MORE dalam PWA. */
 function spToggle(on) { if (isTalk()) return toast("Kelajuan hanya untuk video dengan VO"); spOpen = on === undefined ? !spOpen : !!on; clearPick(); if (playing) stop(); tab = "Potong"; draw(); }
@@ -3115,13 +3140,16 @@ function drawFx() {
   for (const t of PUNCH) { const d = pos - t; if (d >= 0 && d < .28) { sc = 1.1 - .1 * (d / .28); break; } }
   let shx = 0, org = "", zb = 0, zf = 0, hud = null;
   for (const z of S.zooms) { const d = pos - z.t; if (d >= 0 && d < zmLen(z)) { sc = Math.max(sc, zmScale(z, d)); if (z.k === "shake") shx = ZSHAKE[Math.floor(d / .06)] || 0; if (!org) org = zmOrigin(z); zb = Math.max(zb, zmBlur(z, d)); zf = Math.max(zf, zmFlash(z, d)); if (z.k === "digicam") hud = [z, d < .35 ? 0 : d < .7 ? 1 : d < 1.4 ? 2 : 3]; } }
-  { const h = $("zhud"); if (h) { if (hud) { const key = hud[0].t + "|" + (hud[0].z || ""); if (h.dataset.k !== key) { h.dataset.k = key; h.innerHTML = zhudHTML(hud[0]); } h.dataset.s = hud[1]; h.hidden = false; } else if (!h.hidden) h.hidden = true; } }
+  { const h = $("zhud"); if (h) { if (hud) { const key = hud[0].t + "|" + (hud[0].z || ""); if (h.dataset.k !== key) { h.dataset.k = key; h.innerHTML = zhudHTML(hud[0]); } h.style.setProperty("--zc", fx5Col(hud[0].c) || "#ff8a4c"); h.dataset.s = hud[1]; h.hidden = false; } else if (!h.hidden) h.hidden = true; } }
   v.style.transformOrigin = org; { const b = $("mvb"); if (b) b.style.transformOrigin = org; }
   v.style.transform = sc > 1 || shx ? `${shx ? `translateX(${shx}%) ` : ""}scale(${sc.toFixed(3)})` : "";
   /* p24: transition ikut sambungan. Klip "tr" = transition MASUK ke klip tu, "trd" = panjang (s); tanpa "tr" ikut pilihan Style Board. Sama dalam render_draft.py. */
   let a = 0, pi = -1, pa = 0, ni = -1, na = 0;
   for (let i = 1; i < S.clips.length; i++) { a += cLen(S.clips[i - 1]); if (a <= pos) { pi = i; pa = a; } else { ni = i; na = a; break; } }
   tx.style.opacity = 0; tx.style.transform = ""; tx.style.backdropFilter = tx.style.webkitBackdropFilter = "";
+  { const p = $("ptl"); if (p && !p.hidden) p.hidden = true; }
+  /* p32: Portal gelang. Sepanjang D saat SEBELUM potongan, bulatan bergelang membesar dari tengah; dalamnya frame pertama klip baru (render: gambar pegun dari aroll). */
+  if (ni > 0 && jnKind(ni) === "portalr") { const D = jnDur(ni); if (na - pos < D) { const u = 1 - (na - pos) / D, p = $("ptl"), pv = $("ptv"); if (p && pv) { const src = v.currentSrc || v.src; if (src && pv.dataset.s !== src) { pv.dataset.s = src; pv.src = src; } const tt = srcAt(na + .02); if (tt != null && !pv.seeking && Math.abs(pv.currentTime - tt) > .04) { try { pv.currentTime = tt; } catch (er) {} } p.style.setProperty("--r", (230 * u * u).toFixed(2)); p.style.setProperty("--ps", (1.3 - .3 * u * u).toFixed(3)); p.style.setProperty("--pc", fx5Col(S.clips[ni].trc) || "#fff"); p.hidden = false; } return; } }
   if (zb > .3 || zf > .01) { const st = $("stage").clientWidth || 300, bl = zb > .3 ? `blur(${(zb / 1080 * st).toFixed(2)}px)` : ""; tx.style.backdropFilter = tx.style.webkitBackdropFilter = bl; tx.style.background = `rgba(255,255,255,${zf.toFixed(3)})`; tx.style.opacity = 1; return; }
   if (ni > 0 && jnKind(ni) === "portal") { const h = jnDur(ni) / 2; if (na - pos < h) { const u = 1 - (na - pos) / h; tx.style.background = portalBg(1 - u * u); tx.style.opacity = 1; return; } }
   if (pi > 0 && jnKind(pi) === "portal") { const h = jnDur(pi) / 2, u = (pos - pa) / h; if (u < 1) { tx.style.background = portalBg(1 - (1 - u) * (1 - u)); tx.style.opacity = 1; } return; }
@@ -3799,7 +3827,7 @@ function zoomForm() {
   const z = S.zooms[zmSel];
   return z ? `<div class="row" id="fxForm"><span class="lab">Zoom dipilih, ${fmt(z.t)}</span><div class="chips">${ZOOMS.map(([k, n]) => chip(n, (z.k || "punch") === k, `data-zk="${k}"`)).join("")}</div>
       <label class="lab" for="zmZ">Kuat zoom: <span id="zmZV">${(+z.z).toFixed(2)}x</span></label><input id="zmZ" type="range" min="104" max="200" step="2" value="${Math.round(z.z * 100)}">
-      <label class="lab" for="zmOy">Fokus atas / bawah: <span id="zmOyV">${z.oy ?? 45}%</span></label><input id="zmOy" type="range" min="10" max="85" step="1" value="${z.oy ?? 45}">
+      <label class="lab" for="zmOy">Fokus atas / bawah: <span id="zmOyV">${z.oy ?? 45}%</span></label><input id="zmOy" type="range" min="10" max="85" step="1" value="${z.oy ?? 45}">${ZMB.includes(z.k) ? `<label class="lab" for="zmBl">Kabur: <span id="zmBlV">${z.bl ?? 100}%</span></label><input id="zmBl" type="range" min="0" max="200" step="10" value="${z.bl ?? 100}">` : ""}${z.k === "digicam" ? `<span class="lab">Warna nombor zoom</span><div class="chips fx5c">${["#ff8a4c", ...FX5_COL.filter(c => c !== "#14141a")].map(c => `<button class="chip e5sw" aria-pressed="${(z.c || "#ff8a4c").toLowerCase() === c}" data-zc="${c}" aria-label="Warna ${c}"><i style="background:${c}"></i></button>`).join("")}<label class="chip e5sw pk" aria-label="Warna lain"><input type="color" id="zmC" value="${/^#[0-9a-f]{6}$/i.test(z.c || "") ? z.c : "#ff8a4c"}"></label></div>` : ""}
       <div class="chips"><button class="chip" data-zplay="${zmSel}">▶ Tengok</button><button class="chip" data-zdel="${zmSel}">Buang</button></div>
       <span class="legend">Tarik blok oren dalam baris Zoom untuk alih masa.${D.face ? " Zoom ikut muka kau." : ""}</span></div>` : "";
 }
@@ -4550,12 +4578,14 @@ document.addEventListener("click", e => {
   if (d.spx) return spToggle(false);
   if (d.spk) { spSet(SPS[+d.spk]); return spPlay(); }
   if (d.spall) { const c = S.clips[sel]; if (!c) return; spSet(c.sp || 1, true); return toast("Semua klip: " + spTxt(c.sp || 1)); }
+  if (d.jtc) { const c = S.clips[jnSel]; if (!(jnSel > 0) || !c) return; snapshot(); c.trc = d.jtc; touched(); drawPanel(); return jnPlay(); }   /* p32 */
+  if (d.zc) { const z = S.zooms[zmSel]; if (!z) return; snapshot(); z.c = d.zc; touched(); drawPanel(); if (!playing) seek(z.t + .4); return drawFx(); }
   if (d.jtr || d.jall || d.jdel) {   /* p24 */
     const c = S.clips[jnSel]; if (!(jnSel > 0) || !c) return;
     snapshot();
     if (d.jtr) { c.tr = d.jtr; delete c.trd; }
     else if (d.jdel) { c.tr = "cut"; delete c.trd; }
-    else { const k = jnKind(jnSel), dd = c.trd; S.clips.forEach((x, i) => { if (!i) return; x.tr = k; if (dd) x.trd = dd; else delete x.trd; }); toast("Semua sambungan: " + ((OPTS.trans.find(o => o.id === k) || {}).n || k)); }
+    else { const k = jnKind(jnSel), dd = c.trd; S.clips.forEach((x, i) => { if (!i) return; x.tr = k; if (dd) x.trd = dd; else delete x.trd; if (c.trc) x.trc = c.trc; else delete x.trc; }); toast("Semua sambungan: " + ((OPTS.trans.find(o => o.id === k) || {}).n || k)); }
     touched(); drawPanel(); drawTimeline(); if (!d.jall && jnKind(jnSel) !== "cut") jnPlay(); return;
   }
   if (b.id === "mNo") { $("modal").hidden = true; mYesFn = null; return; }
@@ -4765,6 +4795,9 @@ document.addEventListener("input", e => {
   if (id === "stText") { const x = S.stickers[stSel]; if (x) { x.text = e.target.value; drawStickers(); touched(); } return; }
   if (id === "spS") { const c = S.clips[sel], v = SPS[+e.target.value]; if (c && v) { snapshot(); if (v === 1) delete c.sp; else c.sp = v; $("spV").textContent = spTxt(v); $("spL").textContent = (c.out - c.in).toFixed(1) + " s → " + cLen(c).toFixed(1) + " s"; document.querySelectorAll(".spticks button").forEach((q, k) => q.setAttribute("aria-pressed", k === +e.target.value)); touched(); } return; }   /* p25 */
   if (id === "jnD") { const c = S.clips[jnSel]; if (c && jnSel > 0) { c.trd = +e.target.value / 100; $("jnDV").textContent = c.trd.toFixed(2) + " s"; touched(); } return; }   /* p24 */
+  if (id === "zmBl") { const z = S.zooms[zmSel]; if (z) { z.bl = +e.target.value; $("zmBlV").textContent = z.bl + "%"; if (!playing) seek(z.t + (z.k === "digicam" ? 1.44 : z.k === "throughb" ? .25 : .05)); drawFx(); touched(); } return; }   /* p32 */
+  if (id === "zmC") { const z = S.zooms[zmSel]; if (z) { z.c = e.target.value; if (!playing) seek(z.t + .4); drawFx(); touched(); } return; }
+  if (id === "jnC") { const c = S.clips[jnSel]; if (c && jnSel > 0) { c.trc = e.target.value; touched(); } return; }
   if (id === "zmOy") { const z = S.zooms[zmSel]; if (z) { z.oy = +e.target.value; $("zmOyV").textContent = z.oy + "%"; if (!playing) seek(z.t + (z.k === "snap" ? .5 : z.k === "pull" ? .01 : .06)); drawFx(); touched(); } return; }
   if (id === "zmZ") { const z = S.zooms[zmSel]; if (z) { z.z = +e.target.value / 100; $("zmZV").textContent = z.z.toFixed(2) + "x"; if (!playing) { seek(z.t + (z.k === "pull" ? .01 : z.k === "push" ? .7 : z.k === "digital" ? .7 : z.k === "vertigo" ? 1.5 : .06)); } const bl = document.querySelector(`.blk.zm[data-z="${zmSel}"]`); if (bl) bl.textContent = z.z.toFixed(2) + "x"; touched(); } return; }
   if (id === "bgmVol") { S.music.vol = +e.target.value / 100; $("bgmVolV").textContent = e.target.value + "%"; const a = $("bgm"); if (a) a.volume = S.music.vol; return touched(); }
@@ -4979,9 +5012,9 @@ function cutLights(x, W, H, t, p) {
   x.globalAlpha = 1; x.globalCompositeOperation = "source-over";
 }
 const KOLAJ = [[.12, .10, .76, .20, 64, "#8d93c9"], [.56, .45, .34, .13, 36, "#7a86b8"], [.62, .61, .20, .09, 26, "#e06a8c"]];   /* conteng: x, y, lebar, tinggi, bilangan zigzag, warna */
-function paperKolaj(x, W, H) {
+function paperKolaj(x, W, H, c3) {
   x.strokeStyle = "rgba(0,0,0,.07)"; x.lineWidth = 1; x.beginPath(); for (let a = W / 18; a < W; a += W / 18) { x.moveTo(a, 0); x.lineTo(a, H); } for (let b = W / 18; b < H; b += W / 18) { x.moveTo(0, b); x.lineTo(W, b); } x.stroke();
-  x.fillStyle = "#f2d94e"; x.fillRect(.5 * W, .42 * H, .5 * W, .2 * H);
+  x.fillStyle = fx5Col(c3) || "#f2d94e"; x.fillRect(.5 * W, .42 * H, .5 * W, .2 * H);
   x.lineWidth = Math.max(1.5, W * .014); x.lineJoin = "round"; x.lineCap = "round";
   for (const [sx, sy, sw, sh, n, col] of KOLAJ) { x.strokeStyle = col; x.beginPath(); for (let i = 0; i <= n; i++) { const px = (sx + sw * i / n + sw * .015 * Math.sin(i * 78.233)) * W, py = (sy + (i % 2 ? sh - sh * .3 * Math.abs(Math.sin(i * 4.1414)) : sh * .3 * Math.abs(Math.sin(i * 12.9898)))) * H; if (i) x.lineTo(px, py); else x.moveTo(px, py); } x.stroke(); }
 }
@@ -5002,7 +5035,7 @@ function cutDraw() {
   cb.hidden = !needBg; cf.hidden = !needFg;
   if (bf && bf.k === "e-pcutout") {   /* kertas penuh, badan dengan garis putih (bayang CSS) dan goyang */
     const x = cb.getContext("2d"), c1 = fx5Col(bf.c1) || (bf.var === "kolaj" ? "#efede4" : "#f4d9c6"); x.globalCompositeOperation = "source-over"; x.globalAlpha = 1; x.fillStyle = c1; x.fillRect(0, 0, W, H);
-    if (bf.var === "kolaj") paperKolaj(x, W, H); else if (bf.var !== "polos") { x.fillStyle = "rgba(0,0,0,.14)"; for (let yy = 4; yy < H; yy += 9) for (let xx = 4; xx < W; xx += 9) { x.beginPath(); x.arc(xx, yy, 1.1, 0, 6.3); x.fill(); } }
+    if (bf.var === "kolaj") paperKolaj(x, W, H, bf.c3); else if (bf.var !== "polos") { x.fillStyle = "rgba(0,0,0,.14)"; for (let yy = 4; yy < H; yy += 9) for (let xx = 4; xx < W; xx += 9) { x.beginPath(); x.arc(xx, yy, 1.1, 0, 6.3); x.fill(); } }
     const st = $("stage").clientWidth || 300, ow = ((bf.ow ?? 50) / 50 * 14 / 1080 * st).toFixed(1), c2 = fx5Col(bf.c2) || "#ffffff", wb = CUT_WOB[Math.floor(Math.max(0, pos - bf.t) / .18) % 4], wk = (bf.wob ?? 50) / 50;
     cf.style.filter = +ow > 0 ? `drop-shadow(${ow}px 0 0 ${c2}) drop-shadow(-${ow}px 0 0 ${c2}) drop-shadow(0 ${ow}px 0 ${c2}) drop-shadow(0 -${ow}px 0 ${c2}) drop-shadow(3px 4px 0 rgba(60,30,10,.3))` : "";
     cf.style.transformOrigin = "50% 60%"; cf.style.transform = `translate(${(wb[1] * wk / 10.8).toFixed(2)}cqw, ${(wb[2] * wk / 10.8).toFixed(2)}cqw) rotate(${(-wb[0] * wk).toFixed(2)}deg)`;
