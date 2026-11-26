@@ -22,13 +22,15 @@ function edPwaBox(){const l=(S.edpwa||[]).slice().sort((a,b)=>(b.updated||0)-(a.
   return `<div class="card glass" style="margin-bottom:14px"><p class="eyebrow" style="margin:0 0 8px">Dalam app Editor · kemas kini sendiri</p>${l.map(e=>`<div class="rowh" style="align-items:center;gap:8px;padding:6px 0"><div><h3 style="font-size:16px">${esc(e.title||e.id)}</h3><div class="meta">${e.status==='proses'?'Mac mini sedang sediakan…':e.status==='error'?esc(e.msg||'Ralat'):`${e.n||0} fail · ${fmtD(e.updated)}`}</div></div>${edDraftPill(e)}</div>`).join('')}</div>`}
 /* Kad Home 'Edit sendiri' (2026-11-22): pilih folder footage, Mac mini sediakan editor tanpa Claude (job ed_new, 0 token). Design ikut kad Home rbox. */
 function edSelfHome(){
-  const mine=(S.edpwa||[]).filter(e=>e.src==='sendiri').sort((a,b)=>(b.updated||0)-(a.updated||0));
-  const row=e=>{const [pill,col,pct]=e.status==='proses'?['Disediakan…','var(--warn)',50]:e.status==='error'?['Ralat','var(--bad)',0]:['Buka','#4E9B63',100];
-    const act=e.status==='proses'||e.status==='error'?`<span class="pill" style="--pc:${col}">${pill}</span>`:`<a class="pill" style="--pc:${col};text-decoration:none;color:inherit" href="editor/?v=${encodeURIComponent(e.id)}">✂ Buka</a>`+(e.draft&&e.draft.status==='sedia'&&e.draft.id?` <a class="pill" style="--pc:#4E9B63;text-decoration:none;color:inherit" href="https://drive.google.com/file/d/${encodeURIComponent(e.draft.id)}/view" target="_blank" rel="noopener">▶ Draf</a>`:e.draft&&e.draft.status==='proses'?' <span class="pill" style="--pc:var(--warn)">Render…</span>':'');
-    return `<div class="ccr" style="--sc:${col}"><div class="rowh"><span class="ccn">${esc(e.title||e.id)}</span>${act}</div><div class="bar"><i style="width:${pct}%"></i></div>${e.status==='error'?`<div class="meta" style="font-size:11px;margin-top:3px">${esc(String(e.msg||'').slice(0,80))}</div>`:''}</div>`};
-  return `<div class="rbox glass cc" style="--c:${TAB.editor.c};cursor:default"><div class="rowh" style="align-items:center"><div style="min-width:0"><h2>Edit sendiri</h2><div class="meta">Pilih folder footage, edit terus tanpa Claude</div></div><b class="rn">${mine.length}</b></div>
-   ${mine.slice(0,4).map(row).join('')}
-   <div class="ccmore" role="button" tabindex="0" data-act="edSelfNew" style="cursor:pointer">＋ Video baru ${IC.next}</div></div>`}
+  /* 26 Nov (Mira): dulu kad "Edit sendiri". Sekarang senarai SEMUA video dalam app Editor (belum final / published), pautan terus ke
+     app Editor (editor/?app=1), bukan tab Editor Studio. */
+  const L=(S.edpwa||[]).filter(e=>!e.pub&&e.final!=='siap'&&(e.status!=='error'||Date.now()-(e.updated||0)<2*864e5)).sort((a,b)=>(b.updated||0)-(a.updated||0));
+  const row=e=>{const d=e.draft||{};const [pill,col,pct]=e.status==='proses'?['Disediakan '+Math.round(e.pct||0)+'%','var(--warn)',Math.max(4,e.pct||0)]:e.status==='error'?['Ralat','var(--bad)',0]:d.status==='proses'?['Render draf','var(--warn)',60]:d.id?['Draf sedia','#4E9B63',100]:['Sedia edit','var(--c)',100];
+    const ok=e.status!=='proses'&&e.status!=='error';
+    return `<${ok?`a href="editor/?app=1&v=${encodeURIComponent(e.id)}" style="display:block;text-decoration:none;color:inherit"`:'div'} class="ccr" style="--sc:${col}"><div class="rowh"><span class="ccn">${esc(e.title||e.id)}</span><span class="pill" style="--pc:${col}">${esc(pill)}</span></div><div class="bar"><i style="width:${pct}%"></i></div>${e.status==='error'?`<div class="meta" style="font-size:11px;margin-top:3px">${esc(String(e.msg||'').slice(0,80))}</div>`:''}</${ok?'a':'div'}>`};
+  return `<div class="rbox glass cc" style="--c:${TAB.editor.c};cursor:default"><div class="rowh" style="align-items:center"><div style="min-width:0"><h2>Editor</h2><div class="meta">Video yang sedang diedit · tekan untuk buka</div></div><b class="rn">${L.length}</b></div>
+   ${L.slice(0,5).map(row).join('')||'<p class="meta" style="margin:8px 0 0">Tiada video dalam Editor.</p>'}${L.length>5?`<p class="meta" style="margin:6px 0 0">+${L.length-5} lagi</p>`:''}
+   <a class="ccmore" href="editor/?app=1" style="cursor:pointer;text-decoration:none;color:inherit">Semua video dan New Video ${IC.next}</a></div>`}
 A.edSelfNew=()=>{const st=((S.sync.toedit||{}).stages)||[];
   const opts=st.flatMap(s=>(s.items||[]).filter(i=>i.clips>0).map(i=>`<option value="${esc(s.name+'|'+i.name)}">${esc(s.name.replace(/^\d+\.\s*/,''))} / ${esc(i.name)} (${i.clips} klip)</option>`)).join('');
   if(!opts){toast('Tiada folder footage. Tekan Sync dalam tab Edit dulu');return}

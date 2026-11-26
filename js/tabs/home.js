@@ -113,14 +113,14 @@ V.home=()=>{
    <button class="hbox big2 edbox glass" style="--c:${ed.c}" data-act="go" data-id="editor"><span class="edn"><b>${n.editor}</b><span class="l">Editor</span></span><span class="edl">${eds.slice(0,6).map(e=>`<span class="edr"><span>${esc(shortName(e.name))}</span><i style="--pc:${/draf|sedia|semak/i.test(e.status||'')?'var(--warn)':'var(--c)'}">${esc(edMulti(e)?edFinN(e)+'/'+edTot(e):edShort(e.status))}</i></span>`).join('')||'<span>Tiada projek berjalan</span>'}${eds.length>6?`<span>+${eds.length-6} lagi</span>`:''}</span></button>
    ${box('ready')}${box('published')}
   </div>
-  <div class="mgrid">${mini('ideas',n.ideas,'Ideas')}${mini('threads',0,'Threads','threads')}${mini('inspiration',n.inspiration,'Copy Style')}${mini('media-kit',n['media-kit'],'Media Kit')}${mini('footage',(S.brlib||[]).reduce((a,d)=>a+(d.clips||[]).length,0)||S.footage.length+S.broll.length,'Footage library')}${mini('shot',n.shot,'Shot')}${mini('caption',0,'Caption','caption')}${mini('transcribe',0,'Transcribe','transcribe')}</div>
+  <div class="mgrid">${(u=>[['ideas',mini('ideas',n.ideas,'Ideas')],['threads',mini('threads',0,'Threads','threads')],['inspiration',mini('inspiration',n.inspiration,'Copy Style')],['media-kit',mini('media-kit',n['media-kit'],'Media Kit')],['footage',mini('footage',(S.brlib||[]).reduce((a,d)=>a+(d.clips||[]).length,0)||S.footage.length+S.broll.length,'Footage library')],['shot',mini('shot',n.shot,'Shot')],['caption',mini('caption',0,'Caption','caption')],['transcribe',mini('transcribe',0,'Transcribe','transcribe')]].map((x,i)=>[x[1],u[x[0]]||0,i]).sort((a,b)=>b[1]-a[1]||a[2]-b[2]).map(x=>x[0]).join(''))(tabUse())}</div>
+  ${shootHome()}
+  ${edSelfHome()}
   ${homePub()}
   ${schedHome()}
   ${ccard('links','Projects','Sample dan paid job ikut deadline',projCount(),projItems().filter(o=>!o.done).sort((a,b)=>String(a.date).localeCompare(String(b.date))).slice(0,4).map(projRow).join('')||'<p class="meta" style="margin:8px 0 0">Tiada projek menunggu.</p>')}
-  ${sorterCard()||(S.workprojects&&S.workprojects.length?`<div class="card big glass" style="--c:#8676BE;margin-top:14px"><p class="eyebrow" style="margin:0">Footage Sorter · Mac mini</p>${ongoingSlot()}</div>`:'')}
   ${voAlert()}
   ${brHome()}
-  ${edSelfHome()}
   ${calHTML()}`};
 /* Kad B-roll (bawah Footage perlu semak), design sama macam kad Home lain: swipe terus dari sini. */
 function brHome(){
@@ -158,7 +158,15 @@ const shortName=(name,vid)=>{const w=String(name||'').trim().split(/\s+/);return
 const ccard=(k,title,sub,num,rows)=>`<div class="rbox glass cc" style="--c:${TAB[k].c}" role="button" tabindex="0" data-act="go" data-id="${k}"><div class="rowh" style="align-items:center"><div style="min-width:0"><h2>${esc(title)}</h2><div class="meta">${esc(sub)}</div></div><b class="rn">${num}</b></div>${rows}<div class="ccmore">Buka senarai ${IC.next}</div></div>`;
 const ccRow=(name,pill,col,pct)=>`<div class="ccr" style="--sc:${col}"><div class="rowh"><span class="ccn">${esc(name)}</span><span class="pill" style="--pc:${col}">${esc(pill)}</span></div><div class="bar"><i style="width:${pct}%"></i></div></div>`;
 
-A.go=el=>go(el.dataset.id);
+/* 26 Nov (Mira): kotak kecil Home ikut tab yang paling selalu dibuka (kiraan dalam phone ni sahaja, localStorage tabUse).
+   Kad "Footage baru dari phone" (Footage Sorter) dibuang dari Home; ganti dengan senarai video perlu shoot. */
+function tabUse(){try{return JSON.parse(localStorage.getItem('tabUse')||'{}')||{}}catch(e){return {}}}
+function shootHome(){const key=it=>it.sample?it.sample.postBy:String(it.shootDate||'9');const L=byStage('toshoot').sort((a,b)=>key(a).localeCompare(key(b)));
+  const row=it=>{const d=it.sample?it.sample.postBy:it.shootDate,left=/^\d{4}-\d\d-\d\d$/.test(String(d||''))?daysTo(d):null;
+    const col=left===null?'var(--muted)':left>7?'var(--ok)':left>=3?'var(--warn)':'var(--bad)';
+    return ccRow(shortName(it.title||'Tanpa tajuk')+(footCount(it)?' · ada footage':''),left===null?(isJob(it)?'Job':'Creative'):left>0?left+' hari lagi':left===0?'Hari ni':'Lewat '+(-left)+' hari',col,left===null?0:Math.max(6,Math.min(100,100-left*7)))};
+  return ccard('to-shoot','Perlu shoot','Ikut tarikh paling hampir',L.length,L.slice(0,5).map(row).join('')+(L.length>5?`<p class="meta" style="margin:6px 0 0">+${L.length-5} lagi</p>`:'')||'<p class="meta" style="margin:8px 0 0">Tiada video menunggu shoot.</p>')}
+A.go=el=>{try{const u=tabUse(),k=el.dataset.id;u[k]=(u[k]||0)+1;localStorage.setItem('tabUse',JSON.stringify(u))}catch(e){}go(el.dataset.id)};
 /* Folder di Mac mini diimbas sendiri oleh worker setiap 5 minit. Butang ni minta imbasan sekarang. */
 A.syncReq=async()=>{toast('Mac mini sedang imbas folder');try{const r=await studioJob('scan',{},3*60000);toast('Siap: '+(r.topost||0)+' video, '+(r.toedit||0)+' folder edit')}catch(e){toast(e&&e.code==='unavailable'?'Tiada internet':'Mac mini tak jawab. Semak Mac mini hidup')}};
 /* item siap render: fail muncul dalam 00. TO POST FINAL -> pindah sendiri ke Ready */

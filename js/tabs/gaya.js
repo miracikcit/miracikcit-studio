@@ -33,6 +33,7 @@ A.gyUpload=el=>{const rid=(el&&el.dataset&&el.dataset.id)||'';closeModal();gyKee
   const want=csWantGet();if(!want.length){toast('Tick dulu apa nak diambil: Template, Rupa atau Tips');return}
   pickFile('video/*',async f=>{if(f.size>500*1048576){toast('Video lebih 500 MB. Potong dulu atau guna link');return}
     const d=ui.gyDraft||{};const old=rid&&get('gaya',rid);const id=old?old.id:'g'+uid();
+    if(!String(d.note||(old&&old.note)||'').trim()&&/screen ?record|rpreplay/i.test(f.name))d.note='Ini screen record: abaikan butang, ikon dan teks app di tepi skrin';
     save('gaya',Object.assign({},old||{},{id,link:'',upload:'',note:String(d.note||(old&&old.note)||'').trim().slice(0,200),want:(old&&(old.want||[]).length)?old.want:want,fx:[],tags:(old&&old.tags)||[],
       status:'scan',step:'upload',pct:0,msg:'Upload dari phone',srcName:f.name,upAt:Date.now()},ui.csF&&!(old&&old.fold)?{fold:ui.csF}:{}));
     ui.gyDraft={};ui.gyUp=Object.assign({},ui.gyUp,{[id]:{name:f.name,pct:0}});if(typeof wakeOn==='function')wakeOn();render(true);
@@ -183,7 +184,7 @@ function gyView(){const d=ui.gyDraft||{};const F=csFolds();const f=ui.csF||'';co
   <div class="cschips" aria-label="Library ikut folder"><button type="button" class="chip${!f?' on':''}" data-act="csF" data-x="">Semua</button>${F.map(x=>`<button type="button" class="chip${f===x.no?' on':''}${withN.has(x.no)?'':' dim'}" data-act="csF" data-x="${esc(x.no)}">${esc(x.short)}</button>`).join('')}</div>
   <div class="csseg" role="tablist">${seg('','Scan · '+(shown.length+run.length))}${seg('tpl','Template · '+lib.tpls.length)}${seg('rupa','Rupa · '+lib.looks.length)}${seg('tips','Tips · '+lib.tips.length)}</div>
   ${sh?csShelfView(f):`<div>${`<div class="cspaste"><input id="gyL" aria-label="Paste link video" value="${esc(d.link||'')}" placeholder="Paste link video" inputmode="url" autocapitalize="off" autocorrect="off" enterkeyhint="send"><button type="button" class="go" data-act="gySend" aria-label="Scan"${ui.gyBusy?' disabled':''}>${ui.gyBusy?'<i class="spin"></i>':CS_GO}</button></div>`}
-    <div class="cssub"><span>TikTok, IG, FB, Threads, Drive</span><span><button type="button" data-act="gyPaste">Paste</button> · <button type="button" data-act="gyUpload">Upload video</button></span></div>
+    <div class="cssub"><span>TikTok, IG, FB, Threads, Drive</span><span><button type="button" data-act="gyPaste">Paste</button> · <button type="button" data-act="gyUpload">Upload video / screen record</button></span></div>
     <p class="cswl">Aku nak ambil apa?</p><div class="cswant">${CS_WANT.map(([k,t,dd])=>`<button type="button" class="cswt${want.includes(k)?' on':''}" data-act="csWant" data-x="${k}" aria-pressed="${want.includes(k)}"><b>${t}</b><small>${dd}</small></button>`).join('')}</div>
     <input class="csnin" id="gyN" value="${esc(d.note||'')}" maxlength="200" aria-label="Apa yang aku suka dalam video ni" placeholder="Apa yang aku suka (pilihan), cth: cara tukar shot ikut beat">
     <div class="csnote">${tok(est,'Claude tonton video sekali; kurang kalau tick satu sahaja','Opus L')}<span>${want.length?'Claude cari '+want.map(k=>CS_KIND[k]).join(' + ')+' sahaja.':'Tick sekurang-kurangnya satu.'}</span></div></div>
@@ -221,9 +222,18 @@ A.csMenu=el=>{const g=get('gaya',el.dataset.id);modal(`<h2>${esc(g.name||'Style'
 A.csDet=el=>{closeModal();ui.gyOpen=ui.gyOpen===el.dataset.id?null:el.dataset.id;render(true)};
 A.gyPaste=async()=>{try{const t=(await navigator.clipboard.readText()||'').trim();const m=t.match(/https?:\/\/\S+/);if(!m){toast('Tiada link dalam clipboard. Copy link video dulu');return}$('#gyL').value=m[0];gyKeep();toast('Link ditampal. Tekan anak panah')}
   catch(e){toast('Tekan lama dalam kotak dan pilih Paste');$('#gyL')&&$('#gyL').focus()}};
+/* 26 Nov (Mira): link gagal = notifikasi terus dengan sebab (supaya tak cuba banyak kali), dan sebab tu diingat 14 hari dalam phone
+   walaupun kad dibuang; tampal link sama lagi = amaran dulu. */
+function gyFailGet(){try{const o=JSON.parse(localStorage.getItem('gyFail')||'{}')||{};Object.keys(o).forEach(k=>{if(Date.now()-(o[k].at||0)>14*864e5)delete o[k]});return o}catch(e){return {}}}
+const gySeen={},gyPrev={};
+setInterval(()=>{if(typeof S==='undefined'||!S.gaya)return;S.gaya.forEach(g=>{const was=gyPrev[g.id];gyPrev[g.id]=g.status;if(g.status!=='error'){delete gySeen[g.id];return}const sig=g.id+'|'+(g.msg||'');if(gySeen[g.id]===sig)return;gySeen[g.id]=sig;
+  if(isUrl(g.link)){try{const o=gyFailGet();o[g.link]={msg:String(g.msg||'').slice(0,300),at:Date.now()};localStorage.setItem('gyFail',JSON.stringify(o))}catch(e){}}
+  if(was&&was!=='error'&&$('#scrim').hidden)modal(`<h2>Copy Style gagal</h2><p class="meta" style="font-size:14px;line-height:1.5;color:var(--ink)">${esc(String(g.msg||'Tak pasti sebabnya.').slice(0,400))}</p><p class="meta">Jangan cuba link sama lagi; sebabnya sama.</p>
+    <div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Tutup</button><button class="btn solid tab" data-act="gyUpload">Upload video / screen record</button></div>`,TAB.inspiration.c)})},3000);
 A.gySend=()=>{gyKeep();const d=ui.gyDraft||{};const link=((String(d.link||'').match(/https?:\/\/\S+/)||[])[0]||'').trim();if(!isUrl(link)){toast('Paste link dulu (mula dengan https://)');return}
   const want=csWantGet();if(!want.length){toast('Tick dulu apa nak diambil: Template, Rupa atau Tips');return}
   if(!d.up&&S.gaya.some(g=>g.link===link&&g.status!=='error')){toast('Link ni dah ada dalam senarai');return}
+  const bad=!d.up&&!d.force&&gyFailGet()[link];if(bad){confirmBox('Link ni dah gagal tadi: '+String(bad.msg||'').slice(0,160)+' Cuba juga?',()=>{ui.gyDraft=Object.assign({},d,{force:1});A.gySend()},'Cuba juga');return}
   const old=d.retry&&get('gaya',d.retry);const id=old?old.id:'g'+uid();
   save('gaya',Object.assign({},old||{},{id,link,note:String(d.note||'').trim().slice(0,200),want,fx:[],tags:(old&&old.tags)||[],status:'scan',step:'download',pct:3,msg:'Menunggu Mac mini'},ui.csF&&!(old&&old.fold)?{fold:ui.csF}:{},d.up?{upload:d.up.id,srcName:d.up.name}:{}));
   ui.gyDraft={};ui.gyBusy=1;render(true);
