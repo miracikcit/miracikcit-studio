@@ -28,6 +28,18 @@ function deadline(start,days){if(!start)return null;const left=Math.ceil((start+
 const trk=(d,title)=>d?`<div class="trk" style="--sc:${d.color}"><div class="t"><span>${title}</span><span>${d.label}</span></div><div class="bar"><i style="width:${d.pct}%"></i></div></div>`:`<div class="trk"><div class="t"><span>${title}</span><span>Tarikh mula tiada</span></div><div class="bar"><i style="width:0"></i></div></div>`;
 
 /* Penanda token (2026-11-23): bulatan kecil gaya loader, isi ikut anggaran token Claude yang butang tu guna. 0 = percuma. */
+/* Suara Mira (26 Nov 2026): ringkasan voice.md (~/.claude/skills/caption-mira/voice.md). Dipakai prompt Caption + Threads; versi pendek supaya jimat token. */
+const VOICE_MIRA=`SUARA MIRA (wajib):
+- Rojak: Melayu harian sebagai asas, English untuk rasa (honestly, so far, obsessed, stress) dan benda tech (app, set up, screen). Tiada Melayu buku teks, tiada English formal.
+- Kata ganti: post tech (Claude, app, Mac, gadget) guna "aku". Post umum (rumah, keluarga, produk harian, perasaan) campur "I", "saya", "Mira".
+- Cerita apa jadi pada Mira sendiri, bukan tutorial atau nasihat. Jangan sebut "anda" atau "korang" untuk syarah. Bila minta, minta pada crowd ("Yg hebat2 tolong suggest...").
+- Satu perenggan mengalir macam bercakap: setup panjang, kemudian punch pendek 2-5 perkataan. Satu detail konkrit (masa, nombor, nama).
+- Buka terus dengan sebab, pengakuan ("Honestly aku...") atau ayat punchy. Tiada "Hai semua", "Korang pernah tak", "Dalam video ni".
+- Tutup dengan punchline dulu-sekarang, minta tolong crowd, masalah jujur belum selesai, atau rasa pendek ("Stress la 😭"). JANGAN tutup dengan moral atau soalan pada pembaca.
+- Kekalkan: je, la, ya, pun, weh, memang, betul2, sbb, yg, mcm, skrg, "...", HAHA. Maks 1 emoji, maks 2 tanda seru, tiada em dash, tiada bullet atau hashtag dalam badan.
+- Jangan guna: anda, sememangnya, tidak dapat dinafikan, justeru, oleh itu, jom kita terokai, rahsia yang ramai tak tahu, bukan sekadar X tetapi Y, tahukah anda, semoga bermanfaat, delve, unlock, elevate, game-changer, seamless, journey, must-have.
+- Tak salesy, tiada hype: "memang happy", "menolong sangat-sangat ya".
+`;
 const TOK={idea:3000,caption:4000,jobparse:8000,nota:30000,gaya:30000,look:120000,autolabel:3000,edit:250000,edsend:150000,threads:6000,thstyle:7000};
 /* 2026-11-25 (Mira): penanda tunjuk juga model + effort (cth 'Opus M', 'Sonnet L'). TOKM = model setiap kerja, ikut worker. */
 const TOKM={edit:'Opus M',edsend:'Opus L',gaya:'Opus L',look:'Opus M',nota:'Opus L',jobparse:'Opus L'};

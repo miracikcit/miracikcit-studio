@@ -109,13 +109,13 @@ A.capGen=async()=>{const c=ui.cap;const f=capFind(c.link,c.name);const name=(f?f
   if(!SAMPLE){toast('Generate tak tersedia sekarang');return}
   const n=capNotes(f&&f.prod);
   const prompt=`Tulis 3 caption media sosial untuk video produk Mira (@miracikcit), content creator Malaysia. Video ni video lama yang masih dalam draf, belum di-post.
-Produk: ${name}
+${VOICE_MIRA}Produk: ${name}
 ${n.usp?'Nota produk (USP):\n'+n.usp+'\n':''}${c.what.trim()?'Apa dalam video: '+c.what.trim()+'\n':''}Sudut hook: ${c.angle==='Auto'?'pilih 3 sudut STOP berbeza (Shock, Target, Open loop, Proof)':c.angle+' (formula STOP), 3 variasi berbeza'}
 ${f&&f.caps.length?'Hook caption lain produk ni yang dah ada, JANGAN ulang ayat atau idea yang sama:\n- '+f.caps.slice(0,12).join('\n- ')+'\n':''}${n.ban.length?'JANGAN SEBUT: '+n.ban.join('; ')+'\n':''}
 Format setiap caption:
-- hook: satu ayat Bahasa Melayu santai macam cakap dengan kawan, satu emoji di hujung
+- hook: satu ayat ikut SUARA MIRA (rojak santai, cerita Mira sendiri, maks 12 perkataan), satu emoji di hujung
 - line2: satu ayat yang sebut nama produk penuh (huruf besar kecil biasa, bukan semua huruf besar) dan satu USP
-Peraturan: tiada harga atau diskaun, tiada dakwaan perubatan, tiada janji yang tak pasti, tiada sebut Shopee atau platform lain, guna "aku" atau "Mira".
+Peraturan: tiada harga atau diskaun, tiada dakwaan perubatan, tiada janji yang tak pasti, tiada sebut Shopee atau platform lain, kata ganti ikut SUARA MIRA ("aku" untuk gadget / tech, "I" / "saya" / "Mira" untuk produk rumah dan harian).
 tags: 2 hashtag CamelCase tanpa ruang: #NamaProduk #Kategori (cth #Kathwi #PewangiKereta).
 Balas JSON sahaja: {"tags":["#..","#.."],"captions":[{"angle":"..","hook":"..","line2":".."},{"angle":"..","hook":"..","line2":".."},{"angle":"..","hook":"..","line2":".."}]}`;
   c.busy=true;c.t0=Date.now();render(true);

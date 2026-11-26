@@ -104,13 +104,13 @@ function thPrompt(again){const t=thUi();const st=thStyle();const ex=thPosts().fi
   const edits=thPosts().filter(p=>p.edited&&p.draft).slice(0,6);
   return `Kau penulis posting Threads untuk Mira (@miracikcit), content creator Malaysia (lifestyle, produk, vlog, keluarga).
 Tulis 3 versi posting Threads dari point Mira di bawah. Ketiga-tiga versi bawa ISI DAN MESEJ YANG SAMA, tapi ayat, hook dan susunan berlainan, sebab setiap satu akan di-post pada hari berbeza. Setiap versi berdiri sendiri, jangan rujuk versi lain. MESTI bunyi macam Mira tulis sendiri, bukan macam AI.
-${st.summary?'\\nGAYA MIRA (dipelajari):\\n'+st.summary+'\\n':''}${st.notes&&st.notes.length?'Peraturan gaya:\\n- '+st.notes.join('\\n- ')+'\\n':''}${edits.length?'\\nPEMBETULAN MIRA (draf kau vs versi yang dia betulkan; ini paling penting, jangan ulang kesilapan draf):\\n'+edits.map(p=>`DRAF: ${p.draft}\\nMIRA: ${p.final}`).join('\\n\\n')+'\\n':''}${ex.length?'\\nCONTOH POSTING SEBENAR MIRA:\\n'+ex.map((p,i)=>`[${i+1}] ${p.final}`).join('\\n\\n')+'\\n':''}
+${VOICE_MIRA}${st.summary?'\\nGAYA MIRA (dipelajari):\\n'+st.summary+'\\n':''}${st.notes&&st.notes.length?'Peraturan gaya:\\n- '+st.notes.join('\\n- ')+'\\n':''}${edits.length?'\\nPEMBETULAN MIRA (draf kau vs versi yang dia betulkan; ini paling penting, jangan ulang kesilapan draf):\\n'+edits.map(p=>`DRAF: ${p.draft}\\nMIRA: ${p.final}`).join('\\n\\n')+'\\n':''}${ex.length?'\\nCONTOH POSTING SEBENAR MIRA:\\n'+ex.map((p,i)=>`[${i+1}] ${p.final}`).join('\\n\\n')+'\\n':''}
 POINT MIRA:
 ${t.points.trim()}
 ${t.imgs.length?`\\nPosting ni ada ${t.imgs.length} gambar.\\n`:''}Nada: ${t.tone==='Auto'?'ikut point':t.tone}
 ${t.thread?'Pecahkan setiap versi jadi thread bersiri 2 hingga 5 post. Asingkan setiap post dengan baris "---". Setiap post bawah 500 aksara, post pertama hook paling kuat.':'Setiap versi satu post sahaja, bawah 500 aksara.'}
-Peraturan: hook di baris pertama (berhenti scroll), ayat pendek, perenggan pendek, maksimum 1 hashtag atau tiada, jangan reka fakta yang tiada dalam point, tiada harga melainkan Mira tulis.${again?'\\nIni permintaan tulis semula: ayat lain dari sebelum ni. ('+Date.now()+')':''}
-tips: 2 cadangan ringkas untuk naikkan engagement (cth. soalan penutup, masa post, gambar mana dulu).
+Peraturan: hook di ayat pertama (berhenti scroll), satu perenggan mengalir ikut SUARA MIRA, maksimum 1 hashtag atau tiada, jangan reka fakta yang tiada dalam point, tiada harga melainkan Mira tulis.${again?'\\nIni permintaan tulis semula: ayat lain dari sebelum ni. ('+Date.now()+')':''}
+tips: 2 cadangan ringkas untuk naikkan engagement (cth. masa post, gambar mana dulu, ayat minta tolong crowd). Jangan cadang soalan penutup pada pembaca.
 Balas JSON sahaja: {"versions":[{"text":".."},{"text":".."},{"text":".."}],"tips":[".."]}`}
 A.thGen=async el=>{const t=thUi();if(!t.points.trim()){toast('Tulis point dulu');const n=$('#thPts');if(n)n.focus();return}
   if(!SAMPLE){toast('Generate tak tersedia sekarang');return}
