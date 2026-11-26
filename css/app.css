@@ -692,3 +692,5 @@ button.tpchip{cursor:pointer}.tpchip.btnx{font-weight:500}
 .carstrip.sm{margin:8px 0 6px}.carstrip.sm img{height:64px;width:48px;border-radius:7px}
 .carbox{margin-bottom:14px}.carit{padding-top:8px;margin-top:8px;border-top:1px solid var(--line)}.carit strong{display:block;font-size:14px}
 .srp{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}.srp b{font-weight:500}
+/* 26 Nov: butang Batal / Selesai dalam bar Menunggu AirDrop, bar Diterima */
+.airx{border:0;background:none;padding:0 0 0 2px;font:inherit;font-weight:700;color:var(--c);text-decoration:underline;cursor:pointer}.stbar .stt svg{width:13px;height:13px;vertical-align:-2px}

@@ -65,7 +65,8 @@ function fuSel(id,val,withNew,title){const L=fuFolders();const nw=withNew?FOLDER
 function fuStatus(it){const u=(ui.fuUp||{})[it.id],d=get('footin',it.id);
   if(u)return `<div class="stbar" style="--c:var(--c)"><div class="stt"><span>Upload ${u.i}/${u.n}: ${esc(u.name)}</span><span>${u.pct}%</span></div><div class="stg"><i style="width:${Math.max(3,u.pct)}%"></i></div></div>`;
   if(d&&d.status==='proses'&&Date.now()-(d.at||0)<3*36e5)return `<div class="stbar" style="--c:var(--warn)"><div class="stt"><span><i class="spin"></i> Mac mini pindah ke folder (${d.done||0}/${d.n||'?'})</span><span>${d.n?Math.round((d.done||0)/d.n*100):0}%</span></div><div class="stg"><i style="width:${Math.max(3,d.n?(d.done||0)/d.n*100:5)}%"></i></div></div>`;
-  if(d&&d.status==='tunggu'&&Date.now()<(d.until||0)){const left=Math.max(1,Math.ceil((d.until-Date.now())/60000));return `<div class="stbar" style="--c:var(--warn)"><div class="stt"><span><i class="spin"></i> Menunggu AirDrop${d.done?' · '+d.done+' dah masuk':''}</span><span>baki ${left} min</span></div><div class="stg"><i style="width:${Math.max(3,Math.round(left/30*100))}%"></i></div></div>`}
+  if(d&&d.status==='tunggu'&&Date.now()<(d.until||0)){const left=Math.max(1,Math.ceil((d.until-Date.now())/60000));return `<div class="stbar" style="--c:var(--warn)"><div class="stt"><span><i class="spin"></i> Menunggu AirDrop${d.done?' · '+d.done+' dah masuk':''}</span><span>baki ${left} min · <button type="button" class="airx" data-act="airCancel" data-id="${it.id}">${d.done?'Selesai':'Batal'}</button></span></div><div class="stg"><i style="width:${Math.max(3,Math.round(left/30*100))}%"></i></div></div>`}
+  if(d&&d.air&&d.status==='sedia'&&d.done&&Date.now()-(d.at||0)<864e5)return `<div class="stbar" style="--c:var(--ok)"><div class="stt"><span>${IC.check} Diterima · ${d.done} fail</span><span>${esc((d.folder||it.folder||'').replace(/^(\d+)\.\s*/,'$1 · ').replace('/',' › '))}</span></div></div>`;
   if(d&&d.status==='error')return `<p class="meta" style="color:var(--bad);margin:6px 0 0">Upload footage gagal: ${esc(d.msg||'')}</p>`;
   return it.folder?`<p class="meta" style="margin:6px 0 0">📁 ${esc(it.folder.replace(/^(\d+)\.\s*/,'$1 · ').replace('/',' › '))}${d&&d.status==='sedia'&&Date.now()-(d.at||0)<864e5?` · ${d.done} video baru masuk`:''}</p>`:''}
 /* 2026-11-25 (Mira): butang Footage (Jobs dan Creative) buka TIGA cara: upload dari iPhone, pilih folder sedia ada dalam
@@ -107,6 +108,7 @@ A.fuOpen=el=>{const it=get('items',el.dataset.id);if((ui.fuUp||{})[it.id]){toast
 const airPend=()=>((S.sync.airdrop||{}).files)||[];
 A.fuAir=async el=>{const it=get('items',el.dataset.id),u=ui.fu||{},take=!!el.dataset.take;let stage=(it.folder||'').split('/')[0],name=(it.folder||'').split('/').slice(1).join('/');
   if(!stage){if(!u.main){toast('Pilih folder utama dulu');return}stage=u.main}if(!name)name=fuSafe(it.title);
+  const busy=airBusy(it.id);if(busy){const bt=(get('items',busy.id)||{}).title||'kad lain';toast('"'+String(bt).slice(0,40)+'" masih menunggu AirDrop. Tunggu sampai Diterima, atau tekan Batal pada kad tu dulu');return}
   const old=el.innerHTML;el.disabled=true;el.innerHTML='<i class="spin"></i>Beritahu Mac mini';
   try{const now=Date.now();await studioCall('job_add',{type:'air_wait',input:{item:it.id,stage,name,t0:now,take}});
     save('footin',{id:it.id,status:'tunggu',done:0,until:now+30*60000,at:now,air:true,folder:stage+'/'+name});
@@ -114,6 +116,12 @@ A.fuAir=async el=>{const it=get('items',el.dataset.id),u=ui.fu||{},take=!!el.dat
     toast(take?'Mac mini sedang masukkan video ke folder':'Mac mini sedia. Dalam Photos: pilih video › Share › AirDrop › Mac mini');
     if(!take&&/iPhone|iPad|iPod/.test(navigator.userAgent))setTimeout(()=>{location.href='photos-redirect://'},700)}
   catch(e){el.disabled=false;el.innerHTML=old;toast('Mac mini tak jawab: '+String((e&&(e.message||e.code))||'semak internet').slice(0,70))}};
+/* 26 Nov petang (Mira): SATU kad sahaja boleh menunggu AirDrop pada satu masa (elak footage tercampur folder). Kad lain dikunci
+   sampai kad tu Diterima (Mac mini tutup sendiri 30 saat selepas fail terakhir masuk) atau Mira tekan Batal / Selesai. */
+function airBusy(except){return S.footin.find(d=>d.air&&d.status==='tunggu'&&Date.now()<(d.until||0)&&d.id!==except)}
+A.airCancel=async el=>{const d=get('footin',el.dataset.id);if(!d)return;el.disabled=true;el.innerHTML='<i class="spin"></i>';
+  try{await studioCall('job_add',{type:'air_wait',input:{item:d.id,cancel:true}});save('footin',Object.assign({},d,{status:d.done?'sedia':'batal',at:Date.now()}));render();toast(d.done?'Diterima · '+d.done+' fail':'AirDrop dibatalkan')}
+  catch(e){render();toast('Mac mini tak jawab')}};
 function airHome(){const f=airPend();if(!f.length)return '';const gb=f.reduce((a,x)=>a+(x.size||0),0)/1e9;
   return `<div class="card big glass" style="--c:${TAB['to-shoot'].c};margin-top:14px"><p class="eyebrow" style="margin:0">AirDrop · Mac mini</p><h3 style="margin:4px 0">${f.length} video baru sampai</h3>
     <p class="meta">${esc(f.slice(0,3).map(x=>x.name).join(', '))}${f.length>3?' dan '+(f.length-3)+' lagi':''} · ${gb>=1?gb.toFixed(1)+' GB':Math.max(1,Math.round(gb*1000))+' MB'}. Untuk kad mana?</p>

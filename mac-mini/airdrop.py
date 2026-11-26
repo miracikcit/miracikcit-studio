@@ -23,6 +23,7 @@ WAIT_S = 30 * 60
 PENDING_S = 48 * 3600
 EVERY = 5
 STABLE_S = 6
+QUIET_S = 30      # tiada fail baru selama ni selepas fail terakhir masuk = kad Diterima (status sedia)
 
 _lock = threading.RLock()
 _started = threading.Event()
@@ -30,6 +31,7 @@ _xa = {}          # (nama, saiz, ctime) -> bool AirDrop
 _sizes = {}       # nama -> saiz pada imbasan lepas
 _last_pending = {"sig": None}
 _warned = {"perm": False}
+_incoming = {"n": 0}   # fail media dalam Downloads yang belum stabil (masih diterima)
 
 
 def _load():
@@ -61,7 +63,7 @@ def _is_airdrop(path, key):
 def _candidates(down=None):
     """Fail AirDrop yang dah habis diterima: [{name, path, size, at(saat tiba), video}]."""
     down = down or DOWN
-    out, seen, now = [], {}, time.time()
+    out, seen, now, busy = [], {}, time.time(), 0
     try:
         names = os.listdir(down)
     except OSError as e:
@@ -82,11 +84,14 @@ def _candidates(down=None):
             continue
         seen[n] = st.st_size
         stable = _sizes.get(n) == st.st_size and now - st.st_ctime >= STABLE_S and st.st_size > 0
+        if st.st_size > 0 and (_sizes.get(n) not in (None, st.st_size) or now - st.st_ctime < STABLE_S):
+            busy += 1
         if not stable or not _is_airdrop(p, (n, st.st_size, int(st.st_ctime))):
             continue
         out.append({"name": n, "path": p, "size": st.st_size, "at": st.st_ctime, "video": low.endswith(VIDEO)})
     _sizes.clear()
     _sizes.update(seen)
+    _incoming["n"] = busy
     return sorted(out, key=lambda f: f["at"])
 
 
@@ -144,6 +149,7 @@ def tick(sheet, W, down=None):
                     w["done"] = w.get("done", 0) + moved
                     w["files"] = (w.get("files") or []) + names
                     w["take"] = []
+                    w["last"] = now
                     W._set_item(sheet, w["item"], folder=folder)
                     _put(sheet, w["item"], status="tunggu", done=w["done"], until=int(w["until"] * 1000), folder=folder, files=w["files"][-50:])
                     W._scan_last["t"] = 0
@@ -154,7 +160,10 @@ def tick(sheet, W, down=None):
                     _put(sheet, w["item"], status="error", msg=str(e)[:200], done=w.get("done", 0), folder=folder)
                     w = None
                 cand = [f for f in cand if f not in mine]
-            if w and now > w["until"]:
+            if w and w.get("done"):
+                w.setdefault("last", now)
+            quiet = w and w.get("done") and not mine and not _incoming["n"] and now - w.get("last", now) >= QUIET_S
+            if w and (now > w["until"] or quiet):
                 _put(sheet, w["item"], status="sedia" if w.get("done") else "tamat", done=w.get("done", 0), n=w.get("done", 0),
                      folder=folder, files=(w.get("files") or [])[-50:])
                 w = None
@@ -175,6 +184,17 @@ def tick(sheet, W, down=None):
 def job_wait(inp, sheet, W):
     """Kad ditekan: 30 minit seterusnya, fail AirDrop masuk folder kad ni."""
     item = re.sub(r"[^\w-]", "", str(inp.get("item") or ""))
+    if inp.get("cancel"):
+        with _lock:
+            st = _load()
+            w = st.get("wait")
+            if w and w.get("item") == item:
+                _put(sheet, item, status="sedia" if w.get("done") else "batal", done=w.get("done", 0), n=w.get("done", 0),
+                     folder=w["stage"] + "/" + w["name"], files=(w.get("files") or [])[-50:])
+                st.pop("wait", None)
+                _save(st)
+        tick(sheet, W)
+        return {"ok": True}
     stage, name = str(inp.get("stage") or ""), W._safe_name(inp.get("name"))
     W._edit_main(stage)
     if not item:
@@ -186,9 +206,10 @@ def job_wait(inp, sheet, W):
     with _lock:
         st = _load()
         old = st.get("wait")
-        if old and old.get("item") != item:
-            _put(sheet, old["item"], status="sedia" if old.get("done") else "tamat", done=old.get("done", 0), n=old.get("done", 0),
-                 folder=old["stage"] + "/" + old["name"])
+        if old and old.get("item") != item and now <= old.get("until", 0):
+            # satu kad sahaja menunggu pada satu masa (Mira 26 Nov: elak tercampur folder)
+            _put(sheet, item, status="error", msg="Kad lain masih menunggu AirDrop. Tunggu Diterima atau Batal dulu.", done=0)
+            raise RuntimeError("Kad lain masih menunggu AirDrop")
         take = []
         if inp.get("take"):
             take = [f["name"] for f in _candidates() if f["video"] and now - f["at"] < PENDING_S]
