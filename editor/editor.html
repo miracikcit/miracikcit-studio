@@ -1215,6 +1215,8 @@ button:focus-visible, [contenteditable]:focus-visible, input:focus-visible, text
 .cs-underline .key::after { content: ""; position: absolute; left: 0; right: 0; bottom: -.06em; height: .1em; background: var(--kc); border-radius: 99px; transform: rotate(-1.5deg); }
 .stlayer { inset: 0; pointer-events: none; }   /* 26 Nov: tiada z-index di sini, supaya sticker .bh boleh duduk DI BAWAH kanvas badan #cfg */
 .stk { z-index: 5; position: absolute; transform: translate(-50%, -50%); pointer-events: auto; touch-action: none; cursor: grab; }
+.stk.cut { z-index: 4; } .e-cut { position: absolute; inset: 0; overflow: hidden; background: #111; } .e-cut video { width: 100%; height: 100%; object-fit: cover; display: block; } .e-cut .cutno { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font: 600 4cqw/1.2 sans-serif; }   /* p33 */
+.mini .e-cut { position: relative; width: 100%; aspect-ratio: 9/16; }
 .stk.sel { outline: 2px dashed #fff; outline-offset: 2px; border-radius: 4px; }
 .stk svg { display: block; width: 100%; height: auto; overflow: visible; }
 .t-stick { background: #fff; color: #d6336c; font: 900 4.44cqw/1.1 "Montserrat", sans-serif; padding: 1cqw 2.6cqw; border-radius: 2cqw; transform: rotate(-6deg); white-space: nowrap; }
@@ -1852,7 +1854,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .catbar.two .cr + .cr { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--gline); }
 .catbar .cat.sub { font-size: 12px; padding: 5px 11px; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=3eb8b6dedb">
+<link rel="stylesheet" href="../../ed-capcut.css?v=d57c5c715a">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1967,9 +1969,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=3eb8b6dedb"></script>
-<script src="../../../js/runtime.js?v=3eb8b6dedb"></script>
-<script src="../../ed-boot.js?v=3eb8b6dedb"></script>
+<script src="../../../js/config.js?v=d57c5c715a"></script>
+<script src="../../../js/runtime.js?v=d57c5c715a"></script>
+<script src="../../ed-boot.js?v=d57c5c715a"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -2117,6 +2119,7 @@ function fxUnits(text, fx, base, n0 = 0) {
 const TXT_OLD = [["t-hl", "Teks skrip", "", { text: "Sejuk!" }], ["t-hls", "Teks serif", "", { text: "lembut" }], ["t-hlm", "Teks marker", "", { text: "BEST!" }]];
 const TXT_KINDS = [["t-glass", "Butang kaca", "Kotak kaca, contohnya Tengok beg bawah.", { text: "Tengok beg bawah" }]];
 const FX_KINDS = [
+  ["B-roll", [["e-cut", "B-roll atas suara", "Klip close-up penuh skrin, suara kau terus jalan di bawah.", {}]]],   /* p33 */
   ["Review", [["e-stars", "Bintang rating", "5 bintang terisi ikut skor, nombor besar, nota bawah.", { a: "4/5", text: "rating Mira", b: "datang lagi? YES" }], ["e-ring", "Cincin skor", "Cincin terisi ikut skor, nombor di tengah.", { a: "8/10", text: "rating" }], ["e-poll", "Poll TikTok", "Soalan dengan bar undi, macam sticker poll.", { text: "Worth it tak?", items: ["Worth it|82", "Tak|18"] }], ["e-save", "Butang SAVE", "Ikon bookmark + ajak save video.", { text: "SAVE untuk trip nanti" }], ["e-tag", "Tanda harga", "Tag harga tergantung dan berayun.", { a: "RM20", text: "tiket" }], ["e-stamp", "Cop review", "Cop besar dihentak, macam stamp.", { text: "WORTH IT", a: "rating 4/5" }]]],
   ["Trend", [["e-wheel", "Kaunter nombor", "Nombor bergolek macam mesin kira, label atas, pill jumlah bawah.", { a: "RM238", text: "bilik SkyWorlds", b: "jumlah RM238" }], ["e-receipt", "Resit jumlah", "Resit kertas: baris masuk satu-satu, TOTAL bergolek.", { a: "Bajet trip", items: ["Bilik|RM238", "Tiket|RM140"], b: "RM378" }], ["e-ticket", "Tiket koyak", "Tiket berwarna, stub terkoyak.", { a: "RM70", text: "beli 1 FREE 1", b: "TIKET" }], ["e-pin", "Pin lokasi", "Pin jatuh dengan riak, nama tempat.", { a: "Awana", text: "bukan di puncak" }], ["e-slam", "Tajuk slam", "Tajuk besar hentak masuk dan bergegar.", { a: "", text: "WORTH IT!" }]]],
   ["Text", [...TXT_KINDS, ["e-gtype", "Glass type", "Tulisan besar dalam panel kaca. Huruf BESAR jadi italic.", { a: "kenapa aku suka", text: "dua-dua KACA" }], ["e-arrow", "Arrow note", "Nota tangan dengan anak panah.", { text: "cuba yang ni" }], ["e-strike", "Crossed word", "Perkataan kena potong.", { text: "kos renovation" }]]],
@@ -2319,7 +2322,9 @@ function paraHTML(x) {   // 2026-11-09 static block: no .eu, so nothing animates
   const kk = t => esc(t).replace(/(^|\s)([A-Z][A-Z0-9!?.,'&;\-]*[A-Z0-9][A-Z0-9!?.,'&;\-]*)(?=\s|$)/g, (m, sp, w) => `${sp}<span class="k">${w.toLowerCase()}</span>`), pill = (x.items || [])[0] || "";
   return `<div class="e-para"><div class="ps"></div><div class="pz pa">${esc(x.a || "")}</div><div class="pz pt">${kk(x.text || "")}</div><div class="pz pb">${kk(x.b || "")}</div>${pill ? `<div class="pz pp"><span>${esc(pill)}</span></div>` : ""}</div>`;
 }
+const cutHTML = x => `<div class="e-cut"><video class="bgp" src="${BRU(esc(x.vid || ""))}" muted playsinline preload="auto"></video>${x.vid ? "" : '<span class="cutno">pilih klip B-roll</span>'}</div>`;   /* p33 */
 function effectHTML(x, url) {
+  if (x.k === "e-cut") return cutHTML(x);   /* p33 */
   { const z = fx5(x, url); if (z != null) return z; }
   { const z = fx4(x); if (z != null) return z; }
   { const z = fx3(x); if (z != null) return z; }
@@ -2754,6 +2759,7 @@ const FULLFX = x => x.k === "e-bigblur" || x.k === "e-cover" || x.k.startsWith("
 const wrapFx = s => { const m = s.search(/<(?:span|div) class="(?:eu[ "]|st")/); if (m < 0) return s; const e = s.lastIndexOf("</div>"); return s.slice(0, m) + '<div class="fxc">' + s.slice(m, e) + "</div>" + s.slice(e); };
 const fxVars = x => `--fxx:${(((x.x ?? .5) - .5) * 100).toFixed(2)}%;--fxy:${(((x.y ?? .5) - .5) * 100).toFixed(2)}%;--fxs:${((x.s || .19) / .19).toFixed(3)};`;
 function stickerInner(x) {
+  if (x.k === "e-cut") return cutHTML(x);   /* p33 */
   if (x.k === "e-bigblur") return effectHTML(x, photoUrl);
   if (FULLFX(x)) return wrapFx(effectHTML(x, photoUrl));
   if (isFxS(x)) return `<div style="zoom:${(x.s / .19).toFixed(3)}">${effectHTML(x, photoUrl)}</div>`;
@@ -2761,9 +2767,9 @@ function stickerInner(x) {
   const l = libOf(x.k); return l ? `<svg viewBox="0 0 200 200"><g ${STROKE}>${l.svg}</g></svg>` : "";
 }
 const libOf = k => (D.stickerLib || []).find(l => l.k === k);
-const stStyle = x => FULLFX(x) ? "left:50%;top:50%;" + fxVars(x) : `left:${x.x * 100}%;top:${x.y * 100}%;${x.k.startsWith("t-") || isFxS(x) ? "" : `width:${x.s * 100}%`}`;
+const stStyle = x => x.k === "e-cut" ? "left:50%;top:50%;width:100%;height:100%;" : FULLFX(x) ? "left:50%;top:50%;" + fxVars(x) : `left:${x.x * 100}%;top:${x.y * 100}%;${x.k.startsWith("t-") || isFxS(x) ? "" : `width:${x.s * 100}%`}`;
 function drawStickers() {
-  $("stlayer").innerHTML = S.stickers.map((x, i) => { const one = (y, bh) => `<div class="stk${i === stSel ? " sel" : ""}${bh ? " bh" : ""}${x.sk ? " sk-" + x.sk : ""}${x.tn ? " tn-" + x.tn : ""}" data-st="${i}" style="${stStyle(x)}">${stickerInner(y)}</div>`;
+  $("stlayer").innerHTML = S.stickers.map((x, i) => { const one = (y, bh) => `<div class="stk${i === stSel ? " sel" : ""}${bh ? " bh" : ""}${x.k === "e-cut" ? " cut" : ""}${x.sk ? " sk-" + x.sk : ""}${x.tn ? " tn-" + x.tn : ""}" data-st="${i}" style="${stStyle(x)}">${stickerInner(y)}</div>`;
     return x.k === "e-orbit" && CUT.meta && !x.bh ? one({ ...x, _half: "ob" }, 1) + one({ ...x, _half: "of" }, 0) : one(x, x.bh); }).join("");   /* p29: orbit = separuh pusingan di belakang badan (bila cutout ada) */
   showStickers(); drawHL(); planCaps();
 }
@@ -3808,6 +3814,7 @@ const FX_FAMILY = [
   ["List", ["e-checkg", "e-check", "e-badges", "e-torn", "e-emboss", "e-marq", "e-note"]],
   ["Number", ["e-num", "e-tiles", "e-cal", "e-chart"]],
   ["Photo", ["e-polg", "e-polt", "e-pola", "e-fbreak", "e-wipe", "e-stack", "e-fan", "e-phone", "e-cardrow"]],
+  ["B-roll", ["e-cut"]],   /* p33 */
   ["USP scene", ["e-uspa", "e-uspg", "e-usph", "e-uspm", "e-uspb4"]],
   ["End card", ["e-endc", "e-endc2", "e-endc3", "e-endc4"]]
 ];
@@ -3850,7 +3857,7 @@ function fxPanel() {
       ${isBig ? `<span class="lab">Warna</span><div class="chips">${chip("Putih", x.c !== "key", 'data-ec="white"')}${chip("Warna kunci", x.c === "key", 'data-ec="key"')}</div>` : ""}
       ${o.text !== undefined ? field("text", L.text || ({ "e-uspa": "Ayat besar serif", "e-uspb": "Tajuk", "e-uspb4": "Tajuk", "e-uspc": "Tajuk atas jubin", "e-uspd": "Ayat kecil bawah label", "e-endc": "Pill bawah (CTA)" })[x.k] || (x.k === "e-num" ? "Label" : x.k === "e-bigmix" || x.k === "e-bigblur" ? "Text (huruf BESAR jadi italic)" : "Text")) : ""}${o.a !== undefined ? field("a", L.a || labs[0] || "Baris atas") : ""}${o.b !== undefined ? field("b", L.b || labs[1] || labs[0] || "Baris bawah") : ""}
       ${o.items ? `<label class="lab" for="ef-items">${L.items || ({ "e-endc": "4 kad USP, satu baris setiap kad: PERKATAAN BESAR|ayat kecil", "e-uspa": "Baris tulisan tangan bawah", "e-uspb": "Tulisan bawah polaroid, satu baris setiap gambar", "e-uspb4": "Tulisan bawah 4 gambar, satu baris setiap gambar", "e-uspc": "Perkataan bawah jubin 1, 2, 3", "e-uspd": "Label kertas, satu baris setiap label (mula dengan - untuk coret)" })[x.k] || "Satu baris setiap satu"}</label><textarea id="ef-items" data-ef="items">${esc((x.items || []).join("\n"))}</textarea>` : ""}
-      ${x.k.startsWith("e-usp") && (D.broll || []).length ? `<span class="lab">Video belakang</span><div class="chips">${chip("Tiada (guna gambar)", !x.vid, 'data-evid=""')}${D.broll.map(b => chip(b.n, x.vid === b.id, `data-evid="${b.id}"`)).join("")}</div>` : ""}
+      ${(x.k.startsWith("e-usp") || x.k === "e-cut") && (D.broll || []).length ? `<span class="lab">${x.k === "e-cut" ? "Klip B-roll" : "Video belakang"}</span><div class="chips">${x.k === "e-cut" ? "" : chip("Tiada (guna gambar)", !x.vid, 'data-evid=""')}${D.broll.map(b => chip(b.n, x.vid === b.id, `data-evid="${b.id}"`)).join("")}</div>` : ""}
       ${o.ph ? `<span class="lab">Pilih ${o.ph} gambar${x.k === "e-usph" ? " (pertama = latar)" : ""}</span><div class="phgrid">${(D.photos || []).map(p => `<button data-eph="${p.id}" aria-pressed="${(x.photos || []).includes(p.id)}" aria-label="${esc(p.n)}"><img src="${photoUrl(p.id)}" alt="" loading="lazy"></button>`).join("")}</div>` : ""}
       <label class="lab" for="stSize">Saiz: <span id="stSizeV">${Math.round(x.s * 100)}%</span></label><input id="stSize" type="range" min="8" max="50" value="${Math.round(x.s * 100)}">${FX5.includes(x.k) ? fx5Form(x) : ""}
       ${fam ? `<span class="lab">Tukar gaya</span><div class="grid etkgrid">${fam[1].filter(k => fxDef(k) && (ok("fx:" + k) || x.k === k)).map(k => { const f = fxDef(k); return `<div class="opt"><button class="mini ecard" data-etk="${k}" aria-pressed="${x.k === k}" aria-label="Tukar ke ${esc(f[1])}"><div>${fxPreview(vBase(k), { ...f[3], ...(x.text ? { text: x.text } : {}) })}</div></button><h3>${f[1]}</h3>${lk("fx:" + k)}</div>`; }).join("")}</div>` : ""}
