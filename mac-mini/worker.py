@@ -709,6 +709,65 @@ def _footage_tick(sheet):
 _edsync = {"since": 0, "docs": {}, "t": 0}
 
 
+# 26 Nov (Mira): GENTING 7 video ditanda Siap lepas video pertama. Projek banyak video (videos > 1 atau parts > 1)
+# kini dikira ikut bahagian: setiap fail final baru masuk `finals`, dan bahagian yang `file`nya padan dapat `final`.
+# Status Siap + final projek hanya bila SEMUA bahagian ada final (atau finals >= videos kalau tiada senarai parts).
+def _ed_parts(d):
+    return [p for p in (d.get("parts") or []) if isinstance(p, dict)]
+
+
+def _ed_total(d):
+    try:
+        v = int(d.get("videos") or 0)
+    except (TypeError, ValueError):
+        v = 0
+    return max(v, len(_ed_parts(d)))
+
+
+def _ed_multi(d):
+    return _ed_total(d) > 1
+
+
+def _ed_done_n(d):
+    P = _ed_parts(d)
+    return sum(1 for p in P if p.get("final")) if P else len(d.get("finals") or [])
+
+
+def _ed_parts_sync(d, files, nk):
+    k = nk(str(d["folder"]).split("/")[-1])
+    if len(k) < 4:
+        return None
+    after = (d.get("created") or 0) - 3600000
+    finals = list(d.get("finals") or [])
+    parts = [dict(p) for p in _ed_parts(d)]
+    changed = False
+    for f in sorted(files, key=lambda x: x.get("mtime") or 0):
+        t = nk(re.split(r"[_]+", f["name"])[0])
+        if not (len(t) >= 4 and (k.startswith(t) or t.startswith(k[:max(4, len(t))])) and (f.get("mtime") or 0) >= after):
+            continue
+        if f["name"] not in finals:
+            finals.append(f["name"]); changed = True
+        if any(p.get("final") == f["name"] for p in parts):
+            continue
+        fn = nk(f["name"].rsplit(".", 1)[0])
+        for p in parts:                               # padan awalan nama fail yang sesi Claude daftar (cth Genting_1)
+            pf = nk(p.get("file") or "")
+            if not p.get("final") and len(pf) >= 4 and (fn == pf or fn.startswith(pf) and not fn[len(pf):len(pf) + 1].isdigit()):
+                p.update(final=f["name"], status="Siap"); changed = True
+                break
+    if not changed:
+        return None
+    nd = dict(d, finals=finals, updated=int(time.time() * 1000))
+    if parts:
+        nd["parts"] = parts
+    tot, n = _ed_total(nd), _ed_done_n(nd)
+    if tot and n >= tot:
+        nd.update(status="Siap", final=finals[-1])
+    elif re.search(r"siap", str(nd.get("status") or ""), re.I):
+        nd["status"] = "Draf"                         # belum semua: jangan biar "Siap"
+    return nd
+
+
 def editor_autosync(sheet, files):
     """Tab Editor sync sendiri (2026-11-23, Mira): projek yang video finalnya dah ada dalam 00. TO POST FINAL ditanda Siap
     (editor/<id> status + final, edpwa/<id> final). Baca doc berubah sahaja (pull since), setiap 5 minit bersama scan."""
@@ -732,6 +791,12 @@ def editor_autosync(sheet, files):
                 return f["name"]
         return None
     for pth, d in list(_edsync["docs"].items()):
+        if pth.startswith("editor/") and d.get("folder") and _ed_multi(d):
+            nd = _ed_parts_sync(d, files, nk)          # projek banyak video: isi final setiap bahagian, jangan tanda Siap awal
+            if nd:
+                sheet.call("dset", path=pth, data=nd); _edsync["docs"][pth] = nd
+                log.info("Tab Editor: %s %s/%s video siap", pth, _ed_done_n(nd), _ed_total(nd))
+            continue
         if pth.startswith("editor/") and d.get("folder") and not d.get("final") and not re.search(r"siap", str(d.get("status") or ""), re.I):
             fn = hit(str(d["folder"]).split("/")[-1], (d.get("sessionAt") or d.get("created") or 0) - 3600000)
             if fn:
@@ -994,6 +1059,13 @@ def run_nota(inp, sheet, cfg):
 
 # ---------------------------------------------------------------- EDIT NOW, folder edit, paid job
 EDIT_MODEL, EDIT_EFFORT = "claude-opus-5-5", "medium"
+# 26 Nov (Mira): setiap video dalam projek banyak video mesti didaftar, supaya tiada storyboard yang terlepas (kes GENTING Awana P1/P2)
+PARTS_RULE = (" PROJEK BANYAK VIDEO: kalau footage ni jadi lebih dari satu video atau storyboard, daftar SEMUA video dalam tracker "
+              "sebaik pelan siap, sebelum render apa-apa: python3 ~/MiracikcitTranscribe/studio.py merge editor/{ed} "
+              "'{{\"videos\":N,\"parts\":[{{\"id\":\"p1\",\"name\":\"<nama pendek video>\",\"file\":\"<awalan nama fail final, cth Genting_1>\","
+              "\"url\":\"<link storyboard atau editor>\",\"status\":\"Storyboard\"}}]}}'. Hantar senarai parts PENUH setiap kali status "
+              "satu video berubah (Storyboard > Draf > Siap). JANGAN tulis status Siap atau final untuk projek sebelum SEMUA video ada fail final; "
+              "worker tanda sendiri bila fail muncul dalam 00. TO POST FINAL.")
 # Jenis video "Satu Vlog Lima" (skrin Edit Style): kunci dari app -> (nama, cara)
 EDIT_JENIS = {"pendek": ("Versi pendek + muzik", "Pendekkan vlog yang sama, tambah muzik dan teks, jadi video baru."),
               "split": ("Split screen", "Klip atas, klip atau gambar lain di bawah; teks tak wajib, biar video bercerita sendiri."),
@@ -1146,6 +1218,7 @@ def run_edit_now(inp, sheet, cfg):
                   + (" Terus draf (tiada storyboard): draf masuk Editor PWA dalam Studio, tunggu Mira lulus, final ke 00. TO POST FINAL." if picked else ""))
     else:
         sheet.call("dset", path="editstyle/" + ed_id, data=None)
+    prompt += PARTS_RULE.format(ed=ed_id)
     q = lambda x: "'" + str(x).replace("'", "'\\''") + "'"
     d = os.path.join(HOME, "edit-now")
     os.makedirs(d, exist_ok=True)

@@ -24,18 +24,35 @@ function csLib(no){const mine=S.gaya.filter(g=>csDone(g)&&(!no||g.fold===no||g.f
 const csLoad=(txt,pct)=>`<div class="csload" role="status"><i class="f" style="width:${Math.max(3,Math.min(100,pct||0))}%"></i><span class="spin"></span><span>${esc(txt)} · ${Math.round(pct||0)}%</span></div>`;
 const csProg=(txt,pct)=>`<div class="csprog" role="status"><span class="spin"></span><span>${esc(txt)}</span><span class="t"><i style="width:${Math.max(3,Math.min(100,pct||0))}%"></i></span><b>${Math.round(pct||0)}%</b></div>`;
 function gyKeep(){if(!$('#gyL'))return;ui.gyDraft=Object.assign({},ui.gyDraft,{link:$('#gyL').value},$('#gyN')?{note:$('#gyN').value}:{})}
-/* Upload terus ke Drive: Apps Script buka sesi resumable, phone hantar 8 MB setiap kali (tiada token Claude). */
-A.gyUpload=el=>{const rid=(el&&el.dataset&&el.dataset.id)||'';pickFile('video/*',async f=>{gyKeep();if(rid)ui.gyDraft=Object.assign({},ui.gyDraft,{retry:rid});if(f.size>500*1048576){toast('Video lebih 500 MB. Potong dulu atau guna link');return}
-  ui.gyUp={name:f.name,pct:0};render(true);
-  const b64=blob=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]||'');r.onerror=rej;r.readAsDataURL(blob)});
-  try{const s=await studioCall('ustart',{name:f.name,mime:f.type||'video/mp4',size:f.size});const CH=8*1048576;let pos=0,id=null,tries=0;
-    while(pos<f.size&&!id){try{const r=await studioCall('uchunk',{url:s.url,start:pos,total:f.size,b64:await b64(f.slice(pos,pos+CH))});
-        if(r.id)id=r.id;else pos=r.next;tries=0}catch(e){if(++tries>3)throw e;await new Promise(r=>setTimeout(r,2000*tries))}
-      ui.gyUp.pct=Math.min(100,Math.round((id?f.size:pos)/f.size*100));render()}
-    if(!id)throw new Error('Drive tak bagi id fail');
-    ui.gyDraft=Object.assign({},ui.gyDraft,{link:'https://drive.google.com/file/d/'+id+'/view',up:{id,name:f.name,size:f.size}});ui.gyUp=null;A.gySend()}
-  catch(e){toast('Upload tak jadi: '+String((e&&e.message)||'semak internet').slice(0,80))}
-  finally{ui.gyUp=null;render(true)}})};
+/* Upload video rujukan (26 Nov, Mira: "upload tapi tak keluar"). Dulu kad hanya dibuat SELEPAS upload habis melalui Apps Script
+   (uchunk 8 MB base64), jadi kalau upload lambat / terputus / phone tidur, tiada apa yang keluar. Sekarang:
+   1) semak pilihan Template/Rupa/Tips DULU, 2) kad terus keluar (step upload) dengan %, 3) upload terus phone -> Drive (fuPut 32 MB,
+   sama macam footage), 4) gagal = kad Gagal dengan butang Upload semula, bukan hilang. */
+const gyUpBusy=id=>!!(ui.gyUp&&ui.gyUp[id]);
+A.gyUpload=el=>{const rid=(el&&el.dataset&&el.dataset.id)||'';closeModal();gyKeep();
+  const want=csWantGet();if(!want.length){toast('Tick dulu apa nak diambil: Template, Rupa atau Tips');return}
+  pickFile('video/*',async f=>{if(f.size>500*1048576){toast('Video lebih 500 MB. Potong dulu atau guna link');return}
+    const d=ui.gyDraft||{};const old=rid&&get('gaya',rid);const id=old?old.id:'g'+uid();
+    save('gaya',Object.assign({},old||{},{id,link:'',upload:'',note:String(d.note||(old&&old.note)||'').trim().slice(0,200),want:(old&&(old.want||[]).length)?old.want:want,fx:[],tags:(old&&old.tags)||[],
+      status:'scan',step:'upload',pct:0,msg:'Upload dari phone',srcName:f.name,upAt:Date.now()},ui.csF&&!(old&&old.fold)?{fold:ui.csF}:{}));
+    ui.gyDraft={};ui.gyUp=Object.assign({},ui.gyUp,{[id]:{name:f.name,pct:0}});if(typeof wakeOn==='function')wakeOn();render(true);
+    const setP=v=>{v=Math.min(100,Math.round(v));const u=ui.gyUp&&ui.gyUp[id];if(u&&u.pct!==v){u.pct=v;render()}};
+    try{const s=await studioCall('ustart',{origin:location.origin,name:f.name,mime:f.type||'video/mp4',size:f.size});let fid=null,pos=0,tries=0;
+      if(s.direct){const CH=32*1048576;
+        while(pos<f.size&&!fid){try{const r=await fuPut(s.url,f.slice(pos,pos+CH),pos,f.size,l=>setP((pos+l)/f.size*100));if(r.id)fid=r.id;else pos=r.next;tries=0}
+          catch(e){if(++tries>3)throw e;await new Promise(r=>setTimeout(r,2000*tries));try{const q=await fuPut(s.url,null,0,f.size);if(q.id)fid=q.id;else if(q.next!=null)pos=q.next}catch(_){}}
+          setP((fid?f.size:pos)/f.size*100)}}
+      else{const CH=8*1048576;const b64=blob=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]||'');r.onerror=rej;r.readAsDataURL(blob)});
+        while(pos<f.size&&!fid){try{const r=await studioCall('uchunk',{url:s.url,start:pos,total:f.size,b64:await b64(f.slice(pos,pos+CH))});if(r.id)fid=r.id;else pos=r.next;tries=0}
+          catch(e){if(++tries>3)throw e;await new Promise(r=>setTimeout(r,2000*tries))}
+          setP((fid?f.size:pos)/f.size*100)}}
+      if(!fid)throw new Error('Drive tak bagi id fail');
+      if(!get('gaya',id)){studioCall('file_delete',{id:fid}).catch(()=>{});return}   /* kad dibuang semasa upload */
+      save('gaya',Object.assign({},get('gaya',id),{link:'https://drive.google.com/file/d/'+fid+'/view',upload:fid,step:'download',pct:3,msg:'Menunggu Mac mini'}));
+      studioJob('gaya_scan',{id},3*60000).then(()=>toast('Upload siap. Mac mini mula analisis')).catch(e=>{toast('Mac mini tak jawab: '+String((e&&e.message)||'').slice(0,80));
+        save('gaya',Object.assign({},get('gaya',id),{status:'error',step:'download',msg:'Video dah ada dalam Drive tapi Mac mini tak jawab. Semak Mac mini hidup, kemudian tekan Cuba lagi.'}))})}
+    catch(e){const c=get('gaya',id);if(c)save('gaya',Object.assign({},c,{status:'error',step:'upload',msg:'Upload tak jadi: '+String((e&&e.message)||'semak internet').slice(0,120)}));toast('Upload tak jadi. Tekan Upload semula pada kad')}
+    finally{const u=Object.assign({},ui.gyUp);delete u[id];ui.gyUp=u;if(!Object.keys(u).length&&typeof wakeOff==='function'&&!(typeof VR!=='undefined'&&VR.on)&&!Object.keys(ui.fuUp||{}).length)wakeOff();render(true)}})};
 A.gyUpClear=()=>{gyKeep();const d=ui.gyDraft||{};if(d.up)studioCall('file_delete',{id:d.up.id}).catch(()=>{});ui.gyDraft=Object.assign({},d,{up:null,link:''});render(true)};
 function gyParseFx(s){return String(s||'').split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean).slice(0,3).map(x=>{const [a,b]=x.split(/\s*[-–]\s*/);return {a:a||'',b:b||''}}).filter(r=>/^\d/.test(r.a))}
 function gyResipi(g){const c=g.card||{};const j=(...a)=>a.filter(Boolean).join(' ');
@@ -73,13 +90,17 @@ function csTpl(g){const h=csHas(g);const tp=h.tp;const S2=tp.slots||[];const tot
     :`<button type="button" class="csbtn solid" data-act="csTplSave" data-id="${esc(g.id)}"${f?'':' disabled'}>${f?`Jadikan template ${esc(csFoldName(f))}`:'Pilih folder dulu'}</button>`)}
 
 function gyCard(g){
+  if(g.status==='scan'&&g.step==='upload'){const u=(ui.gyUp||{})[g.id];
+    if(u)return `<div class="cscard run"><div class="cstop"><span class="csthumb"><i class="spin"></i></span><div class="csinfo"><span class="csbadge">Uploading</span><span class="csname">${esc(g.srcName||u.name||'Video')}</span><p class="csmeta">Jangan tutup app sampai 100%</p></div></div>${csProg('Upload ke Drive',u.pct)}</div>`;
+    return `<div class="cscard err"><div class="cstop"><span class="csthumb"><b>!</b></span><div class="csinfo"><span class="csbadge bad">Terputus</span><span class="csname">${esc(g.srcName||'Video')}</span><p class="csmeta">Upload berhenti (app ditutup atau phone tidur)</p></div></div>
+      <div class="csrow"><button type="button" class="chip on" data-act="gyUpload" data-id="${esc(g.id)}">Upload semula</button><span style="flex:1"></span><button type="button" class="chip" data-act="gyDel" data-id="${esc(g.id)}">Buang</button></div></div>`}
   if(g.status==='scan'){const stale=Date.now()-(g.updated||0)>25*60000;
     return `<div class="cscard run"><div class="cstop"><span class="csthumb"><i class="spin"></i></span><div class="csinfo"><span class="csbadge">${g.step==='analyse'?'Analysing':'Downloading'}</span><p class="csmeta">${esc(csMeta(g))}</p>${g.useFor?`<p class="csmeta">Untuk ${esc(g.useFor.name)}: sesi edit dibuka sendiri bila siap</p>`:''}</div></div>
       ${csProg(g.msg||'Menunggu Mac mini',g.pct||3)}${stale?`<div class="csrow"><span class="csmeta" style="flex:1">Dah lebih 25 minit tanpa berita.</span><button type="button" class="chip" data-act="gyRetry" data-id="${esc(g.id)}">Cuba lagi</button><button type="button" class="chip" data-act="gyDel" data-id="${esc(g.id)}">Buang</button></div>`:''}</div>`}
-  if(g.status==='error'){const dl=g.step!=='analyse';
-    return `<div class="cscard err"><div class="cstop"><span class="csthumb"><b>!</b></span><div class="csinfo"><span class="csbadge bad">Gagal</span><span class="csname">${dl?'Link gagal download':'Analisis gagal'}</span><p class="csmeta">${esc(csMeta(g))}</p></div></div>
+  if(g.status==='error'){const dl=g.step!=='analyse',upf=g.step==='upload'||!isUrl(g.link);
+    return `<div class="cscard err"><div class="cstop"><span class="csthumb"><b>!</b></span><div class="csinfo"><span class="csbadge bad">Gagal</span><span class="csname">${upf?'Upload gagal':dl?'Link gagal download':'Analisis gagal'}</span><p class="csmeta">${esc(csMeta(g))}</p></div></div>
       <p class="cserr">${esc(g.msg||'Tak tahu sebabnya. Cuba lagi.')}</p>
-      <div class="csrow"><button type="button" class="chip on" data-act="gyRetry" data-id="${esc(g.id)}">Cuba lagi</button>${dl?`<button type="button" class="chip" data-act="gyUpload" data-id="${esc(g.id)}">Upload video</button>`:''}<span style="flex:1"></span><button type="button" class="chip" data-act="gyDel" data-id="${esc(g.id)}">Buang</button></div></div>`}
+      <div class="csrow">${upf?'':`<button type="button" class="chip on" data-act="gyRetry" data-id="${esc(g.id)}">Cuba lagi</button>`}${dl?`<button type="button" class="chip${upf?' on':''}" data-act="gyUpload" data-id="${esc(g.id)}">${upf?'Upload semula':'Upload video'}</button>`:''}<span style="flex:1"></span><button type="button" class="chip" data-act="gyDel" data-id="${esc(g.id)}">Buang</button></div></div>`}
   const h=csHas(g);const avail=['tips','rupa','template'].filter(k=>h[k]);const gk=(g.guess||{}).kind;
   const tab=avail.includes((ui.csTab||{})[g.id])?ui.csTab[g.id]:avail.includes(gk)?gk:avail[0];
   const say=(g.guess||{}).say||(g.card||{}).summary||'';
@@ -161,7 +182,7 @@ function gyView(){const d=ui.gyDraft||{};const F=csFolds();const f=ui.csF||'';co
   return `<div class="cs"><div class="cshead"><p class="cseye">${f?'Library '+esc(csFoldName(f)):'Semua library'}</p><h1>Copy Style</h1></div>
   <div class="cschips" aria-label="Library ikut folder"><button type="button" class="chip${!f?' on':''}" data-act="csF" data-x="">Semua</button>${F.map(x=>`<button type="button" class="chip${f===x.no?' on':''}${withN.has(x.no)?'':' dim'}" data-act="csF" data-x="${esc(x.no)}">${esc(x.short)}</button>`).join('')}</div>
   <div class="csseg" role="tablist">${seg('','Scan · '+(shown.length+run.length))}${seg('tpl','Template · '+lib.tpls.length)}${seg('rupa','Rupa · '+lib.looks.length)}${seg('tips','Tips · '+lib.tips.length)}</div>
-  ${sh?csShelfView(f):`<div>${ui.gyUp?csLoad('Upload '+ui.gyUp.name,ui.gyUp.pct):`<div class="cspaste"><input id="gyL" aria-label="Paste link video" value="${esc(d.link||'')}" placeholder="Paste link video" inputmode="url" autocapitalize="off" autocorrect="off" enterkeyhint="send"><button type="button" class="go" data-act="gySend" aria-label="Scan"${ui.gyBusy?' disabled':''}>${ui.gyBusy?'<i class="spin"></i>':CS_GO}</button></div>`}
+  ${sh?csShelfView(f):`<div>${`<div class="cspaste"><input id="gyL" aria-label="Paste link video" value="${esc(d.link||'')}" placeholder="Paste link video" inputmode="url" autocapitalize="off" autocorrect="off" enterkeyhint="send"><button type="button" class="go" data-act="gySend" aria-label="Scan"${ui.gyBusy?' disabled':''}>${ui.gyBusy?'<i class="spin"></i>':CS_GO}</button></div>`}
     <div class="cssub"><span>TikTok, IG, FB, Threads, Drive</span><span><button type="button" data-act="gyPaste">Paste</button> · <button type="button" data-act="gyUpload">Upload video</button></span></div>
     <p class="cswl">Aku nak ambil apa?</p><div class="cswant">${CS_WANT.map(([k,t,dd])=>`<button type="button" class="cswt${want.includes(k)?' on':''}" data-act="csWant" data-x="${k}" aria-pressed="${want.includes(k)}"><b>${t}</b><small>${dd}</small></button>`).join('')}</div>
     <input class="csnin" id="gyN" value="${esc(d.note||'')}" maxlength="200" aria-label="Apa yang aku suka dalam video ni" placeholder="Apa yang aku suka (pilihan), cth: cara tukar shot ikut beat">

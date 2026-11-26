@@ -17,9 +17,10 @@ V['to-edit']=()=>{const te=S.sync.toedit;const folders=toEditFolders();const fse
   if(ui.teSeg==='broll')return head('B-roll untuk semak')+teSegs()+ftSemakView();
   return head(te?'Folder sync '+fmtD(te.syncedAt):'Belum sync',`<button class="btn sm" data-act="addEdit">${IC.plus}Tambah</button>`)+teSegs()+shotList()+
   `<p class="eyebrow" style="margin:4px 0 10px">Dalam folder edit · ${rows.length}</p>${off?`<div class="banner glass">Mac mini tak jawab sejak ${esc(off)}. EDIT NOW perlukan Mac mini hidup dan app Claude dibuka.</div>`:''}<div class="list">${rows.map(r=>{const e=r.ed;const busy=ui.edNow&&ui.edNow[r.key];
-    return `<div class="card glass"><div class="rowh">${fnoBadge(r.no)}<div style="flex:1;min-width:0">${r.kind==='r'?`<span class="pill rdp">Video baru #${r.round}</span>`:''}<h3>${esc(r.title||r.name)}</h3><div class="meta">${esc(r.sub)}${r.start?' · masuk '+fmtD(r.start):''}</div></div>${e?`<span class="pill" style="--pc:${edTone(e.status)}">${esc(e.status||'Draf')}</span>`:''}${voMic(r)}</div>
+    return `<div class="card glass"><div class="rowh">${fnoBadge(r.no)}<div style="flex:1;min-width:0">${r.kind==='r'?`<span class="pill rdp">Video baru #${r.round}</span>`:''}<h3>${esc(r.title||r.name)}</h3><div class="meta">${esc(r.sub)}${r.start?' · masuk '+fmtD(r.start):''}</div></div>${e?`<span class="pill" style="--pc:${edMulti(e)?(edFinN(e)>=edTot(e)?'var(--ok)':'var(--warn)'):edTone(e.status)}">${esc(edMulti(e)?edFinN(e)+'/'+edTot(e)+' siap':e.status||'Draf')}</span>`:''}${voMic(r)}</div>
     ${trk(r.d,r.t)}
     ${brSteps(r,e)}
+    ${edPartsList(e)}
     <div class="btns tem" style="margin-top:12px">${edBtns(r,e,busy,off)}${r.kind==='f'||r.kind==='r'?`<button class="btn icon sm" data-act="peek" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}" aria-label="Lihat footage" title="Lihat footage">${IC.footage}</button>`:''}<button class="btn icon sm bad" data-act="${r.kind==='f'?'fHide':r.kind==='r'?'redoDel':'delItem'}" data-id="${esc(r.kind==='r'?r.rid:r.key)}" aria-label="Buang">${IC.trash}</button></div>
     ${edNote(r,e)}${tipRep(e)}</div>`}).join('')||`<div class="empty">${te?'Tiada video tunggu edit.':'Belum sync. Tekan Sync folder di Home.'}</div>`}</div>`};
 /* Butang kad: belum mula = EDIT NOW; dah tekan = link terus ke chat Claude (Remote Control) atau status */
@@ -31,6 +32,9 @@ function edBtns(r,e,busy,off){if(r.kind==='r'&&!r.clips)return rawBackBtn(String
   const page=isUrl(e.url)?`<a class="btn sm${chat?'':' solid tab'}" href="${esc(e.url)}" target="_blank" rel="noopener">${IC.ext}${/storyboard/i.test(st)?'Storyboard':'Editor'}</a>`:'';
   const wait=!chat&&!page&&!stuck?`<span class="pill" style="--pc:var(--c)"><i class="spin"></i>Sedang buka sesi</span>`:'';
   return chat+page+wait+(r.kind==='r'||stuck||(!chat&&Date.now()-(e.sessionAt||e.updated||0)>15*60000)?now:'')}
+/* Bahagian projek banyak video: mana dah ada final, mana masih storyboard / draf (26 Nov, Mira) */
+function edPartsList(e){const P=e?edParts(e):[];if(!P.length)return '';const tone=p=>p.final?'var(--ok)':/storyboard|lulus/i.test(p.status||'')?'var(--bad)':'var(--warn)';
+  return `<div class="edparts">${P.map(p=>`<div class="edpart"><span class="ccn">${esc(p.name||p.id||'Video')}</span>${isUrl(p.url)&&!p.final?`<a class="pill" style="--pc:var(--c);text-decoration:none" href="${esc(p.url)}" target="_blank" rel="noopener">Buka</a>`:''}<span class="pill" style="--pc:${tone(p)}">${esc(p.final?'Siap':p.status||'Belum mula')}</span></div>`).join('')}</div>`}
 function edNote(r,e){if(!e)return '';const st=e.status||'';
   if(/persediaan/i.test(st))return `<p class="meta" style="margin:8px 0 0;color:var(--bad)">Sesi tunggu di Terminal Mac mini (persediaan kali pertama). Tekan Enter di Terminal, kemudian jawab Yes untuk Trust folder.</p>`;
   if(/trust/i.test(st))return `<p class="meta" style="margin:8px 0 0;color:var(--bad)">Sesi tunggu di Terminal Mac mini: pilih Yes untuk Trust folder ${esc(r.stage)}. Sekali sahaja untuk folder ni.</p>`;

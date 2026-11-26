@@ -694,3 +694,21 @@ button.tpchip{cursor:pointer}.tpchip.btnx{font-weight:500}
 .srp{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}.srp b{font-weight:500}
 /* 26 Nov: butang Batal / Selesai dalam bar Menunggu AirDrop, bar Diterima */
 .airx{border:0;background:none;padding:0 0 0 2px;font:inherit;font-weight:700;color:var(--c);text-decoration:underline;cursor:pointer}.stbar .stt svg{width:13px;height:13px;vertical-align:-2px}
+
+/* Home: kotak kecil kerja sedang berjalan (26 Nov) */
+.busy{border-radius:18px;padding:8px 12px;margin-top:14px;--c:var(--rose)}
+.busy .bh{display:flex;align-items:center;margin:0 0 2px;font-size:10.5px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.busy .bh .spin{width:9px;height:9px;border-width:1.5px}
+.busy .bi{display:flex;align-items:center;gap:8px;width:100%;min-width:0;border:0;background:none;padding:5px 0;font:inherit;color:var(--ink);text-align:left;cursor:pointer}
+.busy .bi+.bi{border-top:1px solid var(--line)}
+.busy .bn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+.busy .bs{font-size:11px;color:var(--muted);white-space:nowrap}
+.bring{--p:0;position:relative;flex:none;width:24px;height:24px;display:grid;place-items:center}
+.bring i{position:absolute;inset:0;border-radius:50%;background:conic-gradient(var(--c) calc(var(--p) * 1%),var(--line) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 2px));mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 2px))}
+.bring.ind i{background:conic-gradient(var(--c) 28%,var(--line) 0);animation:spn .9s linear infinite}
+.bring b{position:relative;font-size:7.5px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+@media (prefers-reduced-motion:reduce){.bring.ind i{animation:none}}
+/* Bahagian projek banyak video dalam kad To Edit / Editor */
+.edparts{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}
+.edpart{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:13px;min-width:0}
+.edpart .ccn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

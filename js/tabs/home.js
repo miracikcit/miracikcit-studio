@@ -72,6 +72,27 @@ function ongoingSlot(){const L=(S.workprojects||[]).slice().sort((a,b)=>(b.updat
      ${edit(w)?`<a class="btn sm" style="margin-top:6px" href="${esc(edit(w))}" target="_blank" rel="noopener">✏️ Edit susunan</a>`:''}</span>
      <span class="pill" style="--pc:${tone(w.status||'')}">${/perlu semak/i.test(w.status||'')?'🔔 ':''}${esc(w.status||'')}</span></div>`).join('')}
    <p class="meta" style="margin:8px 0 0">Edit susunan buka page sorter (Wi-Fi rumah) terus pada projek tu: tukar nama, tambah atau padam folder, pindah gambar.</p></div>`}
+/* 26 Nov (Mira): kotak kecil "Sedang berjalan" supaya tak lupa apa yang tengah loading dalam Studio.
+   Setiap baris: bulat kecil dengan % (tiada % = bulat berpusing). Tekan baris = buka tab tu. Kosong = kotak tak keluar. */
+function busyList(){const L=[],now=Date.now();const add=(name,pct,go,sub)=>L.push({name,go,sub:sub||'',pct:pct==null||!isFinite(pct)?null:Math.max(0,Math.min(100,Math.round(pct)))});
+  Object.entries(ui.fuUp||{}).forEach(([k,u])=>{const it=get('items',k);add('Upload footage · '+((it&&it.title)||u.name),u.pct,'to-shoot',u.n>1?u.i+'/'+u.n:'')});
+  S.gaya.forEach(g=>{const u=(ui.gyUp||{})[g.id];
+    if(g.status==='scan'&&(g.step!=='upload'||u))add('Copy Style · '+(g.name||g.srcName||'video'),u?u.pct:g.pct,'inspiration',u?'Upload':g.step==='analyse'?'Analisis':'Download');
+    (g.looks||[]).forEach(l=>{if(l.st==='bina')add('Rupa · '+(l.name||''),l.pct,'inspiration','Bina contoh')});
+    if(g.fix&&g.fix.st==='proses'&&now-(g.fix.at||0)<10*60000)add('Copy Style · '+(g.name||''),null,'inspiration','Betulkan')});
+  S.broll.forEach(b=>{const e=b.exp||{};if(b.status==='precut')add('B-roll · '+b.name,b.progress||0,'to-edit','Pre-cut');else if(b.status==='backup')add('B-roll · '+b.name,null,'to-edit','Simpan');else if(e.running)add('B-roll · '+b.name,e.total?e.done/e.total*100:0,'to-edit','Final')});
+  (S.carousel||[]).forEach(c=>{if((c.status==='scan'||c.status==='make')&&now-(c.updated||0)<20*60000)add('Carousel · '+(c.title||''),c.pct,'published',c.status==='make'?'Susun':'Kumpul')});
+  (S.edpwa||[]).forEach(d=>{if(d.finStatus==='proses'&&now-(d.updated||0)<30*60000)add('Render · '+String(d.title||'').replace(/^Edit\s+/,''),d.finPct,'editor','Render')});
+  const fu=S.sync.finalsup||{};if(fu.name&&(fu.pct||0)<100&&now-(fu.at||0)<15*60000)add('Final ke Drive · '+fu.name,fu.pct,'ready','Upload');
+  if(typeof DLQ!=='undefined')Object.values(DLQ).forEach(q=>add('Muat turun video',q.pct||0,'ready',''));
+  Object.entries(ui.edNow||{}).forEach(([k,v])=>add('Edit · '+String(k).split('/').pop(),null,'to-edit',v));
+  if(typeof schedBusy!=='undefined'&&schedBusy)add('Jadual posting',schedProg&&schedProg.pct,'ready','');
+  return L}
+const bRing=p=>`<span class="bring${p==null?' ind':''}" style="--p:${p||0}" aria-hidden="true"><i></i>${p==null?'':`<b>${p}</b>`}</span>`;
+function busyHome(){const L=busyList();if(!L.length)return '';
+  return `<div class="busy glass" role="status" aria-label="${L.length} kerja sedang berjalan"><p class="bh"><i class="spin"></i>Sedang berjalan · ${L.length}</p>
+   ${L.slice(0,5).map(x=>`<button type="button" class="bi" data-act="go" data-id="${esc(x.go)}">${bRing(x.pct)}<span class="bn">${esc(x.name)}</span>${x.sub?`<span class="bs">${esc(x.sub)}</span>`:''}</button>`).join('')}
+   ${L.length>5?`<p class="bs" style="margin:4px 0 0">+${L.length-5} lagi</p>`:''}</div>`}
 const appReady=sv=>byStage('ready').filter(it=>!(it.auto&&sv&&(it.files||[]).some(f=>matchFile(f,sv.groups))));
 V.home=()=>{
   const sv=sheetView();const te=toEditFolders();const hr=new Date().getHours();const eds=S.editor.filter(e=>!edDone(e));
@@ -86,9 +107,10 @@ V.home=()=>{
   return `<div class="head"><div><p class="eyebrow">${hr<12?'Selamat pagi':hr<18?'Selamat petang':'Selamat malam'}, Mira</p><h1>Home</h1></div><button class="btn sm" data-act="syncReq">${IC.copy}Sync folder</button></div>
   ${sheetNote()}
   ${airHome()}
+  ${busyHome()}
   <div class="hgrid">
    ${box('links',projCount(),'Projects')}${box('to-shoot')}${box('to-edit',n.shot+n['to-edit'])}
-   <button class="hbox big2 edbox glass" style="--c:${ed.c}" data-act="go" data-id="editor"><span class="edn"><b>${n.editor}</b><span class="l">Editor</span></span><span class="edl">${eds.slice(0,6).map(e=>`<span class="edr"><span>${esc(shortName(e.name))}</span><i style="--pc:${/draf|sedia|semak/i.test(e.status||'')?'var(--warn)':'var(--c)'}">${esc(edShort(e.status))}</i></span>`).join('')||'<span>Tiada projek berjalan</span>'}${eds.length>6?`<span>+${eds.length-6} lagi</span>`:''}</span></button>
+   <button class="hbox big2 edbox glass" style="--c:${ed.c}" data-act="go" data-id="editor"><span class="edn"><b>${n.editor}</b><span class="l">Editor</span></span><span class="edl">${eds.slice(0,6).map(e=>`<span class="edr"><span>${esc(shortName(e.name))}</span><i style="--pc:${/draf|sedia|semak/i.test(e.status||'')?'var(--warn)':'var(--c)'}">${esc(edMulti(e)?edFinN(e)+'/'+edTot(e):edShort(e.status))}</i></span>`).join('')||'<span>Tiada projek berjalan</span>'}${eds.length>6?`<span>+${eds.length-6} lagi</span>`:''}</span></button>
    ${box('ready')}${box('published')}
   </div>
   <div class="mgrid">${mini('ideas',n.ideas,'Ideas')}${mini('threads',0,'Threads','threads')}${mini('inspiration',n.inspiration,'Copy Style')}${mini('media-kit',n['media-kit'],'Media Kit')}${mini('footage',(S.brlib||[]).reduce((a,d)=>a+(d.clips||[]).length,0)||S.footage.length+S.broll.length,'Footage library')}${mini('shot',n.shot,'Shot')}${mini('caption',0,'Caption','caption')}${mini('transcribe',0,'Transcribe','transcribe')}</div>
