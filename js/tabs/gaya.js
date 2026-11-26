@@ -1,7 +1,7 @@
 /* ---------- COPY STYLE (tab `inspiration`; dulu Inspiration › Resipi Style / Editor › Style) ----------
    Mira paste link / upload video. Mac mini (job gaya_scan) tonton sekali dan cadang apa yang berbaloi diambil:
    tips (ayat pendek), rupa (caption / tajuk / transition / effect) dan template (slot ikut masa). Doc `gaya/<id>`:
-   guess{kind,say}, tips[{g,t,on,saved}], looks[{type,name,d,recipe,on,saved,st bina|semak|lulus|gagal,pct,sample}],
+   guess{kind,say}, tips[{g,t,on,saved}], looks[{type,name,d,recipe,on,saved,st bina|trial|siap|semak|lulus|gagal,pct,sample}  (trial = contoh siap, tunggu Mira; siap/lulus = dalam library)],
    tpl{slots,need,saved}, fold ('21'.. atau '*' = semua folder), folderSug, pct (kemajuan scan).
    Setiap style duduk dalam library SATU folder utama; skrin Edit Style (lepas EDIT NOW) hanya tunjuk library folder tu. */
 const gyImg=(id,w)=>id?`https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w${w||1200}`:'';
@@ -20,7 +20,7 @@ const csDone=g=>g.status==='semak'||g.status==='simpan';
 /* Library satu folder: apa yang Mira dah simpan (termasuk '*') */
 function csLib(no){const mine=S.gaya.filter(g=>csDone(g)&&(!no||g.fold===no||g.fold==='*'));
   return {tips:mine.flatMap(g=>(g.tips||[]).filter(t=>t.saved)),tpls:mine.filter(g=>g.tpl&&g.tpl.saved),
-    looks:mine.flatMap(g=>(g.looks||[]).map((l,i)=>({l,i,g})).filter(x=>x.l.saved&&(x.l.st==='lulus'||x.l.st==='semak')))}}
+    looks:mine.flatMap(g=>(g.looks||[]).map((l,i)=>({l,i,g})).filter(x=>x.l.saved&&(x.l.st==='siap'||x.l.st==='lulus'||x.l.st==='semak')))}}   /* trial belum masuk library */
 const csLoad=(txt,pct)=>`<div class="csload" role="status"><i class="f" style="width:${Math.max(3,Math.min(100,pct||0))}%"></i><span class="spin"></span><span>${esc(txt)} · ${Math.round(pct||0)}%</span></div>`;
 const csProg=(txt,pct)=>`<div class="csprog" role="status"><span class="spin"></span><span>${esc(txt)}</span><span class="t"><i style="width:${Math.max(3,Math.min(100,pct||0))}%"></i></span><b>${Math.round(pct||0)}%</b></div>`;
 function gyKeep(){if(!$('#gyL'))return;ui.gyDraft=Object.assign({},ui.gyDraft,{link:$('#gyL').value},$('#gyN')?{note:$('#gyN').value}:{})}
@@ -60,8 +60,8 @@ function csTips(g){const T=g.tips||[];const grp=[...new Set(T.map(t=>t.g||'Editi
 function csLooks(g){const L=g.looks||[];const pick=L.filter(l=>l.on!==false&&!l.saved).length;const build=L.filter(l=>l.st==='bina');const f=csFoldOf(g);
   const tile=(l,i)=>{const st=l.st;return `<label class="cslook${l.on!==false||l.saved?' on':''}">${l.saved?'':`<input type="checkbox" data-act="csLook" data-id="${esc(g.id)}" data-x="${i}"${l.on!==false?' checked':''} aria-label="${esc(l.name)}">`}
     <div class="tile t-${esc(l.type)}"><span>${l.type==='caption'?'Aa':l.type==='tajuk'?'Tajuk':l.type==='transition'?'⇄':'✦'}</span></div><b>${esc(l.name)}</b><span class="d">${esc(l.d||'')}</span>
-    ${st==='semak'?`<div class="lkact">${l.sample?`<a class="chip" href="${esc(gyDView(l.sample))}" target="_blank" rel="noopener">▶ Contoh</a>`:''}<button type="button" class="chip on" data-act="csLookOk" data-id="${esc(g.id)}" data-x="${i}">Lulus</button><button type="button" class="chip" data-act="csLookNo" data-id="${esc(g.id)}" data-x="${i}">Buang</button></div>`
-     :st==='lulus'?`<span class="lkst ok">Dalam library</span>`:st==='bina'?`<span class="lkst">Membina ${Math.round(l.pct||0)}%</span>`:st==='gagal'?`<span class="lkst bad">Gagal${l.err?': '+esc(l.err):''}</span>`:''}</label>`};
+    ${st==='semak'||st==='trial'?`${st==='trial'?'<span class="lkst trial">Trial · tunggu kau lulus</span>':''}<div class="lkact">${l.sample?`<a class="chip" href="${esc(gyDView(l.sample))}" target="_blank" rel="noopener">▶ Contoh</a>`:''}<button type="button" class="chip on" data-act="csLookOk" data-id="${esc(g.id)}" data-x="${i}">Lulus</button><button type="button" class="chip" data-act="csLookNo" data-id="${esc(g.id)}" data-x="${i}">Buang</button></div>`
+     :st==='lulus'||st==='siap'?`<span class="lkst ok">Dalam library</span>`:st==='bina'?`<span class="lkst">Membina ${Math.round(l.pct||0)}%</span>`:st==='gagal'?`<span class="lkst bad">Gagal${l.err?': '+esc(l.err):''}</span>`:''}</label>`};
   const pct=build.length?build.reduce((a,l)=>a+(l.pct||0),0)/build.length:0;
   return `<div class="cslooks">${L.map(tile).join('')}</div>`+csFoldRow(g)+
    (build.length?csLoad('Membina contoh',pct):pick?`<button type="button" class="csbtn solid" data-act="csLookSave" data-id="${esc(g.id)}"${f&&!ui.csBusy?'':' disabled'}>${f?`Simpan ${pick} rupa`:'Pilih folder dulu'}</button><div class="csnote">${tok(TOK.look*pick,'Claude bina contoh 2 saat')}<span>Claude bina contoh 2 saat dulu. Kau lulus, baru masuk library.</span></div>`:'')}
@@ -187,7 +187,7 @@ A.csLookSave=el=>{const g=get('gaya',el.dataset.id);const idx=(g.looks||[]).map(
     try{await studioJob('look_build',{id:g.id,i:idx},3*60000);toast('Sesi Claude dibuka. Peratus naik pada kad ni')}
     catch(e){const c=get('gaya',g.id);csPut(c,{looks:(c.looks||[]).map((l,i)=>idx.includes(i)?Object.assign({},l,{saved:false,st:'gagal',err:'Mac mini tak jawab'}):l)});toast('Tak dapat mula: '+String((e&&e.message)||'semak Mac mini').slice(0,80))}
     finally{ui.csBusy=0;render()}},'Ya, bina')};
-A.csLookOk=el=>{const g=get('gaya',el.dataset.id);const i=+el.dataset.x;csPut(g,{looks:g.looks.map((l,k)=>k===i?Object.assign({},l,{st:'lulus'}):l)});toast('Rupa masuk library '+csFoldName(csFoldOf(g)))};
+A.csLookOk=el=>{const g=get('gaya',el.dataset.id);const i=+el.dataset.x;csPut(g,{looks:g.looks.map((l,k)=>k===i?Object.assign({},l,{st:'siap',pct:100,err:''}):l)});toast('Rupa masuk library '+csFoldName(csFoldOf(g)))};
 A.csLookNo=el=>{const g=get('gaya',el.dataset.id);const i=+el.dataset.x;csPut(g,{looks:g.looks.map((l,k)=>k===i?Object.assign({},l,{st:'',saved:false,on:false}):l)});toast('Rupa dibuang')};
 A.csTplSave=el=>{const g=get('gaya',el.dataset.id);const tp=csHas(g).tp;csPut(g,Object.assign({tpl:Object.assign({},tp,{saved:true,old:undefined}),status:'simpan'},csEnsureFold(g)));toast('Template disimpan ke library '+csFoldName(csFoldOf(g)))};
 A.csMenu=el=>{const g=get('gaya',el.dataset.id);modal(`<h2>${esc(g.name||'Style')}</h2><div class="rspick">

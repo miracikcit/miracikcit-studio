@@ -448,7 +448,7 @@ audio{width:100%;margin-top:8px}
 .cslook .d{font-size:11.5px;color:var(--mut);line-height:1.3;padding:0 4px}
 .lkact{display:flex;flex-wrap:wrap;gap:4px;padding:0 2px}
 .lkact .chip{min-height:30px;padding:0 9px;font-size:11px}
-.lkst{font-size:11px;font-weight:600;color:var(--mut);padding:0 4px}.lkst.ok{color:#44512A}.lkst.bad{color:#8A2F1C}
+.lkst{font-size:11px;font-weight:600;color:var(--mut);padding:0 4px}.lkst.ok{color:#44512A}.lkst.bad{color:#8A2F1C}.lkst.trial{display:block;color:#7A5A12;margin-top:4px}
 .csbar{display:flex;height:12px;border-radius:99px;overflow:hidden;gap:2px}
 .csbar i{display:block;background:var(--acc)}.csbar i:nth-child(even){background:#B79C86}
 .csslots{display:flex;flex-direction:column}
