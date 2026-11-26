@@ -187,7 +187,8 @@ A.csLookSave=el=>{const g=get('gaya',el.dataset.id);const idx=(g.looks||[]).map(
     try{await studioJob('look_build',{id:g.id,i:idx},3*60000);toast('Sesi Claude dibuka. Peratus naik pada kad ni')}
     catch(e){const c=get('gaya',g.id);csPut(c,{looks:(c.looks||[]).map((l,i)=>idx.includes(i)?Object.assign({},l,{saved:false,st:'gagal',err:'Mac mini tak jawab'}):l)});toast('Tak dapat mula: '+String((e&&e.message)||'semak Mac mini').slice(0,80))}
     finally{ui.csBusy=0;render()}},'Ya, bina')};
-A.csLookOk=el=>{const g=get('gaya',el.dataset.id);const i=+el.dataset.x;csPut(g,{looks:g.looks.map((l,k)=>k===i?Object.assign({},l,{st:'siap',pct:100,err:''}):l)});toast('Rupa masuk library '+csFoldName(csFoldOf(g)))};
+A.csLookOk=el=>{const g=get('gaya',el.dataset.id);const i=+el.dataset.x;csPut(g,{looks:g.looks.map((l,k)=>k===i?Object.assign({},l,{st:'siap',pct:100,err:''}):l)});toast('Rupa masuk library '+csFoldName(csFoldOf(g)));
+  if(window.studioJob)studioJob('look_ok',{id:g.id,i},2*60000).catch(()=>{})};   /* Mac mini: buang ref.mp4 bila semua rupa lulus (0 token) */
 A.csLookNo=el=>{const g=get('gaya',el.dataset.id);const i=+el.dataset.x;csPut(g,{looks:g.looks.map((l,k)=>k===i?Object.assign({},l,{st:'',saved:false,on:false}):l)});toast('Rupa dibuang')};
 A.csTplSave=el=>{const g=get('gaya',el.dataset.id);const tp=csHas(g).tp;csPut(g,Object.assign({tpl:Object.assign({},tp,{saved:true,old:undefined}),status:'simpan'},csEnsureFold(g)));toast('Template disimpan ke library '+csFoldName(csFoldOf(g)))};
 A.csMenu=el=>{const g=get('gaya',el.dataset.id);modal(`<h2>${esc(g.name||'Style')}</h2><div class="rspick">
