@@ -95,6 +95,15 @@ def _move(files, dest):
     done = []
     for f in files:
         out = os.path.join(dest, f["name"])
+        if os.path.exists(out) and os.path.getsize(out) == f["size"]:
+            # fail sama dihantar dua kali: jangan simpan dua salinan
+            tr = os.path.expanduser("~/.Trash")
+            b, e = os.path.splitext(f["name"])
+            try:
+                shutil.move(f["path"], os.path.join(tr, "%s_dup%d%s" % (b, int(time.time() * 1000) % 10000000, e)))
+            except Exception:
+                os.remove(f["path"])
+            continue
         if os.path.exists(out):
             b, e = os.path.splitext(f["name"])
             out = os.path.join(dest, "%s_%d%s" % (b, int(time.time()) % 100000, e))

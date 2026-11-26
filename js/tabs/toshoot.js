@@ -95,7 +95,7 @@ function fuBody(){const u=ui.fu,it=get('items',u.id);if(!it)return '';
       <div class="btns fub"><button class="btn" data-act="fuNew" data-id="${it.id}">Buat folder sahaja</button><button class="btn solid tab" data-act="fuNewUp" data-id="${it.id}">${IC.up}Buat + upload</button></div>`:'';
   return `<h2>Masukkan footage</h2><p class="meta">${esc(it.title||'')}</p><div class="fuos">
     ${opt('air',IC.next,'AirDrop ke Mac mini','Paling laju. Di rumah, dekat Mac mini.')}
-    ${opt('up',IC.up,'Upload dari iPhone','Di luar rumah. Perlu internet, lebih lambat.')}
+    ${opt('up',IC.up,'Upload dari iPhone','Di luar rumah. Terus ke Drive, perlu internet.')}
     ${opt('pick',IC.footage,'Pilih folder dari CLAUDE EDITS','Footage dah ada di Mac mini. Pautkan sahaja.')}
     ${opt('new',IC.plus,'Buat folder baru','Dalam folder utama 21, 22, 23 dan seterusnya.')}</div>
     <div class="fubody">${body}</div>${tsVoBtn(!!it.vo,'fuVo',it.id)}<div class="btns" style="justify-content:space-between;align-items:center;margin-top:10px">${tok(0)}<button class="btn" data-act="closeModal">Tutup</button></div>`}
@@ -135,7 +135,7 @@ A.fuNew=async el=>{const it=get('items',el.dataset.id),v=fuNewVals();if(!v)retur
   catch(e){b.disabled=false;b.textContent='Buat folder sahaja';toast('Tak dapat buat folder: '+String((e&&(e.message||e.code))||'semak Mac mini hidup').slice(0,80))}};
 A.fuNewUp=el=>{const it=get('items',el.dataset.id),v=fuNewVals();if(!v)return;fuFiles(fs=>{closeModal();fuRun(it,v.stage,v.name,fs)})};
 /* 2026-11-26: upload TERUS iPhone -> Drive (tanpa Apps Script di tengah, tanpa base64). Apps Script `ustart` buka sesi dengan
-   Origin app, jadi Drive benarkan PUT dari browser. Sekeping 32 MB dengan % hidup. Gagal = balik ke cara lama (uchunk 8 MB). */
+   Origin app, jadi Drive benarkan PUT dari browser. Sekeping 32 MB dengan % hidup. Cara lama (uchunk 8 MB) dibuang dari sini 26 Nov (Mira); gagal = sambung dari bait terakhir, 3 cubaan. */
 function fuPut(url,blob,start,total,onp){return new Promise((res,rej)=>{const x=new XMLHttpRequest();x.open('PUT',url);
   x.setRequestHeader('Content-Range',blob?`bytes ${start}-${start+blob.size-1}/${total}`:`bytes */${total}`);
   if(blob&&onp)x.upload.onprogress=e=>onp(e.loaded);x.timeout=15*60000;
@@ -143,17 +143,17 @@ function fuPut(url,blob,start,total,onp){return new Promise((res,rej)=>{const x=
     else if(x.status===200||x.status===201){try{res({id:JSON.parse(x.responseText).id})}catch(e){rej(new Error('Drive jawab pelik'))}}
     else rej(new Error('Drive '+x.status))};
   x.onerror=()=>rej(new Error('Sambungan putus'));x.ontimeout=()=>rej(new Error('Terlalu lama'));x.send(blob||null)})}
-async function fuRun(it,stage,name,fs){const b64=blob=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]||'');r.onerror=rej;r.readAsDataURL(blob)});
+async function fuRun(it,stage,name,fs){
   const up=[];ui.fuUp=Object.assign({},ui.fuUp);wakeOn();
   try{for(let k=0;k<fs.length;k++){const f=fs[k];ui.fuUp[it.id]={i:k+1,n:fs.length,name:f.name,pct:0};render();
-      const meta={name:f.name,mime:f.type||'video/mp4',size:f.size};let s=await studioCall('ustart',Object.assign({origin:location.origin},meta));
-      const CH=8*1048576,DCH=32*1048576;let pos=0,id=null,tries=0,direct=!!s.direct,sent=false;
+      const s=await studioCall('ustart',{origin:location.origin,name:f.name,mime:f.type||'video/mp4',size:f.size});
+      if(!s.direct)throw new Error('Drive tak benarkan upload terus');
+      const DCH=32*1048576;let pos=0,id=null,tries=0;
       const pct=b=>{const v=Math.min(100,Math.round(b/f.size*100));if(v!==ui.fuUp[it.id].pct){ui.fuUp[it.id].pct=v;render()}};
-      while(pos<f.size&&!id){try{const r=direct?await fuPut(s.url,f.slice(pos,pos+DCH),pos,f.size,l=>pct(pos+l)):await studioCall('uchunk',{url:s.url,start:pos,total:f.size,b64:await b64(f.slice(pos,pos+CH))});
-          if(r.id)id=r.id;else pos=r.next;tries=0;sent=true}
-        catch(e){if(direct&&!sent){direct=false;pos=0;s=await studioCall('ustart',meta);continue}
-          if(++tries>3)throw e;await new Promise(r=>setTimeout(r,2000*tries));
-          if(direct){try{const q=await fuPut(s.url,null,0,f.size);if(q.id)id=q.id;else if(q.next!=null)pos=q.next}catch(_){}}}
+      while(pos<f.size&&!id){try{const r=await fuPut(s.url,f.slice(pos,pos+DCH),pos,f.size,l=>pct(pos+l));
+          if(r.id)id=r.id;else pos=r.next;tries=0}
+        catch(e){if(++tries>3)throw e;await new Promise(r=>setTimeout(r,2000*tries));
+          try{const q=await fuPut(s.url,null,0,f.size);if(q.id)id=q.id;else if(q.next!=null)pos=q.next}catch(_){}}
         pct(id?f.size:pos)}
       if(!id)throw new Error('Drive tak bagi id fail');up.push({id,name:f.name})}
     await studioCall('job_add',{type:'foot_in',input:{item:it.id,stage,name,files:up}});
