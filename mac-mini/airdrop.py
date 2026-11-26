@@ -165,7 +165,7 @@ def tick(sheet, W, down=None):
         ign = set(st.get("ignore") or [])
         pend = [f for f in cand if f["video"] and now - f["at"] < PENDING_S and (f["name"] + "|" + str(f["size"])) not in ign
                 and not (w and f["at"] >= w["t0"] - 5)]
-        live = {f["name"] + "|" + str(f["size"]) for f in cand}
+        live = {k + "|" + str(v) for k, v in _sizes.items()}   # semua fail dalam Downloads, bukan yang stabil sahaja (elak hilang lepas restart)
         st["ignore"] = sorted(ign & live)
         _save(st)
         _pending_put(sheet, pend)
