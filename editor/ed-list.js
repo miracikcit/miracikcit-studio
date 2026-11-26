@@ -50,8 +50,19 @@
   const thumb = it => { const id = posterId(it.pw), u = id && EDP.url[id]; return `<span class="el-th${u ? ' has' : ''}" style="--h:${hue(it.name)}${u ? `;background-image:url(${u})` : ''}"${id ? ` data-edp="${esc(id)}"` : ''}><span class="ini">${esc(String(it.name || 'V').trim().charAt(0).toUpperCase())}</span>`; };
 
   /* ---- paparan ---- */
+  /* 26 Nov (Mira): footage tambahan yang di-AirDrop selepas projek dibuat (sync/edextra, ditulis mac-mini/airdrop.py) */
+  const xOf = it => Object.entries((T.extra || {}).items || {}).filter(([k, e]) => e && e.vid === it.pw.id && (e.files || []).length).map(([k, e]) => Object.assign({ k }, e));
+  const xPct = e => Math.max(1, Math.min(95, Math.round((Date.now() - (e.t0 || 0)) / (Math.max(1, e.n || e.files.length) * 25000 + 15000) * 100)));
+  function xtra(it) { if (!it.pw.id) return ''; return xOf(it).map(e => { const n = e.files.length, run = e.status === 'proses' && Date.now() - (e.t0 || 0) < 30 * 6e4;
+    return run ? `<div class="el-xtra run"><i class="el-xspin"></i>Masukkan ${n} footage · ${xPct(e)}%</div>`
+      : `<div class="el-xtra"><button data-act="xGo" data-k="${esc(e.k)}">+${n} footage baru · ${e.status === 'error' ? 'Cuba lagi' : 'Masukkan'}</button><button class="no" data-act="xNo" data-k="${esc(e.k)}" aria-label="Tak perlu">${IC.x}</button></div>`; }).join(''); }
+  A.xGo = async el => { const k = el.dataset.k, x = (T.extra || {}).items || {}, e = x[k]; if (!e) return; el.disabled = true;
+    try { await studioCall('job_add', { type: 'air_wait', input: { extra: k } }); x[k] = Object.assign({}, e, { status: 'proses', t0: Date.now(), n: e.files.length }); render(true); toast('Mac mini sedang masukkan footage ke projek'); }
+    catch (err) { el.disabled = false; toast('Mac mini tak jawab'); } };
+  A.xNo = async el => { const k = el.dataset.k, x = (T.extra || {}).items || {}, keep = x[k]; if (!keep) return; delete x[k]; render(true);
+    try { await studioCall('job_add', { type: 'air_wait', input: { extra: k, drop: true } }); toast('Okay, footage kekal dalam folder sahaja'); } catch (err) { x[k] = keep; render(true); toast('Mac mini tak jawab'); } };
   function card(it) { const s = stat(it), ok = ready(it), tag = ok ? 'a' : 'div', href = ok ? ` href="./?v=${encodeURIComponent(it.pw.id)}"` : '';
-    return `<div class="el-card"><${tag} class="lk"${href}>${thumb(it)}<span class="el-pill" style="${s.c ? `--pc:${s.c}` : ''}">${esc(s.t)}</span></span><div class="bd"><h4>${esc(it.name)}</h4>${s.pct ? `<div class="el-bar"><i style="width:${Math.min(100, s.pct)}%"></i></div>` : ''}<span class="el-meta">${esc(s.sub || (it.at ? ago(it.at) : ''))}</span></div></${tag}>${it.k[0] === 'w' ? '' : `<button class="el-dots" data-act="menu" data-k="${esc(it.k)}" aria-label="Lagi untuk ${esc(it.name)}">${IC.dots}</button>`}</div>`; }
+    return `<div class="el-card"><${tag} class="lk"${href}>${thumb(it)}<span class="el-pill" style="${s.c ? `--pc:${s.c}` : ''}">${esc(s.t)}</span></span><div class="bd"><h4>${esc(it.name)}</h4>${s.pct ? `<div class="el-bar"><i style="width:${Math.min(100, s.pct)}%"></i></div>` : ''}<span class="el-meta">${esc(s.sub || (it.at ? ago(it.at) : ''))}</span></div></${tag}>${xtra(it)}${it.k[0] === 'w' ? '' : `<button class="el-dots" data-act="menu" data-k="${esc(it.k)}" aria-label="Lagi untuk ${esc(it.name)}">${IC.dots}</button>`}</div>`; }
   function sheetNew() { const n = T.nw, up = n.up, mb = f => f.size >= 1048576 ? Math.round(f.size / 1048576) + ' MB' : Math.max(1, Math.round(f.size / 1024)) + ' KB';
     const st = ((T.toedit || {}).stages) || [], opts = n.src === 'mac' ? st.flatMap(s => (s.items || []).filter(i => i.clips > 0).map(i => `<option value="${esc(s.name + '|' + i.name)}">${esc(s.name.replace(/^\d+\.\s*/, ''))} / ${esc(i.name)} (${i.clips} klip)</option>`)).join('') : '';
     const body = n.src === 'phone' ? (n.files.length ? `<div class="el-picks">${n.files.map((f, i) => `<div class="el-pk"><video src="${n.urls[i]}#t=0.1" muted playsinline preload="metadata"></video><span class="sz">${mb(f)}</span>${up ? '' : `<button class="rm" data-act="nwRm" data-i="${i}" aria-label="Buang ${esc(f.name)}">${IC.x}</button>`}</div>`).join('')}${up ? '' : `<button class="el-add" data-act="nwPick" aria-label="Tambah video lagi">${IC.plus}</button>`}</div>`
@@ -84,7 +95,7 @@
       <button class="el-new" data-act="nwOpen"><span class="p">${IC.plus}</span><span><b>New Video</b><span>Tambah video dari phone, atau pilih folder di Mac mini</span></span></button>
       <div class="el-chips">${chip('all', 'Semua', all.length)}${chip('own', 'Edit sendiri', sets.own.length)}${chip('claude', 'Dari Claude', sets.claude.length)}</div>
       ${cont ? `<p class="el-eye">Sambung edit</p><div class="el-cont">${thumb(cont)}</span><div class="inf"><h3>${esc(cont.name)}</h3><span class="el-meta">${esc([cont.e && cont.e.style, cont.at ? 'diedit ' + ago(cont.at) : ''].filter(Boolean).join(' · '))}</span>
-        <div class="el-btns"><a class="el-btn go" href="./?v=${encodeURIComponent(cont.pw.id)}">${IC.cut}Buka editor</a>${draftUrl(cont) ? `<a class="el-btn" href="${draftUrl(cont)}" target="_blank" rel="noopener">${IC.play}Draf</a>` : ''}<button class="el-btn" data-act="menu" data-k="${esc(cont.k)}" aria-label="Lagi">${IC.dots}</button></div></div></div>` : ''}
+        <div class="el-btns"><a class="el-btn go" href="./?v=${encodeURIComponent(cont.pw.id)}">${IC.cut}Buka editor</a>${draftUrl(cont) ? `<a class="el-btn" href="${draftUrl(cont)}" target="_blank" rel="noopener">${IC.play}Draf</a>` : ''}<button class="el-btn" data-act="menu" data-k="${esc(cont.k)}" aria-label="Lagi">${IC.dots}</button></div></div></div>${xtra(cont)}` : ''}
       ${cont && list.length ? '<p class="el-eye">Semua video</p>' : ''}${list.length ? `<div class="el-grid">${list.map(card).join('')}</div>` : (cont ? '' : `<div class="el-empty">${!T.loaded ? 'Memuatkan video…' : q ? 'Tiada video sepadan dengan carian.' : 'Tiada video lagi. Ketik New Video untuk mula.'}</div>`)}
       <p class="el-foot el-meta">App Editor berasingan dari Studio. Tukar antara dua app dengan app switcher.</p>
       ${T.nw ? sheetNew() : T.menu ? sheetMenu() : ''}</div>`;
@@ -137,6 +148,8 @@
       await Studio.ready(); const db = await claude.use('db');
       const col = (name, key) => db.collection(name).onSnapshot(snap => { T[key] = snap.docs.map(d => Object.assign({}, d.data(), { id: d.id })); if (name === 'edpwa') T.loaded = true; render(); });
       col('edpwa', 'edpwa'); col('editor', 'tracker');
+      db.doc('sync/edextra').onSnapshot(s => { T.extra = s.exists ? s.data() : null; render(); });
+      setInterval(() => { if (Object.values((T.extra || {}).items || {}).some(e => e && e.status === 'proses') && document.visibilityState === 'visible' && !T.nw && !T.menu) render(); }, 5000);
       db.doc('sync/toedit').onSnapshot(s => { T.toedit = s.exists ? s.data() : null; if (T.nw && T.nw.src === 'mac') render(); });
       setInterval(() => { if (T.wait.length && document.visibilityState === 'visible') render(); }, 20000); } };
 })();

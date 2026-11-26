@@ -154,6 +154,10 @@ def tick(sheet, W, down=None):
                     _put(sheet, w["item"], status="tunggu", done=w["done"], until=int(w["until"] * 1000), folder=folder, files=w["files"][-50:])
                     W._scan_last["t"] = 0
                     W.push_scan(sheet, force=True)
+                    try:
+                        _extra_note(st, sheet, W, w, [n for n in names if n.lower().endswith(VIDEO)])
+                    except Exception:
+                        log.exception("AirDrop: semak projek Editor gagal")
                     log.info("AirDrop: %d fail masuk %s", moved, folder)
                 except Exception as e:
                     log.exception("AirDrop gagal pindah")
@@ -181,9 +185,116 @@ def tick(sheet, W, down=None):
         return moved, len(pend)
 
 
+# ---- Footage tambahan untuk projek yang DAH ada dalam Editor (26 Nov, Mira pilih cadangan A) ----
+# Bila video AirDrop masuk folder kad dan folder tu dah ada projek Editor yang belum final, catat dalam sync/edextra
+# {items:{<kunci>:{vid, base, title, folder, item, files[], at, status?}}}. Studio (kad Shoot, baris Edit) dan app Editor
+# tunjuk "+N footage baru" dengan butang Masukkan ke projek -> job air_wait {extra:<kunci>} -> edfoot._add (klip masuk
+# Klip simpanan, maks 15 s setiap klip; edit sedia ada tak berubah). {extra, drop:true} = abaikan.
+def _projects(sheet, W, stage, name):
+    import edpwa
+    main, _ = W._edit_main(stage)
+    root, out = os.path.join(main, name), []
+    for dp, dn, fn in os.walk(root):
+        depth = dp[len(root):].count(os.sep)
+        dn[:] = [] if depth >= 5 else [d for d in dn if not d.startswith(".")]
+        if "data.json" not in fn or "proxy.mp4" not in fn:
+            continue
+        dn[:] = []
+        for d, base in ((dp, ""), (os.path.dirname(dp), os.path.basename(dp))):
+            vid = edpwa.vid_of(d)
+            doc = (sheet.call("dget", path="edpwa/" + vid) or {}).get("doc") or {}
+            if doc.get("dir") and os.path.realpath(doc["dir"]) == os.path.realpath(d):
+                if doc.get("status") == "sedia" and not doc.get("pub") and doc.get("final") != "siap":
+                    out.append((vid, base, doc))
+                break
+    return out
+
+
+def _extra_put(sheet, st):
+    sheet.call("dset", path="sync/edextra", data={"items": st.get("extra") or {}, "updated": int(time.time() * 1000)})
+
+
+def _extra_note(st, sheet, W, w, vids):
+    if not vids:
+        return
+    ex = st.setdefault("extra", {})
+    hit = False
+    for vid, base, doc in _projects(sheet, W, w["stage"], w["name"]):
+        key = vid + ("~" + re.sub(r"[^\w-]", "", base) if base else "")
+        e = ex.get(key) or {"vid": vid, "base": base, "title": str(doc.get("title") or vid)[:80], "folder": w["stage"] + "/" + w["name"],
+                            "item": w["item"], "files": []}
+        if e.get("status") == "proses":
+            e = dict(e, files=[], status=None)   # yang sedang dimasukkan kekal dalam thread; ni kumpulan baru
+        e["files"] = e["files"] + [w["name"] + "/" + n for n in vids if w["name"] + "/" + n not in e["files"]]
+        e["at"] = int(time.time() * 1000)
+        e.pop("msg", None)
+        if e.get("status") != "proses":
+            e.pop("status", None)
+        ex[key] = e
+        hit = True
+    if hit:
+        _extra_put(sheet, st)
+        log.info("AirDrop: %d footage tambahan dicatat untuk projek Editor dalam %s", len(vids), w["name"])
+
+
+def _extra_job(inp, sheet, W):
+    key = re.sub(r"[^\w~-]", "", str(inp.get("extra")))
+    with _lock:
+        st = _load()
+        e = (st.get("extra") or {}).get(key)
+        if not e:
+            _extra_put(sheet, st)
+            return {"ok": True, "none": True}
+        if inp.get("drop"):
+            st["extra"].pop(key, None)
+            _save(st)
+            _extra_put(sheet, st)
+            return {"ok": True}
+        if e.get("status") == "proses" and time.time() * 1000 - e.get("t0", 0) < 30 * 60000:
+            return {"ok": True, "busy": True}
+        files = list(e.get("files") or [])
+        e.update(status="proses", t0=int(time.time() * 1000), n=len(files))
+        e.pop("msg", None)
+        _save(st)
+        _extra_put(sheet, st)
+    threading.Thread(target=_extra_run, args=(sheet, W, key, dict(e), files), daemon=True).start()
+    return {"ok": True, "n": len(files)}
+
+
+def _extra_run(sheet, W, key, e, files):
+    err = None
+    try:
+        import edfoot
+        doc = (sheet.call("dget", path="edpwa/" + e["vid"]) or {}).get("doc") or {}
+        if not doc.get("dir") or not os.path.isdir(doc["dir"]):
+            raise RuntimeError("Projek Editor tak dijumpai dalam Mac mini")
+        for i in range(0, len(files), 12):
+            edfoot._add({"vid": e["vid"], "base": e.get("base") or "", "files": files[i:i + 12]}, sheet, None, W, e["vid"], doc)
+        log.info("AirDrop: %d footage tambahan masuk projek %s", len(files), e["vid"])
+    except Exception as ex:
+        log.exception("Footage tambahan gagal")
+        err = str(ex)[:200]
+    with _lock:
+        st = _load()
+        cur = (st.get("extra") or {}).get(key)
+        if cur:
+            if err:
+                cur.update(status="error", msg=err)
+            else:
+                cur["files"] = [f for f in cur.get("files") or [] if f not in files]
+                if cur["files"]:
+                    cur.pop("status", None)
+                else:
+                    st["extra"].pop(key, None)
+            _save(st)
+        _extra_put(sheet, st)
+
+
 def job_wait(inp, sheet, W):
     """Kad ditekan: 30 minit seterusnya, fail AirDrop masuk folder kad ni."""
     item = re.sub(r"[^\w-]", "", str(inp.get("item") or ""))
+    if inp.get("extra"):
+        return _extra_job(inp, sheet, W)
     if inp.get("cancel"):
         with _lock:
             st = _load()

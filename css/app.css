@@ -712,3 +712,5 @@ button.tpchip{cursor:pointer}.tpchip.btnx{font-weight:500}
 .edparts{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}
 .edpart{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:13px;min-width:0}
 .edpart .ccn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 26 Nov: +N footage baru untuk projek Editor (kad Shoot, baris Edit) */
+.edxb{margin-top:8px}.edxb .meta{margin:0 0 6px}.edxb .btns{gap:6px}

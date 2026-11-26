@@ -62,7 +62,8 @@ A.tfSave=el=>{const id=el.dataset.id,old=id?get('items',id):{created:Date.now(),
 function fuFolders(){return (((S.sync.toedit||{}).stages)||[]).flatMap(st=>(st.items||[]).map(i=>({v:st.name+'/'+i.name,l:st.name.replace(/^(\d+)\.\s*/,'$1 · ')+' › '+i.name})))}
 function fuSel(id,val,withNew,title){const L=fuFolders();const nw=withNew?FOLDERS.map(f=>`<option value="new|${esc(f)}">＋ Folder baru dalam ${esc(f)}</option>`).join(''):'';
   return `<select class="inp" id="${id}"><option value="">${withNew?'Pilih folder':'Tiada / belum'}</option>${nw?`<optgroup label="Folder baru (nama: ${esc(title||'kad')})">${nw}</optgroup>`:''}<optgroup label="Folder sedia ada">${L.map(o=>`<option value="${esc(o.v)}"${o.v===val?' selected':''}>${esc(o.l)}</option>`).join('')}</optgroup>${val&&!L.some(o=>o.v===val)?`<option value="${esc(val)}" selected>${esc(val)}</option>`:''}</select>`}
-function fuStatus(it){const u=(ui.fuUp||{})[it.id],d=get('footin',it.id);
+function fuStatus(it){return fuStat0(it)+edExtraBar(it.folder)}
+function fuStat0(it){const u=(ui.fuUp||{})[it.id],d=get('footin',it.id);
   if(u)return `<div class="stbar" style="--c:var(--c)"><div class="stt"><span>Upload ${u.i}/${u.n}: ${esc(u.name)}</span><span>${u.pct}%</span></div><div class="stg"><i style="width:${Math.max(3,u.pct)}%"></i></div></div>`;
   if(d&&d.status==='proses'&&Date.now()-(d.at||0)<3*36e5)return `<div class="stbar" style="--c:var(--warn)"><div class="stt"><span><i class="spin"></i> Mac mini pindah ke folder (${d.done||0}/${d.n||'?'})</span><span>${d.n?Math.round((d.done||0)/d.n*100):0}%</span></div><div class="stg"><i style="width:${Math.max(3,d.n?(d.done||0)/d.n*100:5)}%"></i></div></div>`;
   if(d&&d.status==='tunggu'&&Date.now()<(d.until||0)){const left=Math.max(1,Math.ceil((d.until-Date.now())/60000));return `<div class="stbar" style="--c:var(--warn)"><div class="stt"><span><i class="spin"></i> Menunggu AirDrop${d.done?' · '+d.done+' dah masuk':''}</span><span>baki ${left} min · <button type="button" class="airx" data-act="airCancel" data-id="${it.id}">${d.done?'Selesai':'Batal'}</button></span></div><div class="stg"><i style="width:${Math.max(3,Math.round(left/30*100))}%"></i></div></div>`}
@@ -122,6 +123,34 @@ function airBusy(except){return S.footin.find(d=>d.air&&d.status==='tunggu'&&Dat
 A.airCancel=async el=>{const d=get('footin',el.dataset.id);if(!d)return;el.disabled=true;el.innerHTML='<i class="spin"></i>';
   try{await studioCall('job_add',{type:'air_wait',input:{item:d.id,cancel:true}});save('footin',Object.assign({},d,{status:d.done?'sedia':'batal',at:Date.now()}));render();toast(d.done?'Diterima · '+d.done+' fail':'AirDrop dibatalkan')}
   catch(e){render();toast('Mac mini tak jawab')}};
+/* 26 Nov (Mira, cadangan A): footage tambahan selepas projek dah ada dalam Editor. Mac mini catat dalam sync/edextra bila video
+   AirDrop masuk folder yang dah ada projek Editor belum final; di sini tanda "+N footage baru" + butang Masukkan ke projek
+   (job air_wait {extra:kunci} -> edfoot._add: klip masuk Klip simpanan, edit sedia ada kekal). */
+const edExtra=folder=>folder?Object.entries((S.sync.edextra||{}).items||{}).filter(([k,e])=>e&&e.folder===folder&&(e.files||[]).length).map(([k,e])=>Object.assign({k},e)):[];
+const edxRun=e=>e.status==='proses'&&Date.now()-(e.t0||0)<30*6e4;
+const edxPct=e=>Math.max(1,Math.min(95,Math.round((Date.now()-(e.t0||0))/(Math.max(1,e.n||e.files.length)*25000+15000)*100)));
+function edExtraBar(folder){return edExtra(folder).map(e=>{const n=e.files.length,t=esc(String(e.title||'projek Editor').slice(0,48));
+  if(edxRun(e))return `<div class="stbar edxb" style="--c:var(--warn)"><div class="stt"><span><i class="spin"></i> Masukkan ${n} footage ke ${t}</span><span class="edxp" data-t0="${e.t0||0}" data-n="${e.n||n}">${edxPct(e)}%</span></div><div class="stg"><i style="width:${edxPct(e)}%"></i></div></div>`;
+  return `<div class="edxb"><p class="meta"><b>+${n} footage baru</b> untuk ${t}${e.status==='error'?` · <span style="color:var(--bad)">tak jadi: ${esc(String(e.msg||'').slice(0,70))}</span>`:''}</p>
+    <div class="btns"><button class="btn sm solid tab" data-act="edExtraGo" data-id="${esc(e.k)}">${IC.plus}${e.status==='error'?'Cuba lagi':'Masukkan ke projek'}</button><button class="btn sm" data-act="edExtraNo" data-id="${esc(e.k)}">Tak perlu</button></div></div>`}).join('')}
+A.edExtraGo=async el=>{const k=el.dataset.id,x=(S.sync.edextra||{}).items||{},e=x[k];if(!e)return;el.disabled=true;el.innerHTML='<i class="spin"></i>1%';
+  try{await studioCall('job_add',{type:'air_wait',input:{extra:k}});x[k]=Object.assign({},e,{status:'proses',t0:Date.now(),n:e.files.length});render();toast('Mac mini sedang masukkan footage. Buka semula projek dalam Editor bila siap')}
+  catch(err){render();toast('Mac mini tak jawab')}};
+A.edExtraNo=async el=>{const k=el.dataset.id,x=(S.sync.edextra||{}).items||{},keep=x[k];if(!keep)return;delete x[k];render();
+  try{await studioCall('job_add',{type:'air_wait',input:{extra:k,drop:true}});toast('Okay, footage kekal dalam folder sahaja')}catch(err){x[k]=keep;render();toast('Mac mini tak jawab')}};
+setInterval(()=>document.querySelectorAll('.edxp').forEach(s=>{const p=edxPct({t0:+s.dataset.t0,n:+s.dataset.n,files:[]});s.textContent=p+'%';const b=s.closest('.stbar').querySelector('.stg i');if(b)b.style.width=p+'%'}),3000);
+/* Baris tab Edit: butang AirDrop footage tambahan terus ke folder tu (kad dah keluar dari Shoot) */
+const airRowId=(stage,name)=>((S.items.find(it=>it.folder===stage+'/'+name)||{}).id)||('fx-'+nrm(stage+' '+name).replace(/[^a-z0-9]+/g,'-').slice(0,40));
+function airRowStatus(r){if(!r.stage||!r.name)return '';const id=airRowId(r.stage,r.name),d=get('footin',id),it={id,folder:''};
+  return ((d&&d.air&&(d.status==='tunggu'||d.status==='sedia'))?fuStat0(it):'')+edExtraBar(r.stage+'/'+r.name)}
+A.airMore=async el=>{const stage=el.dataset.x,name=el.dataset.n,id=airRowId(stage,name);
+  const busy=airBusy(id);if(busy){const bt=(get('items',busy.id)||{}).title||busy.folder||'kad lain';toast('"'+String(bt).slice(0,40)+'" masih menunggu AirDrop. Tunggu sampai Diterima, atau tekan Batal dulu');return}
+  const old=el.innerHTML;el.disabled=true;el.innerHTML='<i class="spin"></i>';
+  try{const now=Date.now();await studioCall('job_add',{type:'air_wait',input:{item:id,stage,name,t0:now}});
+    save('footin',{id,status:'tunggu',done:0,until:now+30*60000,at:now,air:true,folder:stage+'/'+name});render();
+    toast('Mac mini sedia. Dalam Photos: pilih video › Share › AirDrop › Mac mini');
+    if(/iPhone|iPad|iPod/.test(navigator.userAgent))setTimeout(()=>{location.href='photos-redirect://'},700)}
+  catch(e){el.disabled=false;el.innerHTML=old;toast('Mac mini tak jawab: '+String((e&&(e.message||e.code))||'semak internet').slice(0,70))}};
 function airHome(){const f=airPend();if(!f.length)return '';const gb=f.reduce((a,x)=>a+(x.size||0),0)/1e9;
   return `<div class="card big glass" style="--c:${TAB['to-shoot'].c};margin-top:14px"><p class="eyebrow" style="margin:0">AirDrop · Mac mini</p><h3 style="margin:4px 0">${f.length} video baru sampai</h3>
     <p class="meta">${esc(f.slice(0,3).map(x=>x.name).join(', '))}${f.length>3?' dan '+(f.length-3)+' lagi':''} · ${gb>=1?gb.toFixed(1)+' GB':Math.max(1,Math.round(gb*1000))+' MB'}. Untuk kad mana?</p>

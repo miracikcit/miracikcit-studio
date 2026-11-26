@@ -21,8 +21,8 @@ V['to-edit']=()=>{const te=S.sync.toedit;const folders=toEditFolders();const fse
     ${trk(r.d,r.t)}
     ${brSteps(r,e)}
     ${edPartsList(e)}
-    <div class="btns tem" style="margin-top:12px">${edBtns(r,e,busy,off)}${r.kind==='f'||r.kind==='r'?`<button class="btn icon sm" data-act="peek" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}" aria-label="Lihat footage" title="Lihat footage">${IC.footage}</button>`:''}<button class="btn icon sm bad" data-act="${r.kind==='f'?'fHide':r.kind==='r'?'redoDel':'delItem'}" data-id="${esc(r.kind==='r'?r.rid:r.key)}" aria-label="Buang">${IC.trash}</button></div>
-    ${edNote(r,e)}${tipRep(e)}</div>`}).join('')||`<div class="empty">${te?'Tiada video tunggu edit.':'Belum sync. Tekan Sync folder di Home.'}</div>`}</div>`};
+    <div class="btns tem" style="margin-top:12px">${edBtns(r,e,busy,off)}${r.kind==='f'||r.kind==='r'?`<button class="btn icon sm" data-act="peek" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}" aria-label="Lihat footage" title="Lihat footage">${IC.footage}</button>`:''}${r.kind==='f'?`<button class="btn icon sm" data-act="airMore" data-x="${esc(r.stage)}" data-n="${esc(r.name)}" aria-label="Tambah footage dengan AirDrop" title="Tambah footage dengan AirDrop">${IC.up}</button>`:''}<button class="btn icon sm bad" data-act="${r.kind==='f'?'fHide':r.kind==='r'?'redoDel':'delItem'}" data-id="${esc(r.kind==='r'?r.rid:r.key)}" aria-label="Buang">${IC.trash}</button></div>
+    ${r.kind==='f'?airRowStatus(r):''}${edNote(r,e)}${tipRep(e)}</div>`}).join('')||`<div class="empty">${te?'Tiada video tunggu edit.':'Belum sync. Tekan Sync folder di Home.'}</div>`}</div>`};
 /* Butang kad: belum mula = EDIT NOW; dah tekan = link terus ke chat Claude (Remote Control) atau status */
 function edBtns(r,e,busy,off){if(r.kind==='r'&&!r.clips)return rawBackBtn(String(r.key).replace(/#r\d+$/,''));
   /* 23 Nov: EDIT NOW tak lagi tunggu semua B-roll disemak; Claude guna klip Final yang dah ada */
