@@ -67,6 +67,7 @@ function thTextBox(){const t=thUi();const st=thStyle();
     <div class="btns" style="gap:6px">${TH_TONE.map(a=>`<button class="btn sm ${t.tone===a?'solid tab':''}" data-act="thTone" data-x="${a}" aria-pressed="${t.tone===a}">${a}</button>`).join('')}</div>
     <div style="margin-top:10px">${chk(t.thread,'thThread','','Pecah jadi thread bersiri (lebih 500 aksara)')}</div>
     <div class="btns" style="margin-top:14px"><button class="btn ${t.points.trim()?'solid tab':''}" data-act="thGen"${t.busy?' disabled':''}>${t.busy?'Sedang tulis...':IC.ideas+'Tulis 3 versi'}</button>${tok(TOK.threads,'3 versi, isi sama, ayat lain')}</div>
+    <div class="btns" style="margin-top:8px"><button class="btn sm" data-act="thMine">${IC.copy}Aku tulis sendiri · Copy & simpan</button><span class="meta">0 token, jadi contoh gaya kau</span></div>
     <p class="meta" style="margin:10px 0 0">${t.busy?ldr('Claude sedang tulis'):`Belajar dari ${thPosts().filter(thFinal).length} posting kau${st.notes&&st.notes.length?' + nota gaya':''}.`}</p></div>`}
 function thResBox(){const t=thUi();if(!t.res)return '';
   const box=(v,i)=>{const txt=t.edit[i]??v.text;const parts=thParts(txt);const done=t.postIds[i];
@@ -83,6 +84,9 @@ const thCountTxt=parts=>parts.length>1?parts.map((p,i)=>`Post ${i+1}: ${p.length
 document.addEventListener('input',e=>{const el=e.target;if(!el.dataset)return;const t=ui.th;if(!t)return;
   if(el.dataset.thf)t[el.dataset.thf]=el.value;
   else if(el.dataset.thedit!=null){const i=+el.dataset.thedit;t.edit[i]=el.value;const c=$('#thCount'+i);if(c)c.textContent=thCountTxt(thParts(el.value))}});
+/* 26 Nov (Mira): tulis sendiri terus, tak perlu Claude. Copy + simpan sebagai contoh suara sebenar (source 'sendiri'), untuk kemaskini voice.md bulanan. */
+A.thMine=()=>{const t=thUi();const txt=t.points.trim();if(txt.length<15){toast('Tulis posting kau dulu dalam kotak');return}copyText(thParts(txt).join('\n\n'),'Dicopy. Paste dalam Threads');
+  save('threads',{final:txt,source:'sendiri',edited:false},true);t.points='';render(true);thAutoStudy()};
 A.thTone=el=>{thUi().tone=el.dataset.x;render(true)};
 A.thThread=()=>{const t=thUi();t.thread=!t.thread;render(true)};
 A.thReset=el=>{delete thUi().edit[+el.dataset.x];render(true)};
@@ -152,7 +156,7 @@ Balas JSON sahaja:
 
 /* ---------- sejarah ---------- */
 function thHistory(){const ps=thPosts().filter(thFinal);if(!ps.length)return '';
-  return `<p class="eyebrow" style="margin-top:26px">Posting tersimpan · ${ps.length}</p><div class="list">${ps.slice(0,40).map(p=>`<details class="col card glass"><summary><div class="rowh" style="align-items:center"><div style="min-width:0"><h3 style="font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.final.split('\n')[0])}</h3><div class="meta">${fmtD(p.created)}${p.source==='lama'?' · posting lama':p.edited?' · kau edit':''}</div></div><span class="ic chev">${IC.chev}</span></div></summary>
+  return `<p class="eyebrow" style="margin-top:26px">Posting tersimpan · ${ps.length}</p><div class="list">${ps.slice(0,40).map(p=>`<details class="col card glass"><summary><div class="rowh" style="align-items:center"><div style="min-width:0"><h3 style="font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.final.split('\n')[0])}</h3><div class="meta">${fmtD(p.created)}${p.source==='sendiri'?' · tulis sendiri':p.source==='lama'?' · posting lama':p.edited?' · kau edit':''}</div></div><span class="ic chev">${IC.chev}</span></div></summary>
     <div style="white-space:pre-wrap;font-size:14px;margin-top:10px">${esc(p.final)}</div>
     <div class="btns" style="gap:6px;margin-top:10px"><button class="btn sm" data-act="thHCopy" data-id="${p.id}">${IC.copy}Copy</button><button class="btn icon sm bad" data-act="thHDel" data-id="${p.id}" aria-label="Padam">${IC.trash}</button></div></details>`).join('')}</div>`}
 A.thHCopy=el=>{const p=get('threads',el.dataset.id);if(p)copyText(thParts(p.final).join('\n\n'),'Dicopy')};

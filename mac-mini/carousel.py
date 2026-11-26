@@ -276,14 +276,19 @@ def job_car_make(inp, sheet, cfg, worker):
     return _start(sheet, str(inp.get("id") or ""), worker, _make, "make", "Mula susun slide")
 
 
-TEXT_PROMPT = """Kau penulis content untuk @miracikcit (Bahasa Melayu santai, ayat pendek). Tulis teks untuk satu CAROUSEL gambar {n} slide.
+# Suara Mira (26 Nov 2026): versi pendek ~/.claude/skills/caption-mira/voice.md, sama dengan VOICE_MIRA dalam js/core/utils.js.
+TEXT_PROMPT = """Kau penulis content untuk @miracikcit. Tulis teks untuk satu CAROUSEL gambar {n} slide.
+SUARA MIRA: rojak Melayu harian + English untuk rasa (honestly, obsessed, stress) dan benda tech. "aku" untuk post tech / gadget, "I" / "saya" / "Mira" untuk post rumah dan harian.
+Cerita apa jadi pada Mira sendiri, bukan tutorial; tiada "anda", tiada syarah "korang". Kekalkan je, la, ya, pun, weh, betul2, sbb, yg, mcm.
+Jangan guna: sememangnya, tidak dapat dinafikan, justeru, oleh itu, jom kita terokai, rahsia yang ramai tak tahu, bukan sekadar, tahukah anda, semoga bermanfaat, delve, unlock, game-changer, must-have. Tiada em dash, tak salesy.
+Caption: satu perenggan mengalir macam bercakap (setup panjang, punch pendek), satu detail konkrit, maks 1 emoji. Tutup dengan punchline dulu-sekarang, minta tolong crowd, atau rasa pendek. JANGAN tutup dengan moral atau soalan pada pembaca.
 Tajuk / topik: {title}
 Bahan rujukan (nota atau caption video yang sama; guna fakta dari sini sahaja, jangan reka harga atau nama):
 {src}
 
 Balas JSON sahaja: {{"texts":["teks slide 1", "..."], "caption":"caption posting + 3-5 hashtag di baris akhir"}}
 - Tepat {n} teks. Slide 1 = hook yang buat orang swipe (paling banyak 8 perkataan). Slide tengah = satu point setiap slide (paling banyak 9 perkataan).
-  Slide akhir = ajak simpan atau kongsi.
+  Slide akhir = payoff + satu ajakan santai macam kawan (cth simpan dulu), bukan soalan pada pembaca.
 - Tiada emoji dalam teks slide. Jangan ulang ayat pembuka caption video asal."""
 
 
