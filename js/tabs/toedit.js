@@ -12,7 +12,7 @@ function edDeadline(name,start){const it=smpFor(name);if(!it)return {d:deadline(
 V['to-edit']=()=>{const te=S.sync.toedit;const folders=toEditFolders();const fset=new Set(folders.map(f=>nrm(f.name)));
   const rows=folders.map(x=>({kind:'f',key:x.key,stage:x.stage,no:fno(x.stage),name:x.name,sub:[x.stage.replace(/^\d+\.\s*/,''),(x.clips||0)+' klip'+(x.images?' + '+x.images+' gambar':'')].join(' · '),start:x.mtime}))
    .concat(byStage('toedit').filter(it=>!fset.has(nrm(it.title))).map(it=>({kind:'i',key:it.id,stage:it.folder||'',no:fno(it.folder),name:it.title,sub:[(it.folder||'Belum pilih folder').replace(/^\d+\.\s*/,''),it.account,'folder belum ada footage'].filter(Boolean).join(' · '),start:(it.stageAt&&it.stageAt.toedit)||it.created})))
-   .filter(r=>!isPublishedName(r.name)&&!HELPER_DIR.test(r.name)).concat(redoRows()).map(r=>Object.assign(r,edDeadline(r.name,r.start),{ed:edFor(r.key,r.name)})).sort((a,b)=>(a.d?a.d.left:99)-(b.d?b.d.left:99));
+   .filter(r=>(!isPublishedName(r.name)||(r.kind==='f'&&multiKey(r.key)))&&!HELPER_DIR.test(r.name))   /* 26 Nov (Mira): projek banyak video (GENTING 7 video) kekal walaupun satu video (versi bajet) dah published */.concat(redoRows()).map(r=>Object.assign(r,edDeadline(r.name,r.start),{ed:edFor(r.key,r.name)})).sort((a,b)=>(a.d?a.d.left:99)-(b.d?b.d.left:99));
   const off=macOff();
   if(ui.teSeg==='broll')return head('B-roll untuk semak')+teSegs()+ftSemakView();
   return head(te?'Folder sync '+fmtD(te.syncedAt):'Belum sync',`<button class="btn sm" data-act="addEdit">${IC.plus}Tambah</button>`)+teSegs()+shotList()+
