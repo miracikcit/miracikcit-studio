@@ -26,7 +26,8 @@ function thRender(im,max,ratio){const c=thCrop(im.el,ratio||im.ratio);const k=Ma
   if(im.e.w<0){x.filter='none';x.globalCompositeOperation='soft-light';x.fillStyle=`rgba(90,140,220,${-im.e.w/100})`;x.fillRect(0,0,cv.width,cv.height)}
   return cv}
 /* 27 Nov (Mira): tulisan + outline + doodle atas gambar, enjin dalam thdeco.js (0 token). */
-const thDecoText=()=>{const t=thUi();return t.dtxt!=null?t.dtxt:t.points};
+/* Tulisan setiap gambar berasingan (im.deco.t); null = ikut tulisan am (t.dtxt, atau point). */
+const thDecoText=im=>{const t=thUi();im=im||t.imgs[t.sel];return im&&im.deco.t!=null?im.deco.t:(t.dtxt!=null?t.dtxt:t.points)};
 const thDirty=()=>{if(ui.th){ui.th.keep=null;ui.th.dl=null;peSaveSoon()}};
 /* Topeng subjek diminta SEKALI untuk gambar penuh (im.mk); medan setiap nisbah dipotong dalam phone, jadi saiz platform lain tak perlukan job baru. */
 function thF(im,key){key=key||im.ratio;if(im.mkS!=='ok'||!im.mk)return null;
@@ -34,10 +35,12 @@ function thF(im,key){key=key||im.ratio;if(im.mkS!=='ok'||!im.mk)return null;
     cv.width=300;cv.height=Hd;cv.getContext('2d').drawImage(im.mk,c.sx*kx,c.sy*ky,c.sw*kx,c.sh*ky,0,0,300,Hd);im.F[key]=tdField(cv,Hd)}
   return im.F[key]}
 function thCompose(im,max,ratio){const r=ratio||im.ratio,cv=thRender(im,max,r);const d=r===im.ratio?im.deco:Object.assign({},im.deco,{pos:{}});
-  if(d&&d.style)tdDraw(cv,d,thF(im,r),thDecoText());return cv}
+  if(d&&d.style)tdDraw(cv,d,thF(im,r),thDecoText(im));return cv}
 const thBlob=async(im,ratio)=>{await tdFonts();return new Promise(r=>thCompose(im,2160,ratio).toBlob(r,'image/jpeg',0.92))};
 async function thPaint(){await tdFonts();const cv=$('#thCv'),t=thUi(),im=t.imgs[t.sel];if(!cv||!im||!im.deco.style||!im.el.naturalWidth)return;
-  const c=thRender(im,900);im._bx=tdDraw(c,im.deco,thF(im),thDecoText());
+  const c=thRender(im,900);
+  if(t.lasso){im._bx=[];const x=c.getContext('2d');x.fillStyle='rgba(0,0,0,.28)';x.fillRect(0,0,c.width,c.height)}
+  else im._bx=tdDraw(c,im.deco,thF(im),thDecoText(im));
   if(cv.width!==c.width||cv.height!==c.height){cv.width=c.width;cv.height=c.height}cv.getContext('2d').drawImage(c,0,0)}
 /* Topeng subjek dari Mac mini (job subjek, Apple Vision, 0 token). Gambar kecil 640 px dihantar, dibuang dari Drive sebaik siap. */
 async function thMask(im){if(im.mkS)return;if(!ASSETS||!window.studioJob||mode!=='live'){im.mkS='none';return}
@@ -49,7 +52,7 @@ async function thMask(im){if(im.mkS)return;if(!ASSETS||!window.studioJob||mode!=
   catch(e){im.mkS='none';toast('Tak dapat cari bentuk subjek. Tulisan dan doodle masih jalan')}
   finally{clearInterval(iv);if(up)ASSETS.delete(up.id).catch(()=>{});thDirty();render(true)}}
 function thAddImgs(files){const t=thUi();files.filter(f=>/^image\//.test(f.type)).slice(0,10-t.imgs.length).forEach(f=>{const url=URL.createObjectURL(f);const el=new Image();
-  const im={id:uid(),name:f.name.replace(/\.[^.]+$/,''),file:f,url,el,ratio:'asal',pre:'cantik',e:Object.assign({},TH_PRE.cantik),deco:{style:'',col:null,seed:1,pos:{},txt:!t.imgs.length},F:{}};el.onload=()=>{render(true);peSaveSoon()};el.src=url;t.imgs.push(im)});
+  const im={id:uid(),name:f.name.replace(/\.[^.]+$/,''),file:f,url,el,ratio:'asal',pre:'cantik',e:Object.assign({},TH_PRE.cantik),deco:{style:'',col:null,seed:1,pos:{},txt:true,t:t.imgs.length?'':null,font:''},F:{}};el.onload=()=>{render(true);peSaveSoon()};el.src=url;t.imgs.push(im)});
   t.sel=Math.max(0,t.imgs.length-1);if(t.step===1&&t.imgs.length)t.step=2;thDirty();render(true)}
 
 /* ---------- langkah ---------- */
@@ -68,48 +71,67 @@ A.peDelAt=el=>{const t=thUi(),i=+el.dataset.x,im=t.imgs[i];if(im)URL.revokeObjec
 
 /* 2 · Edit: pratonton, kad doodle, kotak tulisan, Lain-lain (dilipat), Download. Mesti muat satu skrin phone. */
 async function peDood(){const t=thUi(),im=t.imgs[t.sel];if(!im||!im.el.naturalWidth)return;await tdFonts();
-  const key=[im.id,JSON.stringify(im.e),im.deco.col,im.deco.seed,im.mkS,im.deco.txt,thDecoText()].join('|');
-  if(!im._dd||im._dd.k!==key){const u={},F=thF(im,'1:1');for(const k of Object.keys(TD_STY)){const c=thRender(im,160,'1:1');tdDraw(c,Object.assign({},im.deco,{style:k,pos:{}}),F,thDecoText());u[k]=c.toDataURL('image/jpeg',.7)}im._dd={k:key,u}}
+  const key=[im.id,JSON.stringify(im.e),im.deco.col,im.deco.seed,im.mkS,im.deco.font,im.mkB&&im.mkB.length,thDecoText(im)].join('|');
+  if(!im._dd||im._dd.k!==key){const u={},F=thF(im,'1:1');for(const k of Object.keys(TD_STY)){const c=thRender(im,160,'1:1');tdDraw(c,Object.assign({},im.deco,{style:k,pos:{}}),F,thDecoText(im));u[k]=c.toDataURL('image/jpeg',.7)}im._dd={k:key,u}}
   document.querySelectorAll('[data-pedd]').forEach(n=>{const s=im._dd.u[n.dataset.pedd];if(s&&n.getAttribute('src')!==s)n.src=s})}
 const peDlLab=k=>{const d=thUi().dl;if(d&&d.k===k){if(d.p!=null)return `<i class="spin"></i>Sedia ${d.p}%`;if(d.files)return IC.dl+'Simpan ke phone'}return IC.dl+(k==='edit'?'Download image':'Gambar')};
 function peEdit(){const t=thUi();const im=t.imgs[t.sel];if(!im)return peGambar();
-  const dk=im.deco,dc=dk.style?(dk.col!=null?dk.col:TD_STY[dk.style].c):0;if(dk.style)requestAnimationFrame(thPaint);requestAnimationFrame(peDood);
+  const dk=im.deco,dc=dk.style?(dk.col!=null?dk.col:TD_STY[dk.style].c):0;if(!dk.style)t.lasso=false;if(dk.style)requestAnimationFrame(thPaint);requestAnimationFrame(peDood);requestAnimationFrame(()=>peGrow($('#thDtx')));
   const many=t.imgs.length>1,dd=im._dd&&im._dd.u||{};
   const sl=(k,lab,min,max)=>`<label class="thsl"><span>${lab}<b data-v="${k}">${im.e[k]>0?'+':''}${im.e[k]}</b></span><input type="range" min="${min}" max="${max}" step="1" value="${im.e[k]}" data-thsl="${k}"></label>`;
   return `<div class="card big glass pe-ed">
-    <div class="thstage pe-stage" style="${im.ratio!=='asal'?'aspect-ratio:'+im.ratio.replace(':','/'):''}">${dk.style?`<canvas id="thCv" class="thcv"></canvas>`:`<img id="thPrev" src="${im.url}" style="filter:${thFilter(im.e)};${im.ratio!=='asal'?'object-fit:cover;width:100%;height:100%':''}" alt="">${im.e.w<0?`<i class="thcool" style="opacity:${-im.e.w/100}"></i>`:''}`}${im.mkS==='busy'?`<span class="pill pe-busy" style="--pc:var(--c)"><i class="spin"></i>Cari bentuk <b id="thMkP">0</b>%</span>`:''}<button class="btn icon sm bad pe-del" data-act="thDelImg" aria-label="Buang gambar ni">${IC.trash}</button></div>
+    <div class="thstage pe-stage${t.lasso?' las':''}" style="${im.ratio!=='asal'?'aspect-ratio:'+im.ratio.replace(':','/'):''}">${dk.style?`<canvas id="thCv" class="thcv"></canvas>`:`<img id="thPrev" src="${im.url}" style="filter:${thFilter(im.e)};${im.ratio!=='asal'?'object-fit:cover;width:100%;height:100%':''}" alt="">${im.e.w<0?`<i class="thcool" style="opacity:${-im.e.w/100}"></i>`:''}`}${im.mkS==='busy'?`<span class="pill pe-busy" style="--pc:var(--c)"><i class="spin"></i>Cari bentuk <b id="thMkP">0</b>%</span>`:''}${t.lasso?`<span class="pill pe-busy" style="--pc:var(--c)">Lukis keliling benda tu</span>`:''}${dk.style&&im.mkS!=='busy'?`<div class="pe-pick"><button class="btn sm ${t.lasso?'solid tab':''}" data-act="peLasso">${IC.edit}${t.lasso?'Batal':'Pilih benda'}</button>${im.mkU&&!t.lasso?`<button class="btn sm" data-act="peAuto">Auto</button>`:''}</div>`:''}<button class="btn icon sm bad pe-del" data-act="thDelImg" aria-label="Buang gambar ni">${IC.trash}</button></div>
     ${many?`<div class="thrail pe-rail">${t.imgs.map((x,i)=>`<button class="thth ${i===t.sel?'on':''}" data-act="thSel" data-x="${i}" aria-label="Gambar ${i+1}"><img src="${x.url}" style="filter:${thFilter(x.e)}" alt=""></button>`).join('')}</div>`:''}
     <div class="pe-dood"><button type="button" class="pe-dd ${!dk.style?'on':''}" data-act="thDeco" data-x="" aria-pressed="${!dk.style}"><img src="${im.url}" style="filter:${thFilter(im.e)}" alt=""><span>Tiada</span></button>${Object.entries(TD_STY).map(([k,s])=>`<button type="button" class="pe-dd ${dk.style===k?'on':''}" data-act="thDeco" data-x="${k}" aria-pressed="${dk.style===k}"><img data-pedd="${k}" src="${dd[k]||im.url}" alt=""><span>${s.l}</span></button>`).join('')}</div>
-    <textarea class="inp" id="thDtx" data-thf="dtxt" rows="3" placeholder="Baris pertama = tajuk. Setiap baris lain = satu tulisan." style="margin-top:10px">${esc(thDecoText())}</textarea>
+    <textarea class="inp pe-tx" id="thDtx" data-thf="dtxt" rows="1" placeholder="${many?'Tulisan gambar '+(t.sel+1)+'. ':''}Baris pertama = tajuk, baris lain = satu tulisan.">${esc(thDecoText(im))}</textarea>
     <details class="pe-more"${t.more?' open':''}><summary>Lain-lain</summary>
+      ${dk.style?`<span class="num" style="display:block;margin:6px 0 2px">Font</span><div class="thrail pe-fonts"><button type="button" class="pe-fn ${!dk.font?'on':''}" data-act="peFont" data-x="">Asal</button>${Object.entries(TD_FACE).map(([k,f])=>`<button type="button" class="pe-fn ${dk.font===k?'on':''}" data-act="peFont" data-x="${k}" style="font:${f[1].replace('SZ','17')}">${f[0]}</button>`).join('')}</div>`:''}
       ${dk.style?`<div class="thcolrow">${TD_COL.map((c,i)=>`<button class="thcol ${dc===i?'on':''}" style="--k:${c[1]}" data-act="thCol" data-x="${i}" aria-label="Warna ${c[0]}"></button>`).join('')}<button class="btn sm" data-act="thShuf">Susun lain</button></div>`:''}
-      ${many?`<div class="btns" style="gap:6px;margin-top:10px">${dk.style?chk(dk.txt!==false,'thDTxt','','Tulisan pada gambar ni'):''}<button class="btn sm" data-act="thAll">Guna untuk semua gambar</button></div>`:''}
+      ${many?`<div class="btns" style="gap:6px;margin-top:10px"><button class="btn sm" data-act="thAll">Guna gaya ni untuk semua gambar</button></div>`:''}
       <span class="num" style="display:block;margin:12px 0 6px">Potong</span>
       <div class="btns" style="gap:6px">${Object.entries(TH_RATIO).map(([k,l])=>`<button class="btn sm ${im.ratio===k?'solid tab':''}" data-act="thRatio" data-x="${k}">${l}</button>`).join('')}</div>
       <div class="rowh" style="align-items:center;margin:12px 0 2px"><span class="num">Laras</span><button class="btn sm" data-act="peE0">Asal</button></div>
       ${sl('b','Cerah',-40,40)}${sl('c','Kontras',-40,40)}${sl('s','Warna',-60,60)}${sl('w','Hangat / sejuk',-40,40)}
+      <span class="num" style="display:block;margin:12px 0 2px">Preset warna</span>
+      <div class="thrail">${Object.entries(TH_PRE).map(([k,p])=>`<button class="thpre ${im.pre===k?'on':''}" data-act="thPre" data-x="${k}"><img src="${im.url}" style="filter:${thFilter(p)}" alt=""><span>${p.l}</span></button>`).join('')}</div>
     </details>
     <div class="pe-act"><button class="btn" data-act="peDl" data-x="">${peDlLab('edit')}</button><button class="btn solid tab" data-act="peStep" data-x="3">Seterusnya</button></div></div>`}
 document.addEventListener('toggle',e=>{const n=e.target;if(n&&n.classList&&n.classList.contains('pe-more')&&ui.th)ui.th.more=n.open},true);
-A.thSel=el=>{thUi().sel=+el.dataset.x;render(true)};
+A.thSel=el=>{const t=thUi();t.sel=+el.dataset.x;t.lasso=false;render(true)};
 A.thDeco=el=>{const im=thUi().imgs[thUi().sel];if(!im)return;im.deco.style=el.dataset.x;thDirty();if(im.deco.style&&!im.mkS)thMask(im);else render(true)};
 A.thCol=el=>{const im=thUi().imgs[thUi().sel];if(!im)return;im.deco.col=+el.dataset.x;thDirty();render(true)};
 A.thShuf=()=>{const im=thUi().imgs[thUi().sel];if(!im)return;im.deco.seed=(im.deco.seed||1)+1;im.deco.pos={};thDirty();thPaint();peDood()};
-A.thDTxt=()=>{const im=thUi().imgs[thUi().sel];if(!im)return;im.deco.txt=im.deco.txt===false;thDirty();render(true)};
+A.thPre=el=>{const im=thUi().imgs[thUi().sel];if(!im)return;im.pre=el.dataset.x;im.e=Object.assign({},TH_PRE[el.dataset.x]);thDirty();render(true)};
+A.peFont=el=>{const im=thUi().imgs[thUi().sel];if(!im)return;im.deco.font=el.dataset.x;im.deco.pos={};thDirty();render(true)};
+const peGrow=el=>{if(!el)return;el.style.height='auto';el.style.height=Math.min(140,el.scrollHeight+2)+'px'};
+/* Pilih benda sendiri: Mac kadang pilih benda lain (cth anak, bukan tilam). Lukis keliling benda dengan jari = topeng baru (im.mkU); Auto = balik ke pilihan Mac. */
+A.peLasso=()=>{const t=thUi();t.lasso=!t.lasso;render(true)};
+A.peAuto=()=>{const im=thUi().imgs[thUi().sel];if(!im)return;im.mkU=false;im.F={};im.deco.pos={};if(im.mkA){im.mk=im.mkA.mk;im.mkB=im.mkA.mkB;im.mkS='ok';thDirty();render(true)}else{im.mk=null;im.mkB='';im.mkS=undefined;thDirty();thMask(im)}};
+function peLassoDone(pts){const t=thUi(),im=t.imgs[t.sel];if(!im)return;
+  if(pts.length<8){toast('Lukis satu pusingan keliling benda tu');thPaint();return}
+  const c=thCrop(im.el,im.ratio),W=im.el.naturalWidth,H=im.el.naturalHeight,mw=240,mh=Math.max(1,Math.round(240*H/W)),cv=document.createElement('canvas');cv.width=mw;cv.height=mh;
+  const x=cv.getContext('2d');x.fillStyle='#000';x.fillRect(0,0,mw,mh);x.fillStyle='#fff';x.beginPath();
+  pts.forEach((p,i)=>{const fx=(c.sx+p.x/300*c.sw)*mw/W,fy=(c.sy+p.y/300*c.sw)*mh/H;if(i)x.lineTo(fx,fy);else x.moveTo(fx,fy)});x.closePath();x.fill();
+  if(!im.mkU&&im.mkS==='ok'&&im.mk)im.mkA={mk:im.mk,mkB:im.mkB};
+  im.mk=cv;im.mkB=cv.toDataURL('image/png').split(',')[1];im.mkS='ok';im.mkU=true;im.F={};im.deco.pos={};t.lasso=false;thDirty();render(true)}
 A.peE0=()=>{const im=thUi().imgs[thUi().sel];if(!im)return;im.pre='asli';im.e=Object.assign({},TH_PRE.asli);thDirty();render(true)};
 /* Seret tulisan dengan jari: bila mula seret, semua kedudukan dikunci supaya yang lain tak melompat. */
 function thPt(e,cv){const r=cv.getBoundingClientRect(),p=e.touches?e.touches[0]:e,k=300/r.width;return {x:(p.clientX-r.left)*k,y:(p.clientY-r.top)*k}}
-function thDragStart(e){const cv=e.target;if(!cv||cv.id!=='thCv'||!ui.th)return;const im=ui.th.imgs[ui.th.sel];if(!im||!im._bx)return;const p=thPt(e,cv);let i=-1;
+function thDragStart(e){const cv=e.target;if(!cv||cv.id!=='thCv'||!ui.th)return;const im=ui.th.imgs[ui.th.sel];if(!im)return;const p=thPt(e,cv);let i=-1;
+  if(ui.th.lasso){e.preventDefault();ui.thLas={cv,pts:[p]};return}
+  if(!im._bx)return;
   im._bx.forEach((b,k)=>{if(p.x>b.x-8&&p.x<b.x+b.w+8&&p.y>b.y-8&&p.y<b.y+b.h+8)i=k});if(i<0)return;e.preventDefault();
   const pos=im.deco.pos=im.deco.pos||{};im._bx.forEach((b,k)=>{if(!pos[k])pos[k]={x:b.x+b.w/2,y:b.y+b.h/2}});
   const b=im._bx[i];ui.thDrag={im,i,dx:p.x-(b.x+b.w/2),dy:p.y-(b.y+b.h/2),cv}}
-function thDragMove(e){const d=ui.thDrag;if(!d)return;if(e.cancelable)e.preventDefault();const p=thPt(e,d.cv);d.im.deco.pos[d.i]={x:p.x-d.dx,y:p.y-d.dy};if(!d.raf)d.raf=requestAnimationFrame(()=>{d.raf=0;thPaint()})}
-function thDragEnd(){if(ui.thDrag){ui.thDrag=null;thDirty()}}
+function thDragMove(e){const L=ui.thLas;if(L){if(e.cancelable)e.preventDefault();const p=thPt(e,L.cv),q=L.pts[L.pts.length-1];if(Math.hypot(p.x-q.x,p.y-q.y)<1.5)return;L.pts.push(p);
+    const x=L.cv.getContext('2d'),u=L.cv.width/300;x.lineCap='round';x.lineJoin='round';x.strokeStyle='#fff';x.lineWidth=3*u;x.beginPath();x.moveTo(q.x*u,q.y*u);x.lineTo(p.x*u,p.y*u);x.stroke();return}
+  const d=ui.thDrag;if(!d)return;if(e.cancelable)e.preventDefault();const p=thPt(e,d.cv);d.im.deco.pos[d.i]={x:p.x-d.dx,y:p.y-d.dy};if(!d.raf)d.raf=requestAnimationFrame(()=>{d.raf=0;thPaint()})}
+function thDragEnd(){if(ui.thLas){const L=ui.thLas;ui.thLas=null;peLassoDone(L.pts);return}if(ui.thDrag){ui.thDrag=null;thDirty()}}
 document.addEventListener('touchstart',thDragStart,{passive:false});document.addEventListener('touchmove',thDragMove,{passive:false});document.addEventListener('touchend',thDragEnd);
 document.addEventListener('mousedown',thDragStart);document.addEventListener('mousemove',thDragMove);document.addEventListener('mouseup',thDragEnd);
 A.thDelImg=()=>{const t=thUi();const im=t.imgs[t.sel];if(im)URL.revokeObjectURL(im.url);t.imgs.splice(t.sel,1);t.sel=Math.max(0,Math.min(t.sel,t.imgs.length-1));if(!t.imgs.length)t.step=1;thDirty();render(true)};
 A.thRatio=el=>{const im=thUi().imgs[thUi().sel];im.ratio=el.dataset.x;im.deco.pos={};thDirty();render(true)};
-A.thAll=()=>{const t=thUi();const im=t.imgs[t.sel];t.imgs.forEach(x=>{x.pre=im.pre;x.e=Object.assign({},im.e);x.ratio=im.ratio;if(x!==im)x.deco=Object.assign({},im.deco,{pos:{},txt:x.deco.txt})});thDirty();render(true);if(im.deco.style)(async()=>{for(const x of t.imgs)if(!x.mkS)await thMask(x)})();toast('Sama untuk '+t.imgs.length+' gambar')};
+A.thAll=()=>{const t=thUi();const im=t.imgs[t.sel];t.imgs.forEach(x=>{x.pre=im.pre;x.e=Object.assign({},im.e);x.ratio=im.ratio;if(x!==im)x.deco=Object.assign({},im.deco,{pos:{},t:x.deco.t,txt:true})});thDirty();render(true);if(im.deco.style)(async()=>{for(const x of t.imgs)if(!x.mkS)await thMask(x)})();toast('Sama untuk '+t.imgs.length+' gambar')};
 /* Download image: satu butang, peratus semasa gambar disediakan. Di phone gambar keluar melalui helaian Simpan (Save Image = terus ke Photos);
    kalau phone tolak sebab terlalu lama selepas ketik, butang jadi "Simpan ke phone" dan ketik kedua terus buka. Di komputer = muat turun biasa. */
 const DL_save=f=>{const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=f.name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)};
@@ -171,9 +193,11 @@ A.pePlat=el=>{const t=thUi(),k=el.dataset.x,i=t.plats.indexOf(k);if(i<0)t.plats=
 A.peRp=el=>{thUi().rp=el.dataset.x;render(true)};
 const thCountTxt=parts=>parts.length>1?parts.map((p,i)=>`Post ${i+1}: ${p.length}`).join(' · '):`${(parts[0]||'').length}/${TH_MAX} aksara${(parts[0]||'').length>TH_MAX?' · terlebih, tanda thread bersiri':''}`;
 document.addEventListener('input',e=>{const el=e.target;if(!el.dataset)return;const t=ui.th;if(!t)return;
-  if(el.dataset.thf){const k=el.dataset.thf;t[k]=el.value;
+  if(el.dataset.thf){const k=el.dataset.thf,im=t.imgs[t.sel];
+    if(k==='dtxt'){if(im)im.deco.t=el.value;t.dtxtMine=true;peGrow(el);thDirty();clearTimeout(t._pt);t._pt=setTimeout(()=>{if($('#thCv'))thPaint()},250);return}
+    t[k]=el.value;
     if(k==='q'){const n=$('#thLs');if(n)n.innerHTML=thListRows();return}
-    if(k==='dtxt'||(k==='points'&&t.dtxt==null)){if(k==='dtxt')t.dtxtMine=true;thDirty();clearTimeout(t._pt);t._pt=setTimeout(()=>{if($('#thCv'))thPaint();const d=$('#thDtx');if(d&&k==='points')d.value=t.points},250)}
+    if(k==='points'&&t.dtxt==null){thDirty();clearTimeout(t._pt);t._pt=setTimeout(()=>{if($('#thCv'))thPaint()},250)}
     else peSaveSoon()}
   else if(el.dataset.thedit!=null){const k=peK(el.dataset.thedit);t.edit[k]=el.value;const c=$('#thCount'+k);if(c)c.textContent=typeof k==='number'?thCountTxt(thParts(el.value)):el.value.length+' aksara';peSaveSoon()}});
 /* 26 Nov (Mira): tulis sendiri terus, tak perlu Claude. Copy + simpan sebagai contoh suara sebenar (source 'sendiri'), untuk kemaskini voice.md bulanan. */
@@ -205,7 +229,7 @@ function peSaveSoon(){const t=ui.th;if(!t||t.done)return;clearTimeout(t._sv);t._
 async function peSave(){const t=ui.th;if(!t||t.done||peEmpty(t))return;clearTimeout(t._sv);if(!t.did)t.did=uid();
   try{await tdFonts();const im0=t.imgs[0];const d={id:t.did,updated:Date.now(),points:t.points,tone:t.tone,thread:t.thread,plats:t.plats.slice(),rp:t.rp,dtxt:t.dtxt,dtxtMine:!!t.dtxtMine,res:t.res,edit:Object.assign({},t.edit),postIds:Object.assign({},t.postIds),step:t.step,sel:t.sel,
       th:im0&&im0.el.naturalWidth?thCompose(im0,160).toDataURL('image/jpeg',.6):'',
-      imgs:t.imgs.map(x=>({id:x.id,name:x.name,file:x.file,ratio:x.ratio,pre:x.pre,e:Object.assign({},x.e),deco:JSON.parse(JSON.stringify(x.deco)),mkB:x.mkB||''}))};
+      imgs:t.imgs.map(x=>({id:x.id,name:x.name,file:x.file,ratio:x.ratio,pre:x.pre,e:Object.assign({},x.e),deco:JSON.parse(JSON.stringify(x.deco)),mkB:x.mkB||'',mkU:!!x.mkU}))};
     await peTx('readwrite',s=>s.put(d));const L=ui.peDr||(ui.peDr=[]);const i=L.findIndex(x=>x.id===d.id);if(i<0)L.unshift(d);else L[i]=d;
     const n=$('#peDrN');if(n)n.textContent=L.length}catch(e){}}
 async function peDrLoad(){if(ui.peDr)return;ui.peDr=[];try{const a=await peTx('readonly',s=>s.getAll());ui.peDr=(a||[]).sort((x,y)=>(y.updated||0)-(x.updated||0));if(ui.view==='threads'&&ui.peDr.length)render(true)}catch(e){}}
@@ -217,7 +241,7 @@ const peClear=()=>{const o=ui.th;if(o){clearTimeout(o._sv);o.imgs.forEach(x=>URL
 A.peNew=async()=>{await peSave();peClear();render(true);window.scrollTo(0,0)};
 A.peOpen=async el=>{await peSave();const d=(ui.peDr||[]).find(x=>x.id===el.dataset.id);if(!d)return;const t=peClear();
   Object.assign(t,{did:d.id,points:d.points||'',tone:d.tone||'Auto',thread:!!d.thread,plats:d.plats||['th','fb'],rp:d.rp||'th',dtxt:d.dtxt==null?null:d.dtxt,dtxtMine:!!d.dtxtMine,res:d.res||null,edit:d.edit||{},postIds:d.postIds||{},step:d.step||1,sel:d.sel||0});
-  t.imgs=(d.imgs||[]).filter(x=>x.file).map(x=>{const url=URL.createObjectURL(x.file),im={id:x.id,name:x.name,file:x.file,url,el:new Image(),ratio:x.ratio||'asal',pre:x.pre||'',e:x.e,deco:x.deco,F:{},mkB:x.mkB||''};
+  t.imgs=(d.imgs||[]).filter(x=>x.file).map(x=>{const url=URL.createObjectURL(x.file),im={id:x.id,name:x.name,file:x.file,url,el:new Image(),ratio:x.ratio||'asal',pre:x.pre||'',e:x.e,deco:x.deco,F:{},mkB:x.mkB||'',mkU:!!x.mkU};if(im.deco.txt===false&&im.deco.t==null)im.deco.t='';im.deco.txt=true;
     im.el.onload=()=>render(true);im.el.src=url;
     if(x.mkB){const m=new Image();m.onload=()=>{im.mk=m;im.mkS='ok';render(true)};m.src='data:image/png;base64,'+x.mkB}return im});
   t.sel=Math.min(t.sel,Math.max(0,t.imgs.length-1));render(true);window.scrollTo(0,0)};

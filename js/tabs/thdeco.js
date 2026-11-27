@@ -7,12 +7,15 @@ const TD_COL=[['Pink','#ff7fae'],['Kuning','#ffd45c'],['Biru','#8fc4f5'],['Hijau
 const TD_STY={pink:{l:'Outline',c:0},dot:{l:'Bertitik',c:1},nota:{l:'Nota',c:0},pastel:{l:'Pastel',c:2}};
 const TD_FONT={pink:"400 SZpx Chewy,'Arial Rounded MT Bold',sans-serif",dot:"700 SZpx Fredoka,'Arial Rounded MT Bold',sans-serif",
   nota:"400 SZpx 'Patrick Hand','Comic Sans MS',cursive",pastel:"400 SZpx 'Gochi Hand','Comic Sans MS',cursive"};
+/* 27 Nov (Mira): font boleh dipilih (deco.font); kosong = font asal gaya tu. Semua dah dimuat dalam index.html. */
+const TD_FACE={chewy:['Chewy',"400 SZpx Chewy,'Arial Rounded MT Bold',sans-serif"],fredoka:['Fredoka',"700 SZpx Fredoka,'Arial Rounded MT Bold',sans-serif"],patrick:['Patrick',"400 SZpx 'Patrick Hand','Comic Sans MS',cursive"],gochi:['Gochi',"400 SZpx 'Gochi Hand','Comic Sans MS',cursive"],caveat:['Caveat',"500 SZpx Caveat,'Bradley Hand',cursive"],jost:['Jost',"600 SZpx Jost,system-ui,sans-serif"],fraunces:['Fraunces',"italic 600 SZpx Fraunces,Georgia,serif"]};
+const tdFontOf=(deco,sz)=>((deco.font&&TD_FACE[deco.font]?TD_FACE[deco.font][1]:TD_FONT[deco.style])).replace('SZ',sz);
 const TD_SZ={pink:[36,19],dot:[36,17],nota:[29,16],pastel:[24,19]};
 const TD_SH={star:'M0-10 2.9-3.1 10-3.1 4.3 1.2 6.2 8.1 0 4-6.2 8.1-4.3 1.2-10-3.1-2.9-3.1Z',spark:'M0-10C1-3 3-1 10 0 3 1 1 3 0 10-1 3-3 1-10 0-3-1-1-3 0-10Z',
   heart:'M0 8C-12-1-7-10 0-4 7-10 12-1 0 8Z',squig:'M-14 0q3.5-9 7 0t7 0 7 0 7 0',cloud:'M-10 5a4.5 4.5 0 0 1 1-9 6.5 6.5 0 0 1 12-1 4.8 4.8 0 0 1 6 10Z',
   tri:'M0-8 8 6-8 6Z',burst:'M-6-2-11-7M0-4 0-11M6-2 11-7'};
 let tdFontsP=null;
-function tdFonts(){if(!tdFontsP){const fs=Object.values(TD_FONT).map(f=>f.replace('SZ','24'));
+function tdFonts(){if(!tdFontsP){const fs=Object.values(TD_FONT).concat(Object.values(TD_FACE).map(f=>f[1])).map(f=>f.replace('SZ','24'));
   tdFontsP=document.fonts&&document.fonts.load?Promise.all(fs.map(f=>document.fonts.load(f,'Setup baru').catch(()=>{}))).then(()=>true):Promise.resolve(true)}return tdFontsP}
 function tdRng(s){let a=(s|0)+0x9e3779b9;return ()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296}}
 function tdShade(hex,f){const n=parseInt(hex.slice(1),16);const c=v=>Math.max(0,Math.min(255,Math.round(v*f)));return 'rgb('+c(n>>16)+','+c(n>>8&255)+','+c(n&255)+')'}
@@ -51,7 +54,7 @@ function tdLayout(x,F,Hd,deco,items){const rnd=tdRng((deco.seed||1)*7919),[st,sl
   const hit=(a,b,pad)=>a.x<b.x+b.w+pad&&b.x<a.x+a.w+pad&&a.y<b.y+b.h+pad&&b.y<a.y+a.h+pad;
   const over=b=>{let n=0;for(let i=0;i<=4;i++)for(let j=0;j<=3;j++)if(tdIn(F,b.x-3+(b.w+6)*i/4,b.y-3+(b.h+6)*j/3,deco.style==='pastel'?22:17))n++;return n};
   items.forEach((it,idx)=>{let sz=it.title?st:sl,txt=deco.style==='nota'?it.t.toUpperCase():it.t,lines,w;
-    for(let tries=0;tries<4;tries++){x.font=TD_FONT[deco.style].replace('SZ',sz);lines=tdWrap(txt,it.title?12:14);w=Math.max(...lines.map(l=>x.measureText(l).width))+(deco.style==='nota'?lines[0].length:0);if(w<=270)break;sz*=.86}
+    for(let tries=0;tries<4;tries++){x.font=tdFontOf(deco,sz);lines=tdWrap(txt,it.title?12:14);w=Math.max(...lines.map(l=>x.measureText(l).width))+(deco.style==='nota'?lines[0].length:0);if(w<=270)break;sz*=.86}
     const pad=it.title&&deco.style==='pastel'?10:4,b={w:w+pad*2,h:lines.length*sz*1.08+pad*2,lines,sz,title:it.title,rot:((idx%2?1:-1)*(it.title?5:3)+(rnd()-.5)*3)*Math.PI/180,pad};
     const man=deco.pos&&deco.pos[idx];
     if(man){b.x=Math.max(-b.w/2,Math.min(300-b.w/2,man.x-b.w/2));b.y=Math.max(-b.h/2,Math.min(Hd-b.h/2,man.y-b.h/2))}
@@ -98,7 +101,7 @@ function tdDraw(cv,deco,F,text){const sty=TD_STY[deco.style];if(!sty)return [];c
   dd.forEach((d,i)=>{const e=sets[(i+Math.floor(d.k*3))%sets.length];
     if(e[0]==='bee'){x.save();x.strokeStyle=A;x.lineWidth=2;x.setLineDash([4,5]);x.beginPath();x.moveTo(d.x-12,d.y+6);x.quadraticCurveTo(d.x-34,d.y+22,d.x-26,d.y+44);x.stroke();x.restore();d={...d,s:Math.max(1,d.s)}}
     tdShape(x,e[0],d,e[1],e[2],e[3],e[0]==='cloud'?1.4:1)});
-  boxes.forEach(b=>{x.save();x.translate(b.x+b.w/2,b.y+b.h/2);x.rotate(b.rot);x.font=TD_FONT[S].replace('SZ',b.sz);x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';
+  boxes.forEach(b=>{x.save();x.translate(b.x+b.w/2,b.y+b.h/2);x.rotate(b.rot);x.font=tdFontOf(deco,b.sz);x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';
     try{x.letterSpacing=S==='nota'?'1px':'0px'}catch(e){}
     if(S==='pastel'&&b.title){x.shadowColor='rgba(0,0,0,.2)';x.shadowBlur=5;x.shadowOffsetY=2;x.fillStyle='#f6efe0';x.beginPath();
       if(x.roundRect)x.roundRect(-b.w/2,-b.h/2,b.w,b.h,Math.min(18,b.h/2));else x.rect(-b.w/2,-b.h/2,b.w,b.h);x.fill();

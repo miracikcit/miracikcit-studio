@@ -749,12 +749,16 @@ button.pe-tile.add{border:1.5px dashed var(--beige);display:grid;place-items:cen
 .pe-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
 .card.pe-ed{padding:14px}
 .pe-busy{position:absolute;left:8px;bottom:8px}
-.pe-rail .thth{width:44px;height:44px}
-.pe-dood{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px}
+.pe-rail{padding:6px 0 0}.pe-rail .thth{width:36px;height:36px;border-radius:9px}
+.pe-pick{position:absolute;left:8px;top:8px;display:flex;gap:6px}.pe-pick .btn{min-height:32px;padding:6px 12px;background:rgba(255,255,255,.88)}.pe-pick .btn.solid{background:var(--c);color:#fff}
+textarea.inp.pe-tx{margin-top:6px;min-height:40px;resize:none;overflow:auto;padding-top:9px;padding-bottom:9px}
+.pe-fonts{padding:4px 0 2px;gap:6px}.pe-fn{flex:none;border:2px solid transparent;border-radius:12px;padding:5px 12px;min-height:36px;background:rgba(255,255,255,.6);color:var(--ink);cursor:pointer;font-size:13px;white-space:nowrap}.pe-fn.on{border-color:var(--c)}
+.pe-stage.las .thcv{touch-action:none;cursor:crosshair}
+.pe-dood{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:6px}
 .pe-dd{min-width:0;border:2px solid transparent;border-radius:12px;padding:0;background:rgba(255,255,255,.5);overflow:hidden;cursor:pointer;display:flex;flex-direction:column;font:inherit;color:var(--ink)}
 .pe-dd img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}.pe-dd span{font-size:9px;padding:4px 1px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pe-dd.on{border-color:var(--c)}.pe-dd.on span{font-weight:600}
-.pe-more{margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+.pe-more{margin-top:6px;border-top:1px solid var(--line);padding-top:4px}
 .pe-more summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;font-size:10px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);min-height:28px}
 .pe-more summary::-webkit-details-marker{display:none}.pe-more summary::after{content:'+';font-size:16px;letter-spacing:0}.pe-more[open] summary::after{content:'\2013'}
 .pe-seg{display:flex;margin-top:18px}.pe-seg button{flex:1;padding:6px 4px}
