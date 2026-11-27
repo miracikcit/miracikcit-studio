@@ -766,3 +766,9 @@ textarea.inp.pe-tx{margin-top:6px;min-height:40px;resize:none;overflow:auto;padd
 .pe-l{flex:1;min-width:0;font-size:14px}
 .pe-dot{flex:none;width:10px;height:10px;border-radius:50%;background:rgba(0,0,0,.12)}.pe-dot.ok{background:#6B8F71}
 .pe-drb{flex:1;min-width:0;border:0;background:none;padding:0;text-align:left;font:inherit;color:inherit;cursor:pointer}.pe-drb h3{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pe-drb .meta{display:block}
+
+/* AirDrop: resit kad dan video tanpa kad (27 Nov). Awalan afr- */
+.afr-rec{margin-top:8px}.afr-rec .meta{margin:6px 0 0}.afr-rec .btns{margin-top:6px}
+.afr-ths{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;padding:2px 0}
+.afr-ths img,.afr-ths i{flex:none;width:44px;height:58px;border-radius:9px;object-fit:cover;background:rgba(0,0,0,.08);display:grid;place-items:center;font-style:normal;font-size:10px;color:var(--muted)}
+.afr-pend{border:1.5px solid var(--warn)}.afr-pend .btns{flex-wrap:wrap}.afr-pend .btn{max-width:100%;overflow:hidden;text-overflow:ellipsis}

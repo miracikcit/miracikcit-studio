@@ -10,8 +10,18 @@ yang sampai dalam ~/Downloads ke <folder utama>/<nama kad> dalam CLAUDE EDITS da
 - Tiada kad menunggu: video AirDrop 48 jam terakhir disenaraikan dalam `sync/airdrop` {files:[{name,size,at}]};
   Home tanya "untuk kad mana?". Job `air_ignore` buang senarai tu (fail kekal dalam Downloads).
 - Status kad dalam doc footin/<item>: tunggu (until) / sedia (done) / error.
-Thread sendiri, semak Downloads setiap 5 saat; tulis ke Sheet hanya bila ada perubahan."""
-import json, logging, os, re, shutil, subprocess, threading, time
+Thread sendiri, semak Downloads setiap 5 saat; tulis ke Sheet hanya bila ada perubahan.
+
+27 Nov 2026 (Mira: video AirDrop lalu kad tak masuk folder; "aku tak nak mix up footage"):
+- Kad TAK ditutup 30 saat selepas fail pertama lagi (video besar sampai lambat): QUIET_S 3 minit.
+- Video yang sampai selepas kad ditutup TAK dipindah sendiri: masuk senarai menunggu dengan gambar kecil + `last` (kad terakhir, 1 jam),
+  Studio tanya "Masukkan ke <kad terakhir>?" / kad lain, dan phone dapat notifikasi.
+- Resit: doc footin ada `list` [{n, s, th}] (gambar kecil), `have` (bilangan video sebenar dalam folder), `manual` (ditambah terus
+  dalam folder, bukan melalui Studio), `gone` (hilang dari folder), `ack` (Mac mini dah terima arahan).
+- Semak folder setiap minit (`_recon`): video ditambah terus dalam Finder dikesan, ditawarkan ke projek Editor; sisa `.part` > 24 jam ke Trash.
+- Job air_wait {move:1, item, files, to:{item, stage, name}} = pindah video yang tersalah kad (hanya fail yang masuk melalui AirDrop).
+- Tulisan ke Sheet yang gagal (Sheet terkunci) disimpan dan dicuba semula; pemindahan fail tak bergantung pada Sheet."""
+import base64, json, logging, os, re, shutil, subprocess, tempfile, threading, time
 
 log = logging.getLogger("transcribe")
 HOME = os.path.dirname(os.path.abspath(__file__))
@@ -23,7 +33,10 @@ WAIT_S = 30 * 60
 PENDING_S = 48 * 3600
 EVERY = 5
 STABLE_S = 6
-QUIET_S = 30      # tiada fail baru selama ni selepas fail terakhir masuk = kad Diterima (status sedia)
+QUIET_S = 180     # tiada fail baru selama ni selepas fail terakhir masuk = kad Diterima (27 Nov: 30 s terlalu cepat, video besar sampai lambat)
+RECON_S = 60      # semak isi folder kad
+LAST_S = 3600     # video lewat ditawarkan kepada kad terakhir selama ni
+CARD_S = 14 * 86400
 
 _lock = threading.RLock()
 _started = threading.Event()
@@ -32,6 +45,88 @@ _sizes = {}       # nama -> saiz pada imbasan lepas
 _last_pending = {"sig": None}
 _warned = {"perm": False}
 _incoming = {"n": 0}   # fail media dalam Downloads yang belum stabil (masih diterima)
+_out = []         # tulisan Sheet yang gagal: [(path, data)], dicuba semula setiap pusingan
+_th = {}          # (nama, saiz) -> gambar kecil base64
+_recon_at = {"t": 0}
+_pend_n = {"n": 0}
+
+
+def _send(sheet, path, data):
+    try:
+        sheet.call("dset", path=path, data=data)
+        return True
+    except Exception as e:
+        _out[:] = [o for o in _out if o[0] != path] + [(path, data)]
+        log.warning("AirDrop: Sheet tak jawab, %s disimpan untuk cuba semula (%s)", path, str(e)[:80])
+        return False
+
+
+def _flush(sheet):
+    while _out:
+        path, data = _out[0]
+        try:
+            sheet.call("dset", path=path, data=data)
+        except Exception:
+            return
+        _out.pop(0)
+
+
+def _thumb(path, key=None):
+    """Gambar kecil 72 px (base64 JPEG ~1.5 KB) untuk resit dalam Studio. Gagal = kosong."""
+    key = key or (os.path.basename(path), os.path.getsize(path) if os.path.exists(path) else 0)
+    if key in _th:
+        return _th[key]
+    out = ""
+    try:
+        ff = shutil.which("ffmpeg") or "/opt/homebrew/opt/ffmpeg-full/bin/ffmpeg"
+        tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False).name
+        vid = path.lower().endswith(VIDEO)
+        cmd = [ff, "-y", "-v", "error"] + (["-ss", "0.5"] if vid else []) + ["-i", path, "-frames:v", "1", "-vf", "scale=72:-2", "-q:v", "12", tmp]
+        subprocess.run(cmd, capture_output=True, timeout=25)
+        if os.path.getsize(tmp) > 0:
+            out = base64.b64encode(open(tmp, "rb").read()).decode()
+        os.remove(tmp)
+    except Exception:
+        pass
+    if len(_th) > 400:
+        _th.clear()
+    _th[key] = out if len(out) < 3500 else ""
+    return _th[key]
+
+
+def _listdir(folder):
+    try:
+        return sorted(n for n in os.listdir(folder) if not n.startswith(".") and n.lower().endswith(VIDEO + IMAGE) and os.path.isfile(os.path.join(folder, n)))
+    except OSError:
+        return None
+
+
+def _card(st, item, stage=None, name=None, W=None):
+    """Rekod tempatan setiap kad: folder, fail yang masuk melalui AirDrop, isi folder terakhir dilihat."""
+    cs = st.setdefault("cards", {})
+    c = cs.get(item)
+    if c is None or (stage and (c.get("stage") != stage or c.get("name") != name)):
+        c = {"stage": stage, "name": name, "air": [], "seen": None, "manual": [], "gone": [], "doc": {}}
+        if W and stage:
+            try:
+                c["seen"] = _listdir(os.path.join(W._edit_main(stage)[0], name))
+            except Exception:
+                pass
+        cs[item] = c
+    c["t"] = time.time()
+    return c
+
+
+def _card_put(sheet, st, item, **kw):
+    """Tulis doc footin/<item>, sentiasa dengan keadaan folder sebenar (have / manual / gone)."""
+    c = (st.get("cards") or {}).get(item)
+    doc = dict((c or {}).get("doc") or {}, **kw)
+    if c:
+        seen = c.get("seen") or []
+        doc.update(have=len([n for n in seen if n.lower().endswith(VIDEO)]), manual=(c.get("manual") or [])[-20:], gone=(c.get("gone") or [])[-20:])
+        c["doc"] = doc
+    doc.update(at=int(time.time() * 1000), air=True, ack=1)
+    _send(sheet, "footin/" + item, doc)
 
 
 def _load():
@@ -120,21 +215,86 @@ def _move(files, dest):
 def _put(sheet, item, **kw):
     kw["at"] = int(time.time() * 1000)
     kw["air"] = True
-    sheet.call("dset", path="footin/" + item, data=kw)
+    kw["ack"] = 1
+    _send(sheet, "footin/" + item, kw)
 
 
-def _pending_put(sheet, files, force=False):
-    lst = [{"name": f["name"], "size": f["size"], "at": int(f["at"] * 1000)} for f in files]
-    sig = json.dumps(lst, sort_keys=True)
+def _pending_put(sheet, files, force=False, last=None, W=None):
+    lst = [{"name": f["name"], "size": f["size"], "at": int(f["at"] * 1000), "th": _thumb(f["path"], (f["name"], f["size"])) if i < 8 else ""}
+           for i, f in enumerate(files)]
+    data = {"files": lst}
+    if last and lst:
+        data["last"] = {k: last.get(k) for k in ("item", "stage", "name")}
+    sig = json.dumps(data, sort_keys=True)
     if force or sig != _last_pending["sig"]:
-        sheet.call("dset", path="sync/airdrop", data={"files": lst, "updated": int(time.time() * 1000)})
-        _last_pending["sig"] = sig
+        if _send(sheet, "sync/airdrop", dict(data, updated=int(time.time() * 1000))):
+            _last_pending["sig"] = sig
+        if lst and not _pend_n["n"] and W is not None:
+            try:
+                W.push_send(sheet, "Video sampai tanpa kad", "%d video menunggu di Mac mini. Buka Studio dan pilih kad." % len(lst))
+            except Exception:
+                pass
+    _pend_n["n"] = len(lst)
+
+
+def _recon(sheet, W, st, now):
+    """Setiap minit: banding isi folder setiap kad dengan kali terakhir. Video ditambah / hilang di luar Studio ditanda pada kad."""
+    cs = st.setdefault("cards", {})
+    for item in [k for k, c in cs.items() if now - c.get("t", 0) > CARD_S]:
+        cs.pop(item, None)
+    for item, c in cs.items():
+        if not c.get("stage"):
+            continue
+        try:
+            folder = os.path.join(W._edit_main(c["stage"])[0], c["name"])
+        except Exception:
+            continue
+        cur = _listdir(folder)
+        if cur is None:
+            continue
+        try:   # sisa upload yang gagal
+            for n in os.listdir(folder):
+                p = os.path.join(folder, n)
+                if n.endswith(".part") and now - os.path.getmtime(p) > 86400:
+                    W.trash_local(p)
+                    log.info("AirDrop: sisa upload %s dibuang ke Trash", n)
+        except Exception:
+            pass
+        prev = c.get("seen")
+        if prev is None:
+            c["seen"] = cur
+            continue
+        if cur == prev:
+            continue
+        added = [n for n in cur if n not in prev and n not in (c.get("air") or [])]
+        gone = [n for n in prev if n not in cur]
+        c["seen"] = cur
+        c["manual"] = [n for n in (c.get("manual") or []) if n in cur] + added
+        c["gone"] = [n for n in (c.get("gone") or []) if n not in cur] + gone
+        c["air"] = [n for n in (c.get("air") or []) if n in cur]
+        c["t"] = now
+        if c.get("doc"):
+            c["doc"]["list"] = [e for e in c["doc"].get("list") or [] if e.get("n") in cur]
+        _card_put(sheet, st, item, **({} if c.get("doc") else {"status": "sedia", "done": 0, "folder": c["stage"] + "/" + c["name"]}))
+        log.info("AirDrop: folder %s berubah di luar Studio (+%d, -%d)", c["name"], len(added), len(gone))
+        vids = [n for n in added if n.lower().endswith(VIDEO)]
+        if vids:
+            try:
+                _extra_note(st, sheet, W, {"stage": c["stage"], "name": c["name"], "item": item}, vids)
+            except Exception:
+                log.exception("AirDrop: semak projek Editor gagal")
+        try:
+            W._scan_last["t"] = 0
+            W.push_scan(sheet, force=True)
+        except Exception:
+            pass
 
 
 def tick(sheet, W, down=None):
     """Satu pusingan. Pulang (bilangan dipindah, bilangan menunggu kad)."""
     with _lock:
         st, now = _load(), time.time()
+        _flush(sheet)
         cand = _candidates(down)
         w = st.get("wait")
         moved = 0
@@ -144,16 +304,26 @@ def tick(sheet, W, down=None):
             if mine:
                 try:
                     main, _ = W._edit_main(w["stage"])
-                    names = _move(mine, os.path.join(main, w["name"]))
+                    dest = os.path.join(main, w["name"])
+                    c = _card(st, w["item"], w["stage"], w["name"], W)
+                    names = _move(mine, dest)
                     moved = len(names)
                     w["done"] = w.get("done", 0) + moved
                     w["files"] = (w.get("files") or []) + names
                     w["take"] = []
                     w["last"] = now
-                    W._set_item(sheet, w["item"], folder=folder)
-                    _put(sheet, w["item"], status="tunggu", done=w["done"], until=int(w["until"] * 1000), folder=folder, files=w["files"][-50:])
-                    W._scan_last["t"] = 0
-                    W.push_scan(sheet, force=True)
+                    c["air"] = (c.get("air") or []) + names
+                    c["seen"] = _listdir(dest) or []
+                    c["gone"] = [n for n in (c.get("gone") or []) if n not in c["seen"]]
+                    w["list"] = ((w.get("list") or []) + [{"n": n, "s": os.path.getsize(os.path.join(dest, n)), "th": _thumb(os.path.join(dest, n))} for n in names])[-8:]
+                    _save(st)   # fail dah berpindah: rekod dulu, Sheet kemudian (Sheet gagal tak boleh hilangkan rekod)
+                    _card_put(sheet, st, w["item"], status="tunggu", done=w["done"], until=int(w["until"] * 1000), folder=folder, files=w["files"][-50:], list=w["list"])
+                    try:
+                        W._set_item(sheet, w["item"], folder=folder)
+                        W._scan_last["t"] = 0
+                        W.push_scan(sheet, force=True)
+                    except Exception as e:
+                        log.warning("AirDrop: fail dah masuk folder, tapi Studio belum dikemas kini (%s)", str(e)[:80])
                     try:
                         _extra_note(st, sheet, W, w, [n for n in names if n.lower().endswith(VIDEO)])
                     except Exception:
@@ -168,8 +338,10 @@ def tick(sheet, W, down=None):
                 w.setdefault("last", now)
             quiet = w and w.get("done") and not mine and not _incoming["n"] and now - w.get("last", now) >= QUIET_S
             if w and (now > w["until"] or quiet):
-                _put(sheet, w["item"], status="sedia" if w.get("done") else "tamat", done=w.get("done", 0), n=w.get("done", 0),
-                     folder=folder, files=(w.get("files") or [])[-50:])
+                _card(st, w["item"], w["stage"], w["name"], W)
+                _card_put(sheet, st, w["item"], status="sedia" if w.get("done") else "tamat", done=w.get("done", 0), n=w.get("done", 0),
+                          folder=folder, files=(w.get("files") or [])[-50:], list=w.get("list") or [])
+                st["last"] = {"item": w["item"], "stage": w["stage"], "name": w["name"], "at": now}
                 w = None
             if w:
                 st["wait"] = w
@@ -180,8 +352,18 @@ def tick(sheet, W, down=None):
                 and not (w and f["at"] >= w["t0"] - 5)]
         live = {k + "|" + str(v) for k, v in _sizes.items()}   # semua fail dalam Downloads, bukan yang stabil sahaja (elak hilang lepas restart)
         st["ignore"] = sorted(ign & live)
+        if now - _recon_at["t"] >= RECON_S and down is None:
+            _recon_at["t"] = now
+            try:
+                _recon(sheet, W, st, now)
+            except Exception:
+                log.exception("AirDrop: semak folder gagal")
+        last = st.get("last")
+        if last and now - last.get("at", 0) > LAST_S:
+            st.pop("last", None)
+            last = None
         _save(st)
-        _pending_put(sheet, pend)
+        _pending_put(sheet, pend, last=last, W=W)
         return moved, len(pend)
 
 
@@ -295,13 +477,17 @@ def job_wait(inp, sheet, W):
     item = re.sub(r"[^\w-]", "", str(inp.get("item") or ""))
     if inp.get("extra"):
         return _extra_job(inp, sheet, W)
+    if inp.get("move"):
+        return _move_job(inp, sheet, W)
     if inp.get("cancel"):
         with _lock:
             st = _load()
             w = st.get("wait")
             if w and w.get("item") == item:
-                _put(sheet, item, status="sedia" if w.get("done") else "batal", done=w.get("done", 0), n=w.get("done", 0),
-                     folder=w["stage"] + "/" + w["name"], files=(w.get("files") or [])[-50:])
+                _card(st, item, w["stage"], w["name"], W)
+                _card_put(sheet, st, item, status="sedia" if w.get("done") else "batal", done=w.get("done", 0), n=w.get("done", 0),
+                          folder=w["stage"] + "/" + w["name"], files=(w.get("files") or [])[-50:], list=w.get("list") or [])
+                st["last"] = {"item": item, "stage": w["stage"], "name": w["name"], "at": time.time()}
                 st.pop("wait", None)
                 _save(st)
         tick(sheet, W)
@@ -326,11 +512,63 @@ def job_wait(inp, sheet, W):
             take = [f["name"] for f in _candidates() if f["video"] and now - f["at"] < PENDING_S]
         keep = old if (old and old.get("item") == item and old.get("stage") == stage and old.get("name") == name) else {}
         st["wait"] = {"item": item, "stage": stage, "name": name, "t0": keep.get("t0", t0), "until": now + WAIT_S, "take": take,
-                      "done": keep.get("done", 0), "files": keep.get("files", [])}
+                      "done": keep.get("done", 0), "files": keep.get("files", []), "list": keep.get("list", [])}
+        c = _card(st, item, stage, name, W)
+        if not keep:
+            c["doc"] = {}
+        st.pop("last", None)
         _save(st)
-        _put(sheet, item, status="tunggu", done=keep.get("done", 0), until=int((now + WAIT_S) * 1000), folder=stage + "/" + name)
+        _card_put(sheet, st, item, status="tunggu", done=keep.get("done", 0), until=int((now + WAIT_S) * 1000), folder=stage + "/" + name, list=keep.get("list", []))
     tick(sheet, W)
     return {"folder": stage + "/" + name, "until": int((now + WAIT_S) * 1000)}
+
+
+def _move_job(inp, sheet, W):
+    """Salah kad: pindah video dari folder kad A ke folder kad B. Hanya fail yang masuk melalui AirDrop ke kad A boleh dipindah."""
+    src_item = re.sub(r"[^\w-]", "", str(inp.get("item") or ""))
+    to = inp.get("to") or {}
+    dst_item = re.sub(r"[^\w-]", "", str(to.get("item") or ""))
+    stage, name = str(to.get("stage") or ""), W._safe_name(to.get("name"))
+    with _lock:
+        st = _load()
+        a = (st.get("cards") or {}).get(src_item)
+        if not a or not dst_item or dst_item == src_item:
+            raise RuntimeError("Kad asal tak dijumpai")
+        if (st.get("wait") or {}).get("item") in (src_item, dst_item):
+            raise RuntimeError("Kad masih menunggu AirDrop. Tekan Selesai dulu.")
+        src = os.path.join(W._edit_main(a["stage"])[0], a["name"])
+        dst = os.path.join(W._edit_main(stage)[0], name)
+        if os.path.realpath(src) == os.path.realpath(dst):
+            raise RuntimeError("Folder sama")
+        want = [os.path.basename(str(n)) for n in (inp.get("files") or [])]
+        files = [{"name": n, "path": os.path.join(src, n), "size": os.path.getsize(os.path.join(src, n))}
+                 for n in want if n in (a.get("air") or []) and os.path.isfile(os.path.join(src, n))]
+        if not files:
+            raise RuntimeError("Tiada video yang boleh dipindah")
+        b = _card(st, dst_item, stage, name, W)
+        names = _move(files, dst)
+        gone = [f["name"] for f in files]
+        a["air"] = [n for n in a.get("air") or [] if n not in gone]
+        a["seen"] = _listdir(src) or []
+        b["air"] = (b.get("air") or []) + names
+        b["seen"] = _listdir(dst) or []
+        ad, bd = a.get("doc") or {}, b.get("doc") or {}
+        al = [e for e in ad.get("list") or [] if e.get("n") not in gone]
+        bl = ((bd.get("list") or []) + [{"n": n, "s": os.path.getsize(os.path.join(dst, n)), "th": _thumb(os.path.join(dst, n))} for n in names])[-8:]
+        _save(st)
+        _card_put(sheet, st, src_item, status="sedia", done=max(0, (ad.get("done") or 0) - len(gone)), list=al,
+                  files=[n for n in ad.get("files") or [] if n not in gone], folder=a["stage"] + "/" + a["name"])
+        _card_put(sheet, st, dst_item, status="sedia", done=(bd.get("done") or 0) + len(names), list=bl,
+                  files=((bd.get("files") or []) + names)[-50:], folder=stage + "/" + name)
+        _save(st)
+        try:
+            W._set_item(sheet, dst_item, folder=stage + "/" + name)
+            W._scan_last["t"] = 0
+            W.push_scan(sheet, force=True)
+        except Exception:
+            pass
+        log.info("AirDrop: %d fail dipindah dari %s ke %s", len(names), a["name"], name)
+        return {"moved": len(names)}
 
 
 def job_ignore(inp, sheet, W):

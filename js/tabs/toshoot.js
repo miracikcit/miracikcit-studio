@@ -7,9 +7,9 @@ A.shootTab=el=>{ui.shootTab=el.dataset.id;try{localStorage.setItem('ms:shootTab'
 V['to-shoot']=()=>{if(!ui.shootTab){try{ui.shootTab=localStorage.getItem('ms:shootTab')||'job'}catch(e){ui.shootTab='job'}}
   const key=it=>it.sample?it.sample.postBy:String(it.shootDate||'9');const all=byStage('toshoot').sort((a,b)=>key(a).localeCompare(key(b)));
   const jobs=all.filter(isJob),cre=all.filter(it=>!isJob(it)),ideas=byStage('ideas');
-  if(ui.shootTab==='creative')return head('Idea dan video creative',`<button class="btn sm solid tab" data-act="tsNew">${IC.plus}Tambah creative</button>`)+kindSeg('creative',jobs.length,cre.length+ideas.length,'shootTab')+creList(cre,ideas);
+  if(ui.shootTab==='creative')return head('Idea dan video creative',`<button class="btn sm solid tab" data-act="tsNew">${IC.plus}Tambah creative</button>`)+kindSeg('creative',jobs.length,cre.length+ideas.length,'shootTab')+airHome()+creList(cre,ideas);
   const list=jobs;
-  return head('Paid job dan sample',`<button class="btn sm solid tab" data-act="smpAdd">${IC.plus}Tambah sample</button>`)+kindSeg('job',jobs.length,cre.length+ideas.length,'shootTab')+`<div class="list alt">${list.map(it=>{
+  return head('Paid job dan sample',`<button class="btn sm solid tab" data-act="smpAdd">${IC.plus}Tambah sample</button>`)+kindSeg('job',jobs.length,cre.length+ideas.length,'shootTab')+airHome()+`<div class="list alt">${list.map(it=>{
     const left=it.shootDate?Math.ceil((new Date(it.shootDate+'T00:00:00')-Date.now())/DAY):null;const col=left===null?'var(--muted)':left>7?'var(--ok)':left>=0?'var(--warn)':'var(--bad)';
     const badge=it.sample&&!sampleDone(it)?smpBadge(it):`<div class="smpb" style="--pc:${col}">${left!==null?`<span class="pill">${left>0?left+' hari lagi':left===0?'Hari ni':'Lewat '+(-left)+' hari'}</span>`:''}<button class="smpd" data-act="tsDate" data-id="${it.id}">${it.shootDate?'Shoot '+dmy(it.shootDate):'Set tarikh shoot'}</button></div>`;
     return `<div class="card glass tsc"><div class="rowh" style="align-items:flex-start;gap:10px"><div style="min-width:0"><h3>${esc(it.title||'Nota')} ${jobPill(it)}</h3><div class="meta">${esc([it.sample?'Sample '+smpPlat(it.sample.plat):'',it.sample&&it.sample.price?'RM '+it.sample.price:'',it.brand,it.nota?'ada nota':''].filter(Boolean).join(' · '))}</div></div>${badge}</div>
@@ -66,8 +66,12 @@ function fuStatus(it){return fuStat0(it)+edExtraBar(it.folder)}
 function fuStat0(it){const u=(ui.fuUp||{})[it.id],d=get('footin',it.id);
   if(u)return `<div class="stbar" style="--c:var(--c)"><div class="stt"><span>Upload ${u.i}/${u.n}: ${esc(u.name)}</span><span>${u.pct}%</span></div><div class="stg"><i style="width:${Math.max(3,u.pct)}%"></i></div></div>`;
   if(d&&d.status==='proses'&&Date.now()-(d.at||0)<3*36e5)return `<div class="stbar" style="--c:var(--warn)"><div class="stt"><span><i class="spin"></i> Mac mini pindah ke folder (${d.done||0}/${d.n||'?'})</span><span>${d.n?Math.round((d.done||0)/d.n*100):0}%</span></div><div class="stg"><i style="width:${Math.max(3,d.n?(d.done||0)/d.n*100:5)}%"></i></div></div>`;
-  if(d&&d.status==='tunggu'&&Date.now()<(d.until||0)){const left=Math.max(1,Math.ceil((d.until-Date.now())/60000));return `<div class="stbar" style="--c:var(--warn)"><div class="stt"><span><i class="spin"></i> Menunggu AirDrop${d.done?' · '+d.done+' dah masuk':''}</span><span>baki ${left} min · <button type="button" class="airx" data-act="airCancel" data-id="${it.id}">${d.done?'Selesai':'Batal'}</button></span></div><div class="stg"><i style="width:${Math.max(3,Math.round(left/30*100))}%"></i></div></div>`}
-  if(d&&d.air&&d.status==='sedia'&&d.done&&Date.now()-(d.at||0)<864e5)return `<div class="stbar" style="--c:var(--ok)"><div class="stt"><span>${IC.check} Diterima · ${d.done} fail</span><span>${esc((d.folder||it.folder||'').replace(/^(\d+)\.\s*/,'$1 · ').replace('/',' › '))}</span></div></div>`;
+  if(d&&d.status==='tunggu'&&Date.now()<(d.until||0)){const left=Math.max(1,Math.ceil((d.until-Date.now())/60000)),age=Date.now()-(d.at||0);
+    /* 27 Nov: selagi Mac mini belum sahkan (ack), jangan nampak macam okay. 40 saat tanpa jawapan = amaran + Cuba lagi. */
+    if(!d.ack&&age>40000)return `<div class="stbar" style="--c:var(--bad)"><div class="stt"><span style="color:var(--bad)">Mac mini belum terima. Jangan AirDrop dulu</span><span><button type="button" class="airx" data-act="airRetry" data-id="${it.id}">Cuba lagi</button> · <button type="button" class="airx" data-act="airCancel" data-id="${it.id}">Batal</button></span></div></div>`;
+    if(!d.ack)return `<div class="stbar" style="--c:var(--warn)"><div class="stt"><span><i class="spin"></i> Beritahu Mac mini</span><span class="afr-pc" data-t0="${d.at||0}">${Math.min(95,Math.round(age/400))}%</span></div><div class="stg"><i style="width:${Math.min(95,Math.round(age/400))}%"></i></div></div>`;
+    return `<div class="stbar" style="--c:var(--warn)"><div class="stt"><span><i class="spin"></i> Mac mini sedia · ${d.done?d.done+' dah masuk':'hantar AirDrop sekarang'}</span><span>baki ${left} min · <button type="button" class="airx" data-act="airCancel" data-id="${it.id}">${d.done?'Semua dah sampai':'Batal'}</button></span></div><div class="stg"><i style="width:${Math.max(3,Math.round(left/30*100))}%"></i></div></div>`+afrRec(it,d)}
+  if(d&&d.air&&d.status==='sedia'&&(d.done||d.have)&&Date.now()-(d.at||0)<7*864e5)return `<div class="stbar" style="--c:var(--ok)"><div class="stt"><span>${IC.check} ${d.done?'Diterima · '+d.done+' fail':'Folder dikemas kini'}</span><span>${esc((d.folder||it.folder||'').replace(/^(\d+)\.\s*/,'$1 · ').replace('/',' › '))}</span></div></div>`+afrRec(it,d);
   if(d&&d.status==='error')return `<p class="meta" style="color:var(--bad);margin:6px 0 0">Upload footage gagal: ${esc(d.msg||'')}</p>`;
   return it.folder?`<p class="meta" style="margin:6px 0 0">📁 ${esc(it.folder.replace(/^(\d+)\.\s*/,'$1 · ').replace('/',' › '))}${d&&d.status==='sedia'&&Date.now()-(d.at||0)<864e5?` · ${d.done} video baru masuk`:''}</p>`:''}
 /* 2026-11-25 (Mira): butang Footage (Jobs dan Creative) buka TIGA cara: upload dari iPhone, pilih folder sedia ada dalam
@@ -112,11 +116,34 @@ A.fuAir=async el=>{const it=get('items',el.dataset.id),u=ui.fu||{},take=!!el.dat
   const busy=airBusy(it.id);if(busy){const bt=(get('items',busy.id)||{}).title||'kad lain';toast('"'+String(bt).slice(0,40)+'" masih menunggu AirDrop. Tunggu sampai Diterima, atau tekan Batal pada kad tu dulu');return}
   const old=el.innerHTML;el.disabled=true;el.innerHTML='<i class="spin"></i>Beritahu Mac mini';
   try{const now=Date.now();await studioCall('job_add',{type:'air_wait',input:{item:it.id,stage,name,t0:now,take}});
-    save('footin',{id:it.id,status:'tunggu',done:0,until:now+30*60000,at:now,air:true,folder:stage+'/'+name});
+    save('footin',{id:it.id,status:'tunggu',done:0,until:now+30*60000,at:now,air:true,ack:0,folder:stage+'/'+name});
     if(take){S.sync.airdrop={files:[]}}closeModal();render();
-    toast(take?'Mac mini sedang masukkan video ke folder':'Mac mini sedia. Dalam Photos: pilih video › Share › AirDrop › Mac mini');
+    toast(take?'Mac mini sedang masukkan video ke folder':'Tunggu kad tunjuk "Mac mini sedia", kemudian AirDrop. Jangan tutup kad sampai semua video sampai');
     if(!take&&/iPhone|iPad|iPod/.test(navigator.userAgent))setTimeout(()=>{location.href='photos-redirect://'},700)}
   catch(e){el.disabled=false;el.innerHTML=old;toast('Mac mini tak jawab: '+String((e&&(e.message||e.code))||'semak internet').slice(0,70))}};
+/* 27 Nov (Mira: "aku tak nak mix up footage"): resit setiap kad. Gambar kecil video yang baru masuk (d.list), bilangan sebenar dalam
+   folder (d.have), yang ditambah terus dalam Finder (d.manual), yang hilang (d.gone), dan Salah kad = pindah ke kad lain (job air_wait {move}). */
+function afrRec(it,d){const L=d.list||[],man=d.manual||[],gone=d.gone||[];if(!L.length&&!man.length&&!gone.length&&d.have==null)return '';
+  return `<div class="afr-rec">${L.length?`<div class="afr-ths">${L.map(x=>x.th?`<img src="data:image/jpeg;base64,${x.th}" alt="${esc(x.n)}" title="${esc(x.n)}">`:`<i title="${esc(x.n)}">${esc(String(x.n).replace(/\.[^.]+$/,'').slice(-4))}</i>`).join('')}</div>`:''}
+    <p class="meta">${d.have!=null?`<b>${d.have} video dalam folder</b>`:''}${man.length?` · ${man.length} ditambah terus dalam folder`:''}${gone.length?` · <span style="color:var(--bad)">${gone.length} hilang: ${esc(gone.slice(-3).join(', '))}</span>`:''}</p>
+    ${L.length&&d.status!=='tunggu'?`<div class="btns"><button class="btn sm" data-act="afrWrong" data-id="${it.id}">Salah kad? Pindah</button></div>`:''}</div>`}
+const afrCards=()=>byStage('toshoot').concat(byStage('toedit'));
+const afrDest=it=>{let stage=(it.folder||'').split('/')[0],name=(it.folder||'').split('/').slice(1).join('/');if(!stage)stage=fuGuess(it);if(!name)name=fuSafe(it.title);return {item:it.id,stage,name}};
+A.afrWrong=el=>{const id=el.dataset.id,d=get('footin',id);if(!d||!(d.list||[]).length)return;ui.afr={id,sel:(d.list||[]).map(x=>x.n)};
+  modal(`<h2>Pindah ke kad mana?</h2><p class="meta">${ui.afr.sel.length} video yang baru masuk akan dipindah. Video lain kekal.</p><div class="fuos">${afrCards().filter(x=>x.id!==id).map(x=>`<button type="button" class="fuo" data-act="afrMove" data-id="${x.id}"><i>${IC.footage}</i><span><b>${esc(x.title||'Nota')}</b><small>${esc(fuMainL(afrDest(x).stage))}</small></span></button>`).join('')||'<p class="meta">Tiada kad lain.</p>'}</div><div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Tutup</button></div>`,TAB['to-shoot'].c)};
+A.afrMove=async el=>{const a=ui.afr,to=get('items',el.dataset.id);if(!a||!to)return;const dst=afrDest(to);if(!dst.stage){toast('Kad tu belum ada folder utama');return}
+  el.disabled=true;el.querySelector('i').innerHTML='<i class="spin"></i>';
+  try{await studioCall('job_add',{type:'air_wait',input:{move:1,item:a.id,files:a.sel,to:dst}});closeModal();toast('Mac mini sedang pindahkan '+a.sel.length+' video ke "'+String(to.title||'').slice(0,30)+'"')}
+  catch(e){el.disabled=false;toast('Mac mini tak jawab')}};
+A.airRetry=async el=>{const d=get('footin',el.dataset.id);if(!d||!d.folder)return;const [stage,...r]=d.folder.split('/'),name=r.join('/');el.disabled=true;el.innerHTML='<i class="spin"></i>';
+  try{const now=Date.now();await studioCall('job_add',{type:'air_wait',input:{item:d.id,stage,name,t0:now}});save('footin',Object.assign({},d,{at:now,until:now+30*60000,ack:0}));render();toast('Dihantar semula. Tunggu "Mac mini sedia" sebelum AirDrop')}
+  catch(e){render();toast('Tak sampai. Semak internet phone')}};
+/* Video sampai tanpa kad, kad terakhir dicadang: satu ketik masukkan ke kad tu (Mac mini tak pindah sendiri). */
+A.airLast=async el=>{const l=(S.sync.airdrop||{}).last;if(!l)return;el.disabled=true;el.innerHTML='<i class="spin"></i>Beritahu Mac mini';
+  try{const now=Date.now();await studioCall('job_add',{type:'air_wait',input:{item:l.item,stage:l.stage,name:l.name,t0:now,take:true}});
+    save('footin',Object.assign({},get('footin',l.item)||{id:l.item},{status:'tunggu',until:now+30*60000,at:now,air:true,ack:0,folder:l.stage+'/'+l.name}));S.sync.airdrop={files:[]};render();toast('Mac mini sedang masukkan video ke "'+String(l.name).slice(0,30)+'"')}
+  catch(e){render();toast('Mac mini tak jawab')}};
+setInterval(()=>{let stale=false;document.querySelectorAll('.afr-pc').forEach(s=>{const age=Date.now()-(+s.dataset.t0||0);if(age>40000)stale=true;else{const p=Math.min(95,Math.round(age/400));s.textContent=p+'%';const b=s.closest('.stbar').querySelector('.stg i');if(b)b.style.width=p+'%'}});if(stale&&typeof render==='function')render()},2000);
 /* 26 Nov petang (Mira): SATU kad sahaja boleh menunggu AirDrop pada satu masa (elak footage tercampur folder). Kad lain dikunci
    sampai kad tu Diterima (Mac mini tutup sendiri 30 saat selepas fail terakhir masuk) atau Mira tekan Batal / Selesai. */
 function airBusy(except){return S.footin.find(d=>d.air&&d.status==='tunggu'&&Date.now()<(d.until||0)&&d.id!==except)}
@@ -147,15 +174,16 @@ A.airMore=async el=>{const stage=el.dataset.x,name=el.dataset.n,id=airRowId(stag
   const busy=airBusy(id);if(busy){const bt=(get('items',busy.id)||{}).title||busy.folder||'kad lain';toast('"'+String(bt).slice(0,40)+'" masih menunggu AirDrop. Tunggu sampai Diterima, atau tekan Batal dulu');return}
   const old=el.innerHTML;el.disabled=true;el.innerHTML='<i class="spin"></i>';
   try{const now=Date.now();await studioCall('job_add',{type:'air_wait',input:{item:id,stage,name,t0:now}});
-    save('footin',{id,status:'tunggu',done:0,until:now+30*60000,at:now,air:true,folder:stage+'/'+name});render();
+    save('footin',{id,status:'tunggu',done:0,until:now+30*60000,at:now,air:true,ack:0,folder:stage+'/'+name});render();
     toast('Mac mini sedia. Dalam Photos: pilih video › Share › AirDrop › Mac mini');
     if(/iPhone|iPad|iPod/.test(navigator.userAgent))setTimeout(()=>{location.href='photos-redirect://'},700)}
   catch(e){el.disabled=false;el.innerHTML=old;toast('Mac mini tak jawab: '+String((e&&(e.message||e.code))||'semak internet').slice(0,70))}};
-function airHome(){const f=airPend();if(!f.length)return '';const gb=f.reduce((a,x)=>a+(x.size||0),0)/1e9;
-  return `<div class="card big glass" style="--c:${TAB['to-shoot'].c};margin-top:14px"><p class="eyebrow" style="margin:0">AirDrop · Mac mini</p><h3 style="margin:4px 0">${f.length} video baru sampai</h3>
+function airHome(){const f=airPend();if(!f.length)return '';const gb=f.reduce((a,x)=>a+(x.size||0),0)/1e9,l=(S.sync.airdrop||{}).last;
+  return `<div class="card big glass afr-pend" style="--c:${TAB['to-shoot'].c};margin:14px 0"><p class="eyebrow" style="margin:0">AirDrop · belum masuk mana-mana folder</p><h3 style="margin:4px 0">${f.length} video sampai tanpa kad</h3>
+    ${f.some(x=>x.th)?`<div class="afr-ths">${f.slice(0,8).map(x=>x.th?`<img src="data:image/jpeg;base64,${x.th}" alt="${esc(x.name)}" title="${esc(x.name)}">`:'').join('')}</div>`:''}
     <p class="meta">${esc(f.slice(0,3).map(x=>x.name).join(', '))}${f.length>3?' dan '+(f.length-3)+' lagi':''} · ${gb>=1?gb.toFixed(1)+' GB':Math.max(1,Math.round(gb*1000))+' MB'}. Untuk kad mana?</p>
-    <div class="btns" style="margin-top:8px"><button class="btn solid tab" data-act="airPick">Pilih kad</button><button class="btn" data-act="airIgnore">Bukan footage</button></div></div>`}
-A.airPick=()=>{const L=byStage('toshoot');modal(`<h2>Untuk kad mana?</h2><div class="fuos">${L.map(it=>`<button type="button" class="fuo" data-act="fuOpen" data-id="${it.id}"><i>${IC.footage}</i><span><b>${esc(it.title||'Nota')}</b><small>${isJob(it)?'Job':'Creative'}${it.folder?' · '+esc(fuMainL(it.folder.split('/')[0])):''}</small></span></button>`).join('')||'<p class="meta">Tiada kad dalam Shoot. Tambah kad dulu.</p>'}</div><div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Tutup</button></div>`,TAB['to-shoot'].c)};
+    <div class="btns" style="margin-top:8px">${l?`<button class="btn solid tab" data-act="airLast">${IC.check}Masukkan ke ${esc(String(l.name).slice(0,16))}</button>`:''}<button class="btn${l?'':' solid tab'}" data-act="airPick">${l?'Kad lain':'Pilih kad'}</button><button class="btn" data-act="airIgnore">Bukan footage</button></div></div>`}
+A.airPick=()=>{const L=afrCards();modal(`<h2>Untuk kad mana?</h2><div class="fuos">${L.map(it=>`<button type="button" class="fuo" data-act="fuOpen" data-id="${it.id}"><i>${IC.footage}</i><span><b>${esc(it.title||'Nota')}</b><small>${it.stage==='toedit'?'Edit':isJob(it)?'Job':'Creative'}${it.folder?' · '+esc(fuMainL(it.folder.split('/')[0])):''}</small></span></button>`).join('')||'<p class="meta">Tiada kad dalam Shoot atau Edit. Tambah kad dulu.</p>'}</div><div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Tutup</button></div>`,TAB['to-shoot'].c)};
 A.airIgnore=async()=>{const keep=S.sync.airdrop;S.sync.airdrop={files:[]};render();
   try{await studioCall('job_add',{type:'air_ignore',input:{}});toast('Okay, video tu kekal dalam Downloads Mac mini')}catch(e){S.sync.airdrop=keep;render();toast('Mac mini tak jawab')}};
 A.fuMode=el=>{fuKeep();ui.fu.mode=el.dataset.id;modal(fuBody(),TAB['to-shoot'].c)};

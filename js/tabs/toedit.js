@@ -15,7 +15,7 @@ V['to-edit']=()=>{const te=S.sync.toedit;const folders=toEditFolders();const fse
    .filter(r=>(!isPublishedName(r.name)||(r.kind==='f'&&multiKey(r.key)))&&!HELPER_DIR.test(r.name))   /* 26 Nov (Mira): projek banyak video (GENTING 7 video) kekal walaupun satu video (versi bajet) dah published */.concat(redoRows()).map(r=>Object.assign(r,edDeadline(r.name,r.start),{ed:edFor(r.key,r.name)})).sort((a,b)=>(a.d?a.d.left:99)-(b.d?b.d.left:99));
   const off=macOff();
   if(ui.teSeg==='broll')return head('B-roll untuk semak')+teSegs()+ftSemakView();
-  return head(te?'Folder sync '+fmtD(te.syncedAt):'Belum sync',`<button class="btn sm" data-act="addEdit">${IC.plus}Tambah</button>`)+teSegs()+shotList()+
+  return head(te?'Folder sync '+fmtD(te.syncedAt):'Belum sync',`<button class="btn sm" data-act="addEdit">${IC.plus}Tambah</button>`)+teSegs()+airHome()+shotList()+
   `<p class="eyebrow" style="margin:4px 0 10px">Dalam folder edit · ${rows.length}</p>${off?`<div class="banner glass">Mac mini tak jawab sejak ${esc(off)}. EDIT NOW perlukan Mac mini hidup dan app Claude dibuka.</div>`:''}<div class="list">${rows.map(r=>{const e=r.ed;const busy=ui.edNow&&ui.edNow[r.key];
     return `<div class="card glass"><div class="rowh">${fnoBadge(r.no)}<div style="flex:1;min-width:0">${r.kind==='r'?`<span class="pill rdp">Video baru #${r.round}</span>`:''}<h3>${esc(r.title||r.name)}</h3><div class="meta">${esc(r.sub)}${r.start?' · masuk '+fmtD(r.start):''}</div></div>${e?`<span class="pill" style="--pc:${edMulti(e)?(edFinN(e)>=edTot(e)?'var(--ok)':'var(--warn)'):edTone(e.status)}">${esc(edMulti(e)?edFinN(e)+'/'+edTot(e)+' siap':e.status||'Draf')}</span>`:''}${voMic(r)}</div>
     ${trk(r.d,r.t)}
