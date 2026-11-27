@@ -730,3 +730,35 @@ a.hprow.hpx{text-decoration:none}.hprow.hpx .pill{flex:none}.hpx .tm{width:72px}
 .hpcd i{height:6px}.hpdot{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none}
 .hpcl{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:11px;color:var(--muted)}.hpcl span{display:flex;align-items:center;gap:5px}
 .hgx .edbox .edl{justify-content:center;gap:9px}
+
+/* Photo Editor (27 Nov): langkah, grid gambar, kad doodle, Lain-lain, baris Post. Awalan pe- */
+.pe-steps{display:flex;gap:2px;margin-bottom:10px;padding:4px;border-radius:20px;background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.85);box-shadow:inset 0 1px 0 #fff}
+.pe-steps button{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:5px;padding:6px 2px;border:0;border-radius:16px;background:transparent;font:inherit;font-size:9.5px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);cursor:pointer}
+.pe-steps i{font-style:normal;flex:none;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:10px;letter-spacing:0;background:rgba(0,0,0,.07);color:var(--ink);font-variant-numeric:tabular-nums}
+.pe-steps .past i{background:var(--c);color:#fff;opacity:.5}
+.pe-steps .on{background:#fff;color:var(--ink);box-shadow:0 2px 8px rgba(46,39,35,.08)}.pe-steps .on i{background:var(--c);color:#fff}
+.pe-act{display:flex;gap:8px;margin-top:12px}.pe-act .btn{flex:1 1 0;min-width:0}
+.pe-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.pe-tile{position:relative;aspect-ratio:3/4;border-radius:14px;overflow:hidden;background:rgba(255,255,255,.5)}
+.pe-tile>button:first-child{display:block;width:100%;height:100%;border:0;padding:0;background:none;cursor:pointer}.pe-tile img{width:100%;height:100%;object-fit:cover;display:block}
+.pe-tile b{position:absolute;left:6px;top:6px;min-width:20px;height:20px;border-radius:10px;display:grid;place-items:center;font-size:11px;font-weight:600;background:rgba(46,39,35,.72);color:#fff;pointer-events:none}
+.pe-x{position:absolute;right:4px;top:4px;width:26px;height:26px;border-radius:50%;border:0;padding:0;display:grid;place-items:center;background:rgba(255,255,255,.85);color:var(--ink);cursor:pointer}.pe-x svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8}
+button.pe-tile.add{border:1.5px dashed var(--beige);display:grid;place-items:center;color:var(--c);cursor:pointer;padding:0}.pe-tile.add svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.6}
+.pe-stage{margin-top:0}.pe-stage img,.pe-stage .thcv{max-height:31vh}
+.pe-del{position:absolute;right:8px;top:8px}
+.pe-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.card.pe-ed{padding:14px}
+.pe-busy{position:absolute;left:8px;bottom:8px}
+.pe-rail .thth{width:44px;height:44px}
+.pe-dood{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px}
+.pe-dd{min-width:0;border:2px solid transparent;border-radius:12px;padding:0;background:rgba(255,255,255,.5);overflow:hidden;cursor:pointer;display:flex;flex-direction:column;font:inherit;color:var(--ink)}
+.pe-dd img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}.pe-dd span{font-size:9px;padding:4px 1px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pe-dd.on{border-color:var(--c)}.pe-dd.on span{font-weight:600}
+.pe-more{margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+.pe-more summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;font-size:10px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);min-height:28px}
+.pe-more summary::-webkit-details-marker{display:none}.pe-more summary::after{content:'+';font-size:16px;letter-spacing:0}.pe-more[open] summary::after{content:'\2013'}
+.pe-seg{display:flex;margin-top:18px}.pe-seg button{flex:1;padding:6px 4px}
+.pe-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.pe-row:last-child{border-bottom:0;padding-bottom:0}
+.pe-l{flex:1;min-width:0;font-size:14px}
+.pe-dot{flex:none;width:10px;height:10px;border-radius:50%;background:rgba(0,0,0,.12)}.pe-dot.ok{background:#6B8F71}
+.pe-drb{flex:1;min-width:0;border:0;background:none;padding:0;text-align:left;font:inherit;color:inherit;cursor:pointer}.pe-drb h3{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pe-drb .meta{display:block}

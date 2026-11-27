@@ -19,12 +19,12 @@ const IC={
  check:P('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),chev:P('<path d="M6 9l6 6 6-6"/>'),mic:P('<rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><path d="M12 18v2.5"/>'),
  up:P('<path d="M12 16V5"/><path d="M7.5 9.5L12 5l4.5 4.5"/><path d="M5 19.5h14"/>'),search:P('<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>'),back:P('<path d="M15 6l-6 6 6 6"/>'),next:P('<path d="M9 6l6 6-6 6"/>'),
  broll:P('<rect x="6" y="3.5" width="12" height="17" rx="3"/><path d="M10.5 9.5v5l4-2.5-4-2.5z"/><path d="M3 9l-1.5 3L3 15M21 9l1.5 3L21 15"/>'),
- threads:P('<path d="M16 11.5c0-3-1.8-4.5-4-4.5s-4 1.6-4 4.5 1.8 4.5 4 4.5c1.6 0 2.6-.8 3-2"/><path d="M16 11.5V13a2 2 0 0 0 4 0v-1a8 8 0 1 0-3 6.2"/>'),
+ threads:P('<rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="8.8" cy="10" r="1.6"/><path d="M4 17l4.8-4.2 3.4 3 3-2.6 4.8 4"/>'),
  edit:P('<path d="M4 20l1-4L16.5 4.5l3 3L8 19l-4 1z"/>'),caption:P('<path d="M5 6h14M5 10h14M5 14h8"/><path d="M14.5 17.5l2 2 4-4"/>'),dl:P('<path d="M12 4v11"/><path d="M7.5 10.5L12 15l4.5-4.5"/><path d="M5 19.5h14"/>'),ext:P('<path d="M10 5H6a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4"/><path d="M14 4h6v6"/><path d="M20 4l-8.5 8.5"/>'),x:P('<path d="M6 6l12 12M18 6L6 18"/>')
 };
 const TABS_=[
  ['home','Home','#9A4F5D'],['ideas','Ideas','#C29A3C'],['links','Confirmed Projects','#5A8FB5'],['to-shoot','Shoot','#CF8A55'],['shot','Shot','#C2666A'],['to-edit','Edit','#8676BE'],
- ['ready','To Publish','#8A6A52'],['published','Published','#6B5548'],['caption','Caption','#B0704F'],['threads','Threads','#7A5C6E'],['jobs','Jobs','#A8763E'],
+ ['ready','To Publish','#8A6A52'],['published','Published','#6B5548'],['caption','Caption','#B0704F'],['threads','Photo Editor','#7A5C6E'],['jobs','Jobs','#A8763E'],
  ['editor','Editor','#9C6396'],['footage','Footage library','#9A8C7A'],['broll','B-Roll Picker','#B0704F'],['inspiration','Copy Style','#4E3A2E'],['transcribe','Transcribe','#8C6A4F'],['media-kit','Media Kit','#B0937B'],['vo','VO','#B5546B'],['lagi','Lagi','#9A8C7A']
 ].map(([k,l,c])=>({k,l,c,ic:IC[k==='vo'?'mic':k.replace('-','')]||IC.plus}));
 const NAV=['home','links','to-shoot','vo','to-edit','editor','ready','published','lagi'];   /* 23 Nov: Ideas dalam Lagi, VO antara Shoot dan Edit */
