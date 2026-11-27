@@ -123,3 +123,32 @@ body:has(#main .edlist) .toast{background:#f3f1ee;color:#111}
 @media (prefers-reduced-motion:reduce){.el-bar i{transition:none}}
 /* 26 Nov: footage tambahan dari AirDrop pada kad projek */
 .el-xtra{display:flex;gap:6px;padding:0 38px 10px 8px}.el-xtra button{flex:1;min-height:36px;border-radius:11px;border:1px solid var(--el-teal);background:color-mix(in srgb,var(--el-teal) 18%,transparent);color:var(--ink);font:600 12px/1.2 inherit;padding:6px 8px;cursor:pointer}.el-xtra button.no{flex:0 0 36px;border-color:var(--el-line);background:none;color:var(--muted);display:grid;place-items:center}.el-xtra button.no svg{width:14px;height:14px}.el-xtra.run{align-items:center;font-size:12px;font-weight:600;color:var(--el-warn)}.el-xspin{width:13px;height:13px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:elxsp .8s linear infinite}@keyframes elxsp{to{transform:rotate(360deg)}}
+/* 27 Nov malam (Mira: "kemas lagi, kecilkan tulisan, jangan makan banyak space"): senarai padat. Saiz di sini ganti saiz atas. */
+body.edapp{font-size:13px}
+.edlist{gap:10px}
+.el-top b{font-size:20px}
+.el-ib{width:34px;height:34px;border-radius:11px}
+.el-new{padding:9px 10px;gap:10px;border-radius:15px}
+.el-new .p{width:32px;height:32px;border-radius:11px}.el-new .p svg{width:18px;height:18px}
+.el-new b{font-size:14px}.el-new span{font-size:11px}
+.el-chip{padding:5px 10px;font-size:11px}
+.el-eye{font-size:9.5px;margin:2px 0 -4px}
+.el-cont{padding:8px;gap:10px;border-radius:15px}
+.el-cont .el-th{width:52px;border-radius:9px}
+.el-cont h3{font-size:13.5px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.el-meta{font-size:11px}
+.el-btn{padding:6px 10px;font-size:11.5px;border-radius:10px}.el-btn svg{width:13px;height:13px}
+.el-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+@media (min-width:620px){.el-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (min-width:860px){.el-grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
+.el-card{border-radius:13px}
+.el-card .el-th{aspect-ratio:1/1}
+.el-th .ini{font-size:18px}
+.el-pill{right:4px;top:4px;padding:1px 6px;font-size:8.5px}
+.el-card .bd{padding:6px 22px 7px 7px;min-height:0}
+.el-card h4{font-size:11px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.el-card .bd .el-meta{font-size:9.5px}
+.el-dots{width:24px;height:28px;right:0;bottom:3px}.el-dots svg{width:14px;height:14px}
+.el-more>summary{padding:9px 12px;font-size:12px}
+.el-more .r strong{font-size:12px}
+.el-xtra{padding:0 24px 7px 6px}.el-xtra button{min-height:28px;font-size:10.5px}
