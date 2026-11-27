@@ -14,7 +14,7 @@ V['to-shoot']=()=>{if(!ui.shootTab){try{ui.shootTab=localStorage.getItem('ms:sho
     const badge=it.sample&&!sampleDone(it)?smpBadge(it):`<div class="smpb" style="--pc:${col}">${left!==null?`<span class="pill">${left>0?left+' hari lagi':left===0?'Hari ni':'Lewat '+(-left)+' hari'}</span>`:''}<button class="smpd" data-act="tsDate" data-id="${it.id}">${it.shootDate?'Shoot '+dmy(it.shootDate):'Set tarikh shoot'}</button></div>`;
     return `<div class="card glass tsc"><div class="rowh" style="align-items:flex-start;gap:10px"><div style="min-width:0"><h3>${esc(it.title||'Nota')} ${jobPill(it)}</h3><div class="meta">${esc([it.sample?'Sample '+smpPlat(it.sample.plat):'',it.sample&&it.sample.price?'RM '+it.sample.price:'',it.brand,it.nota?'ada nota':''].filter(Boolean).join(' · '))}</div></div>${badge}</div>
     <div class="tsx">${accSel(`id="ac-${it.id}" data-col="items" data-id="${it.id}" data-f="account"`,it.account||'','Akaun')}${it.sample?smpListing(it):''}${notaBtn(it,it.sample?'smpNotaBtn':'nota')}${tsMic(it)}</div>${prodLine(it)}
-    <div class="tsm">${footBtn(it)}<button class="btn icon sm" data-act="tsEdit" data-id="${it.id}" aria-label="Edit">${IC.edit}</button><button class="btn icon sm bad" data-act="delItem" data-id="${it.id}" aria-label="Padam">${IC.trash}</button></div>${fuStatus(it)}</div>`}).join('')||`<div class="empty">Tiada job menunggu. Tambah sample, atau job dari tab Projects.</div>`}</div>`};
+    ${sbtBox(it)}<div class="tsm">${footBtn(it)}${sbtAddBtn(it)}<button class="btn icon sm" data-act="tsEdit" data-id="${it.id}" aria-label="Edit">${IC.edit}</button><button class="btn icon sm bad" data-act="delItem" data-id="${it.id}" aria-label="Padam">${IC.trash}</button></div>${sbtOn(it)?'':fuStatus(it)}</div>`}).join('')||`<div class="empty">Tiada job menunggu. Tambah sample, atau job dari tab Projects.</div>`}</div>`};
 A.tsDate=el=>{const it=get('items',el.dataset.id);modal(`<h2>Tarikh shoot</h2><p class="meta">${esc(it.title||'')}</p><label class="f"><span>Tarikh</span><input type="date" class="inp" id="tsD" value="${esc(it.shootDate||'')}"></label><div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="tsDateSave" data-id="${it.id}">Simpan</button></div>`,TAB['to-shoot'].c)};
 A.tsDateSave=el=>{const it=get('items',el.dataset.id);save('items',Object.assign({},it,{shootDate:($('#tsD')||{}).value||''}));closeModal();toast('Tarikh disimpan')};
 A.toShot=el=>moveItem(get('items',el.dataset.id),'shot',{shotAt:ymd(new Date())});
@@ -25,8 +25,8 @@ A.toShot=el=>moveItem(get('items',el.dataset.id),'shot',{shotAt:ymd(new Date())}
 function creCard(it){const left=it.shootDate?Math.ceil((new Date(it.shootDate+'T00:00:00')-Date.now())/DAY):null;const col=left===null?'#999':left>7?'var(--ok)':left>=0?'var(--warn)':'var(--bad)';
   const meta=[it.nota?'ada nota':'',noEmoji(it.details||((it.src&&it.src.text)||'')).slice(0,140)].filter(Boolean).join(' · ');
   return `<div class="card glass tsc crc"><div class="crp"><span class="pill" style="--pc:#9A4F5D">Creative</span><button class="pill crd" style="--pc:${col}" data-act="tsDate" data-id="${it.id}">${it.shootDate?'Shoot '+dmy(it.shootDate)+(left>0?' · '+left+' hari lagi':left===0?' · hari ni':' · lewat '+(-left)+' hari'):'Set tarikh shoot'}</button>${accSel(`id="ac-${it.id}" data-col="items" data-id="${it.id}" data-f="account"`,it.account||'','Akaun')}${tsMic(it)}</div>
-    <h3>${esc(it.title||'Tanpa tajuk')}</h3>${meta?`<div class="meta">${esc(meta)}</div>`:''}${fuStatus(it)}
-    <div class="crm">${footBtn(it)}${notaBtn(it,'nota')}<button class="btn icon sm" data-act="tsEdit" data-id="${it.id}" aria-label="Edit">${IC.edit}</button><button class="btn icon sm bad" data-act="delItem" data-id="${it.id}" aria-label="Padam">${IC.trash}</button></div></div>`}
+    <h3>${esc(it.title||'Tanpa tajuk')}</h3>${meta?`<div class="meta">${esc(meta)}</div>`:''}${sbtOn(it)?sbtBox(it):fuStatus(it)}
+    <div class="crm">${footBtn(it)}${sbtAddBtn(it)}${notaBtn(it,'nota')}<button class="btn icon sm" data-act="tsEdit" data-id="${it.id}" aria-label="Edit">${IC.edit}</button><button class="btn icon sm bad" data-act="delItem" data-id="${it.id}" aria-label="Padam">${IC.trash}</button></div></div>`}
 function creList(cre,ideas){
   const row=it=>{const meta=['Idea',it.account,noEmoji(it.details||((it.src&&it.src.text)||'')).slice(0,90)].filter(Boolean).join(' · ');
     return `<div class="crow glass"><div class="crt"><b>${esc(it.title||'Tanpa tajuk')}</b><small>${esc(meta)}</small></div><div class="crb"><button class="btn sm" data-act="tsPlan" data-id="${it.id}">Nak shoot</button>
@@ -73,7 +73,7 @@ function fuStat0(it){const u=(ui.fuUp||{})[it.id],d=get('footin',it.id);
     return `<div class="stbar" style="--c:var(--warn)"><div class="stt"><span><i class="spin"></i> Mac mini sedia · ${d.done?d.done+' dah masuk':'hantar AirDrop sekarang'}</span><span>baki ${left} min · <button type="button" class="airx" data-act="airCancel" data-id="${it.id}">${d.done?'Semua dah sampai':'Batal'}</button></span></div><div class="stg"><i style="width:${Math.max(3,Math.round(left/30*100))}%"></i></div></div>`+afrRec(it,d)}
   if(d&&d.air&&d.status==='sedia'&&(d.done||d.have)&&Date.now()-(d.at||0)<7*864e5)return `<div class="stbar" style="--c:var(--ok)"><div class="stt"><span>${IC.check} ${d.done?'Diterima · '+d.done+' fail':'Folder dikemas kini'}</span><span>${esc((d.folder||it.folder||'').replace(/^(\d+)\.\s*/,'$1 · ').replace('/',' › '))}</span></div></div>`+afrRec(it,d);
   if(d&&d.status==='error')return `<p class="meta" style="color:var(--bad);margin:6px 0 0">Upload footage gagal: ${esc(d.msg||'')}</p>`;
-  return it.folder?`<p class="meta" style="margin:6px 0 0">📁 ${esc(it.folder.replace(/^(\d+)\.\s*/,'$1 · ').replace('/',' › '))}${d&&d.status==='sedia'&&Date.now()-(d.at||0)<864e5?` · ${d.done} video baru masuk`:''}</p>`:''}
+  return it.folder?`<p class="meta" style="margin:6px 0 0">📁 ${esc(it.folder.replace(/^(\d+)\.\s*/,'$1 · ').replace('/',' › '))}${d&&d.status==='sedia'&&Date.now()-(d.at||0)<864e5?` · ${d.done} video baru masuk`:''}</p>${sbtThs(d,'afr-ths')}`:''}
 /* 2026-11-25 (Mira): butang Footage (Jobs dan Creative) buka TIGA cara: upload dari iPhone, pilih folder sedia ada dalam
    CLAUDE EDITS (paut sahaja), atau buat folder baru dalam folder utama (21, 22, 23...) terus dari phone. Semua 0 token. */
 const fuSafe=t=>String(t||'Footage').replace(/[\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim().slice(0,60);
@@ -86,20 +86,21 @@ function fuGuess(it){const M=fuMains(),has=no=>M.find(n=>n.startsWith(no+'.'));i
 function fuBody(){const u=ui.fu,it=get('items',u.id);if(!it)return '';
   const opt=(m,ic,t,d)=>`<button type="button" class="fuo${u.mode===m?' on':''}" data-act="fuMode" data-id="${m}"><i>${ic}</i><span><b>${t}</b><small>${d}</small></span></button>`;
   const pn=airPend().length;
-  const body=u.mode==='air'?`${it.folder?`<p class="meta">Masuk folder ${esc(fuMainL(it.folder.split('/')[0]))}</p>`:`<p class="fulab">Folder utama</p><div class="fuchips">${fuMains().map(n=>`<button type="button" class="fuchip${u.main===n?' on':''}" data-act="fuMain" data-id="${esc(n)}">${esc(fuMainL(n))}</button>`).join('')}</div>`}
+  const T=fuT(it,u);
+  const body=u.mode==='air'?`${T.stage?`<p class="meta">Masuk folder ${esc(fuMainL(T.stage))} › ${esc(T.name)}</p>`:`<p class="fulab">Folder utama</p><div class="fuchips">${fuMains().map(n=>`<button type="button" class="fuchip${u.main===n?' on':''}" data-act="fuMain" data-id="${esc(n)}">${esc(fuMainL(n))}</button>`).join('')}</div>`}
       ${pn?`<div class="btns fub"><button class="btn" data-act="fuAir" data-id="${it.id}" data-take="1">${IC.check}Masukkan ${pn} video yang dah sampai</button></div>`:''}
       <div class="btns fub"><button class="btn solid tab" data-act="fuAir" data-id="${it.id}">${IC.up}Buka Photos dan AirDrop</button></div>`
-    :u.mode==='up'?`<label class="f"><span>Masuk folder mana</span>${fuSel('fuF',u.sel||it.folder||'',false,it.title)}</label>
+    :u.mode==='up'?`<label class="f"><span>Masuk folder mana</span>${fuSel('fuF',u.sel||T.folder||'',false,it.title)}</label>
       <p class="meta">Skrin tak akan tidur masa upload; jangan tutup atau tukar app sampai bar habis.</p>
       <div class="btns fub"><button class="btn solid tab" data-act="fuPick" data-id="${it.id}">${IC.up}Pilih video</button></div>`
-    :u.mode==='pick'?`<label class="f"><span>Folder dalam CLAUDE EDITS</span>${fuSel('fuF',u.sel||it.folder||'',false,it.title)}</label>
+    :u.mode==='pick'?`<label class="f"><span>Folder dalam CLAUDE EDITS</span>${fuSel('fuF',u.sel||T.folder||'',false,it.title)}</label>
       <p class="meta">Footage dah ada di Mac mini. Kad dipautkan ke folder tu, tiada upload.</p>
       <div class="btns fub"><button class="btn solid tab" data-act="fuLink" data-id="${it.id}">${IC.check}Paut folder ni</button></div>`
     :u.mode==='new'?`<p class="fulab">Folder utama</p><div class="fuchips">${fuMains().map(n=>`<button type="button" class="fuchip${u.main===n?' on':''}" data-act="fuMain" data-id="${esc(n)}">${esc(fuMainL(n))}</button>`).join('')}</div>
       <label class="f"><span>Nama folder</span><input class="inp" id="fuN" value="${esc(u.name)}" maxlength="60"></label>
       <p class="meta">Jadi: ${esc(u.main||'pilih folder utama')} › <span id="fuNp">${esc(fuSafe(u.name))}</span></p>
       <div class="btns fub"><button class="btn" data-act="fuNew" data-id="${it.id}">Buat folder sahaja</button><button class="btn solid tab" data-act="fuNewUp" data-id="${it.id}">${IC.up}Buat + upload</button></div>`:'';
-  return `<h2>Masukkan footage</h2><p class="meta">${esc(it.title||'')}</p><div class="fuos">
+  return `<h2>Masukkan footage</h2><p class="meta">${esc(it.title||'')}</p>${sbtChips(it,u)}<div class="fuos">
     ${opt('air',IC.next,'AirDrop ke Mac mini','Paling laju. Di rumah, dekat Mac mini.')}
     ${opt('up',IC.up,'Upload dari iPhone','Di luar rumah. Terus ke Drive, perlu internet.')}
     ${opt('pick',IC.footage,'Pilih folder dari CLAUDE EDITS','Footage dah ada di Mac mini. Pautkan sahaja.')}
@@ -107,16 +108,16 @@ function fuBody(){const u=ui.fu,it=get('items',u.id);if(!it)return '';
     <div class="fubody">${body}</div>${tsVoBtn(!!it.vo,'fuVo',it.id)}<div class="btns" style="justify-content:space-between;align-items:center;margin-top:10px">${tok(0)}<button class="btn" data-act="closeModal">Tutup</button></div>`}
 const fuKeep=()=>{const u=ui.fu;if(!u)return;const n=$('#fuN');if(n)u.name=n.value;const f=$('#fuF');if(f)u.sel=f.value};
 A.fuOpen=el=>{const it=get('items',el.dataset.id);if((ui.fuUp||{})[it.id]){toast('Upload sedang berjalan');return}
-  ui.fu={id:it.id,mode:'air',main:fuGuess(it),name:fuSafe(it.title),sel:it.folder||''};modal(fuBody(),TAB['to-shoot'].c)};
+  ui.fu={id:it.id,mode:'air',main:fuGuess(it),name:fuSafe(it.title),sel:it.folder||'',b:''};if(sbtOn(it))sbtPick(it,el.dataset.b||sbtNext(it));modal(fuBody(),TAB['to-shoot'].c)};
 /* 2026-11-26 (Mira): "aku nak transfer files je". AirDrop dari Photos ke Mac mini; worker (mac-mini/airdrop.py) pindahkan fail yang
    sampai dalam 30 minit ke <folder utama>/<nama kad>. Mira pilih folder utama sahaja; subfolder = nama kad. 0 token. */
 const airPend=()=>((S.sync.airdrop||{}).files)||[];
-A.fuAir=async el=>{const it=get('items',el.dataset.id),u=ui.fu||{},take=!!el.dataset.take;let stage=(it.folder||'').split('/')[0],name=(it.folder||'').split('/').slice(1).join('/');
-  if(!stage){if(!u.main){toast('Pilih folder utama dulu');return}stage=u.main}if(!name)name=fuSafe(it.title);
-  const busy=airBusy(it.id);if(busy){const bt=(get('items',busy.id)||{}).title||'kad lain';toast('"'+String(bt).slice(0,40)+'" masih menunggu AirDrop. Tunggu sampai Diterima, atau tekan Batal pada kad tu dulu');return}
+A.fuAir=async el=>{const it0=get('items',el.dataset.id),u=ui.fu||{},take=!!el.dataset.take,T=fuT(it0,u);let stage=T.stage,name=T.name;
+  if(!stage){if(!u.main){toast('Pilih folder utama dulu');return}stage=u.main}
+  const it={id:T.id};const busy=airBusy(it.id);if(busy){const bt=(get('items',busy.id)||{}).title||'kad lain';toast('"'+String(bt).slice(0,40)+'" masih menunggu AirDrop. Tunggu sampai Diterima, atau tekan Batal pada kad tu dulu');return}
   const old=el.innerHTML;el.disabled=true;el.innerHTML='<i class="spin"></i>Beritahu Mac mini';
   try{const now=Date.now();await studioCall('job_add',{type:'air_wait',input:{item:it.id,stage,name,t0:now,take}});
-    save('footin',{id:it.id,status:'tunggu',done:0,until:now+30*60000,at:now,air:true,ack:0,folder:stage+'/'+name});
+    save('footin',{id:it.id,status:'tunggu',done:0,until:now+30*60000,at:now,air:true,ack:0,folder:stage+'/'+name});sbtSet(it0,T.k,stage+'/'+name);
     if(take){S.sync.airdrop={files:[]}}closeModal();render();
     toast(take?'Mac mini sedang masukkan video ke folder':'Tunggu kad tunjuk "Mac mini sedia", kemudian AirDrop. Jangan tutup kad sampai semua video sampai');
     if(!take&&/iPhone|iPad|iPod/.test(navigator.userAgent))setTimeout(()=>{location.href='photos-redirect://'},700)}
@@ -190,15 +191,16 @@ A.fuMode=el=>{fuKeep();ui.fu.mode=el.dataset.id;modal(fuBody(),TAB['to-shoot'].c
 A.fuMain=el=>{fuKeep();ui.fu.main=el.dataset.id;modal(fuBody(),TAB['to-shoot'].c)};
 function fuFiles(done){const inp=document.createElement('input');inp.type='file';inp.accept='video/*';inp.multiple=true;inp.onchange=()=>{const fs=[...inp.files];if(fs.length)done(fs)};inp.click()}
 A.fuPick=el=>{const it=get('items',el.dataset.id),v=($('#fuF')||{}).value||'';if(!v){toast('Pilih folder dulu');return}
-  const stage=v.split('/')[0],name=v.split('/').slice(1).join('/');fuFiles(fs=>{closeModal();fuRun(it,stage,name,fs)})};
+  const stage=v.split('/')[0],name=v.split('/').slice(1).join('/');const T=fuT(it,ui.fu);fuFiles(fs=>{closeModal();sbtSet(it,T.k,v);fuRun({id:T.id},stage,name,fs)})};
 A.fuLink=el=>{const it=get('items',el.dataset.id),v=($('#fuF')||{}).value||'';if(!v){toast('Pilih folder dulu');return}
+  const T=fuT(it,ui.fu);if(T.k!=='1'){sbtSet(it,T.k,v);closeModal();toast('Folder dipaut ke '+sbtLab(T.k));return}
   tsVoSync(save('items',Object.assign({},it,{folder:v})),!!it.vo);closeModal();toast('Folder dipaut ke kad')};
 function fuNewVals(){fuKeep();const u=ui.fu,name=fuSafe(u.name);if(!u.main){toast('Pilih folder utama dulu');return null}if(!name){toast('Tulis nama folder');return null}
   if(fuFolders().some(o=>nrm(o.v)===nrm(u.main+'/'+name))){toast('Folder ni dah ada. Guna "Pilih folder dari CLAUDE EDITS"');return null}return {stage:u.main,name}}
 A.fuNew=async el=>{const it=get('items',el.dataset.id),v=fuNewVals();if(!v)return;const b=el;b.disabled=true;b.innerHTML='<i class="spin"></i>Buat folder';
-  try{const r=await studioJob('mkfolder',{stage:v.stage,name:v.name},2*60000);{const c=get('items',it.id);tsVoSync(save('items',Object.assign({},c,{folder:v.stage+'/'+((r&&r.name)||v.name)})),!!c.vo)}closeModal();toast('Folder dibuat: '+fuMainL(v.stage)+' › '+((r&&r.name)||v.name))}
+  try{const r=await studioJob('mkfolder',{stage:v.stage,name:v.name},2*60000);{const c=get('items',it.id),T=fuT(c,ui.fu),nf=v.stage+'/'+((r&&r.name)||v.name);if(T.k!=='1')sbtSet(c,T.k,nf);else tsVoSync(save('items',Object.assign({},c,{folder:nf})),!!c.vo)}closeModal();toast('Folder dibuat: '+fuMainL(v.stage)+' › '+((r&&r.name)||v.name))}
   catch(e){b.disabled=false;b.textContent='Buat folder sahaja';toast('Tak dapat buat folder: '+String((e&&(e.message||e.code))||'semak Mac mini hidup').slice(0,80))}};
-A.fuNewUp=el=>{const it=get('items',el.dataset.id),v=fuNewVals();if(!v)return;fuFiles(fs=>{closeModal();fuRun(it,v.stage,v.name,fs)})};
+A.fuNewUp=el=>{const it=get('items',el.dataset.id),v=fuNewVals();if(!v)return;const T=fuT(it,ui.fu);fuFiles(fs=>{closeModal();sbtSet(it,T.k,v.stage+'/'+v.name);fuRun({id:T.id},v.stage,v.name,fs)})};
 /* 2026-11-26: upload TERUS iPhone -> Drive (tanpa Apps Script di tengah, tanpa base64). Apps Script `ustart` buka sesi dengan
    Origin app, jadi Drive benarkan PUT dari browser. Sekeping 32 MB dengan % hidup. Cara lama (uchunk 8 MB) dibuang dari sini 26 Nov (Mira); gagal = sambung dari bait terakhir, 3 cubaan. */
 function fuPut(url,blob,start,total,onp){return new Promise((res,rej)=>{const x=new XMLHttpRequest();x.open('PUT',url);
@@ -228,8 +230,10 @@ async function fuRun(it,stage,name,fs){
 
 /* 2026-11-23 (Mira): butang Shot dibuang. Satu butang footage: Upload footage -> bila folder ada video jadi "Ada footage · N video"
    + butang Ke Edit (kad pindah ke tab Edit, folder dah terpaut). */
-function footCount(it){if(!it.folder)return 0;const [st,...rest]=it.folder.split('/'),nm=rest.join('/');const s=(((S.sync.toedit||{}).stages)||[]).find(x=>x.name===st);const i=s&&(s.items||[]).find(x=>x.name===nm);return i?(i.clips||0):0}
-function footBtn(it,compact){const n=footCount(it),busy=(ui.fuUp||{})[it.id];
+const footCount=it=>footCountF(it.folder);
+function footCountF(folder){if(!folder)return 0;const [st,...rest]=String(folder).split('/'),nm=rest.join('/');const s=(((S.sync.toedit||{}).stages)||[]).find(x=>x.name===st);const i=s&&(s.items||[]).find(x=>x.name===nm);return i?(i.clips||0):0}
+function footBtn(it,compact){if(sbtOn(it))return sbtList(it).every(b=>footCountF(b.folder)>0)?`<button class="btn sm solid tab tsgrow" data-act="tsToEdit" data-id="${it.id}">Ke Edit${IC.next}</button>`:'<span class="sbt-sp"></span>';
+  const n=footCount(it),busy=(ui.fuUp||{})[it.id];
   if(busy)return `<button class="btn sm st-run" disabled><i class="spin"></i>${busy.pct}%</button>`;
   if(!n)return `<button class="btn sm${compact?'':' solid tab tsgrow'}" data-act="fuOpen" data-id="${it.id}" aria-label="Upload footage">${IC.up}${compact?'':'Footage'}</button>`;
   return `<button class="btn sm st-done${compact?'':' tsgrow'}" data-act="fuOpen" data-id="${it.id}" title="Tambah lagi footage">${IC.check}${compact?n:'Footage · '+n}</button><button class="btn sm solid tab" data-act="tsToEdit" data-id="${it.id}">Ke Edit${IC.next}</button>`}
@@ -255,3 +259,48 @@ function tsVoSync(it,was){const ref=tsVoRef(it),id=voId(ref.sub);const empty=d=>
 A.tfVo=el=>{ui.tfVo=!ui.tfVo;el.outerHTML=tsVoBtn(ui.tfVo,'tfVo','')};
 A.fuVo=el=>{fuKeep();const it=get('items',el.dataset.id);const o=save('items',Object.assign({},it,{vo:!it.vo}));tsVoSync(o,!!it.vo);modal(fuBody(),TAB['to-shoot'].c);toast(o.vo?'Ditanda perlu VO. Ada dalam tab VO':'Tanda VO dibuang')};
 A.tsVoGo=el=>{const it=get('items',el.dataset.id);tsVoSync(it,true);const ref=tsVoRef(it);ui.voOpen=voId(ref.sub);location.hash='#vo'};
+
+/* ---------- BATCH (27 Nov 2026, Mira; lakaran https://claude.ai/artifact/PbbXqW3aoztTPs2p5cX7Wi) ----------
+   Satu kad Shoot boleh ada beberapa batch shoot. Kad KEKAL dalam Shoot sampai semua batch ada footage (baru keluar butang Ke Edit).
+   Satu deadline untuk semua batch. Data pada kad: it.batches [{n, folder}] (batch 1 = it.folder), it.shareF (folder "Semua batch").
+   Setiap batch = folder sendiri di sebelah folder asal: "<nama>", "<nama> Batch 2", "<nama> Kongsi". Jadi tab Edit tunjuk satu kad
+   setiap batch dengan EDIT NOW sendiri, tanpa ubah worker. Resit AirDrop setiap batch: doc footin/<id kad>-b<n> (kongsi: -bk).
+   Footage dikongsi: Edit Style tambah nota supaya sesi Claude boleh guna folder batch lain + Kongsi (sbtInfo, gaya.js esGo). */
+const sbtOn=it=>!!it&&Array.isArray(it.batches)&&it.batches.length>0;
+const sbtList=it=>sbtOn(it)?it.batches.map(b=>b.n===1?{n:1,folder:it.folder&&it.folder.includes('/')?it.folder:(b.folder||'')}:b):[];
+const sbtId=(it,k)=>String(k)==='1'?it.id:it.id+'-b'+k;
+const sbtFolder=(it,k)=>k==='k'?(it.shareF||''):((sbtList(it).find(b=>String(b.n)===String(k))||{}).folder||'');
+const sbtLab=k=>k==='k'?'Semua batch':'Batch '+k;
+function sbtBase(it){const f=sbtFolder(it,1);return {stage:f?f.split('/')[0]:((it.folder||'').split('/')[0]||''),name:f?f.split('/').slice(1).join('/'):fuSafe(it.title)}}
+const sbtName=(it,k)=>String(k)==='1'?sbtBase(it).name:sbtBase(it).name.slice(0,50).trim()+(k==='k'?' Kongsi':' Batch '+k);
+function fuT(it,u){const k=sbtOn(it)?String((u&&u.b)||'1'):'1';const f=k==='1'?(it.folder&&it.folder.includes('/')?it.folder:''):sbtFolder(it,k);const b=sbtBase(it);
+  return {k,id:sbtId(it,k),folder:f,stage:f?f.split('/')[0]:b.stage,name:f?f.split('/').slice(1).join('/'):sbtName(it,k)}}
+function sbtSet(it0,k,folder){k=String(k);if(k==='1')return;const it=get('items',it0.id);if(!it||!sbtOn(it))return;
+  save('items',Object.assign({},it,k==='k'?{shareF:folder}:{batches:it.batches.map(b=>String(b.n)===k?Object.assign({},b,{folder}):b)}))}
+const sbtNext=it=>{const b=sbtList(it).find(b=>!footCountF(b.folder));return String(b?b.n:sbtList(it)[0].n)};
+function sbtPick(it,k){const u=ui.fu;u.b=String(k);const T=fuT(it,u);u.sel=T.folder;u.name=T.name}
+const sbtThs=(d,cls)=>d&&(d.list||[]).some(x=>x.th)?`<div class="${cls}">${d.list.filter(x=>x.th).slice(-8).map(x=>`<img src="data:image/jpeg;base64,${x.th}" alt="${esc(x.n)}" title="${esc(x.n)}">`).join('')}</div>`:'';
+const sbtAddBtn=it=>sbtOn(it)?'':`<button class="btn sm" data-act="sbtAdd" data-id="${it.id}" aria-label="Tambah batch">${IC.plus}Batch</button>`;
+function sbtBox(it){if(!sbtOn(it))return '';const L=sbtList(it),has=L.filter(b=>footCountF(b.folder)>0).length;
+  const row=(k,folder)=>{const n=footCountF(folder),id=sbtId(it,k),d=get('footin',id),nm=folder?folder.split('/').slice(1).join('/'):'';const e=n&&typeof edFor==='function'?edFor(folder,nm):null;
+    const vids=e&&typeof edMulti==='function'&&edMulti(e)?' · '+edFinN(e)+'/'+edTot(e)+' video':'';const busy=(ui.fuUp||{})[id];
+    const pill=k==='k'?'':n?(e?`<span class="pill" style="--pc:var(--ok)">Di Edit</span>`:`<span class="pill" style="--pc:var(--warn)">Ada footage</span>`):`<span class="pill" style="--pc:#999">Belum shoot</span>`;
+    const st=d&&(busy||d.status==='tunggu'||d.status==='proses'||d.status==='error'||(d.status==='sedia'&&Date.now()-(d.at||0)<864e5))?fuStat0({id,folder:''}):sbtThs(d,'sbt-ths');
+    return `<div class="sbt-row${n?'':' todo'}"><div class="sbt-h"><div class="sbt-t"><b>${sbtLab(k)}</b><small>${n?n+' klip'+vids:k==='k'?'Footage kongsi':'Belum ada footage'}</small></div>${pill}
+      <button class="btn sm${n?'':' solid tab'}" data-act="fuOpen" data-id="${it.id}" data-b="${k}" aria-label="Footage ${sbtLab(k)}"${busy?' disabled':''}>${busy?'<i class="spin"></i>'+busy.pct+'%':IC.up}</button>
+      ${!n&&!folder&&k!=='k'&&k!==1&&k===L[L.length-1].n?`<button class="btn icon sm bad" data-act="sbtDel" data-id="${it.id}" data-b="${k}" aria-label="Buang ${sbtLab(k)}">${IC.trash}</button>`:''}</div>${st}</div>`};
+  return `<div class="sbt-box"><div class="sbt-sum"><span class="pill" style="--pc:${has===L.length?'var(--ok)':'var(--warn)'}">${has}/${L.length} batch ada footage</span><div class="sbt-bar"><i style="width:${Math.round(has/L.length*100)}%"></i></div></div>
+    ${L.map(b=>row(b.n,b.folder)).join('')}${it.shareF?row('k',it.shareF):''}<button type="button" class="sbt-add" data-act="sbtAdd" data-id="${it.id}">${IC.plus}Batch</button></div>`}
+A.sbtAdd=el=>{const it=get('items',el.dataset.id);if(!it)return;const L=sbtOn(it)?it.batches:[{n:1,folder:it.folder&&it.folder.includes('/')?it.folder:''}];const n=Math.max(...L.map(b=>b.n))+1;
+  save('items',Object.assign({},it,{batches:L.concat({n,folder:''})}));toast(sbtOn(it)?'Batch '+n+' ditambah':'Kad ni kini ada Batch 1 dan Batch 2');return n};
+A.sbtDel=el=>{const it=get('items',el.dataset.id),k=+el.dataset.b;if(!it||!sbtOn(it))return;const L=it.batches.filter(b=>b.n!==k);const o=Object.assign({},it,{batches:L});if(L.length<2&&!it.shareF)delete o.batches;save('items',o);toast('Batch '+k+' dibuang')};
+/* Pilihan batch dalam helaian Masukkan footage */
+function sbtChips(it,u){if(!sbtOn(it))return '';const c=(k,l)=>`<button type="button" class="fuchip${String(u.b)===String(k)?' on':''}" data-act="fuBatch" data-id="${k}">${l}</button>`;
+  return `<p class="fulab">Footage ni untuk batch mana?</p><div class="fuchips">${sbtList(it).map(b=>{const n=footCountF(b.folder);return c(b.n,'Batch '+b.n+(n?' · '+n:''))}).join('')}${c('k','Semua batch')}${c('new',IC.plus+'Batch baru')}</div>`}
+A.fuBatch=el=>{fuKeep();let k=el.dataset.id;const u=ui.fu;if(k==='new')k=A.sbtAdd({dataset:{id:u.id}});sbtPick(get('items',u.id),k);modal(fuBody(),TAB['to-shoot'].c)};
+/* Untuk tab Edit: folder Kongsi tak jadi kad sendiri; folder batch tahu adik-beradiknya */
+const sbtShares=()=>new Set(S.items.filter(it=>it.shareF).map(it=>it.shareF));
+function sbtInfo(key){for(const it of S.items){if(!sbtOn(it))continue;const L=sbtList(it),b=L.find(x=>x.folder&&x.folder===key);if(!b)continue;
+    return {n:b.n,total:L.length,others:L.filter(x=>x.n!==b.n&&x.folder&&footCountF(x.folder)>0).map(x=>x.folder),share:it.shareF&&footCountF(it.shareF)>0?it.shareF:''}}return null}
+function sbtNote(key){const i=sbtInfo(key);if(!i)return '';const nm=f=>'"'+f.split('/').slice(1).join('/')+'"';const ex=i.others.concat(i.share?[i.share]:[]);
+  return 'BATCH: projek ni ada '+i.total+' batch footage. Sesi ni untuk Batch '+i.n+' (folder '+nm(key)+'). Footage utama dari folder ni.'+(ex.length?' Footage dalam folder '+ex.map(nm).join(', ')+' (folder utama yang sama) BOLEH digunakan juga.':'')+' Opening dan ending mesti lain dari video batch lain.'}

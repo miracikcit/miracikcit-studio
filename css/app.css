@@ -797,3 +797,21 @@ textarea.inp.pe-tx{margin-top:6px;min-height:40px;resize:none;overflow:auto;padd
 .edpgo{min-height:32px;padding:6px 12px;text-decoration:none;flex:none}
 .btns.tem:has(.edgd){flex-wrap:wrap}.btns.tem>.btn.edgd{flex:1 1 100%}
 .brshort{font-size:12.5px;color:var(--bad);margin-top:3px;line-height:1.35}.brshort b{font-weight:600}
+
+/* Batch dalam kad Shoot (27 Nov) */
+.sbt-box{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.sbt-sum{display:flex;align-items:center;gap:10px;margin-bottom:2px}
+.sbt-bar{flex:1;height:5px;border-radius:9px;background:rgba(46,39,35,.1);overflow:hidden}.sbt-bar i{display:block;height:100%;background:var(--ok);border-radius:9px}
+.sbt-row{padding:8px 10px;border-radius:14px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.85)}
+.sbt-row.todo{background:transparent;border:1px dashed var(--line)}
+.sbt-h{display:flex;align-items:center;gap:8px}
+.sbt-t{flex:1;min-width:0;display:flex;flex-direction:column}.sbt-t b{font-size:13px;font-weight:600}.sbt-t small{font-size:11px;color:var(--muted)}
+.sbt-h .btn.sm{min-height:28px;padding:0 10px}
+.sbt-ths{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;margin-top:7px}
+.sbt-ths img{flex:none;width:40px;height:54px;border-radius:8px;object-fit:cover;background:rgba(0,0,0,.08)}
+.sbt-row .stbar{margin-top:7px}
+.sbt-add{align-self:flex-start;display:inline-flex;align-items:center;gap:4px;font:inherit;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:none;border:1px dashed var(--line);border-radius:999px;padding:5px 12px;cursor:pointer}
+.sbt-add svg,.fuchip svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;flex:none}
+.fuchip:has(svg){display:inline-flex;align-items:center;gap:4px}
+.sbt-sp{flex:1}
+.sbt-ep{margin-top:3px}

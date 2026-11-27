@@ -283,7 +283,7 @@ const esRe=()=>{const v=$('#esL')?$('#esL').value:'';if($('#esN'))ui.es.nota=$('
 A.esJenis=el=>{ui.es.jenis=el.dataset.x;esRe()};
 A.esTpl=el=>{ui.es.tpl=el.dataset.x;esRe()};
 A.esLook=el=>{const k=el.dataset.x;const L=ui.es.looks;ui.es.looks=L.includes(k)?L.filter(x=>x!==k):L.concat(k);esRe()};
-A.esGo=async()=>{const e=ui.es;if($('#esN'))e.nota=$('#esN').value.trim();closeModal();ui.edNow=Object.assign({},ui.edNow,{[e.key]:'Buka sesi...'});render();
+A.esGo=async()=>{const e=ui.es;if($('#esN'))e.nota=$('#esN').value.trim();{const bn=typeof sbtNote==='function'?sbtNote(String(e.key).replace(/#r\d+$/,'')):'';if(bn)e.nota=((e.nota?e.nota.slice(0,590-bn.length)+' | ':'')+bn).slice(0,600)}closeModal();ui.edNow=Object.assign({},ui.edNow,{[e.key]:'Buka sesi...'});render();
   try{await studioJob('edit_now',{stage:e.stage,name:e.name,key:e.key,style:{tpl:e.tpl||'',looks:e.looks},round:e.round||0,jenis:e.jenis||'',nota:e.nota||''},3*60000);toast('Sesi Claude dibuka di Mac mini. Buka app Claude di phone untuk kawal')}
   catch(x){toast('Tak dapat buka sesi: '+String((x&&(x.message||x.code))||'semak Mac mini hidup').slice(0,80))}
   finally{const b=Object.assign({},ui.edNow);delete b[e.key];ui.edNow=b;render()}};
