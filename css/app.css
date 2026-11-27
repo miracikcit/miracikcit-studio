@@ -796,3 +796,4 @@ textarea.inp.pe-tx{margin-top:6px;min-height:40px;resize:none;overflow:auto;padd
 .edpst .pill{white-space:normal;text-align:left}
 .edpgo{min-height:32px;padding:6px 12px;text-decoration:none;flex:none}
 .btns.tem:has(.edgd){flex-wrap:wrap}.btns.tem>.btn.edgd{flex:1 1 100%}
+.brshort{font-size:12.5px;color:var(--bad);margin-top:3px;line-height:1.35}.brshort b{font-weight:600}

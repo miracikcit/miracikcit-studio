@@ -95,12 +95,17 @@ function brProjects(){const P={};const add=(key,stage,name)=>P[key]||(P[key]={ke
     if(!p.subs.some(s=>s.rel===b.key))p.subs.push({rel:b.key,sub:b.key===k?'':String(b.key).split('/').pop()})});
   return Object.values(P).filter(p=>p.subs.length).map(p=>{p.subs.forEach(s=>{s.b=S.broll.find(b=>b.key===s.rel)||null;const b=s.b;
       s.st=!b||b.skip?'belum':b.status==='precut'?'precut':b.status==='backup'?'backup':b.status==='error'?'error':b.status==='stok'?'siap':brLeft(b)>0?'swipe':'semak'});
-    const has=k=>p.subs.some(s=>s.st===k);p.rank=has('swipe')||has('semak')||has('error')?0:has('precut')||has('backup')?1:has('belum')?2:3;return p})
+    const has=k=>p.subs.some(s=>s.st===k);p.rank=has('swipe')||has('semak')||has('error')?0:has('precut')||has('backup')?1:has('belum')?2:3;
+    /* 27 Nov: subfolder yang video Editornya masih perlu klip Final (part.broll.need) = belum siap, naik ke "Perlu swipe" */
+    const ed=S.editor.find(x=>x.folder===p.key);p.subs.forEach(s=>{s.short=null;edParts(ed).forEach(pt=>{const x=typeof partBr==='function'?partBr(pt):null;if(x&&x.need&&!x.ok&&x.b&&s.b&&x.b.key===s.b.key)s.short={name:pt.name,have:x.have,need:x.need}})});
+    if(p.subs.some(s=>s.short))p.rank=0;return p})
    .sort((a,b)=>a.rank-b.rank||String(a.key).localeCompare(String(b.key)))}
 function brSubRow(s,c){const b=s.b;const busy=ui.ftBusy&&(ui.ftBusy[s.rel]||(b&&ui.ftBusy[b.id]));const nm=s.sub||'Semua video';
   const pick=b?brPick(b):'';
   const ext=`<a class="btn icon sm" href="${esc(pick)}" target="_blank" rel="noopener" aria-label="Buka dalam Picker" title="Swipe, edit dan Final dalam Picker (Wi-Fi rumah)">${IC.ext}</a>`;
   let txt,col,act='';
+  if(s.short){const h=`<div class="brshort"><b>Perlu ${s.short.need-s.short.have} s lagi</b> untuk video ${esc(s.short.name)} (${s.short.have}/${s.short.need} s). Buka Picker, tanda lagi klip Final.</div>`;
+    return `<div class="brrow"><div style="flex:1;min-width:0"><strong>${esc(nm)}</strong>${h}</div><a class="btn sm solid tab" href="${esc(pick)}" target="_blank" rel="noopener">${IC.ext}Final lagi</a></div>`}
   if(s.st==='belum'){txt='Belum pre-cut';col='#999';act=`<button class="btn sm" data-act="brStart" data-id="${esc(s.rel)}"${busy?' disabled':''}>${busy?'<i class="spin"></i>':''}Pre-cut</button>`}
   else if(s.st==='precut'){txt='Mac mini sedang potong';col='var(--c)';act=ldr('Pre-cut',b.progress||0)}
   else if(s.st==='backup'){txt='Sedang simpan';col='var(--c)';act=ldr('Simpan')}

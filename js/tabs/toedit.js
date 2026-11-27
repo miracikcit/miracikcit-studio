@@ -20,7 +20,7 @@ V['to-edit']=()=>{const te=S.sync.toedit;const folders=toEditFolders();const fse
     return `<div class="card glass"><div class="rowh">${fnoBadge(r.no)}<div style="flex:1;min-width:0">${r.kind==='r'?`<span class="pill rdp">Video baru #${r.round}</span>`:''}<h3>${esc(r.title||r.name)}</h3><div class="meta">${esc(r.sub)}${r.start?' · masuk '+fmtD(r.start):''}</div></div>${e?`<span class="pill" style="--pc:${edMulti(e)?(edFinN(e)>=edTot(e)?'var(--ok)':'var(--warn)'):edTone(e.status)}">${esc(edMulti(e)?edFinN(e)+'/'+edTot(e)+' siap':e.status||'Draf')}</span>`:''}${voMic(r)}</div>
     ${trk(r.d,r.t)}
     ${brSteps(r,e)}
-    ${edPartsList(e)}
+    ${edPartsList(e,r)}
     <div class="btns tem" style="margin-top:12px">${edBtns(r,e,busy,off)}${r.kind==='f'||r.kind==='r'?`<button class="btn icon sm" data-act="peek" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}" aria-label="Lihat footage" title="Lihat footage">${IC.footage}</button>`:''}${r.kind==='f'?`<button class="btn icon sm" data-act="airMore" data-x="${esc(r.stage)}" data-n="${esc(r.name)}" aria-label="Tambah footage dengan AirDrop" title="Tambah footage dengan AirDrop">${IC.up}</button>`:''}<button class="btn icon sm bad" data-act="${r.kind==='f'?'fHide':r.kind==='r'?'redoDel':'delItem'}" data-id="${esc(r.kind==='r'?r.rid:r.key)}" aria-label="Buang">${IC.trash}</button></div>
     ${r.kind==='f'?airRowStatus(r):''}${edNote(r,e)}${tipRep(e)}</div>`}).join('')||`<div class="empty">${te?'Tiada video tunggu edit.':'Belum sync. Tekan Sync folder di Home.'}</div>`}</div>`};
 /* Butang kad: belum mula = EDIT NOW; dah tekan = link terus ke chat Claude (Remote Control) atau status */
@@ -39,13 +39,24 @@ function edBtns(r,e,busy,off){if(r.kind==='r'&&!r.clips)return rawBackBtn(String
 const edAlive=e=>{const s=S.sync.sessions;return !!(e&&s&&Array.isArray(s.ids)&&s.ids.includes(e.id))};
 const edDead=e=>{const s=S.sync.sessions;return !!(e&&isUrl(e.chat)&&s&&Array.isArray(s.ids)&&!s.ids.includes(e.id)&&Date.now()-(e.sessionAt||e.updated||0)>3*60000&&!macOff())};
 /* Bahagian projek banyak video: mana dah ada final, mana masih storyboard / draf (26 Nov, Mira) */
-function edPartsList(e){const P=e?edParts(e):[];if(!P.length)return '';const tone=p=>p.final?'var(--ok)':/storyboard|lulus/i.test(p.status||'')?'var(--bad)':'var(--warn)';
+/* 27 Nov (Mira: B-roll SkyWorlds "Siap" tapi tak ada apa nak buat, dan projek tergendala tak bergerak lepas tu).
+   Bahagian video yang tunggu B-roll: part.broll {place, need} (saat footage Final yang perlu, cth panjang VO). Klip Final dikira dari brlib
+   ikut place. Kurang = "B-roll a/b s · perlu c s lagi" + Final lagi (buka Picker folder tu). Cukup = "B-roll cukup" + Sambung kerja. */
+const brHave=place=>(S.brlib||[]).filter(d=>nrm(d.place)===nrm(place)).reduce((a,d)=>a+(d.clips||[]).reduce((x,c)=>x+(+c.len||0),0),0);
+function partBr(p){if(!p||p.final||!/b-?roll/i.test(p.status||''))return null;const place=(p.broll&&p.broll.place)||p.name||'';
+  const have=Math.round(brHave(place)),need=Math.round(+(p.broll&&p.broll.need)||0);
+  const b=S.broll.find(x=>nrm(String(x.key||'').split('/').pop()).includes(nrm(place))||nrm(place).includes(nrm(String(x.key||'').split('/').pop().replace(/^\d+\s*/,''))));
+  return {place,have,need,ok:need?have>=need:false,b}}
+const edBrReady=e=>edParts(e).some(p=>{const x=partBr(p);return x&&x.ok});
+function edPartsList(e,r){const P=e?edParts(e):[];if(!P.length)return '';const tone=p=>p.final?'var(--ok)':/storyboard|lulus/i.test(p.status||'')?'var(--bad)':'var(--warn)';
   /* 27 Nov: nama penuh (dulu terpotong "Awana r…"), dan setiap baris yang belum siap ada butang: storyboard / draf (p.url), B-roll, atau chat sesi. */
-  const act=p=>{if(p.final)return '';const sb=/storyboard|lulus/i.test(p.status||'');
+  const act=p=>{if(p.final)return '';const sb=/storyboard|lulus/i.test(p.status||''),br=partBr(p);
+    if(br&&br.ok&&r)return `<button type="button" class="btn sm solid tab edpgo" data-act="esOpen" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}">▶ Sambung kerja</button>`;
+    if(br&&br.b)return `<a class="btn sm${br.need?' solid tab':''} edpgo" href="${esc(brPick(br.b))}" target="_blank" rel="noopener">${IC.ext}Final lagi</a>`;
     if(isUrl(p.url))return `<a class="btn sm${sb?' solid tab':''} edpgo" href="${esc(p.url)}" target="_blank" rel="noopener">${IC.ext}${sb?'Buka storyboard':'Buka'}</a>`;
     if(/b-?roll/i.test(p.status||''))return `<button type="button" class="btn sm edpgo" data-act="teSeg" data-x="broll">B-roll</button>`;
     return isUrl(e.chat)&&!edDead(e)?`<a class="btn sm edpgo" href="${esc(e.chat)}" target="_blank" rel="noopener">${IC.ext}Chat</a>`:''};
-  return `<div class="edparts">${P.map(p=>`<div class="edpart${p.final?'':' todo'}"><span class="ccn">${esc(p.name||p.id||'Video')}</span><span class="edpst"><span class="pill" style="--pc:${tone(p)}">${esc(p.final?'Siap':p.status||'Belum mula')}</span>${act(p)}</span></div>`).join('')}</div>`}
+  return `<div class="edparts">${P.map(p=>`<div class="edpart${p.final?'':' todo'}"><span class="ccn">${esc(p.name||p.id||'Video')}</span><span class="edpst"><span class="pill" style="--pc:${tone(p)}">${esc(p.final?'Siap':p.status||'Belum mula')}</span>${(x=>x?`<span class="pill" style="--pc:${x.ok?'var(--ok)':'var(--bad)'}">${x.ok?'B-roll cukup '+x.have+' s':x.need?'B-roll '+x.have+'/'+x.need+' s · perlu '+(x.need-x.have)+' s lagi':'B-roll '+x.have+' s'}</span>`:'')(partBr(p))}${act(p)}</span></div>`).join('')}</div>`}
 function edNote(r,e){if(!e)return '';const st=e.status||'';
   if(edDead(e))return `<p class="meta" style="margin:8px 0 0;color:var(--bad)">Sesi Claude projek ni dah tertutup di Mac mini. Tekan Sambung kerja untuk buka sesi baru. Kerja yang dah siap kekal.</p>`;
   if(/persediaan/i.test(st))return `<p class="meta" style="margin:8px 0 0;color:var(--bad)">Sesi tunggu di Terminal Mac mini (persediaan kali pertama). Tekan Enter di Terminal, kemudian jawab Yes untuk Trust folder.</p>`;
