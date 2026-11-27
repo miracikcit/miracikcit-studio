@@ -29,8 +29,12 @@ function brSteps(r,e){const useBr=r.kind==='f'&&BR_VO.test(r.stage||'');const bb
   const lefts=pend.reduce((a,b)=>a+brLeft(b),0);const brLab=!bbs.length?(useBr?'Belum pre-cut':'—'):pre?'Pre-cut '+Math.min(100,Math.round(pre.progress||0))+'%':pend.length?(lefts>0?lefts+' tunggu swipe':'Final dalam Picker'):'Siap ✓';
   const brOk=bbs.length&&!pend.length;
   const steps=[...(useBr?[['B-roll',brLab,brOk,pend.length>0]]:[]),['Edit',e?'Sesi dibuka':'',!!e&&!/sesi/i.test(st),!!e&&/sesi/i.test(st)],['Draf',/draf|semak|render/i.test(st)?st:'',/render|siap/i.test(st)||!!(e&&e.final),/draf|semak/i.test(st)],['Final','',!!(e&&(e.final||/siap/i.test(st))),false]];
-  return `<div class="brsteps">${steps.map(([n,l,ok,cur])=>`<button type="button" class="brs${ok?' ok':''}${cur?' cur':''}"${n==='B-roll'&&bbs.length?' data-act="teSeg" data-x="broll"':' tabindex="-1"'}><i>${ok?IC.check:''}</i><b>${n}</b>${l?`<span>${esc(l)}</span>`:''}</button>`).join('<em></em>')}</div>
+  return `<div class="brsteps">${steps.map(([n,l,ok,cur])=>`<button type="button" class="brs${ok?' ok':''}${cur?' cur':''}"${n==='B-roll'&&bbs.length?' data-act="teSeg" data-x="broll"':n==='Edit'?' data-act="brGo"':' tabindex="-1"'}><i>${ok?IC.check:''}</i><b>${n}</b>${l?`<span>${esc(l)}</span>`:''}</button>`).join('<em></em>')}</div>
 `}
+/* 27 Nov (Mira: "tekan Edit tak jalan apa-apa"): bulatan langkah EDIT nampak macam butang tapi dulu kosong.
+   Kini ia tekan butang utama kad tu: EDIT NOW / Sambung kerja, atau Buka chat Claude bila sesi dah ada. */
+A.brGo=el=>{const c=el.closest('.card');const b=c&&(c.querySelector('.tem a.btn.solid,.tem .edgo.solid:not([disabled])')||c.querySelector('.tem a.btn,.tem .edgo:not([disabled])'));
+  if(b)b.click();else toast('Belum boleh buka: Mac mini tak jawab atau sesi sedang dibuka')};
 
 /* Segmen Edit: Folder | B-roll */
 function teSegs(){const n=S.broll.filter(b=>brPending(b)||b.status==='error').length;const seg=ui.teSeg||'folder';
