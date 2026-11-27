@@ -61,10 +61,10 @@ A.peStep=el=>{thUi().step=+el.dataset.x;render(true);window.scrollTo(0,0);peSave
 
 /* 1 · Gambar */
 function peGambar(){const t=thUi();
-  if(!t.imgs.length)return `<div class="card big glass"><span class="num">1 · Gambar</span><div class="pe-act"><button class="btn solid tab" data-act="thPick">${IC.up}Upload gambar</button><button class="btn" data-act="peStep" data-x="3">Tanpa gambar</button></div></div>`;
+  if(!t.imgs.length)return `<div class="card big glass"><span class="num">1 · Gambar</span><div class="pe-act"><button class="btn solid tab" data-act="thPick">${IC.up}Upload gambar</button><button class="btn" data-act="peCar">Dari video</button></div><div class="pe-act"><button class="btn" data-act="peStep" data-x="3">Tanpa gambar</button></div></div>`;
   return `<div class="card big glass"><div class="rowh" style="align-items:center"><span class="num">1 · Gambar</span><span class="meta">${t.imgs.length}/10</span></div>
     <div class="pe-grid">${t.imgs.map((x,i)=>`<div class="pe-tile"><button type="button" data-act="peGo" data-x="${i}" aria-label="Edit gambar ${i+1}"><img src="${x.url}" style="filter:${thFilter(x.e)}" alt=""></button><b>${i+1}</b><button type="button" class="pe-x" data-act="peDelAt" data-x="${i}" aria-label="Buang gambar ${i+1}">${IC.x}</button></div>`).join('')}${t.imgs.length<10?`<button type="button" class="pe-tile add" data-act="thPick" aria-label="Tambah gambar">${IC.plus}</button>`:''}</div>
-    <div class="pe-act"><button class="btn solid tab" data-act="peStep" data-x="2">Seterusnya: Edit</button></div></div>`}
+    <div class="pe-act"><button class="btn" data-act="peCar">Dari video</button><button class="btn solid tab" data-act="peStep" data-x="2">Seterusnya: Edit</button></div></div>`}
 A.thPick=()=>pickFile('image/*',fs=>thAddImgs(fs),true);
 A.peGo=el=>{const t=thUi();t.sel=+el.dataset.x;t.step=2;render(true);window.scrollTo(0,0)};
 A.peDelAt=el=>{const t=thUi(),i=+el.dataset.x,im=t.imgs[i];if(im)URL.revokeObjectURL(im.url);t.imgs.splice(i,1);t.sel=Math.max(0,Math.min(t.sel,t.imgs.length-1));thDirty();render(true)};
@@ -168,6 +168,7 @@ function pePosting(){const t=thUi();const st=thStyle();const n=t.plats.length;
     <span class="num" style="display:block;margin:4px 0 6px">Nada</span>
     <div class="btns" style="gap:6px">${TH_TONE.map(a=>`<button class="btn sm ${t.tone===a?'solid tab':''}" data-act="thTone" data-x="${a}" aria-pressed="${t.tone===a}">${a}</button>`).join('')}</div>
     ${t.plats.includes('th')?`<div style="margin-top:10px">${chk(t.thread,'thThread','','Threads bersiri (lebih 500 aksara)')}</div>`:''}
+    <label class="f" style="margin-top:10px"><span>Untuk produk</span><select class="inp" data-pesel="prod"><option value="">Bukan produk</option>${peProds().map(n=>`<option${t.prod===n?' selected':''}>${esc(n)}</option>`).join('')}${t.prod&&!peProds().includes(t.prod)?`<option selected>${esc(t.prod)}</option>`:''}</select></label>
     <div class="btns" style="margin-top:14px"><button class="btn ${t.points.trim()&&n?'solid tab':''}" data-act="thGen"${t.busy?' disabled':''}>${t.busy?`<i class="spin"></i>Sedang tulis <b id="peGenP">${peGenPct()}</b>%`:IC.ideas+'Tulis untuk '+n+' platform'}</button>${tok(peTok(),'caption setiap platform + tulisan gambar')}</div>
     ${t.plats.includes('th')?`<div class="btns" style="margin-top:8px"><button class="btn sm" data-act="thMine">${IC.copy}Aku tulis sendiri · Copy & simpan</button>${tok(0)}</div>`:''}</div>`+peRes()+thStyleBox()}
 function peBox(k,title){const t=thUi(),r=t.res,num=typeof k==='number',base=num?r.versions[k].text:r[k],txt=t.edit[k]??base,parts=num?thParts(txt):[txt],done=t.postIds[k];
@@ -186,9 +187,41 @@ function pePost(){const t=thUi(),rows=peRows();
   if(!rows.length)return `<div class="card big glass"><span class="num">4 · Post</span><div class="pe-act"><button class="btn solid tab" data-act="peStep" data-x="3">Tulis caption dulu</button></div></div>`;
   const rs={};t.plats.forEach(p=>{const r=PE_PLAT[p].r;(rs[r]=rs[r]||[]).push(PE_PLAT[p].l)});
   return `<div class="card big glass"><div class="rowh" style="align-items:center"><span class="num">4 · Post</span><span class="meta">${rows.filter(r=>t.postIds[r.k]).length}/${rows.length} dicopy</span></div>
-    ${rows.map(r=>`<div class="pe-row"><i class="pe-dot ${t.postIds[r.k]?'ok':''}"></i><span class="pe-l">${r.l}</span><button class="btn sm ${t.postIds[r.k]?'':'solid '+PE_PLAT[r.p].b}" data-act="peCopy" data-x="${r.k}">${IC.copy}${t.postIds[r.k]?'Copy lagi':'Copy'}</button></div>`).join('')}</div>`+
+    ${rows.map(r=>`<div class="pe-row"><i class="pe-dot ${t.postIds[r.k]?'ok':''}"></i><span class="pe-l">${r.l}</span><button class="btn sm" data-act="peCopy" data-x="${r.k}">${IC.copy}${t.postIds[r.k]?'Copy lagi':'Copy'}</button></div>`).join('')}
+    <div class="pe-act"><button class="btn solid tab" id="peSendB" data-act="peSend"${t.sending?' disabled':''}>${t.sending?'<i class="spin"></i>Hantar 1%':IC.next+'Hantar ke To Publish'}</button></div>
+    <p class="meta" style="margin:8px 0 0">App pilih hari yang video tak cukup${rows.filter(r=>r.p==='th').length>1?'. Threads versi 2 dan 3 dapat hari berikutnya':''}.${t.prod?' Produk: '+esc(t.prod)+'.':''}</p></div>`+
     (t.imgs.length?`<div class="card glass" style="margin-top:12px"><div class="rowh" style="align-items:center"><span class="num">Gambar ikut saiz</span>${tok(0)}</div>
     ${Object.entries(rs).map(([r,ls])=>`<div class="pe-row"><b class="thno">${r}</b><span class="pe-l">${ls.join(' · ')}</span><button class="btn sm" data-act="peDl" data-x="${r}">${peDlLab(r)}</button></div>`).join('')}</div>`:'')}
+/* Fasa 2 (27 Nov): hantar set posting ke Jadual To Publish (photopost.js). Gambar setiap saiz platform naik ke Drive `PHOTO POSTS/P-0xx`,
+   caption setiap baris disimpan dalam Senarai (dan belajar gaya Threads), draf dibuang. */
+const peProds=()=>{const out=new Set();try{(parseSheet()||[]).filter(g=>g.tab==='PRODUCTS').forEach(g=>out.add(g.name))}catch(e){}S.items.filter(it=>typeof isJob==='function'&&isJob(it)&&['toshoot','shot','toedit'].includes(it.stage)).forEach(it=>out.add(it.title));return [...out].filter(Boolean).sort((a,b)=>a.localeCompare(b))};
+document.addEventListener('change',e=>{const el=e.target;if(el.dataset&&el.dataset.pesel==='prod'&&ui.th){ui.th.prod=el.value;peSaveSoon()}});
+function peKeepRow(k,no){const t=thUi(),txt=peTxt(k);if(!txt)return;const num=typeof k==='number',base=num?t.res.versions[k].text:t.res[k],o=t.postIds[k]&&get('threads',t.postIds[k])||{no,pe:1};
+  const p=save('threads',Object.assign({},o,{points:t.points.trim(),tone:t.tone,draft:base,final:txt,edited:txt!==String(base).trim()},num?{day:k+1}:{plat:k}),true);t.postIds[k]=p.id}
+A.peSend=async()=>{const t=thUi(),rows=peRows();if(!rows.length||t.sending)return;t.sending=true;const set=p=>{const b=$('#peSendB');if(b){b.disabled=true;b.innerHTML=`<i class="spin"></i>Hantar ${p}%`}};set(1);
+  try{const imgs={},live=ASSETS&&mode==='live',rs=[...new Set(t.plats.map(p=>PE_PLAT[p].r))],no=thNextNo(),dir='P-'+String(no).padStart(3,'0');
+    if(t.imgs.length&&live){await tdFonts();const tot=rs.length*t.imgs.length;let n=0;
+      for(const r of rs){imgs[r]=[];for(const im of t.imgs){const b=await new Promise(z=>thCompose(im,1440,r).toBlob(z,'image/jpeg',.88));
+        imgs[r].push((await ASSETS.upload(new File([b],dir+'-'+r.replace(':','x')+'-'+(imgs[r].length+1)+'.jpg',{type:'image/jpeg'}),'PHOTO POSTS/'+dir)).id);set(Math.max(1,Math.round(++n/tot*94)))}}}
+    const mk=r=>({k:String(r.k),p:r.p,v:typeof r.k==='number'?r.k+1:0,text:peTxt(r.k),ok:false,link:''});
+    const units=[{rows:rows.filter(r=>r.p!=='th'||r.k===0).map(mk)}];rows.filter(r=>r.p==='th'&&r.k>0).forEach(r=>units.push({rows:[mk(r)]}));
+    rows.forEach(r=>peKeepRow(r.k,no));
+    const th=t.imgs[0]&&t.imgs[0].el.naturalWidth?thCompose(t.imgs[0],160).toDataURL('image/jpeg',.6):'';
+    save('photos',{id:'ph'+uid(),no,title:String(thDecoText(t.imgs[0])||t.points).split('\n')[0].trim().slice(0,60),prod:t.prod||'',created:Date.now(),th,imgs,units:units.filter(u=>u.rows.length).map(u=>Object.assign({date:'',time:'',acc:'',fixed:false},u))},true);
+    if(typeof ppC!=='undefined')ppC=null;t.done=true;clearTimeout(t._sv);
+    if(t.did){const id=t.did;t.did=null;peTx('readwrite',s=>s.delete(id)).catch(()=>{});ui.peDr=(ui.peDr||[]).filter(x=>x.id!==id)}
+    thAutoStudy();peClear();toast(dir+' masuk To Publish');go('ready')}
+  catch(e){t.sending=false;render(true);toast('Tak dapat hantar. Semak internet dan cuba lagi')}};
+/* Fasa 3: gambar dari video. Guna gambar yang carousel dah kumpul (Published › ＋ Carousel imbas video, 0 token). */
+const peCarList=()=>(S.carousel||[]).map(c=>({c,L:(c.slides||[]).length?c.slides.map(id=>({id:String(id).split('~')[0],hd:true})):(c.cands||[]).map(x=>({id:x.thumb,hd:false}))})).filter(x=>x.L.length);
+A.peCar=()=>{const cs=peCarList();ui.peCarSel=[];
+  modal(`<h2>Gambar dari video</h2>${cs.length?cs.map(({c,L})=>`<p class="eyebrow" style="margin:12px 0 6px">${esc(c.title||'Carousel')} · ${L.length}${L[0].hd?'':' · saiz kecil'}</p><div class="cargrid">${L.map(x=>`<button type="button" class="carth" data-act="peCarPick" data-id="${esc(x.id)}" aria-pressed="false"><img src="${esc(gyImg(x.id,300))}" alt="" loading="lazy" referrerpolicy="no-referrer"></button>`).join('')}</div>`).join(''):'<p class="meta">Belum ada gambar dari video. Buka Published, pilih produk dan tekan ＋ Carousel supaya Mac mini imbas videonya dulu.</p>'}
+    <div class="btns" style="justify-content:flex-end;margin-top:12px"><button class="btn" data-act="closeModal">Tutup</button>${cs.length?`<button class="btn solid tab" id="peCarGo" data-act="peCarGo">Masukkan</button>`:''}</div>`,TAB.threads.c)};
+A.peCarPick=el=>{const L=ui.peCarSel||(ui.peCarSel=[]),id=el.dataset.id,i=L.indexOf(id);if(i<0){if(L.length+thUi().imgs.length>=10){toast('Maksimum 10 gambar');return}L.push(id)}else L.splice(i,1);el.classList.toggle('on',i<0);el.setAttribute('aria-pressed',i<0);const b=$('#peCarGo');if(b)b.textContent='Masukkan '+(L.length||'')};
+A.peCarGo=async el=>{const L=ui.peCarSel||[];if(!L.length){toast('Ketik gambar dulu');return}el.disabled=true;const fs=[];
+  try{for(let i=0;i<L.length;i++){el.innerHTML=`<i class="spin"></i>${Math.round(i/L.length*100)}%`;const r=await fetch('https://lh3.googleusercontent.com/d/'+L[i]+'=w2000',{referrerPolicy:'no-referrer'});if(!r.ok)throw new Error('http');fs.push(new File([await r.blob()],'video-'+(i+1)+'.jpg',{type:'image/jpeg'}))}
+    closeModal();thAddImgs(fs)}
+  catch(e){el.disabled=false;el.textContent='Masukkan';toast('Tak dapat ambil gambar dari Drive')}};
 A.pePlat=el=>{const t=thUi(),k=el.dataset.x,i=t.plats.indexOf(k);if(i<0)t.plats=Object.keys(PE_PLAT).filter(p=>p===k||t.plats.includes(p));else t.plats.splice(i,1);render(true);peSaveSoon()};
 A.peRp=el=>{thUi().rp=el.dataset.x;render(true)};
 const thCountTxt=parts=>parts.length>1?parts.map((p,i)=>`Post ${i+1}: ${p.length}`).join(' · '):`${(parts[0]||'').length}/${TH_MAX} aksara${(parts[0]||'').length>TH_MAX?' · terlebih, tanda thread bersiri':''}`;
@@ -227,7 +260,7 @@ const peTx=async(m,f)=>{const d=await peDb();return new Promise((r,j)=>{const q=
 const peEmpty=t=>!t.imgs.length&&!t.points.trim()&&!t.res;
 function peSaveSoon(){const t=ui.th;if(!t||t.done)return;clearTimeout(t._sv);t._sv=setTimeout(peSave,900)}
 async function peSave(){const t=ui.th;if(!t||t.done||peEmpty(t))return;clearTimeout(t._sv);if(!t.did)t.did=uid();
-  try{await tdFonts();const im0=t.imgs[0];const d={id:t.did,updated:Date.now(),points:t.points,tone:t.tone,thread:t.thread,plats:t.plats.slice(),rp:t.rp,dtxt:t.dtxt,dtxtMine:!!t.dtxtMine,res:t.res,edit:Object.assign({},t.edit),postIds:Object.assign({},t.postIds),step:t.step,sel:t.sel,
+  try{await tdFonts();const im0=t.imgs[0];const d={id:t.did,updated:Date.now(),prod:t.prod||'',points:t.points,tone:t.tone,thread:t.thread,plats:t.plats.slice(),rp:t.rp,dtxt:t.dtxt,dtxtMine:!!t.dtxtMine,res:t.res,edit:Object.assign({},t.edit),postIds:Object.assign({},t.postIds),step:t.step,sel:t.sel,
       th:im0&&im0.el.naturalWidth?thCompose(im0,160).toDataURL('image/jpeg',.6):'',
       imgs:t.imgs.map(x=>({id:x.id,name:x.name,file:x.file,ratio:x.ratio,pre:x.pre,e:Object.assign({},x.e),deco:JSON.parse(JSON.stringify(x.deco)),mkB:x.mkB||'',mkU:!!x.mkU}))};
     await peTx('readwrite',s=>s.put(d));const L=ui.peDr||(ui.peDr=[]);const i=L.findIndex(x=>x.id===d.id);if(i<0)L.unshift(d);else L[i]=d;
@@ -240,7 +273,7 @@ function peDrList(){const L=ui.peDr||[];
 const peClear=()=>{const o=ui.th;if(o){clearTimeout(o._sv);o.imgs.forEach(x=>URL.revokeObjectURL(x.url))}ui.th=null;return thUi()};
 A.peNew=async()=>{await peSave();peClear();render(true);window.scrollTo(0,0)};
 A.peOpen=async el=>{await peSave();const d=(ui.peDr||[]).find(x=>x.id===el.dataset.id);if(!d)return;const t=peClear();
-  Object.assign(t,{did:d.id,points:d.points||'',tone:d.tone||'Auto',thread:!!d.thread,plats:d.plats||['th','fb'],rp:d.rp||'th',dtxt:d.dtxt==null?null:d.dtxt,dtxtMine:!!d.dtxtMine,res:d.res||null,edit:d.edit||{},postIds:d.postIds||{},step:d.step||1,sel:d.sel||0});
+  Object.assign(t,{did:d.id,prod:d.prod||'',points:d.points||'',tone:d.tone||'Auto',thread:!!d.thread,plats:d.plats||['th','fb'],rp:d.rp||'th',dtxt:d.dtxt==null?null:d.dtxt,dtxtMine:!!d.dtxtMine,res:d.res||null,edit:d.edit||{},postIds:d.postIds||{},step:d.step||1,sel:d.sel||0});
   t.imgs=(d.imgs||[]).filter(x=>x.file).map(x=>{const url=URL.createObjectURL(x.file),im={id:x.id,name:x.name,file:x.file,url,el:new Image(),ratio:x.ratio||'asal',pre:x.pre||'',e:x.e,deco:x.deco,F:{},mkB:x.mkB||'',mkU:!!x.mkU};if(im.deco.txt===false&&im.deco.t==null)im.deco.t='';im.deco.txt=true;
     im.el.onload=()=>render(true);im.el.src=url;
     if(x.mkB){const m=new Image();m.onload=()=>{im.mk=m;im.mkS='ok';render(true)};m.src='data:image/png;base64,'+x.mkB}return im});

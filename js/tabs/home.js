@@ -26,6 +26,7 @@ async function autoCal(){if(calAutoBusy||mode!=='live'||calState!=='ok'||!MCP)re
 function calPosts(pre){const out={};const add=(d,o)=>(out[d]=out[d]||[]).push(o);
   try{const groups=parseSheet();if(groups){const plan=schedPlan(groups);groups.forEach(g=>g.rows.forEach(r=>{const v=plan.get(schKey(r));if(!v||!v.date||!v.date.startsWith(pre)||v.status==='Excluded')return;
     add(v.date,{t:v.time||'',acc:v.acc||'',name:r.group.name+(r.vid?' · VID '+r.vid:''),sub:[v.kind,v.acc?'@'+v.acc:''].filter(Boolean).join(' · '),done:v.status==='Posted'||tpDone(r),id:'rv-'+r.tab+'-'+r.row})}))}}catch(e){}
+  try{ppPlanC().forEach(o=>{if(o.date&&o.date.startsWith(pre))add(o.date,{t:o.time||'',acc:o.acc||'',name:ppNo(o.p)+' · '+(o.p.title||'Posting gambar'),sub:'Posting gambar · '+[...new Set(o.u.rows.map(r=>PP_L[r.p]))].join(', '),done:ppDone(o.u),id:'pp-'+o.p.id+'-'+o.i})})}catch(e){}
   calEvents.filter(e=>e.date.startsWith(pre)&&!/Ref: (post|shoot|edit)-/.test(e.note||'')).forEach(e=>add(e.date,{t:e.time||'',acc:e.account||'',name:e.title,sub:e.account?'@'+e.account:'Google Calendar',ev:e.id}));
   Object.values(out).forEach(L=>L.sort((a,b)=>a.t.localeCompare(b.t)));return out}
 function calHTML(){const c=ui.cal||(ui.cal={y:new Date().getFullYear(),m:new Date().getMonth()});const days=new Date(c.y,c.m+1,0).getDate();const off=(new Date(c.y,c.m,1).getDay()+6)%7;const pre=c.y+'-'+pad(c.m+1)+'-';
