@@ -1,5 +1,6 @@
 /* ---------- shell ---------- */
 function go(v){location.hash=v}
+const EDAPP='https://miracikcit.github.io/miracikcit-studio/editor/?app=1';   /* 27 Nov, Mira: butang Editor bawa ke APP EDITOR sendiri (luar Studio), bukan tab Studio */
 function route(){let h=location.hash.slice(1);if(h==='gaya'||h==='resipi')h='inspiration';if(h==='lab')h='media-kit';if(h==='inspire')h='inspiration';if(h==='products')h='links';if(h==='b-roll'||h==='broll')h='footage';if(h==='jobs')h='links';ui.view=TAB[h]?h:'home';render(true);window.scrollTo(0,0)}
 window.addEventListener('hashchange',route);
 function render(force){
@@ -7,7 +8,7 @@ function render(force){
   if(!force&&ae&&ae.closest&&ae.closest('#main')&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&ae.type!=='checkbox'){renderPending=true;return}
   renderPending=false;const t=TAB[ui.view];
   const nv=NAV.includes(ui.view)?ui.view:ui.view==='shot'?'to-edit':'lagi';
-  $('#nav').innerHTML=NAV.map(k=>TAB[k]).map(v=>`<a href="#${v.k}" class="${nv===v.k?'on':''}" style="--c:${v.c}"${nv===v.k?' aria-current="page"':''}>${v.ic}<span>${navLabel(v.l)}</span></a>`).join('');
+  $('#nav').innerHTML=NAV.map(k=>TAB[k]).map(v=>`<a href="${v.k==='editor'?EDAPP:'#'+v.k}"${v.k==='editor'?' target="_blank" rel="noopener"':''} class="${nv===v.k?'on':''}" style="--c:${v.c}"${nv===v.k?' aria-current="page"':''}>${v.ic}<span>${navLabel(v.l)}</span></a>`).join('');
   const on=$('#nav a.on');if(on&&force)on.scrollIntoView({inline:'center',block:'nearest'});
   const d=new Date();$('#today').textContent=HARI[d.getDay()]+', '+d.getDate()+' '+BULAN[d.getMonth()];
   const m=$('#main');m.style.setProperty('--c',t.c);

@@ -27,9 +27,9 @@ function edSelfHome(){
   const L=(S.edpwa||[]).filter(e=>!e.pub&&e.final!=='siap'&&(e.status!=='error'||Date.now()-(e.updated||0)<2*864e5)).sort((a,b)=>(b.updated||0)-(a.updated||0));
   const row=e=>{const d=e.draft||{};const [pill,col]=e.status==='proses'?['Disediakan '+Math.round(e.pct||0)+'%','var(--warn)']:e.status==='error'?['Ralat','var(--bad)']:d.status==='proses'?['Render draf','var(--warn)']:d.id?['Draf sedia','var(--ok)']:['Sedia edit','var(--c)'];
     const ok=e.status!=='proses'&&e.status!=='error';
-    return hpRow(agoFmt(e.updated||e.created||Date.now()),e.title||e.id,e.status==='error'?String(e.msg||'').slice(0,60):e.src==='sendiri'?'Edit sendiri':'Dari Claude',hpPill(pill,col),ok?{href:'editor/?app=1&v='+encodeURIComponent(e.id)}:null)};
+    return hpRow(agoFmt(e.updated||e.created||Date.now()),e.title||e.id,e.status==='error'?String(e.msg||'').slice(0,60):e.src==='sendiri'?'Edit sendiri':'Dari Claude',hpPill(pill,col),ok?{href:EDAPP+'&v='+encodeURIComponent(e.id),target:'_blank',rel:'noopener'}:null)};
   return hpCard('editor',L.length,'Editor','video sedang diedit · tekan untuk buka',L.slice(0,5).map(row).join('')+(L.length>5?`<p class="meta" style="margin:6px 0 0">+${L.length-5} lagi</p>`:'')||'<p class="meta" style="margin:4px 0 0">Tiada video dalam Editor.</p>','')
-    .replace(/<\/div>$/,`<a class="ccmore hpmore" href="editor/?app=1" style="text-decoration:none">Semua video dan New Video ${IC.next}</a></div>`)}
+    .replace(/<\/div>$/,`<a class="ccmore hpmore" href="${EDAPP}" target="_blank" rel="noopener" style="text-decoration:none">Semua video dan New Video ${IC.next}</a></div>`)}
 A.edSelfNew=()=>{const st=((S.sync.toedit||{}).stages)||[];
   const opts=st.flatMap(s=>(s.items||[]).filter(i=>i.clips>0).map(i=>`<option value="${esc(s.name+'|'+i.name)}">${esc(s.name.replace(/^\d+\.\s*/,''))} / ${esc(i.name)} (${i.clips} klip)</option>`)).join('');
   if(!opts){toast('Tiada folder footage. Tekan Sync dalam tab Edit dulu');return}
