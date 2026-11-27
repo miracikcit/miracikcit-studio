@@ -890,6 +890,25 @@ def run_ocr(file_id, sheet):
     return {"lines": json.loads(r.stdout or "[]")}
 
 
+def run_subjek(file_id, sheet):
+    """Topeng subjek gambar (Apple Vision, bin/subjek) untuk outline tab Threads. Percuma, gambar tak keluar dari Mac."""
+    import base64
+    f = sheet.call("file_get", id=file_id)
+    tool = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bin", "subjek")
+    with tempfile.TemporaryDirectory(prefix="miracikcit-subjek-") as tmp:
+        src = os.path.join(tmp, "g" + (os.path.splitext(f.get("name") or "")[1] or ".jpg"))
+        out = os.path.join(tmp, "m.png")
+        with open(src, "wb") as fh:
+            fh.write(base64.b64decode(f["b64"]))
+        r = subprocess.run([tool, src, out, "240"], capture_output=True, text=True, timeout=90)
+        o = json.loads(r.stdout or "{}")
+        if not o.get("w") or not os.path.exists(out):
+            return {"none": True}
+        with open(out, "rb") as fh:
+            o["b64"] = base64.b64encode(fh.read()).decode()
+    return o
+
+
 def run_listing_save(inp, sheet):
     """Simpan gambar listing dari app ke R1. PRODUCT LISTING/<produk>, kemudian baca teks gambar (Apple Vision, percuma)."""
     import base64
@@ -1756,6 +1775,8 @@ def studio_jobs(sheet, cfg):
                 outp = run_listing_save(inp, sheet)
             elif j["type"] == "ocr":
                 outp = run_ocr(inp.get("file", ""), sheet)
+            elif j["type"] == "subjek":
+                outp = run_subjek(inp.get("file", ""), sheet)
             elif j["type"] in ("broll_done", "best_done", "broll_start"):
                 import footage
                 outp = getattr(footage, "job_" + j["type"])(inp, sheet, drive_upload)

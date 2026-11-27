@@ -40,7 +40,7 @@ const VOICE_MIRA=`SUARA MIRA (wajib):
 - Jangan guna: anda, sememangnya, tidak dapat dinafikan, justeru, oleh itu, jom kita terokai, rahsia yang ramai tak tahu, bukan sekadar X tetapi Y, tahukah anda, semoga bermanfaat, delve, unlock, elevate, game-changer, seamless, journey, must-have.
 - Tak salesy, tiada hype: "memang happy", "menolong sangat-sangat ya".
 `;
-const TOK={idea:3000,caption:4000,jobparse:8000,nota:30000,gaya:30000,look:120000,autolabel:3000,edit:250000,edsend:150000,threads:6000,thstyle:7000};
+const TOK={idea:3000,caption:4000,jobparse:8000,nota:30000,gaya:30000,look:120000,autolabel:3000,edit:250000,edsend:150000,threads:8000,thstyle:7000};
 /* 2026-11-25 (Mira): penanda tunjuk juga model + effort (cth 'Opus M', 'Sonnet L'). TOKM = model setiap kerja, ikut worker. */
 const TOKM={edit:'Opus M',edsend:'Opus L',gaya:'Opus L',look:'Opus M',nota:'Opus L',jobparse:'Opus L'};
 const tokOf=k=>tok(TOK[k],'',TOKM[k]);

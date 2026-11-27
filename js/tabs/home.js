@@ -136,7 +136,8 @@ V.home=()=>{
   ${airHome()}
   ${busyHome()}
   ${brHome()}
-  ${calHTML()}`};
+  ${calHTML()}
+  ${storeHome()}`};
 /* Kad B-roll (bawah Footage perlu semak), design sama macam kad Home lain: swipe terus dari sini. */
 function brHome(){
   /* 23 Nov: satu kad sahaja untuk B-roll (dulu ada kad 🔔 Footage perlu semak yang sama). Swipe / edit / Final dalam Picker. */
@@ -183,6 +184,14 @@ const hpPill=(t,c)=>`<span class="pill" style="--pc:${c}">${esc(t)}</span>`;
 function projHp(o){const d=o.kind==='sample'?(o.it.sample||{}).postBy:(jobNext(o.j)||{}).date;const left=d?daysTo(d):null;const col=left===null?'var(--muted)':left>7?'var(--ok)':left>=3?'var(--warn)':'var(--bad)';
   return hpRow(left===null?'·':left<0?'Lewat '+(-left)+'h':left===0?'Hari ni':left+' hari',o.name,o.kind==='sample'?'Sample':'Paid job',hpPill(o.kind==='sample'?(JSTEPS[o.step+1]||'Siap'):((jobNext(o.j)||{}).label||'Job'),col),{'data-act':'go','data-id':'links'})}
 /* Storan: tunjuk hanya bila hampir penuh (lebih 85%) */
+/* 27 Nov (Mira): tracker storan di bawah sekali Home: Mac mini, iCloud, Google Drive, PERTAMA. Data sync/storage (Mac mini) + tab SORTER (iCloud). 0 token. */
+function storeHome(){const st=S.sync.storage||{},v=sorterRaw||[],num=(r,c)=>+String(((v[r]||[])[c])??'').trim()||0,G=1073741824,d=st.disk||null;
+  const sz=b=>{const g=b/G;return g>=1000?(g/1000).toFixed(2)+' TB':g>=10?Math.round(g)+' GB':g.toFixed(1)+' GB'};
+  const rows=[['Mac mini',st.mac],['iCloud',num(4,3)?{used:num(4,2)*G,total:num(4,3)*G}:null],['Google Drive',st.drive],['PERTAMA',d,d&&!d.mounted?'tak disambung':'']];
+  const bar=([n,o,note])=>{if(!o||!o.total)return `<div class="hstor"><div class="hstt"><b>${n}</b><span>${note||'belum ada bacaan'}</span></div><div class="hstb"></div></div>`;
+    const pct=Math.round(o.pct!=null?o.pct:o.used/o.total*100),col=pct>85?'var(--bad)':pct>70?'var(--warn)':'var(--ok)';
+    return `<div class="hstor" style="--sc:${col}"><div class="hstt"><b>${n}${note?' · '+note:''}</b><span>${pct}% · ${sz(o.used)} / ${sz(o.total)}</span></div><div class="hstb"><i style="width:${Math.max(2,Math.min(100,pct))}%"></i></div></div>`};
+  return `<div class="card glass hpc"><p class="eyebrow" style="margin:0">Storan</p>${rows.map(bar).join('')}</div>`}
 function storeWarnHome(){if(!sorterRaw||!sorterRaw.length)return '';const v=sorterRaw,cell=(r,c)=>String(((v[r]||[])[c])??'').trim();
   const L=[[cell(3,1)||'Hard disk',+cell(3,2)||0,+cell(3,3)||0],['iCloud',+cell(4,2)||0,+cell(4,3)||0]].filter(x=>x[2]&&x[1]/x[2]>.85);if(!L.length)return '';
   return `<div class="banner glass" style="margin-top:14px">${L.map(x=>`<b>${esc(x[0])}</b> ${Math.round(x[1]/x[2]*100)}% penuh (${x[1]} / ${x[2]>=1000?(x[2]/1000).toFixed(1)+' TB':x[2]+' GB'})`).join(' · ')}. Kosongkan sikit, atau Sort gambar peribadi dalam Lagi.</div>`}
