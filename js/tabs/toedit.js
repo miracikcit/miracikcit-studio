@@ -47,7 +47,6 @@ function partBr(p){if(!p||p.final||!/b-?roll/i.test(p.status||''))return null;co
   const have=Math.round(brHave(place)),need=Math.round(+(p.broll&&p.broll.need)||0);
   const b=S.broll.find(x=>nrm(String(x.key||'').split('/').pop()).includes(nrm(place))||nrm(place).includes(nrm(String(x.key||'').split('/').pop().replace(/^\d+\s*/,''))));
   return {place,have,need,ok:need?have>=need:false,b}}
-const edBrReady=e=>edParts(e).some(p=>{const x=partBr(p);return x&&x.ok});
 function edPartsList(e,r){const P=e?edParts(e):[];if(!P.length)return '';const tone=p=>p.final?'var(--ok)':/storyboard|lulus/i.test(p.status||'')?'var(--bad)':'var(--warn)';
   /* 27 Nov: nama penuh (dulu terpotong "Awana r…"), dan setiap baris yang belum siap ada butang: storyboard / draf (p.url), B-roll, atau chat sesi. */
   const act=p=>{if(p.final)return '';const sb=/storyboard|lulus/i.test(p.status||''),br=partBr(p);
@@ -65,10 +64,6 @@ function edNote(r,e){if(!e)return '';const st=e.status||'';
   return ''}
 /* Mac mini dianggap offline kalau tiada ping lebih 5 minit (sel P1 tab Transcribe, diisi oleh worker setiap minit) */
 function macOff(){const t=Date.parse(((typeof trRaw!=='undefined'&&trRaw&&trRaw[0])||[])[15]||'');if(!t)return '';return Date.now()-t>5*60000?fmtD(t)+' '+new Date(t).toTimeString().slice(0,5):''}
-A.edNow=async el=>{const key=el.dataset.id,stage=el.dataset.x,name=el.dataset.n;ui.edNow=Object.assign({},ui.edNow,{[key]:'Buka sesi...'});render();
-  try{const r=await studioJob('edit_now',{stage,name,key},3*60000);toast('Sesi Claude dibuka di Mac mini. Buka app Claude di phone untuk kawal')}
-  catch(e){toast('Tak dapat buka sesi: '+String((e&&(e.message||e.code))||'semak Mac mini hidup').slice(0,80))}
-  finally{const b=Object.assign({},ui.edNow);delete b[key];ui.edNow=b;render()}};
 A.copy=el=>copyText(el.dataset.x);
 A.fHide=el=>{const k=el.dataset.id;confirmBox('Buang "'+k.split('/').pop()+'" dari To Edit?',()=>{markToEdit(k,'hidden');toast('Dibuang')},'Ya, buang')};
 A.addEdit=()=>modal(`<h2>Tambah video untuk edit</h2><label class="f"><span>Nama video</span><input class="inp" id="aeT"></label><label class="f"><span>Folder</span><select class="inp" id="aeF">${FOLDERS.map(f=>`<option>${esc(f)}</option>`).join('')}</select></label><p class="meta">Mac mini buat folder ni dalam folder edit. Masukkan footage ke situ, kemudian tekan EDIT NOW.</p><div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="addEditSave">Simpan</button></div>`);

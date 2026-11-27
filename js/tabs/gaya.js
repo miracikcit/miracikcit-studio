@@ -28,7 +28,6 @@ function gyKeep(){if(!$('#gyL'))return;ui.gyDraft=Object.assign({},ui.gyDraft,{l
    (uchunk 8 MB base64), jadi kalau upload lambat / terputus / phone tidur, tiada apa yang keluar. Sekarang:
    1) semak pilihan Template/Rupa/Tips DULU, 2) kad terus keluar (step upload) dengan %, 3) upload terus phone -> Drive (fuPut 32 MB,
    sama macam footage), 4) gagal = kad Gagal dengan butang Upload semula, bukan hilang. */
-const gyUpBusy=id=>!!(ui.gyUp&&ui.gyUp[id]);
 A.gyUpload=el=>{const rid=(el&&el.dataset&&el.dataset.id)||'';closeModal();gyKeep();
   const want=csWantGet();if(!want.length){toast('Tick dulu apa nak diambil: Template, Rupa atau Tips');return}
   pickFile('video/*',async f=>{if(f.size>500*1048576){toast('Video lebih 500 MB. Potong dulu atau guna link');return}
@@ -54,8 +53,6 @@ A.gyUpload=el=>{const rid=(el&&el.dataset&&el.dataset.id)||'';closeModal();gyKee
         save('gaya',Object.assign({},get('gaya',id),{status:'error',step:'download',msg:'Video dah ada dalam Drive tapi Mac mini tak jawab. Semak Mac mini hidup, kemudian tekan Cuba lagi.'}))})}
     catch(e){const c=get('gaya',id);if(c)save('gaya',Object.assign({},c,{status:'error',step:'upload',msg:'Upload tak jadi: '+String((e&&e.message)||'semak internet').slice(0,120)}));toast('Upload tak jadi. Tekan Upload semula pada kad')}
     finally{const u=Object.assign({},ui.gyUp);delete u[id];ui.gyUp=u;if(!Object.keys(u).length&&typeof wakeOff==='function'&&!(typeof VR!=='undefined'&&VR.on)&&!Object.keys(ui.fuUp||{}).length)wakeOff();render(true)}})};
-A.gyUpClear=()=>{gyKeep();const d=ui.gyDraft||{};if(d.up)studioCall('file_delete',{id:d.up.id}).catch(()=>{});ui.gyDraft=Object.assign({},d,{up:null,link:''});render(true)};
-function gyParseFx(s){return String(s||'').split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean).slice(0,3).map(x=>{const [a,b]=x.split(/\s*[-–]\s*/);return {a:a||'',b:b||''}}).filter(r=>/^\d/.test(r.a))}
 function gyResipi(g){const c=g.card||{};const j=(...a)=>a.filter(Boolean).join(' ');
   const fx=[c.transition,c.zoom].filter(Boolean).join(' ');
   const rows=g.kind==='teks'?[['Hook',c.hook],['Susunan cerita',null],['Gaya ayat',c.text],['Mesej utama',c.message],['Kenapa menarik',c.why],['Penutup',c.cta],['Panjang',c.length]]

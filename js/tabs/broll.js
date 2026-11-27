@@ -55,7 +55,6 @@ A.brShot=el=>{const b=get('broll',el.dataset.id);const sh=Object.assign({},b.sho
 
 /* ---------- Swipe dalam Studio ---------- */
 let brSw=null;
-A.brSwipe=el=>{const b=get('broll',el.dataset.id);if(!b)return;brSw={id:b.id,hist:[],tags:[]};brSwDraw()};
 function brQueue(b){const d=brDec(b),p=b.pdec||{};return brMoms(b).filter(m=>!d[m.id]&&!p[m.id])}
 function brSwDraw(){const b=get('broll',brSw.id);if(!b){closeModal();return}const all=brMoms(b);const q=brQueue(b);const m=q[0];const prod=b.type==='product';
   const keeps=brLocalKeeps(b);
@@ -91,7 +90,6 @@ A.brSwClose=()=>{brSw=null;closeModal();render(true)};
 /* ---------- Edit › B-roll: satu kad setiap projek (2026-11-20) ----------
    Semua folder edit, subfolder jadi baris dalam kad. Susunan: perlu swipe, sedang pre-cut, belum pre-cut, siap (dilipat).
    Butang Pre-cut untuk satu subfolder, semua yang belum dalam projek, atau satu folder utama. */
-const BR_SKIP=/^(25|27|42)/;
 function brProjects(){const P={};const add=(key,stage,name)=>P[key]||(P[key]={key,stage,name,subs:[]});
   const tg=((S.sync.brfolders||{}).p)||{};
   toEditFolders().filter(f=>BR_VO.test(f.stage)).forEach(f=>{const p=add(f.key,f.stage,f.name);(tg[f.key]||(!S.sync.brfolders&&f.clips?[[f.key,'']]:[])).forEach(([rel,sub])=>p.subs.push({rel,sub}))});

@@ -164,9 +164,9 @@ A.carRetry=el=>{const d=get('carousel',el.dataset.id);const mk=d.step==='make'||
   studioJob(mk?'car_make':'car_scan',{id:d.id},3*60000).catch(()=>toast('Mac mini tak jawab'))};
 A.carDel=el=>{const d=get('carousel',el.dataset.id);confirmBox('Buang carousel "'+(d.title||'')+'" dari senarai? Fail yang dah dibuat tak dipadam.',()=>{if(ui.carOpen===d.id)ui.carOpen=null;del('carousel',d.id);toast('Dibuang dari senarai')},'Ya, buang')};
 A.carPosted=el=>{const d=get('carousel',el.dataset.id);save('carousel',Object.assign({},d,{posted:d.posted?0:Date.now()}));toast(d.posted?'Tanda Posted dibuang':'Ditanda Posted')};
-/* To Publish: carousel yang siap dan belum posted, di bawah tajuk */
+/* To Publish: carousel yang siap dan belum posted, di bawah senarai video */
 function carReadyBox(){const L=S.carousel.filter(c=>c.status==='siap'&&!c.posted).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));if(!L.length)return '';
   return `<div class="card glass carbox"><p class="eyebrow" style="margin:0">Carousel untuk post · ${L.length}</p>${L.map(d=>`<div class="carit"><div class="carstrip sm">${(d.slides||[]).slice(0,5).map(id=>`<img src="${esc(gyImg(id,200))}" alt="" loading="lazy" referrerpolicy="no-referrer">`).join('')}</div>
     <strong>${esc(d.title||'Carousel')}</strong><span class="meta">${(d.slides||[]).length} slide · gambar 3:4</span>
     <div class="btns" style="flex-wrap:wrap;margin-top:6px">${d.drive?`<a class="btn sm solid tab" href="${esc(carFold(d.drive))}" target="_blank" rel="noopener">${IC.ext}Drive</a>`:''}${d.caption?`<button class="btn sm" data-act="copy" data-x="${esc(d.caption)}">Copy caption</button>`:''}<button class="btn sm" data-act="carOpen" data-id="${esc(d.id)}">Lihat</button><button class="btn sm st-done" data-act="carPosted" data-id="${esc(d.id)}">Posted</button></div></div>`).join('')}</div>`}
-{const prevReady=V.ready;V.ready=()=>carReadyBox()+prevReady()}
+{const prevReady=V.ready;V.ready=()=>prevReady()+carReadyBox()}   /* 27 Nov: posting gambar di bawah Reels (Mira), bukan paling atas */

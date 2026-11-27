@@ -43,7 +43,6 @@ const VOICE_MIRA=`SUARA MIRA (wajib):
 const TOK={idea:3000,caption:4000,jobparse:8000,nota:30000,gaya:30000,look:120000,autolabel:3000,edit:250000,edsend:150000,threads:8000,thstyle:7000};
 /* 2026-11-25 (Mira): penanda tunjuk juga model + effort (cth 'Opus M', 'Sonnet L'). TOKM = model setiap kerja, ikut worker. */
 const TOKM={edit:'Opus M',edsend:'Opus L',gaya:'Opus L',look:'Opus M',nota:'Opus L',jobparse:'Opus L'};
-const tokOf=k=>tok(TOK[k],'',TOKM[k]);
 function tok(n,note,m){if(!n)return `<span class="tokn free" title="Tiada token Claude"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/></svg>0 token</span>`;
   const f=Math.max(.08,Math.min(1,Math.log10(n)/Math.log10(500000))),c=2*Math.PI*6,col=n<10000?'var(--ok)':n<100000?'var(--warn)':'var(--bad)';
   const t=n>=1000?'~'+Math.round(n/1000)+'k':'~'+n;

@@ -38,6 +38,5 @@ const ACC_COL={miracikcit:'#9A4F5D',miracikcitjuga:'#5A7FA8',bondamiracikcit:'#B
 const accSel=(attrs,val,ph)=>`<select class="inp acc" style="--ac:${ACC_COL[val]||'transparent'}" ${attrs}><option value="">${ph||'Pilih akaun'}</option>${ACCOUNTS.concat(val&&!ACCOUNTS.includes(val)?[val]:[]).map(a=>`<option ${val===a?'selected':''}>${esc(a)}</option>`).join('')}</select>`;
 const accPill=a=>a?`<span class="pill" style="--pc:${ACC_COL[a]||'#999'}">${esc(a)}</span>`:'';
 const JOB_STATUS=['Baru','Dalam proses','Draf dihantar','Siap post','Invois dihantar','Bayaran diterima'];
-const FTAGS=['b-roll','unboxing','before/after','produk','tangan','transformation','talking head'];
 const DAY=864e5;
 

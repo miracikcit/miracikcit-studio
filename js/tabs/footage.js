@@ -8,8 +8,6 @@ const dThumb=id=>id?`https://drive.google.com/thumbnail?id=${encodeURIComponent(
 const dView=id=>'https://drive.google.com/file/d/'+encodeURIComponent(id)+'/view';
 const gb=b=>b?(b/1073741824>=1?(b/1073741824).toFixed(1)+' GB':Math.round(b/1048576)+' MB'):'';
 const brPending=b=>b&&['precut','ready','backup'].includes(b.status);
-const brFor=key=>S.broll.find(b=>b.key===key)||null;
-const ftSemak=()=>S.broll.filter(b=>brPending(b)||b.status==='error').length+S.footage.filter(f=>f.status==='semak'||f.status==='backup').length;
 function thumbImg(id,extra){return id?`<img src="${esc(dThumb(id))}" alt="" loading="lazy" referrerpolicy="no-referrer"${extra||''}>`:'<span class="noth"></span>'}
 V.footage=()=>{const seg=ui.ftSeg==='stok'?'stok':'disk';   /* 24 Nov: Lokasi jadi utama */
   const segs=[['disk','Lokasi & ruang'],['stok','Stok klip']];
@@ -97,7 +95,6 @@ A.ftTagAdd=()=>{const v=($('#ftNewTag')||{}).value||'';v.split(',').map(t=>t.tri
 A.ftTagSave=async()=>{const e=ui.ftEd;e.busy=true;ftClipDraw();
   try{await studioJob('brtag',{k:e.k,tag:e.tag},2*60000);toast('Tag disimpan. Sheet B-ROLL INDEX ikut dalam seminit');closeModal()}
   catch(err){e.busy=false;ftClipDraw();toast('Tak berjaya: '+String((err&&err.message)||'semak Mac mini hidup').slice(0,80))}};
-A.ftMoved=el=>{const col=el.dataset.x||'footage';const o=get(col,el.dataset.id);save(col,Object.assign({},o,{moved:!o.moved,movedAt:Date.now()}))};
 A.ftTog=el=>{const f=get('footage',el.dataset.id);ui.ftDrop=ui.ftDrop||{};const s=ui.ftDrop[f.id]||(ui.ftDrop[f.id]=new Set(f.drop||[]));const k=el.dataset.x;s.has(k)?s.delete(k):s.add(k);render(true)};
 A.bestDone=el=>{const f=get('footage',el.dataset.id);const drop=[...((ui.ftDrop&&ui.ftDrop[f.id])||new Set())];const name=String(f.folder||'').split('/').pop();
   const go2=async()=>{ui.ftBusy=Object.assign({},ui.ftBusy,{[f.id]:1});render();
@@ -105,9 +102,6 @@ A.bestDone=el=>{const f=get('footage',el.dataset.id);const drop=[...((ui.ftDrop&
     catch(e){toast('Tak berjaya: '+String((e&&e.message)||'semak Mac mini hidup').slice(0,80))}
     finally{const b=Object.assign({},ui.ftBusy);delete b[f.id];ui.ftBusy=b;render()}};
   if(drop.length)confirmBox('Buang '+drop.length+' klip ke Trash Mac dan simpan '+((f.files||[]).length-drop.length)+'?',go2,'Ya, teruskan');else go2()};
-A.brDone=el=>{const b=get('broll',el.dataset.id);ui.ftBusy=Object.assign({},ui.ftBusy,{[b.id]:1});render();
-  studioJob('broll_done',{key:b.key},3*60000).then(()=>toast((b.kept||brLocalKeeps(b))+' klip disimpan ke B-ROLL LIBRARY, sedang backup ke Drive')).catch(e=>toast('Tak berjaya: '+String((e&&e.message)||'semak Mac mini hidup').slice(0,80)))
-   .finally(()=>{const x=Object.assign({},ui.ftBusy);delete x[b.id];ui.ftBusy=x;render()})};
 A.brStart=el=>{const key=el.dataset.id;ui.ftBusy=Object.assign({},ui.ftBusy,{[key]:1});render();
   studioJob('broll_start',{key},3*60000).then(()=>toast('Pre-cut dimulakan. Siap dalam beberapa minit')).catch(e=>toast('Tak dapat pre-cut: '+String((e&&e.message)||'').slice(0,80)))
    .finally(()=>{const x=Object.assign({},ui.ftBusy);delete x[key];ui.ftBusy=x;render()})};

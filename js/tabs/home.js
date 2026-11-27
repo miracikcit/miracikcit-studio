@@ -50,7 +50,6 @@ function evForm(ev){modal(`<h2>${ev.id?'Edit posting':'Posting baru'}</h2><label
 A.evAdd=el=>evForm({date:el.dataset.id});
 A.evEdit=el=>{const e=calEvents.find(x=>x.id===el.dataset.id);if(e)evForm(e)};
 A.calNav=el=>{const c=ui.cal;const d=new Date(c.y,c.m+(+el.dataset.x),1);ui.cal={y:d.getFullYear(),m:d.getMonth()};render(true)};
-A.calSync=()=>{toast('Sedang sync kalendar');loadCal()};
 A.evSave=async el=>{const t=$('#evT').value.trim(),d=$('#evD').value,tm=$('#evM').value,a=$('#evA').value,n=$('#evN').value.trim();if(!t||!d){toast('Isi tajuk dan tarikh');return}
   if(!MCP){toast('Google Calendar tak bersambung');return}
   const p={summary:t,description:[a?'Akaun: '+a:'',n,MARK].filter(Boolean).join('\n')};
@@ -61,29 +60,7 @@ A.evSave=async el=>{const t=$('#evT').value.trim(),d=$('#evD').value,tm=$('#evM'
 A.evDel=el=>{const id=el.dataset.id;confirmBox('Padam posting ni dari Google Calendar?',async()=>{try{await MCP.callTool(GC,'delete_event',{eventId:id});toast('Dipadam');loadCal()}catch(e){toast('Tak dapat padam')}})};
 /* Footage Sorter (Mac mini): nombor sahaja, dari tab SORTER yang Mac hantar. Gambar kekal dalam Mac. */
 let sorterRaw=null;
-function sorterCard(){if(!sorterRaw||!sorterRaw.length)return '';
-  const v=sorterRaw;const cell=(r,c)=>String(((v[r]||[])[c])??'').trim();
-  const folders=v.slice(8).map(r=>({label:String(r[0]||''),group:String(r[1]||''),total:+r[2]||0,review:+r[3]||0})).filter(f=>f.label);
-  const toReview=folders.filter(f=>!/check me|duplicates/i.test(f.label)).reduce((a,f)=>a+f.review,0);
-  const checkMe=+cell(2,1)||0,link=cell(5,1);
-  const meter=(name,used,total)=>{used=+used||0;total=+total||0;if(!total)return '';const pct=Math.min(100,Math.round(used/total*100));const col=pct>85?'var(--bad)':'var(--ok)';
-    return `<div style="--sc:${col};margin-top:10px"><div class="trk"><div class="t"><span>${esc(name)}</span><span>${used} / ${total>=1000?(total/1000).toFixed(1)+' TB':total+' GB'}</span></div></div><div class="bar"><i style="width:${pct}%"></i></div></div>`};
-  const rows=folders.filter(f=>f.review>0).sort((a,b)=>b.review-a.review).slice(0,6);
-  return `<div class="rbox glass cc" style="--c:#8676BE;cursor:default"><div class="rowh" style="align-items:center"><div style="min-width:0"><h2>Footage baru dari phone</h2><div class="meta">Belum disemak${checkMe?' · '+checkMe+' dalam Check Me':''} · ${esc(cell(1,1))}</div></div><b class="rn">${toReview}</b></div>
-   ${rows.slice(0,3).map(f=>`<div class="ccr"><div class="rowh"><span class="ccn">${esc(f.label.replace(/^[^\w]+\s*/,''))}</span><span class="pill" style="--pc:var(--warn)">${f.review} semak</span></div></div>`).join('')}
-   ${meter(cell(3,1)||'Hard disk',cell(3,2),cell(3,3))}${meter('iCloud',cell(4,2),cell(4,3))}${sorterPersonal(+cell(4,2)||0,+cell(4,3)||0)}
-   ${/^https?:\/\//.test(link)?`<a class="ccmore" href="${esc(link)}" target="_blank" rel="noopener" style="text-decoration:none">Buka folder &amp; semak (Wi-Fi rumah) ${IC.next}</a>`:''}${ongoingSlot()}</div>`}
 /* Ongoing projects (WORK SORTER): status dari Mac (koleksi workprojects). Gambar kekal dalam Mac; butang buka page sorter untuk edit. */
-function ongoingSlot(){const L=(S.workprojects||[]).slice().sort((a,b)=>(b.updated||0)-(a.updated||0));if(!L.length)return '';
-  const tone=st=>/perlu semak|susun semula|belum kemas/i.test(st)?'var(--warn)':/siap/i.test(st)?'var(--ok)':'#8676BE';
-  const edit=w=>/^https?:\/\//.test(w.link||'')?`${w.link}#p=${encodeURIComponent(w.key)}`:'';
-  return `<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--line,rgba(0,0,0,.08))"><p class="eyebrow" style="margin:0 0 6px">Ongoing projects</p>
-   ${L.map(w=>`<div class="evrow" style="cursor:default;align-items:flex-start"><span style="flex:1;min-width:0"><strong>${esc(w.title)}</strong>
-     <span class="meta" style="display:block">${esc(w.folder)} · ${w.shots||0} shot · ${(w.places||[]).length} folder${w.kabur?' · '+w.kabur+' kabur':''}${w.stars?' · ⭐ '+w.stars:''}</span>
-     ${(w.places||[]).length?`<span class="meta" style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc((w.places||[]).join(' · '))}</span>`:''}
-     ${edit(w)?`<a class="btn sm" style="margin-top:6px" href="${esc(edit(w))}" target="_blank" rel="noopener">✏️ Edit susunan</a>`:''}</span>
-     <span class="pill" style="--pc:${tone(w.status||'')}">${/perlu semak/i.test(w.status||'')?'🔔 ':''}${esc(w.status||'')}</span></div>`).join('')}
-   <p class="meta" style="margin:8px 0 0">Edit susunan buka page sorter (Wi-Fi rumah) terus pada projek tu: tukar nama, tambah atau padam folder, pindah gambar.</p></div>`}
 /* 26 Nov (Mira): kotak kecil "Sedang berjalan" supaya tak lupa apa yang tengah loading dalam Studio.
    Setiap baris: bulat kecil dengan % (tiada % = bulat berpusing). Tekan baris = buka tab tu. Kosong = kotak tak keluar. */
 function busyList(){const L=[],now=Date.now();const add=(name,pct,go,sub)=>L.push({name,go,sub:sub||'',pct:pct==null||!isFinite(pct)?null:Math.max(0,Math.min(100,Math.round(pct)))});
@@ -158,21 +135,10 @@ function brHome(){
    ${best.length?ccRow(best.length+' set klip terbaik lepas final','pilih simpan / buang','var(--warn)',0):''}
    <div class="ccmore" role="button" tabindex="0" data-act="teSeg" data-x="broll" style="cursor:pointer">Semua B-roll ${IC.next}</div></div>`}
 /* Baris kad Projects di Home: sample guna slider aliran, paid guna slider job */
-function projRow(o){if(o.kind==='sample')return cpRow({it:o.it,step:o.step});const j=o.j;const nx=jobNext(j);const left=nx?daysTo(nx.date):null;const col=left===null?'#999':left>7?'#4E9B63':left>=3?'#E3B23C':'#C2534F';
-  return `<div class="ccr" style="--c:${TAB.links.c}"><div class="rowh"><span class="ccn">${esc(String(o.name).split(/\s+/).slice(0,3).join(' '))}</span><span class="pill smpp" style="--pc:${col}"><b>${left===null?'·':Math.max(left,0)}</b>${nx?esc(nx.label):'tiada tarikh'}</span></div><div class="tl tl-mini">${JSTEPS.map((s,i)=>`<div class="s${i<=o.step?' d':i===o.step+1?' cur':''}"><i>${i<=o.step?IC.check:''}</i></div>`).join('')}</div><div class="meta" style="font-size:11px;margin-top:-2px">Paid RM${esc(rm2(j.fee)||'0')} · sekarang ${esc(JSTEPS[Math.min(o.step+1,5)])}</div></div>`}
 const edShort=st=>({'Storyboard':'SB','Sesi dibuka':'Sesi','Tunggu semakan':'Semak','Sedia render':'Render'})[st||'']||(st||'Draf');
 /* Ringkasan minggu (Isnin): sample perlu shoot, video tunggu edit, link belum submit, job hampir deadline */
-function weekCard(sv){if(new Date().getDay()!==1)return '';const wk=ymdAdd(ymd(new Date()),7);
-  const shoot=activeSamples().filter(it=>it.stage==='toshoot'&&it.sample.postBy<=wk).length;
-  const edit=toEditFolders().length+byStage('toedit').length;
-  const links=sv?publishedEntries(sv).filter(e=>linkGaps(e)>0).length:0;
-  const jobs=S.jobs.filter(j=>j.paid!==false&&!/bayaran/i.test(j.status||'')&&jobNext(j)&&jobNext(j).date<=wk).length;
-  const row=(k,num,lab)=>`<button class="ccr" style="text-align:left;width:100%;background:none;border:0;padding:6px 0;font:inherit;color:inherit;cursor:pointer" data-act="go" data-id="${k}"><div class="rowh"><span class="ccn">${lab}</span><span class="pill" style="--pc:${num?'var(--warn)':'var(--ok)'}">${num}</span></div></button>`;
-  return `<div class="rbox glass cc" style="--c:${TAB.home.c};cursor:default;margin-bottom:14px"><div class="rowh" style="align-items:center"><div style="min-width:0"><h2>Minggu ni</h2><div class="meta">Ringkasan Isnin · ${dmy(ymd(new Date()))} hingga ${dmy(wk)}</div></div></div>
-   ${row('to-shoot',shoot,'Sample perlu shoot')}${row('to-edit',edit,'Video tunggu edit')}${row('published',links,'Link belum submit')}${row('links',jobs,'Paid job hampir deadline')}</div>`}
 /* Kad depan padat: tajuk + nombor besar, baris satu garis dengan nama pendek */
 const shortName=(name,vid)=>{const w=String(name||'').trim().split(/\s+/);return vid?'Vid '+vid+' '+w[0]:w.slice(0,3).join(' ')};
-const ccard=(k,title,sub,num,rows)=>`<div class="rbox glass cc" style="--c:${TAB[k].c}" role="button" tabindex="0" data-act="go" data-id="${k}"><div class="rowh" style="align-items:center"><div style="min-width:0"><h2>${esc(title)}</h2><div class="meta">${esc(sub)}</div></div><b class="rn">${num}</b></div>${rows}<div class="ccmore">Buka senarai ${IC.next}</div></div>`;
 const ccRow=(name,pill,col,pct)=>`<div class="ccr" style="--sc:${col}"><div class="rowh"><span class="ccn">${esc(name)}</span><span class="pill" style="--pc:${col}">${esc(pill)}</span></div><div class="bar"><i style="width:${pct}%"></i></div></div>`;
 
 /* 26 Nov (Mira): kotak kecil Home ikut tab yang paling selalu dibuka (kiraan dalam phone ni sahaja, localStorage tabUse).
@@ -203,7 +169,6 @@ function shootHome(){const key=it=>it.sample?it.sample.postBy:String(it.shootDat
   return hpCard('to-shoot',L.length,'Perlu shoot','ikut tarikh paling hampir',L.slice(0,5).map(row).join('')+(L.length>5?`<p class="meta" style="margin:6px 0 0">+${L.length-5} lagi</p>`:'')||'<p class="meta" style="margin:4px 0 0">Tiada video menunggu shoot.</p>','Buka Shoot','bad')}
 A.go=el=>{try{const u=tabUse(),k=el.dataset.id;u[k]=(u[k]||0)+1;localStorage.setItem('tabUse',JSON.stringify(u))}catch(e){}go(el.dataset.id)};
 /* Folder di Mac mini diimbas sendiri oleh worker setiap 5 minit. Butang ni minta imbasan sekarang. */
-A.syncReq=async()=>{toast('Mac mini sedang imbas folder');try{const r=await studioJob('scan',{},3*60000);toast('Siap: '+(r.topost||0)+' video, '+(r.toedit||0)+' folder edit')}catch(e){toast(e&&e.code==='unavailable'?'Tiada internet':'Mac mini tak jawab. Semak Mac mini hidup')}};
 /* item siap render: fail muncul dalam 00. TO POST FINAL -> pindah sendiri ke Ready */
 function itemMatches(it,f){const t=String(f.name||'').replace(/\.\w+$/,'').split(/[_-]+/).map(nrm);const b=nrm(it.brand),ti=nrm(it.title);
   return (b.length>=3&&t[0]&&(t[0]===b||t[0].startsWith(b)||b.startsWith(t[0])))||(t[1]&&t[1].length>=5&&ti.includes(t[1].slice(0,8)))||(t[0]&&t[0].length>=5&&ti.includes(t[0]))}
@@ -232,7 +197,7 @@ function autoSheet(){if(mode!=='live'||!sheetRaw.PRODUCTS||Date.now()-autoSheetA
 
 /* Lagi: semua alat dan rekod yang jarang guna */
 V.lagi=()=>{const sv=sheetView();const t=(k,num,lab,icon)=>{const c=TAB[k].c;return `<button class="hbox glass mini" style="--c:${c}" data-act="go" data-id="${k}">${icon?`<b style="display:flex;color:${c}">${IC[icon].replace('<svg ','<svg style="width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round" ')}</b>`:`<b>${num}</b>`}<span class="l">${lab}</span></button>`};
-  return head('Alat dan rekod')+`<div class="mgrid">${t('inspiration',S.inspo.length+S.gaya.length,'Copy Style')}${t('media-kit',3,'Media Kit')}${t('footage',S.footage.length,'Footage')}${t('caption',0,'Caption','caption')}${t('threads',0,'Threads','threads')}${t('transcribe',0,'Transcribe','transcribe')}${t('ideas',byStage('ideas').length,'Ideas')}</div>
+  return head('Alat dan rekod')+`<div class="mgrid">${t('inspiration',S.inspo.length+S.gaya.length,'Copy Style')}${t('media-kit',3,'Media Kit')}${t('footage',S.footage.length,'Footage')}${t('caption',0,'Caption','caption')}${t('threads',0,'Photo Editor','threads')}${t('transcribe',0,'Transcribe','transcribe')}${t('ideas',byStage('ideas').length,'Ideas')}</div>
   ${(()=>{const v=sorterRaw||[],cell=(r,c)=>String(((v[r]||[])[c])??'').trim();return `<div class="card glass tp hpc" style="--c:#8676BE"><div class="hphd" style="cursor:default"><b class="tpn hpn zero">${IC.footage}</b><span><strong>Sort gambar peribadi</strong><em>Footage Sorter di Mac mini · iCloud ke PERTAMA</em></span></div>${sorterPersonal(+cell(4,2)||0,+cell(4,3)||0)}</div>`})()}`};
 
 /* 2026-11-25 (Mira): gambar peribadi. Kad beritahu bila patut sort (iCloud 80% ke atas, atau 30 hari sejak Start sort terakhir)

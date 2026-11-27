@@ -11,7 +11,6 @@ V.editor=()=>{const all=S.editor.slice().sort((a,b)=>(b.updated||0)-(a.updated||
 function edForm(e){modal(`<h2>${e.id?'Edit projek':'Projek baru'}</h2><label class="f"><span>Nama video</span><input class="inp" id="edN" value="${esc(e.name||'')}"></label><label class="f"><span>Style edit</span><input class="inp" id="edS" value="${esc(e.style||'')}" placeholder="cth. 21. EDIT SHOP, editor v3"></label>
   <label class="f"><span>Status</span><select class="inp" id="edT">${ED_STATUS.map(s=>`<option ${(e.status||'Draf')===s?'selected':''}>${s}</option>`).join('')}</select></label><label class="f"><span>Link artifact / projek</span><input class="inp" id="edU" value="${esc(e.url||'')}" placeholder="https://claude.ai/artifact/..." inputmode="url"></label>
   <div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="edSave" data-id="${e.id||''}">Simpan</button></div>`)}
-A.edSync=()=>copyText('Sync tab Editor dan Footage Miracikcit Studio (PWA, data dalam tab STUDIO_DATA Sheet CONTENT 2026): guna python3 ~/MiracikcitTranscribe/studio.py put editor/<id> \'<json>\' untuk setiap artifact storyboard / editor video aku yang masih berjalan (tanda yang dah siap), dan footage/<id> untuk set clip baru.','Arahan sync dicopy. Paste dalam chat dengan Claude');
 A.edAdd=()=>edForm({});A.edEdit=el=>edForm(get('editor',el.dataset.id));
 A.edSave=el=>{const n=$('#edN').value.trim();if(!n){toast('Isi nama video');return}const u=$('#edU').value.trim();if(u&&!isUrl(u)){toast('Link mesti mula dengan https://');return}
   save('editor',Object.assign({},get('editor',el.dataset.id)||{},{name:n,style:$('#edS').value.trim(),status:$('#edT').value,url:u}));closeModal();toast('Disimpan')};
@@ -19,7 +18,7 @@ A.edDel=el=>{const e=get('editor',el.dataset.id);confirmBox('Padam "'+(e.name||'
 
 /* Editor PWA (2026-11-22): video yang dah dihantar oleh edpwa.py, buka terus dalam editor Studio (layout CapCut) */
 function edPwaBox(){const l=(S.edpwa||[]).slice().sort((a,b)=>(b.updated||0)-(a.updated||0)).filter(e=>hit('ed',e.title,e.id)&&!edPublished({name:e.title,folder:String(e.dir||'').split('/CLAUDE EDITS/')[1]||''}));if(!l.length)return'';
-  return `<div class="card glass" style="margin-bottom:14px"><p class="eyebrow" style="margin:0 0 8px">Dalam app Editor · kemas kini sendiri</p>${l.map(e=>`<div class="rowh" style="align-items:center;gap:8px;padding:6px 0"><div><h3 style="font-size:16px">${esc(e.title||e.id)}</h3><div class="meta">${e.status==='proses'?'Mac mini sedang sediakan…':e.status==='error'?esc(e.msg||'Ralat'):`${e.n||0} fail · ${fmtD(e.updated)}`}</div></div>${edDraftPill(e)}</div>`).join('')}</div>`}
+  return `<div class="card glass" style="margin-bottom:14px"><p class="eyebrow" style="margin:0 0 8px">Dalam app Editor · kemas kini sendiri</p>${l.map(e=>`<div class="rowh" style="align-items:center;gap:8px;padding:4px 0"><div style="min-width:0"><h3 style="font-size:12.5px;letter-spacing:.06em;line-height:1.3">${esc(e.title||e.id)}</h3><div class="meta">${e.status==='proses'?'Mac mini sedang sediakan…':e.status==='error'?esc(e.msg||'Ralat'):`${e.n||0} fail · ${fmtD(e.updated)}`}</div></div>${edDraftPill(e)}</div>`).join('')}</div>`}
 /* Kad Home 'Edit sendiri' (2026-11-22): pilih folder footage, Mac mini sediakan editor tanpa Claude (job ed_new, 0 token). Design ikut kad Home rbox. */
 function edSelfHome(){
   /* 26 Nov (Mira): dulu kad "Edit sendiri". Sekarang senarai SEMUA video dalam app Editor (belum final / published), pautan terus ke
@@ -30,15 +29,6 @@ function edSelfHome(){
     return hpRow(agoFmt(e.updated||e.created||Date.now()),e.title||e.id,e.status==='error'?String(e.msg||'').slice(0,60):e.src==='sendiri'?'Edit sendiri':'Dari Claude',hpPill(pill,col),ok?{href:EDAPP+'&v='+encodeURIComponent(e.id),'data-act':'edGo','data-u':EDAPP+'&v='+encodeURIComponent(e.id)}:null)};
   return hpCard('editor',L.length,'Editor','video sedang diedit · tekan untuk buka',L.slice(0,5).map(row).join('')+(L.length>5?`<p class="meta" style="margin:6px 0 0">+${L.length-5} lagi</p>`:'')||'<p class="meta" style="margin:4px 0 0">Tiada video dalam Editor.</p>','')
     .replace(/<\/div>$/,`<a class="ccmore hpmore" href="${EDAPP}" data-act="edGo" style="text-decoration:none">Semua video dan New Video ${IC.next}</a></div>`)}
-A.edSelfNew=()=>{const st=((S.sync.toedit||{}).stages)||[];
-  const opts=st.flatMap(s=>(s.items||[]).filter(i=>i.clips>0).map(i=>`<option value="${esc(s.name+'|'+i.name)}">${esc(s.name.replace(/^\d+\.\s*/,''))} / ${esc(i.name)} (${i.clips} klip)</option>`)).join('');
-  if(!opts){toast('Tiada folder footage. Tekan Sync dalam tab Edit dulu');return}
-  modal(`<h2>Edit sendiri</h2><p class="meta">Mac mini masukkan semua klip dalam folder ke timeline (6 saat pertama setiap klip, boleh panjangkan). Tak guna Claude. Siap dalam 2–5 minit.</p>
-   <label class="f"><span>Folder footage</span><select class="inp" id="esF">${opts}</select></label>
-   <label class="f"><span>Nama video</span><input class="inp" id="esN" placeholder="Ikut nama folder"></label>
-   <div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="edSelfGo">Sediakan editor</button></div>`,TAB.editor.c)};
-A.edSelfGo=async()=>{const v=$('#esF').value.split('|'),n=$('#esN').value.trim()||v[1];closeModal();
-  try{await studioCall('job_add',{type:'ed_new',input:{stage:v[0],item:v[1],name:n}});toast('Mac mini sedang sediakan editor. Kad Edit sendiri akan tunjuk Buka bila siap')}catch(e){toast('Tak dapat hantar ke Mac mini. Cuba lagi')}};
 /* Draf dari butang Siap Editor PWA (job ed_draft, render di Mac mini) */
 function edDraftPill(e){const d=e.draft;if(!d)return'';return d.status==='proses'?'<span class="pill" style="--pc:var(--warn)">Render draf…</span>':d.status==='error'?'<span class="pill" style="--pc:var(--bad)">Draf gagal</span>':d.id?'<span class="pill" style="--pc:var(--ok)">Draf siap</span>':''}
 

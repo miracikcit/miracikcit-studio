@@ -29,10 +29,6 @@ function sampleBlock(it){if(!it.sample||sampleDone(it))return '';
   return `<div class="rowh" style="align-items:center;margin-top:10px;border-top:1px solid var(--line);padding-top:10px"><span class="meta">Sample ${smpPlat(it.sample.plat)}</span>${smpBadge(it)}</div>`}
 const activeSamples=()=>S.items.filter(it=>it.sample&&!sampleDone(it)).sort((a,b)=>a.sample.postBy.localeCompare(b.sample.postBy));
 /* Kad Home: CONFIRMED PROJECTS, 4 paling dekat */
-function sampleCard(){const list=activeSamples();
-  return `<div class="card big glass" style="--c:${TAB['to-shoot'].c};margin-top:14px"><div class="rowh" style="align-items:center"><h2 style="margin:0">CONFIRMED PROJECTS</h2><b class="bigno" style="font-size:40px">${list.length}</b></div>
-   ${list.slice(0,4).map(it=>{const p=samplePlan(it);return `<div class="rowh" style="align-items:center;margin-top:12px;gap:10px"><div class="rt" style="min-width:0"><strong>${esc(it.title)}</strong><span class="meta" style="display:block">${smpPlat(it.sample.plat)} · akhir post ${dmy(it.sample.postBy)}</span></div><span class="pill smpp" style="--pc:${p.col}"><b>${Math.max(p.left,0)}</b>${esc(p.label.replace(/^\d+ /,''))}</span></div>`}).join('')||'<p class="meta" style="margin:10px 0 0">Tiada project menunggu. Tambah bila dapat sample baru.</p>'}
-   <div class="btns" style="margin-top:14px"><button class="btn solid tab" data-act="smpAdd">${IC.plus}Tambah sample</button>${list.length?`<button class="btn" data-act="go" data-id="to-shoot">Buka To Shoot${IC.next}</button>`:''}</div></div>`}
 /* Tambah: screenshot terus masuk To Shoot (Mac mini baca teks, percuma) atau isi sendiri */
 A.smpAdd=()=>{ui.smp={rows:[],busy:false};smpModal()};
 function smpModal(){const m=ui.smp;const today=ymd(new Date());
@@ -104,7 +100,6 @@ A.sfSave=()=>{const f=ui.smpF;const v=id=>(($('#'+id)||{}).value||'').trim();con
 /* Deadline dikira dari tarikh terima barang (contoh: 7 hari selepas terima) */
 A.smpRecv=el=>{const it=get('items',el.dataset.id);const s=it.sample;const td=ymd(new Date());closeModal();
   save('items',Object.assign({},it,{sample:Object.assign({},s,{received:true,recvAt:td,start:td,postBy:ymdAdd(td,s.afterRecv||7)})}));toast('Akhir post: '+dmy(ymdAdd(td,s.afterRecv||7)))};
-const smpTasks=it=>{const t=lines((it.sample||{}).tasks);return t.length?`<ul class="smptask">${t.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''};
 /* Harga sample: simpan dalam kad, dan ke Sheet (JENIS = SAMPLE, HARGA) bila produk dah ada dalam Sheet */
 function smpPriceSheet(it){const sv=sheetView();const g=sv&&it&&it.sample&&it.sample.price&&sv.groups.find(x=>x.tab==='PRODUCTS'&&itMatch(it,x.name)&&x.start>(it.sample.sheetRowAtAdd||0));
   if(g&&MCP)sheetWrite(`PRODUCTS!R${g.start}:S${g.start}`,[[g.kind||'SAMPLE',it.sample.price]]).then(()=>toast('Harga disimpan dalam Sheet')).catch(()=>{})}
@@ -145,7 +140,3 @@ A.smpLinkSave=el=>{const it=get('items',el.dataset.id);let sh=pickUrl($('#lkS').
 function confirmedList(sv){const gs=sv?sv.groups.filter(g=>g.tab==='PRODUCTS'):[];
   return activeSamples().map(it=>{const g=gs.find(x=>itMatch(it,x.name))||null;const eds=S.editor.filter(e=>pMatch(e.name,it.title));return {it,g,step:prodDone([it],eds,g,sv)}})}
 const tlMini=d=>`<div class="tl tl-mini">${PSTEPS.map((s,i)=>`<div class="s${i<=d?' d':i===d+1?' cur':''}"><i>${i<=d?IC.check:''}</i></div>`).join('')}</div>`;
-function cpRow(x){const p=samplePlan(x.it);const nm=String(x.it.title).split(/\s+/).slice(0,3).join(' ');const cur=PSTEPS[Math.min(x.step+1,5)];
-  return `<div class="ccr" style="--c:${TAB.links.c}"><div class="rowh"><span class="ccn">${esc(nm)}</span><span class="pill smpp" style="--pc:${p.col}"><b>${Math.max(p.left,0)}</b>${esc(p.label.replace(/^\d+ /,''))}</span></div>${tlMini(x.step)}<div class="meta" style="font-size:11px;margin-top:-2px">${smpPlat(x.it.sample.plat)} · sekarang ${esc(cur)} · akhir post ${dmy(x.it.sample.postBy)}</div></div>`}
-function confirmedSection(sv){const L=confirmedList(sv).filter(x=>hit('lk',x.it.title));if(!L.length)return '';
-  return `<p class="eyebrow" style="margin-top:6px">Sample · ${L.length}</p><div class="list" style="margin-bottom:14px">${L.map(x=>`<div class="card glass"><div class="rowh" style="align-items:flex-start;gap:10px"><div style="min-width:0">${x.g?`<span class="bigno" style="font-size:20px;margin-right:6px">${esc(x.g.no)}</span>`:''}<h3 style="display:inline">${esc(x.it.title)}</h3><div class="meta">Sample ${smpPlat(x.it.sample.plat)}${x.g?' · dalam Sheet':' · belum masuk Sheet'}</div></div>${smpBadge(x.it)}</div>${timeline(x.step,'')}${x.it.sample.afterRecv&&!x.it.sample.received?`<p class="meta" style="margin:6px 0 0;color:var(--warn)">Deadline kira ${x.it.sample.afterRecv} hari dari terima barang. Tekan tarikh untuk tanda dah terima.</p>`:''}${smpTasks(x.it)}${linkRow(x.it)}<div class="btns" style="justify-content:flex-end;margin-top:6px"><button class="btn sm" data-act="smpEdit" data-id="${x.it.id}">${IC.edit}Edit sample</button></div></div>`).join('')}</div>`}
