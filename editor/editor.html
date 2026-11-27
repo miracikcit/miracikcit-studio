@@ -54,6 +54,21 @@
 .e-bigout { font-family: "Londrina Solid", sans-serif; font-weight: 400; color: transparent; -webkit-text-stroke: .62cqw var(--ec, #fff); paint-order: stroke; filter: drop-shadow(0 .4cqw 1cqw rgba(0,0,0,.35)); letter-spacing: .03em; }
 .e-bigsolid { font-family: "Londrina Solid", sans-serif; font-weight: 400; color: var(--ec, #fff); text-shadow: 0 .5cqw 1.6cqw rgba(0,0,0,.42); letter-spacing: .02em; }
 .e-bigserif { font-family: "Gloock", serif; color: var(--ec, #fff); text-shadow: 0 .5cqw 1.8cqw rgba(0,0,0,.42); }
+/* p35: cute + aesthetic */
+.e-bigcute { color: var(--ec, #ffb3c7); -webkit-text-stroke: 1.5cqw #fffdf8; paint-order: stroke fill; filter: drop-shadow(0 .6cqw 0 rgba(60,40,30,.18)) drop-shadow(0 .8cqw 1.4cqw rgba(0,0,0,.25)); letter-spacing: .02em; }
+.e-bigcute.fv0 { font-family: "Fredoka", sans-serif; font-weight: 700; }
+.e-bigcute.fv1 { font-family: "Nunito", sans-serif; font-weight: 800; }
+.e-bigcute.fv2 { font-family: "Londrina Solid", sans-serif; font-weight: 400; }
+.e-bigcute.fv3 { font-family: "Caveat", cursive; font-weight: 700; font-size: 1.15em; }
+.e-bigcute.fv4 { font-family: "Patrick Hand SC", cursive; font-weight: 400; }
+.e-bigaes { color: var(--ec, #f3e9d8); text-shadow: 0 .3cqw 1.6cqw rgba(0,0,0,.28); }
+.e-bigaes .el { rotate: 0deg !important; top: 0 !important; }
+.e-bigaes.fv0 { font-family: "Instrument Serif", serif; font-style: italic; font-weight: 400; font-size: 1.12em; }
+.e-bigaes.fv1 { font-family: "Playfair Display", serif; font-style: italic; font-weight: 500; }
+.e-bigaes.fv2 { font-family: "Josefin Sans", sans-serif; font-weight: 300; letter-spacing: .2em; font-size: .78em; }
+.e-bigaes.fv3 { font-family: "Libre Caslon Text", serif; font-style: italic; font-weight: 400; }
+.e-bigaes.fv4 { font-family: "Allura", cursive; font-weight: 400; font-size: 1.3em; }
+.e-bigaes.fv5 { font-family: "Gloock", serif; font-weight: 400; }
 .e-bigmark { font-family: "Permanent Marker", cursive; color: var(--ec, #fff); text-shadow: 0 .5cqw 1.6cqw rgba(0,0,0,.42); }
 .e-mix { text-align: center; white-space: nowrap; text-shadow: 0 .4cqw 1.8cqw rgba(0,0,0,.5); color: #fff; }
 .e-mix p { margin: 0; font-family: "Plus Jakarta Sans", sans-serif; font-weight: 800; letter-spacing: -.03em; line-height: 1.08; }
@@ -1550,7 +1565,11 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .tab.ictab .ic { display: block; } .tab.ictab .tlab { display: none; }
 .chip.txt { padding: 8px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; border-radius: 12px; }
 .chip.txt .ic { display: none; } #resetAll .ic { display: block; }
-#main.compact #inner .track { display: none; }
+#main.compact #inner .track:not(.brline) { display: none; }   /* p34: baris B-roll kekal */
+#main.compact #labels > span[title="B-roll"] { display: flex !important; }
+.track.brline { background: repeating-linear-gradient(135deg, rgba(120,140,255,.10) 0 6px, transparent 6px 12px), var(--panel2); }
+.blk.brb { background: #5b6cff; color: #fff; font-weight: 600; border-radius: 4px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); }
+.blk.brb.sel { background: #3a49e0; outline: 2px solid #fff; }
 #main.compact #labels > span:not(.lv) { display: none; }
 #hllayer .hlw { position: absolute; transform: translate(-50%, -50%); width: max-content; pointer-events: auto; touch-action: none; cursor: grab; }   /* p19: skop, bukan senarai Caption */
 .hlpick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
@@ -1854,7 +1873,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .catbar.two .cr + .cr { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--gline); }
 .catbar .cat.sub { font-size: 12px; padding: 5px 11px; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=e64e3322a2">
+<link rel="stylesheet" href="../../ed-capcut.css?v=af95f8c5ad">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1969,9 +1988,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=e64e3322a2"></script>
-<script src="../../../js/runtime.js?v=e64e3322a2"></script>
-<script src="../../ed-boot.js?v=e64e3322a2"></script>
+<script src="../../../js/config.js?v=af95f8c5ad"></script>
+<script src="../../../js/runtime.js?v=af95f8c5ad"></script>
+<script src="../../ed-boot.js?v=af95f8c5ad"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -2130,7 +2149,7 @@ const FX_KINDS = [
   ["Labels", [["e-chip", "Label chip", "Label kecil di sebelah kau.", { text: "Tahan lembap" }], ["e-badges", "Badges fly in", "Beberapa badge masuk satu-satu.", { items: ["Tahan air", "Mudah pasang", "Jimat"] }], ["e-marq", "Label strip", "Jalur label bergerak, tengah menyala.", { items: ["murah", "tahan lembap", "mudah pasang"] }], ["e-emboss", "Label maker", "Jalur merah huruf timbul.", { items: ["langkah satu", "langkah dua", "langkah tiga"] }], ["e-dboil", "Doodle boil", "Bulatan lakaran yang bergetar, untuk tunjuk produk.", { text: "" }]]],
   ["Cards", [["e-cboard", "Checklist papan", "Papan gelap di belakang kau: kiraan, bar kuning, baris ditanda satu-satu.", { a: "APA KAU PERLU BUAT", items: ["Letak klip", "Pilih effect", "Siap"], bh: 1, y: .2 }], ["e-apptake", "Skrin app", "Skrin app ambil separuh atas: gambar terbang masuk, teks ditaip.", { a: "Nama app", b: "KLIP", text: "/video", ph: 5, bh: 1, y: .27 }], ["e-notewall", "Dinding nota", "Kad kertas dan komen melekat di dinding belakang kau.", { items: ["Semua orang tanya benda ni", "POV: baru cuba", "Serius senang", "berbaloi tak?", "cara guna yang betul", "Tak sangka jadi", "Kena cuba sekali", "siapa lagi belum tahu?"], bh: 1, y: .25 }], ["e-cpop", "Checklist pop", "Senarai masuk satu-satu, latar separa legap.", { a: "kenapa best", items: ["Lembut", "Tak panas", "Boleh basuh"] }], ["e-chat", "Chat takeover", "Gelembung chat muncul satu-satu.", { a: "kawan", b: "miracikcit", items: ["bantal ni okay ke?", ">okay sangat!", "tak panas?", ">sejuk je"] }], ["e-checkg", "Checklist kaca", "Senarai ditanda satu-satu dalam panel kaca.", { a: "kena ada", items: ["Lap dinding", "Ukur dulu", "Tampal perlahan"] }], ["e-check", "Checklist", "Senarai ditanda satu-satu, kad putih.", { items: ["Lap dinding", "Ukur dulu", "Tampal perlahan"] }], ["e-chart", "Chart grow", "Bar naik satu-satu dalam panel kaca.", { a: "tahan berapa lama", items: ["biasa|2", "plastik|4", "kaca|9"] }], ["e-price", "Price cut", "Harga lama dipotong.", { a: "RM45", b: "RM19" }], ["e-num", "Big number", "Nombor besar dengan label.", { a: "3", text: "langkah je" }], ["e-cal", "Paper calendar", "Kalendar dengan tarikh dibulatkan.", { a: "NOV", b: "12" }]]],
   ["Paper Labels", [["e-pcut", "Paper cut", "Setiap perkataan atas cebisan kertas. Huruf BESAR jadi warna kunci.", { text: "tak payah POTONG satu-satu" }], ["e-torn", "Torn labels", "Senarai kertas koyak berwarna.", { items: ["Masalah", "Kos mahal", "Cuba wallpaper", "Hasilnya"] }], ["e-strip", "Paper strip", "Jalur kertas, huruf mesin taip.", { text: "jom tengok" }], ["e-note", "Notepad list", "Kertas nota dengan tajuk dan kotak.", { a: "kena ada", items: ["Wallpaper", "Pisau", "Kain lap"] }]]],
-  ["Big Text", [["e-storm", "Headline storm", "Tajuk meluru masuk dari kiri dan kanan.", { text: "JANGAN BELI", items: ["tunggu dulu", "sebelum tengok", "video ni", "sampai habis"] }], ["e-hwall", "Headline wall", "Dinding tajuk berulang, baris bergerak bertentangan.", { text: "senang gila" }], ["e-cover", "Cover story", "Gaya kulit majalah: nama atas, ayat utama, tiga baris kecil.", { a: "MIRA", b: "edisi dapur · pilihan bulan ni", text: "satu mesin SEMUA boleh", items: ["cincang 10 saat", "jag kaca", "senang cuci"] }], ["e-bigmix", "Bold + italic", "Sans tebal, huruf BESAR jadi italic.", { text: "Budget FRIENDLY" }], ["e-bigblur", "Blur title", "Latar kabur, tulisan penuh skrin.", { text: "bukan mahal tapi CANTIK" }], ["e-bigserif", "Big serif", "Serif tebal, nampak mahal.", { text: "Budget friendly" }], ["e-bigmark", "Big marker", "Tulisan marker besar.", { text: "Budget friendly" }], ["e-bigout", "Hand outline", "Huruf besar lukis tangan.", { text: "Budget friendly" }], ["e-bigsolid", "Hand solid", "Huruf besar berisi.", { text: "Budget friendly" }], ["e-tiles", "Number tiles", "Kotak nombor dengan tulisan tangan.", { a: "1 2 3 4", text: "empat langkah je" }]]],
+  ["Big Text", [["e-storm", "Headline storm", "Tajuk meluru masuk dari kiri dan kanan.", { text: "JANGAN BELI", items: ["tunggu dulu", "sebelum tengok", "video ni", "sampai habis"] }], ["e-hwall", "Headline wall", "Dinding tajuk berulang, baris bergerak bertentangan.", { text: "senang gila" }], ["e-cover", "Cover story", "Gaya kulit majalah: nama atas, ayat utama, tiga baris kecil.", { a: "MIRA", b: "edisi dapur · pilihan bulan ni", text: "satu mesin SEMUA boleh", items: ["cincang 10 saat", "jag kaca", "senang cuci"] }], ["e-bigmix", "Bold + italic", "Sans tebal, huruf BESAR jadi italic.", { text: "Budget FRIENDLY" }], ["e-bigblur", "Blur title", "Latar kabur, tulisan penuh skrin.", { text: "bukan mahal tapi CANTIK" }], ["e-bigserif", "Big serif", "Serif tebal, nampak mahal.", { text: "Budget friendly" }], ["e-bigmark", "Big marker", "Tulisan marker besar.", { text: "Budget friendly" }], ["e-bigout", "Hand outline", "Huruf besar lukis tangan.", { text: "Budget friendly" }], ["e-bigsolid", "Hand solid", "Huruf besar berisi.", { text: "Budget friendly" }], ["e-bigcute", "Cute", "Font bulat / tangan, warna pastel, outline putih tebal.", { text: "sedap!", c: "#ffb3c7" }], ["e-bigaes", "Aesthetic", "Serif italic / huruf jarang, warna neutral, lembut.", { text: "estetik", c: "#f3e9d8" }], ["e-tiles", "Number tiles", "Kotak nombor dengan tulisan tangan.", { a: "1 2 3 4", text: "empat langkah je" }]]],
   ["Hook", [["e-hook1", "H1 Serif + skrip", "", { a: "korang", text: "Team mana?", b: "3 bau vanilla ♡", items: ["Bath Garden Vanilla Series"] }], ["e-hook2", "H2 Sans + italic", "", { a: "mak-mak,", text: "pamper diri", b: "sikit lah", items: ["dengan Bath Garden Vanilla Series"] }], ["e-hook3", "H3 Marker + skrip", "", { a: "BUKAN SEKADAR", text: "wangi", b: "TAU!", items: ["Bath Garden Vanilla Series"] }], ["e-hook4", "H4 Satu perkataan", "", { a: "Rose, Peony atau Orchid?", text: "team mana", b: "Bath Garden Vanilla Series", items: [""] }], ["e-hook5", "H5 Kaca", "", { a: "mak-mak,", text: "pamper diri", b: "sikit lah", items: ["Bath Garden Vanilla Series"] }], ["e-hook6", "H6 Skrip + serif", "", { a: "bukan sekadar", text: "wangi", b: "tau!", items: ["Bath Garden Vanilla Series"] }], ["e-para", "Static block", "", { a: "girl to another girl,", text: "jom amalkan INOSITOL!", b: "ramai dah perasan, muka makin BERSERI!", items: ["MOOM Happy Hormones"] }]]],
   /* no longer offered (user 2026-11-12: buang USP B, C, D; no text stickers), kept so older videos still open and render */
   ["Lama", [...TXT_OLD, ["e-uspb", "B Polaroid", "", { text: "Vanilla Rose", a: "bau dia macam…", items: ["fruity", "floral", "sweet"], ph: 3 }], ["e-uspc", "C Jubin nombor", "", { text: "top notes", items: ["starfruit", "quince", "mocktail"], a: "", ph: 1 }], ["e-uspd", "D Label + sticky", "", { a: "Vanilla Peony ✿", b: "soft & comforting", items: ["CREAMY", "FLORAL", "SWEET"], text: "← lembut, tenang", ph: 1 }], ["t-blob", "Die-cut krim", "", { text: "SEDAP!" }], ["t-cta", "Pill beg bawah", "", { text: "Tengok beg bawah" }], ["t-stick", "Word sticker", "", { text: "JIMAT!" }], ["t-note", "Tip note", "", { text: "Tip" }], ["t-pill", "Pill", "", { text: "Tahan lembap" }]]]
@@ -2300,12 +2319,16 @@ const isFxS = x => x.k.startsWith("e-");
 const isTxt = x => x.k.startsWith("t-");
 const inFx = x => isFxS(x) || isTxt(x);   // text highlights are edited in Effects (stickers are pictures only, user 2026-11-12)
 /* Same rule as big_text in render_draft.py: short lines, size fits the longest, letters slightly uneven. */
+const BIGUP = x => !(x.k === "e-bigserif" || (x.k === "e-bigaes" && [0, 1, 3, 4].includes(+x.fv || 0)) || (x.k === "e-bigcute" && +x.fv === 3));   /* p35 */
+const BIGC = x => x.c === "key" ? "var(--kc, #ffd447)" : /^#[0-9a-f]{3,8}$/i.test(x.c || "") ? x.c : "#fff";
+const BIG_FV = { "e-bigcute": ["Fredoka", "Nunito", "Londrina", "Caveat", "Patrick Hand"], "e-bigaes": ["Serif italic", "Playfair", "Jarang nipis", "Caslon", "Skrip", "Gloock"] };
+const BIG_COL = { "e-bigcute": [["#ffb3c7", "Pink"], ["#ffd84d", "Kuning"], ["#9ee0c4", "Mint"], ["#b9a8ff", "Lilac"], ["#8fd0ff", "Biru"], ["#ff9b6a", "Peach"], ["#fff", "Putih"]], "e-bigaes": [["#f3e9d8", "Krim"], ["#fff", "Putih"], ["#1d1b1a", "Hitam"], ["#c9b39a", "Taupe"], ["#b9c4a7", "Sage"], ["#e9c9c0", "Blush"], ["#d9a72f", "Mustard"]] };
 function bigText(x) {
-  const up = x.k !== "e-bigserif", raw = (x.text || "").trim(), words = (up ? raw.toUpperCase() : raw).split(/\s+/).filter(Boolean), lines = []; let cur = "";
+  const up = BIGUP(x), raw = (x.text || "").trim(), words = (up ? raw.toUpperCase() : raw).split(/\s+/).filter(Boolean), lines = []; let cur = "";
   words.forEach(w => { if (cur && (cur + " " + w).length > 10) { lines.push(cur); cur = w; } else cur = cur ? cur + " " + w : w; }); if (cur) lines.push(cur);
   const size = Math.min(17, 66 / (Math.max(1, ...lines.map(l => l.length)) * .6)); let n = 0;
   const body = lines.map(l => `<p>${[...l].map(c => { const i = n++; if (c === " ") return `<span class="el">&nbsp;</span>`; return `<span class="el" style="rotate:${(i * 37) % 9 - 4}deg;top:${(((i * 53) % 7 - 3) * .012).toFixed(3)}em;--d:${(i * .03).toFixed(2)}s">${esc(c)}</span>`; }).join("")}</p>`).join("");
-  return `<div class="e-big ${x.k}" style="font-size:${size.toFixed(2)}cqw;--ec:${x.c === "key" ? "var(--kc, #ffd447)" : "#fff"}">${body}</div>`;
+  return `<div class="e-big ${x.k} fv${+x.fv || 0}" style="font-size:${size.toFixed(2)}cqw;--ec:${BIGC(x)}">${body}</div>`;
 }
 function mixText(x, zoom) {
   const lines = []; let cur = [];
@@ -3810,7 +3833,7 @@ function checksHTML() {
 const FX_FAMILY = [
   ["Review", ["e-stars", "e-ring", "e-poll", "e-save", "e-tag", "e-stamp"]],
   ["Trend", ["e-wheel", "e-receipt", "e-ticket", "e-pin", "e-slam"]],
-  ["Text", ["e-gtype", "e-bigmix", "e-bigblur", "e-bigserif", "e-bigmark", "e-bigout", "e-bigsolid", "e-hwall", "e-pcut", "e-chip", "e-strip", "e-strike", "e-arrow"]],
+  ["Text", ["e-gtype", "e-bigmix", "e-bigblur", "e-bigserif", "e-bigmark", "e-bigout", "e-bigsolid", "e-bigcute", "e-bigaes", "e-hwall", "e-pcut", "e-chip", "e-strip", "e-strike", "e-arrow"]],
   ["List", ["e-checkg", "e-check", "e-badges", "e-torn", "e-emboss", "e-marq", "e-note"]],
   ["Number", ["e-num", "e-tiles", "e-cal", "e-chart"]],
   ["Photo", ["e-polg", "e-polt", "e-pola", "e-fbreak", "e-wipe", "e-stack", "e-fan", "e-phone", "e-cardrow"]],
@@ -3854,7 +3877,8 @@ function fxPanel() {
     const fam = FX_FAMILY.find(([, list]) => list.includes(x.k));
     form = `<div class="row" id="fxForm"><span class="lab">${esc(def[1])}, ${fmt(x.t)} selama ${x.d.toFixed(1)} s</span>
       ${isTxt(x) ? `<span class="lab">Gaya</span><div class="chips">${TXT_KINDS.map(([k, n]) => chip(n, x.k === k, `data-stk="${k}"`)).join("")}</div>` : ""}
-      ${isBig ? `<span class="lab">Warna</span><div class="chips">${chip("Putih", x.c !== "key", 'data-ec="white"')}${chip("Warna kunci", x.c === "key", 'data-ec="key"')}</div>` : ""}
+      ${isBig ? `<span class="lab">Warna</span><div class="chips">${chip("Putih", !x.c, 'data-ec="white"')}${chip("Warna kunci", x.c === "key", 'data-ec="key"')}${(BIG_COL[x.k] || BIG_COL["e-bigcute"].concat(BIG_COL["e-bigaes"])).map(([c, n]) => chip(n, x.c === c, `data-ec="${c}"`)).join("")}</div>` : ""}
+      ${BIG_FV[x.k] ? `<span class="lab">Font</span><div class="chips">${BIG_FV[x.k].map((n, j) => chip(n, (+x.fv || 0) === j, `data-efv="${j}"`)).join("")}</div>` : ""}
       ${o.text !== undefined ? field("text", L.text || ({ "e-uspa": "Ayat besar serif", "e-uspb": "Tajuk", "e-uspb4": "Tajuk", "e-uspc": "Tajuk atas jubin", "e-uspd": "Ayat kecil bawah label", "e-endc": "Pill bawah (CTA)" })[x.k] || (x.k === "e-num" ? "Label" : x.k === "e-bigmix" || x.k === "e-bigblur" ? "Text (huruf BESAR jadi italic)" : "Text")) : ""}${o.a !== undefined ? field("a", L.a || labs[0] || "Baris atas") : ""}${o.b !== undefined ? field("b", L.b || labs[1] || labs[0] || "Baris bawah") : ""}
       ${o.items ? `<label class="lab" for="ef-items">${L.items || ({ "e-endc": "4 kad USP, satu baris setiap kad: PERKATAAN BESAR|ayat kecil", "e-uspa": "Baris tulisan tangan bawah", "e-uspb": "Tulisan bawah polaroid, satu baris setiap gambar", "e-uspb4": "Tulisan bawah 4 gambar, satu baris setiap gambar", "e-uspc": "Perkataan bawah jubin 1, 2, 3", "e-uspd": "Label kertas, satu baris setiap label (mula dengan - untuk coret)" })[x.k] || "Satu baris setiap satu"}</label><textarea id="ef-items" data-ef="items">${esc((x.items || []).join("\n"))}</textarea>` : ""}
       ${(x.k.startsWith("e-usp") || x.k === "e-cut") && (D.broll || []).length ? `<span class="lab">${x.k === "e-cut" ? "Klip B-roll" : "Video belakang"}</span><div class="chips">${x.k === "e-cut" ? "" : chip("Tiada (guna gambar)", !x.vid, 'data-evid=""')}${D.broll.map(b => chip(b.n, x.vid === b.id, `data-evid="${b.id}"`)).join("")}</div>` : ""}
@@ -3980,7 +4004,8 @@ function upPayload() { const f = S.final, ser = SER(); return { title: D.title, 
 /* ---------- timeline ---------- */
 function drawTimeline() {
   const T = total(), W = Math.max(endT() * pps, 40);
-  const labels = [["Tajuk", "i-title"], ...(hasCap() ? [["Caption", "i-cc"], ["Highlight", "i-hl"]] : []), ["Zoom", "i-zoom"], ["Effects", "i-fx"], ["Sticker", "i-star"], ["Bunyi", "i-note"], ["Suara asal", "", 1], ...(hasVO() ? [["VO", "i-mic"]] : []), ["Watermark", "", 1]];
+  const hasBr = S.stickers.some(x => x.k === "e-cut") || (D.broll || []).length > 0;   /* p34 */
+  const labels = [...(hasBr ? [["B-roll", "i-film"]] : []), ["Tajuk", "i-title"], ...(hasCap() ? [["Caption", "i-cc"], ["Highlight", "i-hl"]] : []), ["Zoom", "i-zoom"], ["Effects", "i-fx"], ["Sticker", "i-star"], ["Bunyi", "i-note"], ["Suara asal", "", 1], ...(hasVO() ? [["VO", "i-mic"]] : []), ["Watermark", "", 1]];
   $("labels").innerHTML = `<span class="lv" title="Video" aria-label="Video"><svg class="ic"><use href="#i-film"/></svg><span class="tl">Video</span></span>` + labels.map(([n, ic, ro]) => `<span class="${ro ? "ro" : ""}" title="${n}" aria-label="${n}">${ic ? `<svg class="ic"><use href="#${ic}"/></svg>` : ""}<span class="tl">${n}</span></span>`).join("");
   const step = pps < 12 ? 10 : pps < 26 ? 5 : 2, ticks = [];
   for (let s = 0; s <= endT(); s += step) ticks.push(`<i style="left:${s * pps}px">${fmt(s)}</i>`);
@@ -3993,12 +4018,13 @@ function drawTimeline() {
   const rows = [];
   const hxI = S.stickers.findIndex(x => x.k.startsWith("e-hook") && !x.hl);
   const stBlock = (x, i) => { const on = i === stSel, l = isFxS(x) ? fxDef(x.k)[1] : x.k.startsWith("t-") ? (x.text || "teks") : (libOf(x.k) || {}).n || x.k; return bl(x.t, x.d, "stb" + (isFxS(x) || x.k.startsWith("t-") ? " efb" : "") + (on ? " sel" : ""), (on ? `<span class="vh l" data-sh="l">‹</span><span class="vh r" data-sh="r">›</span>` : "") + `<span style="padding:0 ${on ? 18 : 0}px">${esc(l)}</span>`, `data-sb="${i}"`); };
+  if (hasBr) rows.push(`<div class="track brline" id="brTrack">${S.stickers.map((x, i) => x.k === "e-cut" ? bl(x.t, x.d, "stb brb" + (i === stSel ? " sel" : ""), (i === stSel ? `<span class="vh l" data-sh="l">‹</span><span class="vh r" data-sh="r">›</span>` : "") + `<span style="padding:0 ${i === stSel ? 18 : 2}px">${esc(((D.broll || []).find(b => b.id === x.vid) || {}).n || "B-roll")}</span>`, `data-sb="${i}"`) : "").join("")}</div>`);   /* p34 */
   rows.push(`<div class="track" id="hookTrack">${hxI >= 0 ? stBlock(S.stickers[hxI], hxI) : bl(0, Math.min(HOOK_END, E), "title", "hook")}</div>`);
   if (hasCap()) rows.push(`<div class="track" id="capTrack">${GR.map(g => bl(g.start, g.end - g.start, "", "")).join("")}</div>`);
   if (hasCap()) rows.push(`<div class="track" id="hlTrack">${HLS.map(h => bl(h.t, h.d, "hlb" + (h.id === hlSel ? " sel" : ""), esc(h.text), `data-hb="${h.id}"`)).join("")}</div>`);
   const lastC = S.clips[S.clips.length - 1], zEnd = lastC ? Math.min(cLen(lastC), E - endcLen()) : 0;
   rows.push(`<div class="track" id="zmTrack">${bl(0, Math.min(HOOK_END, E), "zoom", "1.04x")}${bl(Math.max(E - endcLen() - zEnd, 0), zEnd, "zoom", "1.06x")}${S.zooms.map((z, i) => bl(z.t, zmLen(z), "zm" + (i === zmSel ? " sel" : ""), (+z.z).toFixed(2) + "x", `data-z="${i}"`)).join("")}</div>`);
-  rows.push(`<div class="track" id="fxTrack">${S.stickers.map((x, i) => inFx(x) && i !== hxI ? stBlock(x, i) : "").join("")}</div>`);
+  rows.push(`<div class="track" id="fxTrack">${S.stickers.map((x, i) => inFx(x) && i !== hxI && x.k !== "e-cut" ? stBlock(x, i) : "").join("")}</div>`);   /* p34: e-cut di baris B-roll */
   rows.push(`<div class="track" id="stTrack">${S.stickers.map((x, i) => inFx(x) ? "" : stBlock(x, i)).join("")}</div>`);
   rows.push(`<div class="track" id="sfxTrack">${S.sfx.map((x, i) => bl(x.t, .8, "sfx" + (i === sfxSel ? " sel" : ""), esc(x.f), `data-s="${i}"`)).join("")}</div>`);
   let a = 0; rows.push(`<div class="track ro">${S.clips.map(c => { const d = cLen(c), off = S.globalMute || c.muted, r = bl(a, d - .04, "voice" + (off ? " off" : ""), off ? "mute" : "asal"); a += d; return r; }).join("")}</div>`);
@@ -4725,7 +4751,8 @@ document.addEventListener("click", e => {
   if (b.id === "upload") { if (b.disabled || b.dataset.busy) return; return upload(b); }
   if (b.id === "finCopy") { const t = $("finPrompt"); if (!t) return; t.select(); (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject()).then(() => toast("Prompt disalin"), () => { document.execCommand("copy"); toast("Prompt disalin"); }); return; }
   if (d.etk) { const y = S.stickers[stSel]; if (y) { snapshot(); convertFx(y, d.etk); touched(); draw(); if (y.k.startsWith("e-endc")) seek(y.t + 1.2); toast(`Tukar ke ${fxDef(d.etk)[1]}`); } return; }
-  if (d.ec) { const y = S.stickers[stSel]; if (y) { y.c = d.ec === "key" ? "key" : ""; touched(); drawPanel(); drawStickers(); } return; }
+  if (d.ec) { const y = S.stickers[stSel]; if (y) { y.c = d.ec === "key" ? "key" : /^#/.test(d.ec) ? d.ec : ""; touched(); drawPanel(); drawStickers(); } return; }
+  if (d.efv !== undefined) { const y = S.stickers[stSel]; if (y) { snapshot(); y.fv = +d.efv; touched(); drawPanel(); drawStickers(); } return; }   /* p35 */
   if (d.popadd !== undefined) { snapshot(); if (addPopup(+d.popadd)) { clearPick(); stSel = S.stickers.length - 1; touched(); draw(); seek(S.stickers[stSel].t + .05); toast("Pop-up ditambah"); } return; }
   if (d.popskip !== undefined) { S.popDone[+d.popskip] = "s"; touched(); return drawPanel(); }
   if (b.id === "popAll") { snapshot(); let n = 0; (D.popups || []).forEach((p, i) => { if (!S.popDone[i] && addPopup(i)) n++; }); clearPick(); touched(); draw(); return toast(`${n} pop-up ditambah`); }
