@@ -788,3 +788,11 @@ textarea.inp.pe-tx{margin-top:6px;min-height:40px;resize:none;overflow:auto;padd
 .pp-ok[aria-pressed="true"]{background:#6B8F71;border-color:#6B8F71;color:#fff}
 .pp-home{margin-top:6px}
 .pp-lk{display:block;margin-top:8px}.pp-lk span{display:block;font-size:12px;font-weight:600;margin-bottom:3px}
+
+/* Kad Edit: baris bahagian video (27 Nov). Nama penuh, yang belum siap dapat butang sendiri */
+.edpart .ccn{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.25}
+.edpart.todo{flex-wrap:wrap;padding:7px 0}.edpart.todo .ccn{flex:1 1 100%}
+.edpst{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;min-width:0}.edpart.todo .edpst{flex:1 1 100%;justify-content:space-between}
+.edpst .pill{white-space:normal;text-align:left}
+.edpgo{min-height:32px;padding:6px 12px;text-decoration:none;flex:none}
+.btns.tem:has(.edgd){flex-wrap:wrap}.btns.tem>.btn.edgd{flex:1 1 100%}

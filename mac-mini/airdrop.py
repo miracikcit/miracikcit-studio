@@ -237,6 +237,20 @@ def _pending_put(sheet, files, force=False, last=None, W=None):
     _pend_n["n"] = len(lst)
 
 
+_sess = {"sig": None}
+
+
+def _sessions(sheet):
+    """Sesi Claude (EDIT NOW, Remote Control) yang masih hidup dalam Terminal Mac mini -> sync/sessions {ids:[id tracker editor]}.
+    Kad Edit guna ni untuk tahu link chat dah mati (27 Nov, Mira tak dapat buka kerja pending GENTING). Ditulis hanya bila berubah.
+    (Diletak di sini supaya worker.py tak perlu diubah; thread AirDrop memang jalan setiap minit.)"""
+    r = subprocess.run(["/bin/ps", "-axo", "command"], capture_output=True, text=True, timeout=10, env=dict(os.environ, LC_ALL="en_US.UTF-8"))
+    ids = sorted(set(re.findall(r"tracker Studio: editor/([\w-]+)", "\n".join(l for l in r.stdout.splitlines() if "remote-control" in l))))
+    sig = ",".join(ids)
+    if sig != _sess["sig"] and _send(sheet, "sync/sessions", {"ids": ids, "at": int(time.time() * 1000)}):
+        _sess["sig"] = sig
+
+
 def _recon(sheet, W, st, now):
     """Setiap minit: banding isi folder setiap kad dengan kali terakhir. Video ditambah / hilang di luar Studio ditanda pada kad."""
     cs = st.setdefault("cards", {})
@@ -358,6 +372,10 @@ def tick(sheet, W, down=None):
                 _recon(sheet, W, st, now)
             except Exception:
                 log.exception("AirDrop: semak folder gagal")
+            try:
+                _sessions(sheet)
+            except Exception:
+                log.exception("Semak sesi Claude gagal")
         last = st.get("last")
         if last and now - last.get("at", 0) > LAST_S:
             st.pop("last", None)

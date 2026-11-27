@@ -26,16 +26,28 @@ V['to-edit']=()=>{const te=S.sync.toedit;const folders=toEditFolders();const fse
 /* Butang kad: belum mula = EDIT NOW; dah tekan = link terus ke chat Claude (Remote Control) atau status */
 function edBtns(r,e,busy,off){if(r.kind==='r'&&!r.clips)return rawBackBtn(String(r.key).replace(/#r\d+$/,''));
   /* 23 Nov: EDIT NOW tak lagi tunggu semua B-roll disemak; Claude guna klip Final yang dah ada */
-  const now=`<button class="btn sm${e?'':' solid tab'} edgo" data-act="esOpen" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}"${r.round?` data-r="${r.round}"`:''}${busy||off||!r.stage||esScan(r.key)?' disabled':''}>${esScan(r.key)?'<i class="spin"></i>Analysing '+Math.round(esScan(r.key).pct||0)+'%':busy?'<i class="spin"></i>'+esc(busy):e?'Buka sesi baru':'▶ EDIT NOW'}</button>${tok(TOK.edit,'satu sesi edit Claude, ikut panjang video',TOKM.edit)}`;
+  /* 27 Nov (Mira: "aku tak dapat access kerja pending"): link chat menuju sesi Claude dalam Terminal Mac mini. Bila sesi tu tutup (restart,
+     Terminal ditutup), link mati dan dulu tiada butang buka sesi baru. Mac mini kini lapor sesi yang hidup (sync/sessions.ids, airdrop.py);
+     sesi mati = butang "Sambung kerja" jadi utama, chat lama jadi butang kecil. Tak pasti (tiada laporan) + sesi lebih 24 jam = butang sesi baru juga ada. */
+  const dead=edDead(e),old=!!(e&&isUrl(e.chat)&&!edAlive(e)&&Date.now()-(e.sessionAt||e.updated||0)>864e5);
+  const now=`<button class="btn sm${e&&!dead?'':' solid tab'} edgo${dead?' edgd':''}" data-act="esOpen" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}"${r.round?` data-r="${r.round}"`:''}${busy||off||!r.stage||esScan(r.key)?' disabled':''}>${esScan(r.key)?'<i class="spin"></i>Analysing '+Math.round(esScan(r.key).pct||0)+'%':busy?'<i class="spin"></i>'+esc(busy):e?(dead?'▶ Sambung kerja':'Buka sesi baru'):'▶ EDIT NOW'}</button>${tok(TOK.edit,'satu sesi edit Claude, ikut panjang video',TOKM.edit)}`;
   if(!e)return now;const st=e.status||'';const stuck=/perlu|tiada link/i.test(st);
-  const chat=isUrl(e.chat)?`<a class="btn sm solid tab" href="${esc(e.chat)}" target="_blank" rel="noopener">${IC.ext}Buka chat Claude</a>`:'';
+  const chat=isUrl(e.chat)?`<a class="btn sm${dead?'':' solid tab'}" href="${esc(e.chat)}" target="_blank" rel="noopener">${IC.ext}${dead?'Chat lama':'Buka chat Claude'}</a>`:'';
   const page=isUrl(e.url)?`<a class="btn sm${chat?'':' solid tab'}" href="${esc(e.url)}" target="_blank" rel="noopener">${IC.ext}${/storyboard/i.test(st)?'Storyboard':'Editor'}</a>`:'';
   const wait=!chat&&!page&&!stuck?`<span class="pill" style="--pc:var(--c)"><i class="spin"></i>Sedang buka sesi</span>`:'';
-  return chat+page+wait+(r.kind==='r'||stuck||(!chat&&Date.now()-(e.sessionAt||e.updated||0)>15*60000)?now:'')}
+  return (dead?now+chat:chat)+page+wait+(!dead&&(r.kind==='r'||stuck||old||(!chat&&Date.now()-(e.sessionAt||e.updated||0)>15*60000))?now:'')}
+const edAlive=e=>{const s=S.sync.sessions;return !!(e&&s&&Array.isArray(s.ids)&&s.ids.includes(e.id))};
+const edDead=e=>{const s=S.sync.sessions;return !!(e&&isUrl(e.chat)&&s&&Array.isArray(s.ids)&&!s.ids.includes(e.id)&&Date.now()-(e.sessionAt||e.updated||0)>3*60000&&!macOff())};
 /* Bahagian projek banyak video: mana dah ada final, mana masih storyboard / draf (26 Nov, Mira) */
 function edPartsList(e){const P=e?edParts(e):[];if(!P.length)return '';const tone=p=>p.final?'var(--ok)':/storyboard|lulus/i.test(p.status||'')?'var(--bad)':'var(--warn)';
-  return `<div class="edparts">${P.map(p=>`<div class="edpart"><span class="ccn">${esc(p.name||p.id||'Video')}</span>${isUrl(p.url)&&!p.final?`<a class="pill" style="--pc:var(--c);text-decoration:none" href="${esc(p.url)}" target="_blank" rel="noopener">Buka</a>`:''}<span class="pill" style="--pc:${tone(p)}">${esc(p.final?'Siap':p.status||'Belum mula')}</span></div>`).join('')}</div>`}
+  /* 27 Nov: nama penuh (dulu terpotong "Awana r…"), dan setiap baris yang belum siap ada butang: storyboard / draf (p.url), B-roll, atau chat sesi. */
+  const act=p=>{if(p.final)return '';const sb=/storyboard|lulus/i.test(p.status||'');
+    if(isUrl(p.url))return `<a class="btn sm${sb?' solid tab':''} edpgo" href="${esc(p.url)}" target="_blank" rel="noopener">${IC.ext}${sb?'Buka storyboard':'Buka'}</a>`;
+    if(/b-?roll/i.test(p.status||''))return `<button type="button" class="btn sm edpgo" data-act="teSeg" data-x="broll">B-roll</button>`;
+    return isUrl(e.chat)&&!edDead(e)?`<a class="btn sm edpgo" href="${esc(e.chat)}" target="_blank" rel="noopener">${IC.ext}Chat</a>`:''};
+  return `<div class="edparts">${P.map(p=>`<div class="edpart${p.final?'':' todo'}"><span class="ccn">${esc(p.name||p.id||'Video')}</span><span class="edpst"><span class="pill" style="--pc:${tone(p)}">${esc(p.final?'Siap':p.status||'Belum mula')}</span>${act(p)}</span></div>`).join('')}</div>`}
 function edNote(r,e){if(!e)return '';const st=e.status||'';
+  if(edDead(e))return `<p class="meta" style="margin:8px 0 0;color:var(--bad)">Sesi Claude projek ni dah tertutup di Mac mini. Tekan Sambung kerja untuk buka sesi baru. Kerja yang dah siap kekal.</p>`;
   if(/persediaan/i.test(st))return `<p class="meta" style="margin:8px 0 0;color:var(--bad)">Sesi tunggu di Terminal Mac mini (persediaan kali pertama). Tekan Enter di Terminal, kemudian jawab Yes untuk Trust folder.</p>`;
   if(/trust/i.test(st))return `<p class="meta" style="margin:8px 0 0;color:var(--bad)">Sesi tunggu di Terminal Mac mini: pilih Yes untuk Trust folder ${esc(r.stage)}. Sekali sahaja untuk folder ni.</p>`;
   if(/log masuk/i.test(st))return `<p class="meta" style="margin:8px 0 0;color:var(--bad)">Claude dalam Terminal Mac mini perlu log masuk.</p>`;
