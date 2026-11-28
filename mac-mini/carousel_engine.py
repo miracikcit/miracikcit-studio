@@ -272,6 +272,30 @@ class Photo:
                     missing += 1   # orang yang rembg terlepas
         faces = real
         self.mask_incomplete = missing > 0
+        # latar yang rembg anggap 'orang' di atas kepala (pokok, tiang): buang, simpan bentuk kepala sahaja
+        inm = [f for f in faces if (a[int((f[1] + f[3]) / 2), int(min(self.W - 1, (f[0] + f[2]) / 2))] > 128)]
+        if inm:
+            rows = np.where((a > 128).any(1))[0]
+            fh = float(np.median([f[3] - f[1] for f in inm]))
+            if len(rows) and rows[0] < min(f[1] for f in inm) - 1.0 * fh:
+                cut = min(f[3] + 0.3 * (f[3] - f[1]) for f in inm)
+                keep = Image.new("L", (self.W, self.H), 0)
+                kd = ImageDraw.Draw(keep)
+                kd.rectangle([0, cut, self.W, self.H], fill=255)
+                for x0, y0, x1, y1 in inm:
+                    w, h = x1 - x0, y1 - y0
+                    cx = (x0 + x1) / 2
+                    kd.ellipse([cx - 0.6 * w, y0 - 0.32 * h, cx + 0.6 * w, y0 + 0.9 * h], fill=255)
+                    kd.rectangle([x0 + 0.04 * w, y0 + 0.3 * h, x1 - 0.04 * w, y1], fill=255)
+                    kd.rectangle([x0 + 0.18 * w, y1 - 0.1 * h, x1 - 0.18 * w, max(y1, cut) + 2], fill=255)
+                rgb = np.asarray(self.raw).astype(np.float32)
+                R, G, B = rgb[..., 0] + 1, rgb[..., 1], rgb[..., 2]
+                foliage = ((G < 0.5 * R) & (B < 0.55 * R) & (R > 32)) | ((G > R * 1.05) & (G > B))
+                yy = np.arange(self.H)[:, None]
+                a = ((a > 128) & (np.asarray(keep) > 0) & ~(foliage & (yy < cut))).astype(np.uint8)
+                a = cv2.morphologyEx(a, cv2.MORPH_OPEN, np.ones((7, 7), np.uint8))
+                a = cv2.medianBlur(cv2.morphologyEx(a, cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8)) * 255, 9)
+                self.mask = Image.fromarray(a)
         self.faces = [tuple(f) for f in faces]
         self.ratio = float((a > 128).mean())
         self.bbox = self.mask.point(lambda v: 255 if v > 128 else 0).getbbox() if self.ratio > 0.002 else None
@@ -1850,6 +1874,8 @@ def render(job):
     if low:
         warnings.append(f"{len(low)} gambar resolusi rendah, digunakan kecil sahaja")
     set_palette(photos)
+    if opts.get("kit"):   # templat dikurasi ikut Kit Gaya (design_kits.py)
+        return render_kit_out(opts, photos, seed, out, warnings)
     rng = random.Random(seed)
     vibe = opts["vibe"] if opts["vibe"] in VIBES else rng.choices(VIBES, [0.45, 0.2, 0.15, 0.2])[0]
     opts["vibe"] = vibe
@@ -1913,6 +1939,49 @@ def render(job):
               "slides": [{k2: v for k2, v in s.items() if k2 != "locked"} for s in slides]}
     r = {"slides": paths, "preview": str(pv), "thumb": str(th), "recipe": recipe, "warnings": warnings,
          "log": c.log, "engine": ENGINE_VERSION}
+    json.dump(r, open(out / "result.json", "w"))
+    prog(100, "Siap")
+    return r
+
+
+def save_outputs(img, n, W, H, out, seed, vibe="kit"):
+    rng = np.random.default_rng(seed)
+    a = np.asarray(img.convert("RGB")).astype(np.float32)
+    a += rng.normal(0, 1.8, a.shape[:2])[..., None]
+    final = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8))
+    paths = []
+    for i in range(n):
+        pth = out / f"slide_{i + 1:02d}.jpg"
+        final.crop((i * W, 0, (i + 1) * W, H)).save(pth, quality=JPEG_Q, subsampling=0)
+        paths.append(str(pth))
+    band, sc = 30, 0.5
+    pw, ph_ = int(n * W * sc), int(H * sc)
+    pv_img = Image.new("RGB", (pw, ph_ + 2 * band), (40, 40, 40))
+    pv_img.paste(final.resize((pw, ph_), RS.LANCZOS), (0, band))
+    d = ImageDraw.Draw(pv_img)
+    for k in range(1, n):
+        x = int(k * W * sc)
+        d.polygon([(x - 9, 4), (x + 9, 4), (x, band - 4)], fill=(255, 90, 110))
+        d.polygon([(x - 9, ph_ + 2 * band - 4), (x + 9, ph_ + 2 * band - 4), (x, ph_ + band + 4)], fill=(255, 90, 110))
+    pv = out / "preview.jpg"
+    pv_img.save(pv, quality=88)
+    th = out / "thumb.jpg"
+    final.crop((0, 0, W, H)).resize((360, int(360 * H / W)), RS.LANCZOS).save(th, quality=82)
+    return paths, str(pv), str(th)
+
+
+def render_kit_out(opts, photos, seed, out, warnings):
+    import design_kits
+    prog(50, "Susun templat " + str(opts.get("kit")))
+    st, rec = design_kits.render_kit(opts, photos, seed)
+    bad = st.bad_seams()
+    if bad:
+        warnings.append(f"Muka mungkin dekat garis potong selepas slide {bad}")
+    prog(93, "Simpan slide")
+    paths, pv, th = save_outputs(st.img, st.n, st.W, st.H, out, seed)
+    recipe = {"v": ENGINE_VERSION, "seed": seed, "vibe": "kit:" + rec["kit"], "aspect": opts.get("aspect"),
+              "kit": rec["kit"], "format": rec["format"], "slides": rec["slides"]}
+    r = {"slides": paths, "preview": pv, "thumb": th, "recipe": recipe, "warnings": warnings, "engine": ENGINE_VERSION}
     json.dump(r, open(out / "result.json", "w"))
     prog(100, "Siap")
     return r
