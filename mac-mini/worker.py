@@ -709,6 +709,65 @@ def _footage_tick(sheet):
 _edsync = {"since": 0, "docs": {}, "t": 0}
 
 
+# 26 Nov (Mira): GENTING 7 video ditanda Siap lepas video pertama. Projek banyak video (videos > 1 atau parts > 1)
+# kini dikira ikut bahagian: setiap fail final baru masuk `finals`, dan bahagian yang `file`nya padan dapat `final`.
+# Status Siap + final projek hanya bila SEMUA bahagian ada final (atau finals >= videos kalau tiada senarai parts).
+def _ed_parts(d):
+    return [p for p in (d.get("parts") or []) if isinstance(p, dict)]
+
+
+def _ed_total(d):
+    try:
+        v = int(d.get("videos") or 0)
+    except (TypeError, ValueError):
+        v = 0
+    return max(v, len(_ed_parts(d)))
+
+
+def _ed_multi(d):
+    return _ed_total(d) > 1
+
+
+def _ed_done_n(d):
+    P = _ed_parts(d)
+    return sum(1 for p in P if p.get("final")) if P else len(d.get("finals") or [])
+
+
+def _ed_parts_sync(d, files, nk):
+    k = nk(str(d["folder"]).split("/")[-1])
+    if len(k) < 4:
+        return None
+    after = (d.get("created") or 0) - 3600000
+    finals = list(d.get("finals") or [])
+    parts = [dict(p) for p in _ed_parts(d)]
+    changed = False
+    for f in sorted(files, key=lambda x: x.get("mtime") or 0):
+        t = nk(re.split(r"[_]+", f["name"])[0])
+        if not (len(t) >= 4 and (k.startswith(t) or t.startswith(k[:max(4, len(t))])) and (f.get("mtime") or 0) >= after):
+            continue
+        if f["name"] not in finals:
+            finals.append(f["name"]); changed = True
+        if any(p.get("final") == f["name"] for p in parts):
+            continue
+        fn = nk(f["name"].rsplit(".", 1)[0])
+        for p in parts:                               # padan awalan nama fail yang sesi Claude daftar (cth Genting_1)
+            pf = nk(p.get("file") or "")
+            if not p.get("final") and len(pf) >= 4 and (fn == pf or fn.startswith(pf) and not fn[len(pf):len(pf) + 1].isdigit()):
+                p.update(final=f["name"], status="Siap"); changed = True
+                break
+    if not changed:
+        return None
+    nd = dict(d, finals=finals, updated=int(time.time() * 1000))
+    if parts:
+        nd["parts"] = parts
+    tot, n = _ed_total(nd), _ed_done_n(nd)
+    if tot and n >= tot:
+        nd.update(status="Siap", final=finals[-1])
+    elif re.search(r"siap", str(nd.get("status") or ""), re.I):
+        nd["status"] = "Draf"                         # belum semua: jangan biar "Siap"
+    return nd
+
+
 def editor_autosync(sheet, files):
     """Tab Editor sync sendiri (2026-11-23, Mira): projek yang video finalnya dah ada dalam 00. TO POST FINAL ditanda Siap
     (editor/<id> status + final, edpwa/<id> final). Baca doc berubah sahaja (pull since), setiap 5 minit bersama scan."""
@@ -732,6 +791,12 @@ def editor_autosync(sheet, files):
                 return f["name"]
         return None
     for pth, d in list(_edsync["docs"].items()):
+        if pth.startswith("editor/") and d.get("folder") and _ed_multi(d):
+            nd = _ed_parts_sync(d, files, nk)          # projek banyak video: isi final setiap bahagian, jangan tanda Siap awal
+            if nd:
+                sheet.call("dset", path=pth, data=nd); _edsync["docs"][pth] = nd
+                log.info("Tab Editor: %s %s/%s video siap", pth, _ed_done_n(nd), _ed_total(nd))
+            continue
         if pth.startswith("editor/") and d.get("folder") and not d.get("final") and not re.search(r"siap", str(d.get("status") or ""), re.I):
             fn = hit(str(d["folder"]).split("/")[-1], (d.get("sessionAt") or d.get("created") or 0) - 3600000)
             if fn:
@@ -823,6 +888,25 @@ def run_ocr(file_id, sheet):
             fh.write(base64.b64decode(f["b64"]))
         r = subprocess.run([tool, src], capture_output=True, text=True, timeout=60)
     return {"lines": json.loads(r.stdout or "[]")}
+
+
+def run_subjek(file_id, sheet):
+    """Topeng subjek gambar (Apple Vision, bin/subjek) untuk outline tab Threads. Percuma, gambar tak keluar dari Mac."""
+    import base64
+    f = sheet.call("file_get", id=file_id)
+    tool = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bin", "subjek")
+    with tempfile.TemporaryDirectory(prefix="miracikcit-subjek-") as tmp:
+        src = os.path.join(tmp, "g" + (os.path.splitext(f.get("name") or "")[1] or ".jpg"))
+        out = os.path.join(tmp, "m.png")
+        with open(src, "wb") as fh:
+            fh.write(base64.b64decode(f["b64"]))
+        r = subprocess.run([tool, src, out, "240"], capture_output=True, text=True, timeout=90)
+        o = json.loads(r.stdout or "{}")
+        if not o.get("w") or not os.path.exists(out):
+            return {"none": True}
+        with open(out, "rb") as fh:
+            o["b64"] = base64.b64encode(fh.read()).decode()
+    return o
 
 
 def run_listing_save(inp, sheet):
@@ -994,6 +1078,18 @@ def run_nota(inp, sheet, cfg):
 
 # ---------------------------------------------------------------- EDIT NOW, folder edit, paid job
 EDIT_MODEL, EDIT_EFFORT = "claude-opus-5-5", "medium"
+# 26 Nov (Mira): setiap video dalam projek banyak video mesti didaftar, supaya tiada storyboard yang terlepas (kes GENTING Awana P1/P2)
+PARTS_RULE = (" PROJEK BANYAK VIDEO: kalau footage ni jadi lebih dari satu video atau storyboard, daftar SEMUA video dalam tracker "
+              "sebaik pelan siap, sebelum render apa-apa: python3 ~/MiracikcitTranscribe/studio.py merge editor/{ed} "
+              "'{{\"videos\":N,\"parts\":[{{\"id\":\"p1\",\"name\":\"<nama pendek video>\",\"file\":\"<awalan nama fail final, cth Genting_1>\","
+              "\"url\":\"<link storyboard atau editor>\",\"status\":\"Storyboard\"}}]}}'. Hantar senarai parts PENUH setiap kali status "
+              "satu video berubah (Storyboard > Draf > Siap). JANGAN tulis status Siap atau final untuk projek sebelum SEMUA video ada fail final; "
+              "worker tanda sendiri bila fail muncul dalam 00. TO POST FINAL.")
+# Jenis video "Satu Vlog Lima" (skrin Edit Style): kunci dari app -> (nama, cara)
+EDIT_JENIS = {"pendek": ("Versi pendek + muzik", "Pendekkan vlog yang sama, tambah muzik dan teks, jadi video baru."),
+              "split": ("Split screen", "Klip atas, klip atau gambar lain di bawah; teks tak wajib, biar video bercerita sendiri."),
+              "broll": ("B-roll estetik + teks", "Ambil satu potongan B-roll (cth buat kopi) dan letak teks relatable."),
+              "penuh": ("Vlog penuh", "Cerita penuh sesi tu, sama ada bercakap depan kamera atau guna VO.")}
 
 
 def _edit_main(stage):
@@ -1036,9 +1132,10 @@ def run_mkfolder(inp, sheet):
     return {"name": name}
 
 
-def open_claude_session(cwd, title, prompt, slug, cfg):
+def open_claude_session(cwd, title, prompt, slug, cfg, model=None, effort=None, settings=True):
     """Buka satu sesi Claude Code dalam Terminal Mac mini (Remote Control hidup) dengan prompt diberi."""
-    ensure_edit_settings(cwd)
+    if settings:
+        ensure_edit_settings(cwd)
     cli = find_tool("claude", [cfg.get("claude_cli")])
     if not cli:
         raise RuntimeError("Claude Code tak dijumpai dalam Mac mini.")
@@ -1047,14 +1144,37 @@ def open_claude_session(cwd, title, prompt, slug, cfg):
     os.makedirs(d, exist_ok=True)
     slug = re.sub(r"[^A-Za-z0-9]+", "-", slug)[:60]
     cmdf, logf = os.path.join(d, slug + ".command"), os.path.join(d, slug + ".log")
+    if os.path.exists(logf):
+        os.remove(logf)
     with open(cmdf, "w", encoding="utf-8") as fh:
         fh.write("#!/bin/zsh -l\n# Dibuat oleh Miracikcit Studio\n" f"cd {q(cwd)} || exit 1\n"
-                 f"exec /usr/bin/script -q {q(logf)} {q(cli)} --model {EDIT_MODEL} --effort {EDIT_EFFORT} -n {q(title)} --remote-control {q(title)} {q(prompt)}\n")
+                 f"exec /usr/bin/script -q {q(logf)} {q(cli)} --model {model or EDIT_MODEL} --effort {effort or EDIT_EFFORT} -n {q(title)} --remote-control {q(title)} {q(prompt)}\n")
     os.chmod(cmdf, 0o755)
     r = subprocess.run(["/usr/bin/open", "-a", "Terminal", cmdf], capture_output=True, text=True, timeout=30)
     if r.returncode != 0:
         raise RuntimeError("Tak dapat buka Terminal: " + (r.stderr or "")[-200:])
     return logf
+
+
+def run_sorter_start():
+    """Mula sort dalam app Footage Sorter: tutup app (kalau terbuka) dan buka semula dengan -autoStart, cara yang sama
+    dengan butang Start dalam app. Sumber dan hard disk ikut tetapan app. Hanya bila Mira tekan Start sort dalam Studio."""
+    app = "/Applications/Footage Sorter.app"
+    if not os.path.isdir(app):
+        raise RuntimeError("App Footage Sorter tiada dalam Mac mini")
+    if not os.path.ismount("/Volumes/PERTAMA"):
+        raise RuntimeError("Sambung PERTAMA ke Mac mini dulu")
+    subprocess.run(["/usr/bin/osascript", "-e", 'tell application "Footage Sorter" to quit'], capture_output=True, text=True, timeout=30)
+    for _ in range(20):
+        if subprocess.run(["/usr/bin/pgrep", "-x", "FootageSorter"], capture_output=True).returncode != 0:
+            break
+        time.sleep(0.5)
+    else:
+        raise RuntimeError("Footage Sorter sedang sibuk dan tak dapat ditutup. Cuba lagi sekejap")
+    r = subprocess.run(["/usr/bin/open", "-a", app, "--args", "-autoStart", "YES"], capture_output=True, text=True, timeout=30)
+    if r.returncode != 0:
+        raise RuntimeError("Tak dapat buka Footage Sorter: " + (r.stderr or "")[-160:])
+    return {"started": True}
 
 
 def run_edit_now(inp, sheet, cfg):
@@ -1069,6 +1189,17 @@ def run_edit_now(inp, sheet, cfg):
         raise RuntimeError("Claude Code tak dijumpai dalam Mac mini.")
     key = os.path.basename(main) + "/" + name
     ed_id = "ed-f-" + re.sub(r"[^a-z0-9]+", "", key.lower())[:40]
+    # 2026-11-25 (Mira): START EDIT dari Published = VIDEO BARU dari footage sama. Setiap pusingan ada tracker sendiri.
+    try:
+        rnd = max(0, min(99, int(inp.get("round") or 0)))
+    except (TypeError, ValueError):
+        rnd = 0
+    fkey = key
+    if rnd:
+        ed_id += f"-r{rnd}"
+        fkey = f"{key}#r{rnd}"
+    jenis = EDIT_JENIS.get(str(inp.get("jenis") or ""))
+    nota = re.sub(r"\s+", " ", str(inp.get("nota") or "")).strip()[:600]
     prompt = f"/edit-reel {no}/{name} (tracker Studio: editor/{ed_id})"
     style = inp.get("style") if isinstance(inp.get("style"), dict) else {}
     if inp.get("gaya"):                              # butang lama "Guna style ni"
@@ -1079,7 +1210,18 @@ def run_edit_now(inp, sheet, cfg):
     gid, gname = str(style.get("tpl") or ""), ""
     import gaya
     br = gaya.brief(sheet, no, style)               # skrin Edit Style: template + rupa pilihan Mira + tips folder
-    if br.get("tips") or br.get("template") or br.get("rupa"):
+    if br.get("tips") or br.get("tips_cuba"):
+        br["laporan"] = ("tips = WAJIB dipakai; tips_cuba = pakai bila sesuai. Lepas draf siap, lapor setiap tip (wajib dan cuba) sekali: "
+                         f"python3 ~/MiracikcitTranscribe/gaya.py report {ed_id} "
+                         "'[{\"id\":\"<id tip>\",\"tip\":\"<ayat tip>\",\"pakai\":true,\"cara\":\"di mana / macam mana dipakai, atau kenapa tak dipakai\"}]'")
+    if jenis:
+        br["jenis_video"] = {"nama": jenis[0], "cara": jenis[1]}
+    if nota:
+        br["nota_mira"] = nota
+    if rnd:
+        br["video_baru"] = {"nombor": rnd, "arahan": "Footage ni dah ada video yang published. Buat video BARU dengan gaya lain. "
+                            "JANGAN ubah, ganti atau padam video lama dan fail finalnya. Opening dan ending mesti berbeza dari semua video lama projek ni."}
+    if br.get("tips") or br.get("tips_cuba") or br.get("template") or br.get("rupa") or jenis or nota or rnd:
         br["updated"] = int(time.time() * 1000)
         sheet.call("dset", path="editstyle/" + ed_id, data=br)
         gname = re.sub(r"[^\w .&+-]", "", str((br.get("template") or {}).get("nama") or ""))[:40]
@@ -1087,20 +1229,25 @@ def run_edit_now(inp, sheet, cfg):
         prompt = (f"/edit-reel {no}/{name}" + (f" tiru \"{gname}\"" if gname else "") + f" (tracker Studio: editor/{ed_id}). "
                   f"EDIT STYLE: baca python3 ~/MiracikcitTranscribe/studio.py get editstyle/{ed_id} dulu. "
                   "template = susunan video yang mesti diikut, rupa = rupa teks / effect yang mesti dipakai (guna kod_siap kalau ada), "
-                  "tips = peraturan tambahan folder ni. Tiru gaya dan susunan sahaja, JANGAN salin ayat, skrip, muzik atau footage video asal."
+                  "tips = peraturan folder ni yang WAJIB diikut, tips_cuba = pakai bila sesuai; ikut medan laporan lepas draf siap. Tiru gaya dan susunan sahaja, JANGAN salin ayat, skrip, muzik atau footage video asal."
+                  + (" jenis_video = jenis post yang Mira nak (ikut cara tu)." if jenis else "")
+                  + (" nota_mira = arahan Mira untuk video ni, utamakan." if nota else "")
+                  + (f" VIDEO BARU #{rnd}: baca video_baru. Semak hook dan penutup video lama projek ni dulu supaya tak berulang; "
+                     f"nama fail final mesti baru (jangan tindih fail lama dalam 00. TO POST FINAL)." if rnd else "")
                   + (" Terus draf (tiada storyboard): draf masuk Editor PWA dalam Studio, tunggu Mira lulus, final ke 00. TO POST FINAL." if picked else ""))
     else:
         sheet.call("dset", path="editstyle/" + ed_id, data=None)
+    prompt += PARTS_RULE.format(ed=ed_id)
     q = lambda x: "'" + str(x).replace("'", "'\\''") + "'"
     d = os.path.join(HOME, "edit-now")
     os.makedirs(d, exist_ok=True)
     for old in glob.glob(os.path.join(d, "*.command")) + glob.glob(os.path.join(d, "*.log")):
         if time.time() - os.path.getmtime(old) > 86400:
             os.remove(old)
-    slug = re.sub(r"[^A-Za-z0-9]+", "-", key)[:60]
+    slug = re.sub(r"[^A-Za-z0-9]+", "-", fkey)[:60]
     cmdf = os.path.join(d, slug + ".command")
     logf = os.path.join(d, slug + ".log")
-    title = f"{no} · {name}"
+    title = f"{no} · {name}" + (f" (video {rnd})" if rnd else "")
     if os.path.exists(logf):
         os.remove(logf)
     with open(cmdf, "w", encoding="utf-8") as fh:
@@ -1114,7 +1261,12 @@ def run_edit_now(inp, sheet, cfg):
         raise RuntimeError("Tak dapat buka Terminal: " + (r.stderr or "")[-200:])
     now = int(time.time() * 1000)
     cur = sheet.call("dget", path="editor/" + ed_id).get("doc") or {"created": now}
-    cur.update({"name": name, "folder": key, "style": os.path.basename(main), "status": "Sesi dibuka", "updated": now, "sessionAt": now})
+    cur.update({"name": name, "folder": fkey, "style": os.path.basename(main), "status": "Sesi dibuka", "updated": now, "sessionAt": now})
+    if rnd:
+        cur["round"] = rnd
+        cur.pop("final", None)                        # pusingan baru: tunggu final baru
+    if jenis:
+        cur["jenis"] = jenis[0]
     if gid and gname:
         cur.update({"style": "Tiru: " + gname, "gaya": gid})
         g = sheet.call("dget", path="gaya/" + gid).get("doc") or {}
@@ -1499,10 +1651,11 @@ def _ed_draft_run(sheet, vid, doc):
 _ANSI = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(\x07|\x1b\\)|\x1b[()][A-Z0-9]|[\x00-\x08\x0b-\x1f]")
 
 
-def _watch_session(sheet, ed_id, logf, limit=900):
+def _watch_session(sheet, ed_id, logf, limit=900, put=None):
     """Baca skrin sesi EDIT NOW: simpan link chat Remote Control ke tracker (butang Buka chat dalam Studio),
     atau tanda status kalau sesi tunggu jawapan di Mac mini (persediaan pertama kali / Trust folder / log masuk)."""
     end, last = time.time() + limit, ""
+    put = put or (lambda f: _ed_merge(sheet, ed_id, f))
     while time.time() < end:
         time.sleep(4)
         try:
@@ -1513,17 +1666,17 @@ def _watch_session(sheet, ed_id, logf, limit=900):
         txt = _ANSI.sub("", raw)
         m = m or re.search(r"https://claude\.ai/code/[A-Za-z0-9_\-]+", txt)
         if m:
-            _ed_merge(sheet, ed_id, {"chat": m.group(0), "status": "Sesi jalan"})
+            put({"chat": m.group(0), "status": "Sesi jalan"})
             return
         tail = txt[-3000:].lower()
         st = ("Perlu persediaan di Mac mini" if "text style" in tail or "choose the text" in tail else
               "Perlu jawab Trust di Mac mini" if "trust" in tail and "folder" in tail else
               "Perlu log masuk di Mac mini" if "log in" in tail or "login" in tail else "")
         if st and st != last:
-            _ed_merge(sheet, ed_id, {"status": st})
+            put({"status": st})
             last = st
     if not last:
-        _ed_merge(sheet, ed_id, {"status": "Sesi dibuka (tiada link)"})
+        put({"status": "Sesi dibuka (tiada link)"})
 
 
 def _ed_merge(sheet, ed_id, fields):
@@ -1622,6 +1775,8 @@ def studio_jobs(sheet, cfg):
                 outp = run_listing_save(inp, sheet)
             elif j["type"] == "ocr":
                 outp = run_ocr(inp.get("file", ""), sheet)
+            elif j["type"] == "subjek":
+                outp = run_subjek(inp.get("file", ""), sheet)
             elif j["type"] in ("broll_done", "best_done", "broll_start"):
                 import footage
                 outp = getattr(footage, "job_" + j["type"])(inp, sheet, drive_upload)
@@ -1631,6 +1786,14 @@ def studio_jobs(sheet, cfg):
             elif j["type"] == "disk_now":
                 import brlib
                 outp = brlib.job_disk_now(inp, sheet)
+            elif j["type"] == "sorter_start":   # kad Home gambar peribadi: Mira tekan Start sort (0 token)
+                outp = run_sorter_start()
+            elif j["type"] in ("car_scan", "car_make", "car_text"):   # carousel gambar 3:4 dari footage (car_text sahaja guna Claude)
+                import carousel
+                outp = getattr(carousel, "job_" + j["type"])(inp, sheet, cfg, sys.modules[__name__])
+            elif j["type"] in ("raw_now", "raw_back"):   # raw footage projek published: salin ke / dari PERTAMA (0 token)
+                import rawfoot
+                outp = getattr(rawfoot, "job_" + j["type"])(inp, sheet)
             elif j["type"] == "gaya_scan":
                 import gaya
                 outp = gaya.job_gaya_scan(inp, sheet, cfg, drive_upload, sys.modules[__name__])
@@ -1640,6 +1803,9 @@ def studio_jobs(sheet, cfg):
             elif j["type"] == "gaya_del":
                 import gaya
                 outp = gaya.job_gaya_del(inp, sheet)
+            elif j["type"] in ("gaya_fix", "gaya_chat"):   # Copy Style: Betulkan dengan nota (Sonnet low) / Chat Claude (Sonnet medium)
+                import gaya
+                outp = getattr(gaya, "job_" + j["type"])(inp, sheet, cfg, sys.modules[__name__])
             elif j["type"] in ("vo_take", "vo_save", "vo_final", "vo_del"):
                 import vo
                 outp = getattr(vo, "job_" + j["type"])(inp, sheet, cfg, sys.modules[__name__])
@@ -1647,6 +1813,9 @@ def studio_jobs(sheet, cfg):
                 outp = run_ed_new(inp, sheet, cfg)
             elif j["type"] == "ed_draft":
                 outp = run_ed_draft(inp, sheet, cfg)
+            elif j["type"] == "ed_cut":   # cutout: tukar latar + "Belakang saya" dalam Editor PWA (0 token)
+                import edcut
+                outp = edcut.run(inp, sheet, cfg, sys.modules[__name__])
             elif j["type"] == "ed_foot":   # footage dari folder lain untuk Editor PWA (0 token)
                 import edfoot
                 outp = edfoot.run(inp, sheet, cfg, sys.modules[__name__])
@@ -1660,18 +1829,21 @@ def studio_jobs(sheet, cfg):
             elif j["type"] == "folder_peek":   # gambar grid footage folder edit (tab Edit, 0 token)
                 import peek
                 outp = peek.run(inp, sheet, sys.modules[__name__])
-            elif j["type"] == "carousel":   # Studio > Design: carousel, single, cover reel, warna (0 token)
-                import carousel
-                outp = carousel.run(inp, sheet, cfg, sys.modules[__name__])
+            elif j["type"] in ("air_wait", "air_ignore"):   # footage melalui AirDrop dari kad Shoot / Home (0 token)
+                import airdrop
+                outp = (airdrop.job_wait if j["type"] == "air_wait" else airdrop.job_ignore)(inp, sheet, sys.modules[__name__])
+            elif j["type"] == "design":   # Studio > Design: carousel, single, cover reel, warna (0 token)
+                import design
+                outp = design.run(inp, sheet, cfg, sys.modules[__name__])
             elif j["type"] == "ed_cover":   # Studio > Editor > Cover: cover reel ikut Kit Gaya (0 token)
-                import carousel
-                outp = carousel.run_ed_cover(inp, sheet, cfg, sys.modules[__name__])
+                import design
+                outp = design.run_ed_cover(inp, sheet, cfg, sys.modules[__name__])
             elif j["type"] in ("ref_tag", "stk_save", "kit_fonts"):   # Rujukan: label Claude, sticker PNG, font kit Editor
-                import carousel
-                outp = getattr(carousel, "run_" + j["type"])(inp, sheet, cfg, sys.modules[__name__])
+                import design
+                outp = getattr(design, "run_" + j["type"])(inp, sheet, cfg, sys.modules[__name__])
             elif j["type"] == "tpl_req":    # Studio > Rujukan > Minta jadi templat (sesi Claude Code)
-                import carousel
-                outp = carousel.run_tpl_req(inp, sheet, cfg, sys.modules[__name__])
+                import design
+                outp = design.run_tpl_req(inp, sheet, cfg, sys.modules[__name__])
             elif j["type"] == "mkfolder":
                 outp = run_mkfolder(inp, sheet)
             elif j["type"] == "jobparse":
@@ -1744,6 +1916,16 @@ def main():
             brlib.quick(sheet)          # kiraan B-roll, library, ruang, hard disk (thread sendiri, tiada token)
         except Exception as e:
             log.warning("brlib gagal: %s", e)
+        try:
+            import rawfoot
+            rawfoot.quick(sheet)        # raw footage projek published: salin ke PERTAMA, buang dari Mac lepas 30 hari (thread sendiri)
+        except Exception as e:
+            log.warning("rawfoot gagal: %s", e)
+        try:
+            import airdrop
+            airdrop.quick(sheet, sys.modules[__name__])   # AirDrop dalam Downloads -> folder kad (thread sendiri)
+        except Exception as e:
+            log.warning("airdrop gagal: %s", e)
         try:
             push_scan(sheet)
         except Exception as e:

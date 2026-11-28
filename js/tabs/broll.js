@@ -29,8 +29,12 @@ function brSteps(r,e){const useBr=r.kind==='f'&&BR_VO.test(r.stage||'');const bb
   const lefts=pend.reduce((a,b)=>a+brLeft(b),0);const brLab=!bbs.length?(useBr?'Belum pre-cut':'—'):pre?'Pre-cut '+Math.min(100,Math.round(pre.progress||0))+'%':pend.length?(lefts>0?lefts+' tunggu swipe':'Final dalam Picker'):'Siap ✓';
   const brOk=bbs.length&&!pend.length;
   const steps=[...(useBr?[['B-roll',brLab,brOk,pend.length>0]]:[]),['Edit',e?'Sesi dibuka':'',!!e&&!/sesi/i.test(st),!!e&&/sesi/i.test(st)],['Draf',/draf|semak|render/i.test(st)?st:'',/render|siap/i.test(st)||!!(e&&e.final),/draf|semak/i.test(st)],['Final','',!!(e&&(e.final||/siap/i.test(st))),false]];
-  return `<div class="brsteps">${steps.map(([n,l,ok,cur])=>`<button type="button" class="brs${ok?' ok':''}${cur?' cur':''}"${n==='B-roll'&&bbs.length?' data-act="teSeg" data-x="broll"':' tabindex="-1"'}><i>${ok?IC.check:''}</i><b>${n}</b>${l?`<span>${esc(l)}</span>`:''}</button>`).join('<em></em>')}</div>
+  return `<div class="brsteps">${steps.map(([n,l,ok,cur])=>`<button type="button" class="brs${ok?' ok':''}${cur?' cur':''}"${n==='B-roll'&&bbs.length?' data-act="teSeg" data-x="broll"':n==='Edit'?' data-act="brGo"':' tabindex="-1"'}><i>${ok?IC.check:''}</i><b>${n}</b>${l?`<span>${esc(l)}</span>`:''}</button>`).join('<em></em>')}</div>
 `}
+/* 27 Nov (Mira: "tekan Edit tak jalan apa-apa"): bulatan langkah EDIT nampak macam butang tapi dulu kosong.
+   Kini ia tekan butang utama kad tu: EDIT NOW / Sambung kerja, atau Buka chat Claude bila sesi dah ada. */
+A.brGo=el=>{const c=el.closest('.card');const b=c&&(c.querySelector('.tem a.btn.solid,.tem .edgo.solid:not([disabled])')||c.querySelector('.tem a.btn,.tem .edgo:not([disabled])'));
+  if(b)b.click();else toast('Belum boleh buka: Mac mini tak jawab atau sesi sedang dibuka')};
 
 /* Segmen Edit: Folder | B-roll */
 function teSegs(){const n=S.broll.filter(b=>brPending(b)||b.status==='error').length;const seg=ui.teSeg||'folder';
@@ -51,7 +55,6 @@ A.brShot=el=>{const b=get('broll',el.dataset.id);const sh=Object.assign({},b.sho
 
 /* ---------- Swipe dalam Studio ---------- */
 let brSw=null;
-A.brSwipe=el=>{const b=get('broll',el.dataset.id);if(!b)return;brSw={id:b.id,hist:[],tags:[]};brSwDraw()};
 function brQueue(b){const d=brDec(b),p=b.pdec||{};return brMoms(b).filter(m=>!d[m.id]&&!p[m.id])}
 function brSwDraw(){const b=get('broll',brSw.id);if(!b){closeModal();return}const all=brMoms(b);const q=brQueue(b);const m=q[0];const prod=b.type==='product';
   const keeps=brLocalKeeps(b);
@@ -87,7 +90,6 @@ A.brSwClose=()=>{brSw=null;closeModal();render(true)};
 /* ---------- Edit › B-roll: satu kad setiap projek (2026-11-20) ----------
    Semua folder edit, subfolder jadi baris dalam kad. Susunan: perlu swipe, sedang pre-cut, belum pre-cut, siap (dilipat).
    Butang Pre-cut untuk satu subfolder, semua yang belum dalam projek, atau satu folder utama. */
-const BR_SKIP=/^(25|27|42)/;
 function brProjects(){const P={};const add=(key,stage,name)=>P[key]||(P[key]={key,stage,name,subs:[]});
   const tg=((S.sync.brfolders||{}).p)||{};
   toEditFolders().filter(f=>BR_VO.test(f.stage)).forEach(f=>{const p=add(f.key,f.stage,f.name);(tg[f.key]||(!S.sync.brfolders&&f.clips?[[f.key,'']]:[])).forEach(([rel,sub])=>p.subs.push({rel,sub}))});
@@ -95,12 +97,17 @@ function brProjects(){const P={};const add=(key,stage,name)=>P[key]||(P[key]={ke
     if(!p.subs.some(s=>s.rel===b.key))p.subs.push({rel:b.key,sub:b.key===k?'':String(b.key).split('/').pop()})});
   return Object.values(P).filter(p=>p.subs.length).map(p=>{p.subs.forEach(s=>{s.b=S.broll.find(b=>b.key===s.rel)||null;const b=s.b;
       s.st=!b||b.skip?'belum':b.status==='precut'?'precut':b.status==='backup'?'backup':b.status==='error'?'error':b.status==='stok'?'siap':brLeft(b)>0?'swipe':'semak'});
-    const has=k=>p.subs.some(s=>s.st===k);p.rank=has('swipe')||has('semak')||has('error')?0:has('precut')||has('backup')?1:has('belum')?2:3;return p})
+    const has=k=>p.subs.some(s=>s.st===k);p.rank=has('swipe')||has('semak')||has('error')?0:has('precut')||has('backup')?1:has('belum')?2:3;
+    /* 27 Nov: subfolder yang video Editornya masih perlu klip Final (part.broll.need) = belum siap, naik ke "Perlu swipe" */
+    const ed=S.editor.find(x=>x.folder===p.key);p.subs.forEach(s=>{s.short=null;edParts(ed).forEach(pt=>{const x=typeof partBr==='function'?partBr(pt):null;if(x&&x.need&&!x.ok&&x.b&&s.b&&x.b.key===s.b.key)s.short={name:pt.name,have:x.have,need:x.need}})});
+    if(p.subs.some(s=>s.short))p.rank=0;return p})
    .sort((a,b)=>a.rank-b.rank||String(a.key).localeCompare(String(b.key)))}
 function brSubRow(s,c){const b=s.b;const busy=ui.ftBusy&&(ui.ftBusy[s.rel]||(b&&ui.ftBusy[b.id]));const nm=s.sub||'Semua video';
   const pick=b?brPick(b):'';
   const ext=`<a class="btn icon sm" href="${esc(pick)}" target="_blank" rel="noopener" aria-label="Buka dalam Picker" title="Swipe, edit dan Final dalam Picker (Wi-Fi rumah)">${IC.ext}</a>`;
   let txt,col,act='';
+  if(s.short){const h=`<div class="brshort"><b>Perlu ${s.short.need-s.short.have} s lagi</b> untuk video ${esc(s.short.name)} (${s.short.have}/${s.short.need} s). Buka Picker, tanda lagi klip Final.</div>`;
+    return `<div class="brrow"><div style="flex:1;min-width:0"><strong>${esc(nm)}</strong>${h}</div><a class="btn sm solid tab" href="${esc(pick)}" target="_blank" rel="noopener">${IC.ext}Final lagi</a></div>`}
   if(s.st==='belum'){txt='Belum pre-cut';col='#999';act=`<button class="btn sm" data-act="brStart" data-id="${esc(s.rel)}"${busy?' disabled':''}>${busy?'<i class="spin"></i>':''}Pre-cut</button>`}
   else if(s.st==='precut'){txt='Mac mini sedang potong';col='var(--c)';act=ldr('Pre-cut',b.progress||0)}
   else if(s.st==='backup'){txt='Sedang simpan';col='var(--c)';act=ldr('Simpan')}

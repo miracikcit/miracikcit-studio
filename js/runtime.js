@@ -140,7 +140,7 @@
   /* ---------------- fail (Google Drive) ---------------- */
   const toB64 = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(f); });
   const assets = {
-    async upload(f) { const j = await call('upload', { name: f.name, mime: f.type, b64: await toB64(f) }); return { id: j.id }; },
+    async upload(f, dir) { const j = await call('upload', Object.assign({ name: f.name, mime: f.type, b64: await toB64(f) }, dir ? { dir } : {})); return { id: j.id }; },   /* dir (27 Nov): subfolder dalam folder aset, cth 'PHOTO POSTS/P-014'; Apps Script lama abaikan */
     async delete(id) { await call('file_delete', { id }); }
   };
   window.studioFileUrl = id => {

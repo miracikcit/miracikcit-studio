@@ -1,8 +1,8 @@
 /* ---------- DESIGN (dulu Carousel; 28 Nov 2026, Mira) ----------
    Edit gambar sahaja (0 token). Upload gambar > pilih format (Carousel / Single / Cover reel / Warna) > pilih templat
-   (Kit Gaya: doodle, comel, majalah, atau Kolaj rawak) > tulisan pilihan > Generate. Mac mini buat (job `carousel`).
+   (Kit Gaya: doodle, comel, majalah, atau Kolaj rawak) > tulisan pilihan > Generate. Mac mini buat (job `design`).
    Kunci slide + Shuffle, versi lama, Hantar ke Posting Gambar. Templat baru datang dari Rujukan ("Minta jadi templat").
-   Doc `carousel/<id>`: {title, photos:[{id,name,star}], opts, seed, lock:[], status queued|run|done|error, pct, msg, err,
+   Doc `design/<id>`: {title, photos:[{id,name,star}], opts, seed, lock:[], status queued|run|done|error, pct, msg, err,
    out:{slides|photos, preview, thumb, folder, recipe, warnings}, old:[versi sebelum ni]} */
 const CR_VIBES=[['rawak','Rawak'],['scrapbook','Scrapbook'],['minimal','Minimal'],['film','Film'],['majalah','Majalah']];
 const CR_CUTS=[['rawak','Rawak'],['longgar','Longgar'],['ketat','Ketat'],['campur','Campur']];
@@ -12,7 +12,7 @@ const CR_KITS0=[{id:'doodle',name:'Tajuk doodle'},{id:'comel',name:'Sticker come
 const CR_DEF={format:'carousel',kit:'doodle',title:'',subtitle:'',texts:'',slides:5,aspect:'4:5',vibe:'rawak',cutout:'rawak',decor:1,enhance:'natural',strength:100,order:false};
 const crUi=()=>ui.cr||(ui.cr={open:'',form:null,busy:''});
 const crImg=id=>studioFileUrl(id);
-const crSorted=()=>S.carousel.filter(c=>!c.gone).sort((a,b)=>(b.created||0)-(a.created||0));
+const crSorted=()=>S.design.filter(c=>!c.gone).sort((a,b)=>(b.created||0)-(a.created||0));
 const crAutoSlides=n=>Math.max(3,Math.min(10,Math.round(n/1.5)||3));
 const crKits=()=>{const k=S.sync&&S.sync.kits&&S.sync.kits.kits;return Array.isArray(k)&&k.length?k:CR_KITS0};
 const crFavs=()=>((S.sync&&S.sync.kitfav&&S.sync.kitfav.ids)||[]).filter(id=>crKits().some(k=>k.id===id));
@@ -21,9 +21,9 @@ A.crFav=el=>{const id=el.dataset.id;const f=crFavs();const k=f.indexOf(id);if(k>
 const crKitName=id=>id==='kolaj'?'Kolaj rawak':id==='rawak'?'Rawak':((crKits().find(k=>k.id===id)||{}).name||id||'Kolaj rawak');
 const crFmtName=o=>o&&o.mode==='enhance'||o&&o.format==='enhance'?'Warna':o&&o.format==='cover'?'Cover reel':o&&o.format==='single'?'Single':((o&&o.slides)||5)+' slide';
 
-V.carousel=()=>{const u=crUi();
+V.design=()=>{const u=crUi();
   if(u.form)return crFormView();
-  const c=u.open&&get('carousel',u.open);if(c)return crDetail(c);
+  const c=u.open&&get('design',u.open);if(c)return crDetail(c);
   const L=crSorted();
   return head('Edit gambar · 0 token',`<button class="btn solid tab" data-act="crNew">${IC.plus}Buat baru</button>`)+
    `<div class="card glass crsteps"><div><b>1</b>Pilih gambar</div><div><b>2</b>Pilih templat</div><div><b>3</b>Generate</div></div>`+
@@ -32,7 +32,7 @@ V.carousel=()=>{const u=crUi();
 
 function crCard(c){const o=c.out||{};const th=o.thumb||(o.photos||[])[0]||'';const op=c.opts||{};
   const st=c.status==='done'?'':c.status==='error'?`<span class="pill" style="--pc:var(--bad)">Gagal</span>`:`<span class="pill" style="--pc:var(--warn)">${c.status==='run'?(c.pct||0)+'%':'Giliran'}</span>`;
-  return `<button class="crcard glass" data-act="crOpen" data-id="${esc(c.id)}">${th?`<img src="${esc(crImg(th))}" alt="" loading="lazy">`:`<span class="crph">${IC.carousel}</span>`}
+  return `<button class="crcard glass" data-act="crOpen" data-id="${esc(c.id)}">${th?`<img src="${esc(crImg(th))}" alt="" loading="lazy">`:`<span class="crph">${IC.design}</span>`}
    <span class="crct"><b>${esc(c.title||'Tanpa tajuk')}</b><span class="meta">${esc(crFmtName(op))}${op.format==='enhance'||op.mode==='enhance'?'':' · '+esc(crKitName(op.kit||'kolaj'))} · ${esc(fmtShort(c.created))}</span>${st}</span></button>`}
 const fmtShort=t=>{const d=new Date(t||Date.now());return d.getDate()+' '+BULAN[d.getMonth()].slice(0,3)};
 
@@ -92,7 +92,7 @@ function crFormView(){const u=crUi(),f=u.form,o=f.opts,enh=o.format==='enhance',
     <label class="f"><span>Nama (untuk folder Drive)</span><input class="inp" id="crTitle" value="${esc(f.title)}" placeholder="Contoh: Genting Nov 2026"></label>
     <div class="btns" style="justify-content:flex-end"><button class="btn solid tab" data-act="crGo"${u.busy||!f.files.length?' disabled':''}>${u.busy?'<i class="spin"></i>'+esc(u.busy):enh?'Tukar warna':'3 · Generate'}</button></div>
    </div>`}
-AFTER.carousel=()=>{const s=$('#crStr');if(s)s.oninput=()=>{const f=crUi().form;if(f){f.opts.strength=+s.value;$('#crStrV').textContent=s.value+'%'}};
+AFTER.design=()=>{const s=$('#crStr');if(s)s.oninput=()=>{const f=crUi().form;if(f){f.opts.strength=+s.value;$('#crStrV').textContent=s.value+'%'}};
   const sl=$('#crSlides');if(sl)sl.onchange=()=>{const f=crUi().form;if(f){f.opts.slides=+sl.value;f.touched=true}};
   ['crTitle','crT1','crT2','crT3'].forEach(id=>{const e=$('#'+id);if(e)e.oninput=crKeep})};
 
@@ -118,7 +118,7 @@ function crOptsOut(o){o=Object.assign({},CR_DEF,o);const strength=(+o.strength||
 async function crSend(c,extra){
   if(c.ed){await studioCall('job_add',{type:'ed_cover',input:{id:c.id,ed:c.ed,title:c.title,opts:crOptsOut(c.opts),seed:c.seed}});return}
   const input=Object.assign({id:c.id,title:c.title,photos:c.photos,opts:crOptsOut(c.opts),seed:c.seed,avoid:crAvoid(c)},extra||{});
-  await studioCall('job_add',{type:'carousel',input})}
+  await studioCall('job_add',{type:'design',input})}
 
 A.crGo=async()=>{const u=crUi(),f=u.form;if(!f||!f.files.length)return;crKeep();
   if(!ASSETS){toast('Upload tak tersedia di sini');return}
@@ -131,8 +131,8 @@ A.crGo=async()=>{const u=crUi(),f=u.form;if(!f||!f.files.length)return;crKeep();
       const r=await ASSETS.upload(sm);x.id=r.id;photos.push({id:r.id,name:x.name,star:x.star})}
     if(!photos.length)throw new Error('tiada gambar');
     u.busy='Hantar ke Mac mini';render(true);
-    const old=f.id&&get('carousel',f.id);
-    const c=save('carousel',Object.assign({},old||{},{id:f.id||undefined,title:f.title.trim()||String(f.opts.title||'').replace(/\*/g,'')||('Design '+fmtShort(Date.now())),photos,opts:Object.assign({},f.opts),
+    const old=f.id&&get('design',f.id);
+    const c=save('design',Object.assign({},old||{},{id:f.id||undefined,title:f.title.trim()||String(f.opts.title||'').replace(/\*/g,'')||('Design '+fmtShort(Date.now())),photos,opts:Object.assign({},f.opts),
       seed:Math.floor(Math.random()*1e9),lock:[],status:'queued',pct:0,msg:'Menunggu Mac mini',err:'',asked:Date.now()}),true);
     await crSend(c);
     f.files.forEach(x=>x.url&&x.file&&URL.revokeObjectURL(x.url));u.form=null;u.busy='';u.open=c.id;render(true);toast('Dihantar. Mac mini sedang buat')}
@@ -166,22 +166,35 @@ function crDetail(c){const o=c.out||{},enh=(c.opts||{}).mode==='enhance'||(c.opt
   const op=c.opts||{};const desc=enh?'Warna '+op.enhance:`${crFmtName(op)} · ${crKitName(op.kit||'kolaj')} · warna ${op.enhance}`;
   return `<div class="head"><div><p class="eyebrow">${esc(desc)}</p><h1>${esc(c.title||'Carousel')}</h1></div><div class="btns"><button class="btn" data-act="crBack">${IC.back}Senarai</button></div></div>`+body+acts+oldRow}
 
-A.crLock=el=>{const c=get('carousel',crUi().open);if(!c)return;const i=+el.dataset.i;const L=(c.lock||[]).slice();const k=L.indexOf(i);if(k>=0)L.splice(k,1);else L.push(i);save('carousel',Object.assign({},c,{lock:L.sort((a,b)=>a-b)}))};
-A.crShuffle=async()=>{const c=get('carousel',crUi().open);if(!c)return;
+A.crLock=el=>{const c=get('design',crUi().open);if(!c)return;const i=+el.dataset.i;const L=(c.lock||[]).slice();const k=L.indexOf(i);if(k>=0)L.splice(k,1);else L.push(i);save('design',Object.assign({},c,{lock:L.sort((a,b)=>a-b)}))};
+A.crShuffle=async()=>{const c=get('design',crUi().open);if(!c)return;
   const lock=(c.lock||[]).filter(i=>c.out&&c.out.slides&&i<c.out.slides.length);
-  const n=save('carousel',Object.assign({},c,{seed:Math.floor(Math.random()*1e9),status:'queued',pct:0,msg:'Menunggu Mac mini',err:'',asked:Date.now()}));
+  const n=save('design',Object.assign({},c,{seed:Math.floor(Math.random()*1e9),status:'queued',pct:0,msg:'Menunggu Mac mini',err:'',asked:Date.now()}));
   try{await crSend(n,lock.length?{lock,recipe:(c.out||{}).recipe||{}}:{});toast(lock.length?'Shuffle, '+lock.length+' slide dikunci':'Shuffle dihantar')}
-  catch(e){save('carousel',Object.assign({},n,{status:'error',err:'Tak dapat hantar ke Mac mini. Semak internet'}));}};
+  catch(e){save('design',Object.assign({},n,{status:'error',err:'Tak dapat hantar ke Mac mini. Semak internet'}));}};
 A.crRetry=A.crShuffle;
-A.crEdit=()=>{const c=get('carousel',crUi().open);if(!c)return;
+A.crEdit=()=>{const c=get('design',crUi().open);if(!c)return;
   if(c.ed){ui.edCv={id:c.ed,kit:(c.opts||{}).kit||'majalah',title:(c.opts||{}).title||'',sub:(c.opts||{}).subtitle||''};edCoverModal();return}
   crUi().form={id:c.id,title:c.title||'',files:(c.photos||[]).map(p=>Object.assign({},p)),opts:Object.assign({},CR_DEF,c.opts||{}),touched:true};render(true)};
-A.crUseOld=el=>{const c=get('carousel',crUi().open);if(!c)return;const i=+el.dataset.i;const old=(c.old||[]).slice();const pick=old.splice(i,1)[0];if(!pick)return;
-  if(c.out)old.unshift(c.out);save('carousel',Object.assign({},c,{out:pick,old,lock:[]}));toast('Versi lama digunakan')};
-A.crDel=()=>{const c=get('carousel',crUi().open);if(!c)return;confirmBox('Padam carousel ni? Gambar dan slide dalam Drive dibuang juga',()=>{
+A.crUseOld=el=>{const c=get('design',crUi().open);if(!c)return;const i=+el.dataset.i;const old=(c.old||[]).slice();const pick=old.splice(i,1)[0];if(!pick)return;
+  if(c.out)old.unshift(c.out);save('design',Object.assign({},c,{out:pick,old,lock:[]}));toast('Versi lama digunakan')};
+A.crDel=()=>{const c=get('design',crUi().open);if(!c)return;confirmBox('Padam design ni? Gambar dan slide dalam Drive dibuang juga',()=>{
   const ids=[];(c.photos||[]).forEach(p=>ids.push(p.id));[c.out].concat(c.old||[]).forEach(o=>{if(!o)return;(o.slides||[]).concat(o.photos||[],[o.preview,o.thumb]).forEach(x=>x&&ids.push(x))});
-  if(ASSETS)ids.forEach(id=>ASSETS.delete(id).catch(()=>{}));del('carousel',c.id);crUi().open='';closeModal();toast('Dipadam')})};
+  if(ASSETS)ids.forEach(id=>ASSETS.delete(id).catch(()=>{}));del('design',c.id);crUi().open='';closeModal();toast('Dipadam')})};
 
 /* Gambar siap terus ke Posting Gambar (tab threads) untuk tulis ayat */
-A.crToPost=()=>{const c=get('carousel',crUi().open);if(!c||!c.out)return;const ids=(c.out.slides||c.out.photos||[]).slice(0,10);
-  const t=thUi();t.ext=ids.map((id,i)=>({id,name:(c.title||'design')+'-'+(i+1)}));t.from=c.title||'Design';go('threads');toast(ids.length+' gambar dihantar ke Posting Gambar')};
+/* Hantar hasil Design ke Posting Gambar (tab threads, Photo Editor main): gambar dah siap diedit, jadi warna Asli dan terus ke langkah 3 Posting. */
+async function crSendPost(c,btn){if(!c||!c.out)return;const ids=(c.out.slides||c.out.photos||[]).slice(0,10);const t=thUi();
+  const room=10-t.imgs.length;if(room<=0){toast('Posting Gambar dah ada 10 gambar');return}const fs=[];
+  try{for(let i=0;i<Math.min(room,ids.length);i++){if(btn)btn.innerHTML=`<i class="spin"></i>${Math.round(i/ids.length*100)}%`;
+      const r=await fetch('https://lh3.googleusercontent.com/d/'+String(ids[i]).split('~')[0]+'=w2160',{referrerPolicy:'no-referrer'});if(!r.ok)throw new Error('http');
+      fs.push(new File([await r.blob()],(String(c.title||'design').replace(/[^\w-]+/g,'-'))+'-'+(i+1)+'.jpg',{type:'image/jpeg'}))}}
+  catch(e){if(btn)btn.textContent='Hantar ke Posting Gambar →';toast('Tak dapat ambil gambar dari Drive');return}
+  const n0=t.imgs.length;thAddImgs(fs);t.imgs.slice(n0).forEach(im=>{im.pre='asli';im.e=Object.assign({},TH_PRE.asli)});t.step=3;t.from=c.title||'Design';
+  if(typeof peSaveSoon==='function')peSaveSoon();closeModal();go('threads');toast(fs.length+' gambar masuk Posting Gambar')}
+A.crToPost=el=>crSendPost(get('design',crUi().open),el);
+/* Posting Gambar > 1 Gambar > Dari Design */
+A.peDesign=()=>{const L=crSorted().filter(c=>c.status==='done'&&c.out&&(c.out.slides||c.out.photos||[]).length);
+  modal(`<h2>Gambar dari Design</h2>${L.length?`<div class="cargrid">${L.map(c=>`<button type="button" class="carth" data-act="peDesignGo" data-id="${esc(c.id)}" aria-label="${esc(c.title||'Design')}"><img src="${esc(crImg(c.out.thumb||(c.out.slides||c.out.photos)[0]))}" alt="" loading="lazy"></button>`).join('')}</div><p class="meta" style="margin:8px 0 0">Ketik satu design. Semua slide masuk sekali.</p>`:`<p class="meta">Belum ada design siap. Buat dulu dalam tab <a href="#design">Design</a>.</p>`}
+    <div class="btns" style="justify-content:flex-end;margin-top:12px"><button class="btn" data-act="closeModal">Tutup</button></div>`,TAB.threads.c)};
+A.peDesignGo=el=>crSendPost(get('design',el.dataset.id),el);

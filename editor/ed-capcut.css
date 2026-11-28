@@ -205,7 +205,12 @@ html.pwa .app { background: transparent; border: 0; border-radius: 0; }
 
   /* tepi kanan video */
   html.pwa .ccside { display: flex; position: absolute; right: 4px; top: 6px; bottom: 8px; width: 86px; z-index: 5; flex-direction: column; align-items: center; gap: 6px; }
-  html.pwa .ccside .ccdone { width: 100%; height: 40px; border: 0; border-radius: 13px; background: #58c7d6; color: #06262b; font: 800 13px var(--display); letter-spacing: .06em; }
+  html.pwa .ccside .ccrow { display: flex; gap: 4px; width: 100%; }   /* 26 Nov (Mira): butang back nampak di sebelah DONE */
+  html.pwa .ccside .ccrow .ccdone { font-size: 12px; letter-spacing: .02em; padding: 0; }
+  html.pwa .ccside .ccback { order: -3; flex: 0 0 30px; height: 40px; display: grid; place-items: center; border-radius: 12px; background: var(--glass); border: 1px solid var(--line); color: var(--fg); }
+  html.pwa .ccside .ccback svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  html.pwa .ccside .ccback:focus-visible { outline: 2px solid #58c7d6; outline-offset: 2px; }
+  html.pwa .ccside .ccdone { flex: 1; min-width: 0; width: 100%; height: 40px; border: 0; border-radius: 13px; background: #58c7d6; color: #06262b; font: 800 13px var(--display); letter-spacing: .06em; }
   html.pwa .ccside .cctc2 { font: 600 11px var(--mono); color: var(--fg); font-variant-numeric: tabular-nums; text-align: center; }
   html.pwa .ccside .ccsv { font: 500 10px/1.25 var(--display); color: var(--muted); text-align: center; max-width: 100%; overflow-wrap: anywhere; }
   html.pwa .ccside .ccsv.err { color: #ff8a80; font-weight: 700; }
@@ -277,7 +282,7 @@ html.pwa #panel input::placeholder, html.pwa #panel textarea::placeholder { colo
 
 /* 24 Nov (Mira): butang besarkan di atas (jauh dari main); nota penerangan disorok (makan ruang), kecuali dalam Render; dalam Effects pilihan dulu, senarai di bawah */
 @media (min-width: 0px) {
-  html.pwa .ccside .ccdone { order: -2; } html.pwa .ccside .ccbig { order: -1; }
+  html.pwa .ccside .ccrow { order: -2; } html.pwa .ccside .ccdone { order: -2; } html.pwa .ccside .ccbig { order: -1; }
   html.pwa:not(.edtab-Siap) #panel .note, html.pwa:not(.edtab-Siap) #panel .legend { display: none !important; }
   html.pwa.edtab-Effects #panel > .catbar { order: 0; } html.pwa.edtab-Effects #panel > .row { order: 1; }
   html.pwa.edtab-Effects #panel > #fxList { order: 8; } html.pwa.edtab-Effects #panel > .row:has(.pool) { order: 9; }

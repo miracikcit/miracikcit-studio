@@ -14,21 +14,22 @@ const IC={
  footage:P('<ellipse cx="12" cy="6.5" rx="7.5" ry="3"/><path d="M4.5 6.5v11c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-11"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/>'),
  inspiration:P('<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>'),
  transcribe:P('<path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/>'),
- carousel:P('<rect x="7" y="5" width="10" height="14" rx="2"/><path d="M4 7.5v9M20 7.5v9"/><path d="M9.5 15l2-2.5 1.5 1.8 1-1.2 1.5 1.9"/>'),
+ design:P('<rect x="7" y="5" width="10" height="14" rx="2"/><path d="M4 7.5v9M20 7.5v9"/><path d="M9.5 15l2-2.5 1.5 1.8 1-1.2 1.5 1.9"/>'),
  mediakit:P('<path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10A.5.5 0 0 1 7 20V3.5z"/><path d="M14 3.5v4h4"/><path d="M10 12h5M10 15.5h5"/>'),
  plus:P('<path d="M12 5v14M5 12h14"/>'),trash:P('<path d="M5 7h14"/><path d="M9 7V5h6v2"/><path d="M7 7l1 13h8l1-13"/>'),copy:P('<rect x="8" y="8" width="11" height="12" rx="2.5"/><path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15"/>'),
  check:P('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),chev:P('<path d="M6 9l6 6 6-6"/>'),mic:P('<rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><path d="M12 18v2.5"/>'),
  up:P('<path d="M12 16V5"/><path d="M7.5 9.5L12 5l4.5 4.5"/><path d="M5 19.5h14"/>'),search:P('<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>'),back:P('<path d="M15 6l-6 6 6 6"/>'),next:P('<path d="M9 6l6 6-6 6"/>'),
  broll:P('<rect x="6" y="3.5" width="12" height="17" rx="3"/><path d="M10.5 9.5v5l4-2.5-4-2.5z"/><path d="M3 9l-1.5 3L3 15M21 9l1.5 3L21 15"/>'),
- threads:P('<path d="M16 11.5c0-3-1.8-4.5-4-4.5s-4 1.6-4 4.5 1.8 4.5 4 4.5c1.6 0 2.6-.8 3-2"/><path d="M16 11.5V13a2 2 0 0 0 4 0v-1a8 8 0 1 0-3 6.2"/>'),
+ threads:P('<rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="8.8" cy="10" r="1.6"/><path d="M4 17l4.8-4.2 3.4 3 3-2.6 4.8 4"/>'),
  edit:P('<path d="M4 20l1-4L16.5 4.5l3 3L8 19l-4 1z"/>'),caption:P('<path d="M5 6h14M5 10h14M5 14h8"/><path d="M14.5 17.5l2 2 4-4"/>'),dl:P('<path d="M12 4v11"/><path d="M7.5 10.5L12 15l4.5-4.5"/><path d="M5 19.5h14"/>'),ext:P('<path d="M10 5H6a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4"/><path d="M14 4h6v6"/><path d="M20 4l-8.5 8.5"/>'),x:P('<path d="M6 6l12 12M18 6L6 18"/>')
 };
+IC.insight=P('<path d="M4 20h16"/><rect x="5.5" y="12" width="3" height="6" rx="1"/><rect x="10.5" y="8" width="3" height="10" rx="1"/><rect x="15.5" y="4.5" width="3" height="13.5" rx="1"/>');
 const TABS_=[
  ['home','Home','#9A4F5D'],['ideas','Ideas','#C29A3C'],['links','Confirmed Projects','#5A8FB5'],['to-shoot','Shoot','#CF8A55'],['shot','Shot','#C2666A'],['to-edit','Edit','#8676BE'],
  ['ready','To Publish','#8A6A52'],['published','Published','#6B5548'],['caption','Caption','#B0704F'],['threads','Posting Gambar','#7A5C6E'],['jobs','Jobs','#A8763E'],
- ['editor','Editor','#9C6396'],['footage','Footage library','#9A8C7A'],['broll','B-Roll Picker','#B0704F'],['inspiration','Rujukan','#4E3A2E'],['transcribe','Transcribe','#8C6A4F'],['media-kit','Media Kit','#B0937B'],['carousel','Design','#B5677A'],['vo','VO','#B5546B'],['lagi','Lagi','#9A8C7A']
+ ['editor','Editor','#9C6396'],['footage','Footage library','#9A8C7A'],['broll','B-Roll Picker','#B0704F'],['inspiration','Rujukan','#4E3A2E'],['transcribe','Transcribe','#8C6A4F'],['media-kit','Media Kit','#B0937B'],['design','Design','#B5677A'],['vo','VO','#B5546B'],['insight','Insight','#6E6A9E'],['lagi','Lagi','#9A8C7A']
 ].map(([k,l,c])=>({k,l,c,ic:IC[k==='vo'?'mic':k.replace('-','')]||IC.plus}));
-const NAV=['home','links','to-shoot','vo','to-edit','editor','ready','published','lagi'];   /* 23 Nov: Ideas dalam Lagi, VO antara Shoot dan Edit */
+const NAV=['home','links','to-shoot','vo','to-edit','editor','ready','published','insight','lagi'];   /* 28 Nov: Insight (data sosmed) dalam menu bawah */   /* 23 Nov: Ideas dalam Lagi, VO antara Shoot dan Edit */
 const navLabel=l=>l.replace('Ready to Publish','Ready').replace('Confirmed Projects','Projects');
 const TAB=Object.fromEntries(TABS_.map(t=>[t.k,t]));
 const STAGE_TAB={ideas:'ideas',toshoot:'to-shoot',shot:'shot',toedit:'to-edit',ready:'ready',published:'published'};
@@ -39,6 +40,5 @@ const ACC_COL={miracikcit:'#9A4F5D',miracikcitjuga:'#5A7FA8',bondamiracikcit:'#B
 const accSel=(attrs,val,ph)=>`<select class="inp acc" style="--ac:${ACC_COL[val]||'transparent'}" ${attrs}><option value="">${ph||'Pilih akaun'}</option>${ACCOUNTS.concat(val&&!ACCOUNTS.includes(val)?[val]:[]).map(a=>`<option ${val===a?'selected':''}>${esc(a)}</option>`).join('')}</select>`;
 const accPill=a=>a?`<span class="pill" style="--pc:${ACC_COL[a]||'#999'}">${esc(a)}</span>`:'';
 const JOB_STATUS=['Baru','Dalam proses','Draf dihantar','Siap post','Invois dihantar','Bayaran diterima'];
-const FTAGS=['b-roll','unboxing','before/after','produk','tangan','transformation','talking head'];
 const DAY=864e5;
 

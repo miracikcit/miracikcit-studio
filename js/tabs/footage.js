@@ -8,14 +8,58 @@ const dThumb=id=>id?`https://drive.google.com/thumbnail?id=${encodeURIComponent(
 const dView=id=>'https://drive.google.com/file/d/'+encodeURIComponent(id)+'/view';
 const gb=b=>b?(b/1073741824>=1?(b/1073741824).toFixed(1)+' GB':Math.round(b/1048576)+' MB'):'';
 const brPending=b=>b&&['precut','ready','backup'].includes(b.status);
-const brFor=key=>S.broll.find(b=>b.key===key)||null;
-const ftSemak=()=>S.broll.filter(b=>brPending(b)||b.status==='error').length+S.footage.filter(f=>f.status==='semak'||f.status==='backup').length;
 function thumbImg(id,extra){return id?`<img src="${esc(dThumb(id))}" alt="" loading="lazy" referrerpolicy="no-referrer"${extra||''}>`:'<span class="noth"></span>'}
-V.footage=()=>{const seg=ui.ftSeg==='stok'?'stok':'disk';   /* 24 Nov: Lokasi jadi utama */
-  const segs=[['disk','Lokasi & ruang'],['stok','Stok klip']];
-  return head('Footage library',`<button class="btn sm" data-act="go" data-id="to-edit">${IC.back||'←'} Edit</button>`)+ftNotes()+`<div class="seg" style="margin-bottom:14px">${segs.map(([k,l])=>`<button type="button" class="${seg===k?'on':''}" data-act="ftSeg" data-x="${k}">${l}</button>`).join('')}</div>`+
-    (seg==='stok'?ftStokView():ftDiskView())};
+V.footage=()=>{const seg=['stok','disk'].includes(ui.ftSeg)?ui.ftSeg:'all';   /* 28 Nov: Semua footage jadi utama */
+  const segs=[['all','Semua footage'],['disk','B-roll & ruang'],['stok','Stok klip']];
+  return head('Footage library',`<button class="btn sm" data-act="go" data-id="to-edit">${IC.back||'←'} Edit</button>`)+`<div class="seg" style="margin-bottom:14px;max-width:100%;overflow-x:auto">${segs.map(([k,l])=>`<button type="button" class="${seg===k?'on':''}" data-act="ftSeg" data-x="${k}" style="white-space:nowrap">${l}</button>`).join('')}</div>`+
+    (seg==='stok'?ftNotes()+ftStokView():seg==='disk'?ftNotes()+ftDiskView():ftAllView())};
 A.ftSeg=el=>{ui.ftSeg=el.dataset.x;render(true)};
+/* 28 Nov (Mira): "senang aku tengok kedudukan footage aku sekarang". Satu senarai SEMUA footage dalam Mac + PERTAMA:
+   di mana (Mac sahaja / Mac + PERTAMA / PERTAMA sahaja) dan status (Dalam edit / Belum published / Published, dibuang dalam N hari).
+   Data: doc sync/footinv (rawfoot.inventory, Mac mini setiap 10 minit, 0 token) + sync/rawfoot + sync/storage. */
+function ftAllRows(){const I=S.sync.footinv||{},F=((S.sync.rawfoot||{}).folders)||{},st=S.sync.storage||{};
+  let live=new Set();try{live=new Set(toEditFolders().map(f=>f.key))}catch(e){}
+  const out=(I.rows||[]).map(r=>{const raw=F[r.key];const where=r.n===0?'hd':r.disk==null?'mac':r.disk>=r.n?'both':r.disk>0?'part':'mac';
+    let stat='',col='#999';
+    if(r.kind==='final'){stat='Video siap (final)';col='var(--ok)'}
+    else if(r.kind==='raw'){stat=where==='mac'||where==='part'?'Folder RAW · tiada salinan auto':'Folder RAW';col=where==='mac'||where==='part'?'var(--warn)':'#B0937B'}
+    else if(r.kind==='best'){stat='Klip terbaik';col='var(--ok)'}
+    else if(raw&&raw.state==='hdonly'||where==='hd'){stat='Dah dibuang dari Mac';col='#999'}
+    else if(raw&&raw.state==='wait'){stat='Published · menunggu salin';col='var(--warn)'}
+    else if(raw&&raw.state==='hd'){stat=raw.hold?'Published · masih diguna':'Published · keluar dari Mac dalam '+raw.left+' hari';col=raw.hold?'#5A8FB5':raw.left<=5?'var(--bad)':'var(--ok)'}
+    else if(live.has(r.key)){stat='Dalam edit';col='#8676BE'}
+    else{stat='Belum published';col='#B0937B'}
+    return Object.assign({},r,{where,stat,col,size:r.size||0,hdSize:r.n===0?(r.diskSize||0):where==='both'?r.size:0,raw})});
+  const tr=st.tree||[];if(tr.length){const n=tr.reduce((a,t)=>a+(t.n||0),0),mac=tr.reduce((a,t)=>a+(t.mac||0),0),disk=tr.reduce((a,t)=>a+(t.disk||0),0),size=tr.reduce((a,t)=>a+(t.size||0),0);
+    const where=!mac?'hd':disk>=n?'both':disk>0?'part':'mac';
+    out.push({key:'lib',main:'Movies',name:'B-ROLL LIBRARY',kind:'lib',n:mac,disk,size:mac?size:0,hdSize:disk>=n?size:0,where,stat:'Klip B-roll Final · '+tr.length+' tempat',col:'var(--ok)'})}
+  return out}
+function ftAllView(){const I=S.sync.footinv;if(!I)return `<div class="card glass"><p class="meta" style="margin:0">Mac mini belum hantar senarai footage. Tunggu 10 minit (Mac mini mesti hidup).</p></div>`;
+  const rows=ftAllRows(),st=S.sync.storage||{},m=st.mac||{},d=st.disk||{};
+  const sum=f=>rows.filter(f).reduce((a,r)=>a+r.size,0);
+  const onMac=sum(r=>r.n>0),safe=sum(r=>r.where==='both'),only=sum(r=>r.n>0&&r.where!=='both');
+  const hdOnly=rows.filter(r=>r.where==='hd').reduce((a,r)=>a+(r.hdSize||0),0);
+  const fl=['mac','both','hd'].includes(ui.ftAll)?ui.ftAll:'semua';
+  const pick=rows.filter(r=>fl==='semua'||(fl==='mac'?r.n>0&&r.where!=='both':r.where===fl)).sort((a,b)=>(b.size||b.hdSize)-(a.size||a.hdSize));
+  const W={mac:['Mac sahaja','var(--warn)'],part:['Mac · PERTAMA sebahagian','var(--warn)'],both:['Mac + PERTAMA','#5A8FB5'],hd:['PERTAMA sahaja','#999']};
+  const pill=(t,c)=>`<span class="pill" style="--pc:${c}">${t}</span>`;
+  const bar=onMac?`<div style="display:flex;height:10px;border-radius:99px;overflow:hidden;margin-top:10px;background:var(--line)"><i style="width:${safe/onMac*100}%;background:#5A8FB5"></i><i style="width:${only/onMac*100}%;background:var(--warn)"></i></div>`:'';
+  const ago=t=>{const s=Math.round((Date.now()-t)/60000);return s<2?'baru tadi':s<60?s+' minit lepas':Math.round(s/60)+' jam lepas'};
+  const row=r=>{const [wt,wc]=W[r.where]||W.mac;const busy=((S.sync.rawfoot||{}).copy||{}).running;
+    return `<div class="brrow"><div style="flex:1;min-width:0"><strong style="overflow-wrap:anywhere">${esc(r.name)}</strong>
+      <span class="meta" style="display:block">${esc(String(r.main).replace(/^(\d+)\.\s*/,'$1 · '))} · ${r.n?r.n+' video · '+gb(r.size):(r.disk||0)+' video · '+gb(r.hdSize)+' dalam PERTAMA'}${r.where==='part'?' · '+r.disk+'/'+r.n+' dah disalin':''}</span>
+      <div class="btns" style="gap:4px;margin-top:5px;flex-wrap:wrap">${pill(wt,wc)}${pill(esc(r.stat),r.col)}</div>
+      ${r.where==='hd'&&r.kind==='edit'&&/^[2-4]\d\. /.test(r.key)?`<div class="btns" style="margin-top:6px">${rawBackBtn(r.key)}</div>`:''}
+      ${r.raw&&r.raw.state==='wait'?`<div class="btns" style="margin-top:6px"><button class="btn sm" data-act="rawNow"${(S.sync.rawfoot||{}).mounted&&!busy?'':' disabled'}>Simpan ke PERTAMA sekarang</button></div>`:''}</div>
+      <b style="font-size:13px;white-space:nowrap">${gb(r.size||r.hdSize)||'0 MB'}</b></div>`};
+  const fb=(k,l)=>`<button type="button" class="${fl===k?'on':''}" data-act="ftAll" data-x="${k}" style="white-space:nowrap">${l}</button>`;
+  return `<div class="card glass"><p class="eyebrow" style="margin:0 0 4px">Kedudukan footage ${tok(0)}</p>
+    <p class="meta" style="margin:0"><b>${gb(onMac)||'0 MB'}</b> footage dalam Mac · <b style="color:#5A8FB5">${gb(safe)||'0 MB'}</b> dah selamat dalam PERTAMA · <b style="color:var(--warn)">${gb(only)||'0 MB'}</b> dalam Mac sahaja${hdOnly?` · ${gb(hdOnly)} dalam PERTAMA sahaja`:''}</p>${bar}
+    ${ftMeter('Mac mini',m)}${ftMeter('PERTAMA',d)}
+    <p class="meta" style="margin:8px 0 0;font-size:11px">PERTAMA ${I.mounted?'disambung':'<span style="color:var(--warn)">tak bersambung</span>'} · dikemaskini ${ago(I.updated||0)}. Footage projek disalin ke PERTAMA sendiri bila SEMUA videonya dah published, kemudian keluar dari Mac 30 hari selepas tu.</p></div>
+    <div class="seg" style="margin:14px 0 4px;max-width:100%;overflow-x:auto">${fb('semua','Semua · '+rows.length)}${fb('mac','Mac sahaja')}${fb('both','Mac + PERTAMA')}${fb('hd','PERTAMA sahaja')}</div>
+    <div class="card glass">${pick.map(row).join('')||'<p class="meta" style="margin:0">Tiada folder dalam senarai ni.</p>'}</div>`}
+A.ftAll=el=>{ui.ftAll=el.dataset.x;render(true)};
 function ftSemakView(){const c=brCfg();
   const brs=S.broll.filter(b=>brPending(b)||b.status==='error').sort((a,b)=>(b.updated||0)-(a.updated||0));
   const best=S.footage.filter(f=>f.status==='semak'||f.status==='backup').sort((a,b)=>(b.updated||0)-(a.updated||0));
@@ -72,7 +116,7 @@ function ftDiskView(){const st=S.sync.storage||{};const root=((st.disk||{}).path
       ${l==null?`<p class="meta" style="margin:4px 0 0;font-size:11px">Mac dah kosong, simpan dalam PERTAMA sahaja</p>`:`<div class="stbar" style="--c:${col};margin-top:6px"><div class="stt"><span>Dibuang dari Mac dalam</span><span>${l} hari</span></div><div class="stg"><i style="width:${Math.max(3,pct)}%"></i></div></div>${d.disk<d.n&&l<=5?`<p class="meta" style="margin:2px 0 0;font-size:11px;color:var(--bad)">Belum masuk PERTAMA: Mac tak buang selagi belum disalin</p>`:''}`}</div>
       ${d.driveFolder?`<a class="btn icon sm" href="https://drive.google.com/drive/folders/${encodeURIComponent(d.driveFolder)}" target="_blank" rel="noopener" aria-label="Buka folder Drive" title="Buka folder dalam Google Drive">${IC.ext}</a>`:''}</div>`};
   const best=S.footage.filter(f=>(f.status==='stok'||!f.status)&&((f.files||[]).length||+f.clips));
-  return `<div class="card glass"><p class="eyebrow" style="margin:0">📂 ${esc(root)}</p>
+  return rawGroups()+`<div class="card glass"><p class="eyebrow" style="margin:0">📂 ${esc(root)}</p>
     <p class="meta" style="margin:8px 0 0"><b>B-ROLL LIBRARY</b> · simpanan tetap dalam PERTAMA</p>
     ${folders.map(place).join('')||'<p class="meta">Belum ada klip Final.</p>'}
     ${best.length?`<p class="meta" style="margin:14px 0 0"><b>KLIP TERBAIK</b></p>${best.map(f=>`<div class="brrow"><div style="flex:1;min-width:0"><strong>📁 ${esc(f.name)}</strong><span class="meta" style="display:block">${(f.files||[]).length||+f.clips||0} klip · ${gb(f.size)}</span></div>${f.backedUp?chip(true,'Drive'):''}</div>`).join('')}`:''}
@@ -97,7 +141,6 @@ A.ftTagAdd=()=>{const v=($('#ftNewTag')||{}).value||'';v.split(',').map(t=>t.tri
 A.ftTagSave=async()=>{const e=ui.ftEd;e.busy=true;ftClipDraw();
   try{await studioJob('brtag',{k:e.k,tag:e.tag},2*60000);toast('Tag disimpan. Sheet B-ROLL INDEX ikut dalam seminit');closeModal()}
   catch(err){e.busy=false;ftClipDraw();toast('Tak berjaya: '+String((err&&err.message)||'semak Mac mini hidup').slice(0,80))}};
-A.ftMoved=el=>{const col=el.dataset.x||'footage';const o=get(col,el.dataset.id);save(col,Object.assign({},o,{moved:!o.moved,movedAt:Date.now()}))};
 A.ftTog=el=>{const f=get('footage',el.dataset.id);ui.ftDrop=ui.ftDrop||{};const s=ui.ftDrop[f.id]||(ui.ftDrop[f.id]=new Set(f.drop||[]));const k=el.dataset.x;s.has(k)?s.delete(k):s.add(k);render(true)};
 A.bestDone=el=>{const f=get('footage',el.dataset.id);const drop=[...((ui.ftDrop&&ui.ftDrop[f.id])||new Set())];const name=String(f.folder||'').split('/').pop();
   const go2=async()=>{ui.ftBusy=Object.assign({},ui.ftBusy,{[f.id]:1});render();
@@ -105,9 +148,6 @@ A.bestDone=el=>{const f=get('footage',el.dataset.id);const drop=[...((ui.ftDrop&
     catch(e){toast('Tak berjaya: '+String((e&&e.message)||'semak Mac mini hidup').slice(0,80))}
     finally{const b=Object.assign({},ui.ftBusy);delete b[f.id];ui.ftBusy=b;render()}};
   if(drop.length)confirmBox('Buang '+drop.length+' klip ke Trash Mac dan simpan '+((f.files||[]).length-drop.length)+'?',go2,'Ya, teruskan');else go2()};
-A.brDone=el=>{const b=get('broll',el.dataset.id);ui.ftBusy=Object.assign({},ui.ftBusy,{[b.id]:1});render();
-  studioJob('broll_done',{key:b.key},3*60000).then(()=>toast((b.kept||brLocalKeeps(b))+' klip disimpan ke B-ROLL LIBRARY, sedang backup ke Drive')).catch(e=>toast('Tak berjaya: '+String((e&&e.message)||'semak Mac mini hidup').slice(0,80)))
-   .finally(()=>{const x=Object.assign({},ui.ftBusy);delete x[b.id];ui.ftBusy=x;render()})};
 A.brStart=el=>{const key=el.dataset.id;ui.ftBusy=Object.assign({},ui.ftBusy,{[key]:1});render();
   studioJob('broll_start',{key},3*60000).then(()=>toast('Pre-cut dimulakan. Siap dalam beberapa minit')).catch(e=>toast('Tak dapat pre-cut: '+String((e&&e.message)||'').slice(0,80)))
    .finally(()=>{const x=Object.assign({},ui.ftBusy);delete x[key];ui.ftBusy=x;render()})};

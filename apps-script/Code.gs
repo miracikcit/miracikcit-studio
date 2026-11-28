@@ -150,7 +150,9 @@ function app(b) {
     case 'cal_delete': { const ev = CalendarApp.getDefaultCalendar().getEventById(b.eventId); if (ev) ev.deleteEvent(); return { ok: true, payload: {} }; }
     case 'upload': {
       const blob = Utilities.newBlob(Utilities.base64Decode(b.b64), b.mime || 'application/octet-stream', b.name || 'fail');
-      const f = folder().createFile(blob);
+      /* b.dir (27 Nov): subfolder dalam folder aset Studio, cth 'PHOTO POSTS/P-014' (posting gambar Photo Editor) */
+      const dirs = String(b.dir || '').split('/').map(function (x) { return x.replace(/[^\w .-]/g, '').trim(); }).filter(Boolean).slice(0, 3);
+      const f = (dirs.length ? DriveApp.getFolderById(drivePath('', dirs)) : folder()).createFile(blob);
       f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
       const kind = /^image\//.test(b.mime) ? 'i' : /^audio\//.test(b.mime) ? 'a' : /pdf/.test(b.mime) ? 'p' : 'f';
       return { ok: true, id: f.getId() + '~' + kind };
@@ -182,12 +184,14 @@ function app(b) {
     }
     case 'ustart': {   // Tiru Gaya: upload video rujukan dari phone terus ke Drive FOOTAGE/GAYA/_UPLOAD (sekeping-sekeping)
       const parent = drivePath('studio', ['FOOTAGE', 'GAYA', '_UPLOAD']);
+      // 26 Nov: Origin app = Drive benarkan browser PUT terus ke sesi ni (upload footage laju, tanpa uchunk)
+      const og = /^(https:\/\/miracikcit\.github\.io|http:\/\/localhost:8790)$/.test(String(b.origin || '')) ? String(b.origin) : '';
       const r = UrlFetchApp.fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id', {
         method: 'post', contentType: 'application/json; charset=UTF-8', muteHttpExceptions: true,
         payload: JSON.stringify({ name: String(b.name || 'rujukan.mp4'), parents: [parent] }),
-        headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken(), 'X-Upload-Content-Type': b.mime || 'video/mp4', 'X-Upload-Content-Length': String(b.size) } });
+        headers: Object.assign({ Authorization: 'Bearer ' + ScriptApp.getOAuthToken(), 'X-Upload-Content-Type': b.mime || 'video/mp4', 'X-Upload-Content-Length': String(b.size) }, og ? { Origin: og } : {}) });
       const loc = r.getHeaders().Location || r.getHeaders().location;
-      return loc ? { ok: true, url: loc } : { ok: false, error: 'Drive tolak: ' + r.getContentText().slice(0, 200) };
+      return loc ? { ok: true, url: loc, direct: !!og } : { ok: false, error: 'Drive tolak: ' + r.getContentText().slice(0, 200) };
     }
     case 'uchunk': {
       if (!/^https:\/\/www\.googleapis\.com\/upload\/drive\//.test(String(b.url))) return { ok: false, error: 'link upload tak sah' };

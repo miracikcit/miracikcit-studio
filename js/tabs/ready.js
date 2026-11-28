@@ -52,14 +52,6 @@ document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closes
 function dlMark(el){const id=el.dataset.id;
   if(el.dataset.x==='dlItem'){const it=get('items',id);if(it&&!it.downloaded)save('items',Object.assign({},it,{downloaded:true,downloadedAt:Date.now()}))}
   else{const rm=get('readymeta',id)||{id};if(!rm.downloaded)save('readymeta',Object.assign({},rm,{downloaded:true,downloadedAt:Date.now()}))}}
-A.dlGo=async el=>{const id=el.dataset.id,fid=el.dataset.f,name=el.dataset.n;if(DLQ[id])return;DLQ[id]={pct:0};render();
-  try{const parts=[];let got=0,total=1,CH=8000000;
-    while(got<total){let j,tries=0;for(;;){try{j=await window.studioChunk(fid,got,CH);break}catch(e){if(++tries>=3)throw e;await new Promise(r=>setTimeout(r,1500))}}
-      total=j.total;const bin=atob(j.b64);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
-      if(!u8.length)throw new Error('kosong');parts.push(u8);got+=u8.length;
-      const pct=Math.floor(got/total*100);DLQ[id].pct=pct;const b=document.querySelector(`[data-dlid="${CSS.escape(id)}"]`);if(b)b.textContent='Memuat '+pct+'%'}
-    DLQ[id]={file:new File(parts,name,{type:'video/mp4'})};render();toast('Siap dimuat. Tekan Simpan video')}
-  catch(e){delete DLQ[id];render();toast('Tak dapat muat video. Semak internet dan cuba lagi')}};
 A.dlSave=async el=>{const id=el.dataset.id;const q=DLQ[id];if(!q||!q.file)return;
   try{if(navigator.canShare&&navigator.canShare({files:[q.file]})){await navigator.share({files:[q.file]})}
     else{const u=URL.createObjectURL(q.file);const a=document.createElement('a');a.href=u;a.download=q.file.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)}

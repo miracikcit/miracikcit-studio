@@ -12,35 +12,58 @@ function edDeadline(name,start){const it=smpFor(name);if(!it)return {d:deadline(
 V['to-edit']=()=>{const te=S.sync.toedit;const folders=toEditFolders();const fset=new Set(folders.map(f=>nrm(f.name)));
   const rows=folders.map(x=>({kind:'f',key:x.key,stage:x.stage,no:fno(x.stage),name:x.name,sub:[x.stage.replace(/^\d+\.\s*/,''),(x.clips||0)+' klip'+(x.images?' + '+x.images+' gambar':'')].join(' · '),start:x.mtime}))
    .concat(byStage('toedit').filter(it=>!fset.has(nrm(it.title))).map(it=>({kind:'i',key:it.id,stage:it.folder||'',no:fno(it.folder),name:it.title,sub:[(it.folder||'Belum pilih folder').replace(/^\d+\.\s*/,''),it.account,'folder belum ada footage'].filter(Boolean).join(' · '),start:(it.stageAt&&it.stageAt.toedit)||it.created})))
-   .filter(r=>!isPublishedName(r.name)&&!HELPER_DIR.test(r.name)).map(r=>Object.assign(r,edDeadline(r.name,r.start),{ed:edFor(r.key,r.name)})).sort((a,b)=>(a.d?a.d.left:99)-(b.d?b.d.left:99));
+   .filter(r=>(!isPublishedName(r.name)||(r.kind==='f'&&multiKey(r.key)))&&!HELPER_DIR.test(r.name))   /* 27 Nov: folder Kongsi batch tak jadi kad sendiri */.filter((sh=>r=>!(r.kind==='f'&&sh.has(r.key)))(sbtShares()))   /* 26 Nov (Mira): projek banyak video (GENTING 7 video) kekal walaupun satu video (versi bajet) dah published */.concat(redoRows()).map(r=>Object.assign(r,edDeadline(r.name,r.start),{ed:edFor(r.key,r.name)})).sort((a,b)=>(a.d?a.d.left:99)-(b.d?b.d.left:99));
   const off=macOff();
   if(ui.teSeg==='broll')return head('B-roll untuk semak')+teSegs()+ftSemakView();
-  return head(te?'Folder sync '+fmtD(te.syncedAt):'Belum sync',`<button class="btn sm" data-act="addEdit">${IC.plus}Tambah</button>`)+teSegs()+shotList()+
+  return head(te?'Folder sync '+fmtD(te.syncedAt):'Belum sync',`<button class="btn sm" data-act="addEdit">${IC.plus}Tambah</button>`)+teSegs()+airHome()+shotList()+
   `<p class="eyebrow" style="margin:4px 0 10px">Dalam folder edit · ${rows.length}</p>${off?`<div class="banner glass">Mac mini tak jawab sejak ${esc(off)}. EDIT NOW perlukan Mac mini hidup dan app Claude dibuka.</div>`:''}<div class="list">${rows.map(r=>{const e=r.ed;const busy=ui.edNow&&ui.edNow[r.key];
-    return `<div class="card glass"><div class="rowh">${fnoBadge(r.no)}<div style="flex:1;min-width:0"><h3>${esc(r.name)}</h3><div class="meta">${esc(r.sub)}${r.start?' · masuk '+fmtD(r.start):''}</div></div>${e?`<span class="pill" style="--pc:${edTone(e.status)}">${esc(e.status||'Draf')}</span>`:''}${voMic(r)}</div>
+    return `<div class="card glass"><div class="rowh">${fnoBadge(r.no)}<div style="flex:1;min-width:0">${r.kind==='r'?`<span class="pill rdp">Video baru #${r.round}</span>`:''}<h3>${esc(r.title||r.name)}</h3>${(b=>b?`<span class="pill sbt-ep" style="--pc:var(--c)">Batch ${b.n}/${b.total}${b.others.length||b.share?' · footage kongsi':''}</span>`:'')(r.kind==='f'?sbtInfo(r.key):null)}<div class="meta">${esc(r.sub)}${r.start?' · masuk '+fmtD(r.start):''}</div></div>${e?`<span class="pill" style="--pc:${edMulti(e)?(edFinN(e)>=edTot(e)?'var(--ok)':'var(--warn)'):edTone(e.status)}">${esc(edMulti(e)?edFinN(e)+'/'+edTot(e)+' siap':e.status||'Draf')}</span>`:''}${voMic(r)}</div>
     ${trk(r.d,r.t)}
     ${brSteps(r,e)}
-    <div class="btns tem" style="margin-top:12px">${edBtns(r,e,busy,off)}${r.kind==='f'?`<button class="btn icon sm" data-act="peek" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}" aria-label="Lihat footage" title="Lihat footage">${IC.footage}</button>`:''}<button class="btn icon sm bad" data-act="${r.kind==='f'?'fHide':'delItem'}" data-id="${esc(r.key)}" aria-label="Buang">${IC.trash}</button></div>
-    ${edNote(r,e)}</div>`}).join('')||`<div class="empty">${te?'Tiada video tunggu edit.':'Belum sync. Tekan Sync folder di Home.'}</div>`}</div>`};
+    ${edPartsList(e,r)}
+    <div class="btns tem" style="margin-top:12px">${edBtns(r,e,busy,off)}${r.kind==='f'||r.kind==='r'?`<button class="btn icon sm" data-act="peek" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}" aria-label="Lihat footage" title="Lihat footage">${IC.footage}</button>`:''}${r.kind==='f'?`<button class="btn icon sm" data-act="airMore" data-x="${esc(r.stage)}" data-n="${esc(r.name)}" aria-label="Tambah footage dengan AirDrop" title="Tambah footage dengan AirDrop">${IC.up}</button>`:''}<button class="btn icon sm bad" data-act="${r.kind==='f'?'fHide':r.kind==='r'?'redoDel':'delItem'}" data-id="${esc(r.kind==='r'?r.rid:r.key)}" aria-label="Buang">${IC.trash}</button></div>
+    ${r.kind==='f'?airRowStatus(r):''}${edNote(r,e)}${tipRep(e)}</div>`}).join('')||`<div class="empty">${te?'Tiada video tunggu edit.':'Belum sync. Tekan Sync folder di Home.'}</div>`}</div>`};
 /* Butang kad: belum mula = EDIT NOW; dah tekan = link terus ke chat Claude (Remote Control) atau status */
-function edBtns(r,e,busy,off){/* 23 Nov: EDIT NOW tak lagi tunggu semua B-roll disemak; Claude guna klip Final yang dah ada */
-  const now=`<button class="btn sm${e?'':' solid tab'} edgo" data-act="esOpen" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}"${busy||off||!r.stage||esScan(r.key)?' disabled':''}>${esScan(r.key)?'<i class="spin"></i>Analysing '+Math.round(esScan(r.key).pct||0)+'%':busy?'<i class="spin"></i>'+esc(busy):e?'Buka sesi baru':'▶ EDIT NOW'}</button>${tok(TOK.edit,'satu sesi edit Claude, ikut panjang video')}`;
+function edBtns(r,e,busy,off){if(r.kind==='r'&&!r.clips)return rawBackBtn(String(r.key).replace(/#r\d+$/,''));
+  /* 23 Nov: EDIT NOW tak lagi tunggu semua B-roll disemak; Claude guna klip Final yang dah ada */
+  /* 27 Nov (Mira: "aku tak dapat access kerja pending"): link chat menuju sesi Claude dalam Terminal Mac mini. Bila sesi tu tutup (restart,
+     Terminal ditutup), link mati dan dulu tiada butang buka sesi baru. Mac mini kini lapor sesi yang hidup (sync/sessions.ids, airdrop.py);
+     sesi mati = butang "Sambung kerja" jadi utama, chat lama jadi butang kecil. Tak pasti (tiada laporan) + sesi lebih 24 jam = butang sesi baru juga ada. */
+  const dead=edDead(e),old=!!(e&&isUrl(e.chat)&&!edAlive(e)&&Date.now()-(e.sessionAt||e.updated||0)>864e5);
+  const now=`<button class="btn sm${e&&!dead?'':' solid tab'} edgo${dead?' edgd':''}" data-act="esOpen" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}"${r.round?` data-r="${r.round}"`:''}${busy||off||!r.stage||esScan(r.key)?' disabled':''}>${esScan(r.key)?'<i class="spin"></i>Analysing '+Math.round(esScan(r.key).pct||0)+'%':busy?'<i class="spin"></i>'+esc(busy):e?(dead?'▶ Sambung kerja':'Buka sesi baru'):'▶ EDIT NOW'}</button>${tok(TOK.edit,'satu sesi edit Claude, ikut panjang video',TOKM.edit)}`;
   if(!e)return now;const st=e.status||'';const stuck=/perlu|tiada link/i.test(st);
-  const chat=isUrl(e.chat)?`<a class="btn sm solid tab" href="${esc(e.chat)}" target="_blank" rel="noopener">${IC.ext}Buka chat Claude</a>`:'';
+  const chat=isUrl(e.chat)?`<a class="btn sm${dead?'':' solid tab'}" href="${esc(e.chat)}" target="_blank" rel="noopener">${IC.ext}${dead?'Chat lama':'Buka chat Claude'}</a>`:'';
   const page=isUrl(e.url)?`<a class="btn sm${chat?'':' solid tab'}" href="${esc(e.url)}" target="_blank" rel="noopener">${IC.ext}${/storyboard/i.test(st)?'Storyboard':'Editor'}</a>`:'';
   const wait=!chat&&!page&&!stuck?`<span class="pill" style="--pc:var(--c)"><i class="spin"></i>Sedang buka sesi</span>`:'';
-  return chat+page+wait+(stuck||(!chat&&Date.now()-(e.sessionAt||e.updated||0)>15*60000)?now:'')}
+  return (dead?now+chat:chat)+page+wait+(!dead&&(r.kind==='r'||stuck||old||(!chat&&Date.now()-(e.sessionAt||e.updated||0)>15*60000))?now:'')}
+const edAlive=e=>{const s=S.sync.sessions;return !!(e&&s&&Array.isArray(s.ids)&&s.ids.includes(e.id))};
+const edDead=e=>{const s=S.sync.sessions;return !!(e&&isUrl(e.chat)&&s&&Array.isArray(s.ids)&&!s.ids.includes(e.id)&&Date.now()-(e.sessionAt||e.updated||0)>3*60000&&!macOff())};
+/* Bahagian projek banyak video: mana dah ada final, mana masih storyboard / draf (26 Nov, Mira) */
+/* 27 Nov (Mira: B-roll SkyWorlds "Siap" tapi tak ada apa nak buat, dan projek tergendala tak bergerak lepas tu).
+   Bahagian video yang tunggu B-roll: part.broll {place, need} (saat footage Final yang perlu, cth panjang VO). Klip Final dikira dari brlib
+   ikut place. Kurang = "B-roll a/b s · perlu c s lagi" + Final lagi (buka Picker folder tu). Cukup = "B-roll cukup" + Sambung kerja. */
+const brHave=place=>(S.brlib||[]).filter(d=>nrm(d.place)===nrm(place)).reduce((a,d)=>a+(d.clips||[]).reduce((x,c)=>x+(+c.len||0),0),0);
+function partBr(p){if(!p||p.final||!/b-?roll/i.test(p.status||''))return null;const place=(p.broll&&p.broll.place)||p.name||'';
+  const have=Math.round(brHave(place)),need=Math.round(+(p.broll&&p.broll.need)||0);
+  const b=S.broll.find(x=>nrm(String(x.key||'').split('/').pop()).includes(nrm(place))||nrm(place).includes(nrm(String(x.key||'').split('/').pop().replace(/^\d+\s*/,''))));
+  return {place,have,need,ok:need?have>=need:false,b}}
+function edPartsList(e,r){const P=e?edParts(e):[];if(!P.length)return '';const tone=p=>p.final?'var(--ok)':/storyboard|lulus/i.test(p.status||'')?'var(--bad)':'var(--warn)';
+  /* 27 Nov: nama penuh (dulu terpotong "Awana r…"), dan setiap baris yang belum siap ada butang: storyboard / draf (p.url), B-roll, atau chat sesi. */
+  const act=p=>{if(p.final)return '';const sb=/storyboard|lulus/i.test(p.status||''),br=partBr(p);
+    if(br&&br.ok&&r)return `<button type="button" class="btn sm solid tab edpgo" data-act="esOpen" data-id="${esc(r.key)}" data-x="${esc(r.stage)}" data-n="${esc(r.name)}">▶ Sambung kerja</button>`;
+    if(br&&br.b)return `<a class="btn sm${br.need?' solid tab':''} edpgo" href="${esc(brPick(br.b))}" target="_blank" rel="noopener">${IC.ext}Final lagi</a>`;
+    if(isUrl(p.url))return `<a class="btn sm${sb?' solid tab':''} edpgo" href="${esc(p.url)}" target="_blank" rel="noopener">${IC.ext}${sb?'Buka storyboard':'Buka'}</a>`;
+    if(/b-?roll/i.test(p.status||''))return `<button type="button" class="btn sm edpgo" data-act="teSeg" data-x="broll">B-roll</button>`;
+    return isUrl(e.chat)&&!edDead(e)?`<a class="btn sm edpgo" href="${esc(e.chat)}" target="_blank" rel="noopener">${IC.ext}Chat</a>`:''};
+  return `<div class="edparts">${P.map(p=>`<div class="edpart${p.final?'':' todo'}"><span class="ccn">${esc(p.name||p.id||'Video')}</span><span class="edpst"><span class="pill" style="--pc:${tone(p)}">${esc(p.final?'Siap':p.status||'Belum mula')}</span>${(x=>x?`<span class="pill" style="--pc:${x.ok?'var(--ok)':'var(--bad)'}">${x.ok?'B-roll cukup '+x.have+' s':x.need?'B-roll '+x.have+'/'+x.need+' s · perlu '+(x.need-x.have)+' s lagi':'B-roll '+x.have+' s'}</span>`:'')(partBr(p))}${act(p)}</span></div>`).join('')}</div>`}
 function edNote(r,e){if(!e)return '';const st=e.status||'';
+  if(edDead(e))return `<p class="meta" style="margin:8px 0 0;color:var(--bad)">Sesi Claude projek ni dah tertutup di Mac mini. Tekan Sambung kerja untuk buka sesi baru. Kerja yang dah siap kekal.</p>`;
   if(/persediaan/i.test(st))return `<p class="meta" style="margin:8px 0 0;color:var(--bad)">Sesi tunggu di Terminal Mac mini (persediaan kali pertama). Tekan Enter di Terminal, kemudian jawab Yes untuk Trust folder.</p>`;
   if(/trust/i.test(st))return `<p class="meta" style="margin:8px 0 0;color:var(--bad)">Sesi tunggu di Terminal Mac mini: pilih Yes untuk Trust folder ${esc(r.stage)}. Sekali sahaja untuk folder ni.</p>`;
   if(/log masuk/i.test(st))return `<p class="meta" style="margin:8px 0 0;color:var(--bad)">Claude dalam Terminal Mac mini perlu log masuk.</p>`;
   return ''}
 /* Mac mini dianggap offline kalau tiada ping lebih 5 minit (sel P1 tab Transcribe, diisi oleh worker setiap minit) */
 function macOff(){const t=Date.parse(((typeof trRaw!=='undefined'&&trRaw&&trRaw[0])||[])[15]||'');if(!t)return '';return Date.now()-t>5*60000?fmtD(t)+' '+new Date(t).toTimeString().slice(0,5):''}
-A.edNow=async el=>{const key=el.dataset.id,stage=el.dataset.x,name=el.dataset.n;ui.edNow=Object.assign({},ui.edNow,{[key]:'Buka sesi...'});render();
-  try{const r=await studioJob('edit_now',{stage,name,key},3*60000);toast('Sesi Claude dibuka di Mac mini. Buka app Claude di phone untuk kawal')}
-  catch(e){toast('Tak dapat buka sesi: '+String((e&&(e.message||e.code))||'semak Mac mini hidup').slice(0,80))}
-  finally{const b=Object.assign({},ui.edNow);delete b[key];ui.edNow=b;render()}};
 A.copy=el=>copyText(el.dataset.x);
 A.fHide=el=>{const k=el.dataset.id;confirmBox('Buang "'+k.split('/').pop()+'" dari To Edit?',()=>{markToEdit(k,'hidden');toast('Dibuang')},'Ya, buang')};
 A.addEdit=()=>modal(`<h2>Tambah video untuk edit</h2><label class="f"><span>Nama video</span><input class="inp" id="aeT"></label><label class="f"><span>Folder</span><select class="inp" id="aeF">${FOLDERS.map(f=>`<option>${esc(f)}</option>`).join('')}</select></label><p class="meta">Mac mini buat folder ni dalam folder edit. Masukkan footage ke situ, kemudian tekan EDIT NOW.</p><div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="addEditSave">Simpan</button></div>`);
@@ -62,3 +85,27 @@ A.peek=async el=>{const stage=el.dataset.x,name=el.dataset.n;
 function voMic(r){const id=voId(r.name),d=get('vo',id),need=voAuto(r.stage||'')||(d&&d.status!=='buang'),has=d&&(((d.vos||[]).some(v=>v.status==='siap'))||d.status==='siap');
   if(!need&&!has)return '';return `<button class="micb ${has?'ok':'need'}" data-act="voGo" data-id="${esc(id)}" data-x="${esc(r.stage||'')}" data-n="${esc(r.name)}" aria-label="${has?'VO dah ada':'Perlu rakam VO'}">${IC.mic.replace('<svg ','<svg style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8" ')}</button>`}
 A.voGo=el=>{const id=el.dataset.id;if(!get('vo',id))save('vo',{id,folder:el.dataset.x,sub:el.dataset.n,status:'perlu',points:[]},true);ui.voOpen=id;location.hash='#vo'};
+
+/* 2026-11-25 (Mira): START EDIT dari Published = kad "Video baru #N" di sini (koleksi redo {title, folder, n, pubKey}).
+   EDIT NOW sama macam kad lain; tracker pusingan = editor/ed-f-<folder>-r<n> (folder "<kunci>#r<n>"). Kad hilang bila final baru masuk 00. */
+function redoStyles(folder){return S.editor.filter(t=>t.folder&&(t.folder===folder||t.folder.startsWith(folder+'#r'))&&(t.jenis||/^(Tiru|Resipi)/.test(t.style||''))).map(t=>t.jenis||String(t.style).replace(/^(Tiru|Resipi):\s*/,''))}
+function redoRows(){return S.redo.filter(x=>!redoDone(x)).map(x=>{const [st,...rest]=String(x.folder||'').split('/'),nm=rest.join('/');const fi=folderInfo(x.folder);const used=redoStyles(x.folder);
+  return {kind:'r',rid:x.id,key:x.folder+'#r'+x.n,round:x.n,stage:st,no:fno(st),name:nm,title:x.title,clips:fi?(fi.clips||0)+(fi.images||0):0,
+    sub:[st.replace(/^\d+\.\s*/,'')+' › '+nm,fi?(fi.clips||0)+' klip'+(fi.images?' + '+fi.images+' gambar':''):'folder tak dijumpai',used.length?'dah dibuat: '+used.join(', '):''].filter(Boolean).join(' · '),start:x.at||x.created}})}
+A.redoDel=el=>{const x=get('redo',el.dataset.id);if(!x)return;confirmBox('Buang kad "'+(x.title||'')+' · video baru #'+x.n+'"? Footage tak disentuh.',()=>{del('redo',x.id);toast('Dibuang')},'Ya, buang')};
+
+/* 2026-11-25 (Mira): cara Claude belajar ikut tips. Sesi edit tulis doc tipsrep/<id tracker> {items[{id,tip,pakai,cara,ans}]}
+   (gaya.py report). Mira jawab Kena / Tak kena; kiraan disimpan pada tip (used, hit, miss) dan tahap berubah sendiri:
+   tak kena 2 kali = turun ke Cuba, kena 3 kali = naik ke Wajib (kalau belum cukup 7). */
+function tipFind(id){for(const g of S.gaya){const T=g.tips||[];for(let i=0;i<T.length;i++)if(T[i].id===id||g.id+':'+i===id)return {g,i,t:T[i]}}return null}
+function tipRep(e){if(!e)return '';const d=get('tipsrep',e.id);if(!d||!(d.items||[]).length)return '';const open=d.items.map((x,i)=>({x,i})).filter(o=>!o.x.ans);
+  if(!open.length)return `<p class="meta tpr0">Laporan tips: semua ${d.items.length} dah dijawab.</p>`;
+  return `<div class="tprep"><p class="eyebrow">Laporan tips · ${open.length} belum dijawab</p>${open.map(({x,i})=>{const f=tipFind(x.id);const txt=x.tip||(f&&f.t.t)||'';
+    return `<div class="tpri"><p><b>${x.pakai?'✓ Dipakai':'✕ Tak dipakai'}:</b> ${esc(txt)}${x.cara?`<span>${esc(x.cara)}</span>`:''}</p><div class="btns">${x.pakai?`<button class="btn sm st-done" data-act="tipAns" data-id="${esc(e.id)}" data-x="${i}" data-k="kena">Kena</button><button class="btn sm" data-act="tipAns" data-id="${esc(e.id)}" data-x="${i}" data-k="tak">Tak kena</button>`:`<button class="btn sm" data-act="tipAns" data-id="${esc(e.id)}" data-x="${i}" data-k="ok">Okay</button><button class="btn sm" data-act="tipAns" data-id="${esc(e.id)}" data-x="${i}" data-k="patut">Patut pakai</button>`}</div></div>`}).join('')}<p class="meta">${tok(0)} Jawapan kau ubah tahap tip (Wajib / Cuba) sendiri.</p></div>`}
+A.tipAns=el=>{const d=get('tipsrep',el.dataset.id);if(!d)return;const i=+el.dataset.x,k=el.dataset.k,x=d.items[i];if(!x)return;
+  save('tipsrep',Object.assign({},d,{items:d.items.map((y,j)=>j===i?Object.assign({},y,{ans:k}):y)}));
+  const f=tipFind(x.id);if(!f||k==='ok')return;const t=Object.assign({},f.t);const fo=f.g.fold==='*'?'':f.g.fold;const room=()=>csTipRefs(fo).filter(r=>r.t.lvl!=='cuba').length<CS_MAXW;
+  if(k==='kena'){t.used=(t.used||0)+1;t.hit=(t.hit||0)+1;if(t.lvl==='cuba'&&t.hit>=3&&room()){t.lvl='wajib';toast('Tip naik ke Wajib')}}
+  else if(k==='tak'){t.used=(t.used||0)+1;t.miss=(t.miss||0)+1;if(t.lvl!=='cuba'&&t.miss>=2){t.lvl='cuba';toast('Tip turun ke Cuba')}}
+  else if(k==='patut'){if(t.lvl==='cuba'&&room()){t.lvl='wajib';toast('Tip dinaikkan ke Wajib')}}
+  save('gaya',Object.assign({},f.g,{tips:f.g.tips.map((y,j)=>j===f.i?t:y)}))};

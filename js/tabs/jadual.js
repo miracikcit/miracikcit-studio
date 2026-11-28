@@ -1,12 +1,9 @@
 /* ---------- To Publish: jadual posting dalam kad sedia ada (24 Nov 2026, tiada tab / segmen berasingan) ----------
    Senarai ikut hari, dikumpul ikut masa. Setiap kad: lencana akaun, Jualan/Creative, produk, hook, Drive, salin caption / hashtag,
    Excluded (atas kad: post cepat, tak dikira kuota, tiada tarikh/masa) dan Scheduled. Ubah slot = status Tetap. Data dalam Sheet U:Z / P:U. 0 token. */
-const SCH_COL={miracikcit:'#7A4E2D',miracikcitjuga:'#C08A4B'};   /* coklat gelap / karamel, tiada hijau */
-const SCH_CRE='#9A4F5D';
+   /* coklat gelap / karamel, tiada hijau */
 function capParts(cap){const c=noEmoji(cap||'');const ps=c.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean);const isTags=p=>p.split(/\s+/).every(w=>/^[#@]/.test(w));
   return {body:ps.filter(p=>!isTags(p)).join('\n\n'),tags:ps.filter(isTags).join(' ')}}
-const schBadge=a=>`<span class="pill smpp" style="--pc:${SCH_COL[a]||'#B0937B'}">@${esc(a||'tiada akaun')}</span>`;
-const schKind=k=>`<span class="pill" style="--pc:${k==='Creative'?SCH_CRE:'#B0937B'}">${esc(k)}</span>`;
 const schDayLbl=d=>{const x=new Date(d+'T00:00:00');const t=ymd(new Date());const lbl=d===t?'Hari ni':d===addDays(t,1)?'Esok':HARI[x.getDay()];return lbl+' · '+x.getDate()+' '+BULAN[x.getMonth()]};
 
 function jadualRows(){const groups=parseSheet();if(!groups)return null;const plan=schedPlan(groups);const sv=sheetView();const list=[];
@@ -18,12 +15,6 @@ function schLine(k,v,late){if(v.status==='Excluded')return `<span class="pill">P
   const when=v.date?`${schDayLbl(v.date)} · ${timeLbl(v.time)}`:'Belum ada slot';
   return `<button type="button" class="pill schwhen${late?' late':''}" data-act="schEdit" data-id="${esc(k)}">${esc(when)}${v.status==='Tetap'?' · Tetap':''} ✎</button>`}
 /* Atas To Publish: loader, amaran, pelan produksi (tertutup asal) */
-function schTop(plan){const groups=parseSheet()||[];const W=schedWarn(plan,groups);const today=ymd(new Date());const warn=[];
-  const late=W.soon.filter(x=>x.date<=addDays(today,3));if(late.length)warn.push(`<b>${late.length} video</b> perlu di-schedule dalam 3 hari.`);
-  const emp=W.days.slice(0,7).reduce((n,d)=>n+d.empty.length,0);if(emp)warn.push(`<b>${emp} slot kosong</b> dalam 7 hari. Stok cukup ${W.fullUntil?'sampai '+schDayLbl(W.fullUntil):'kurang sehari'}.`);
-  if(W.short.length)warn.push(`<b>${W.short.length} produk</b> kurang 3 video setiap akaun: ${W.short.slice(0,3).map(s=>esc(s.name)).join(', ')}${W.short.length>3?' dan '+(W.short.length-3)+' lagi':''}.`);
-  const busy=schedBusy?`<div style="margin-bottom:12px">${ldr((schedProg&&schedProg.txt)||'Kemas kini jadual',schedProg&&schedProg.pct)}</div>`:'';
-  return busy+(warn.length?`<div class="banner glass" style="--c:#C0392B;margin-bottom:12px">${warn.map(w=>`<div>⚠ ${w}</div>`).join('')}</div>`:'')+prodBox()}
 /* Tick Scheduled (TT/IG/FB/SV) = status Scheduled dalam jadual; buang semua tick = kembali Tetap */
 A.tick=async el=>{const [tab,row,kind,idx]=el.dataset.x.split('|');const p=sheetTick(tab,+row,kind,+idx);if(kind!=='sched')return;await p;
   const r=(parseSheet()||[]).flatMap(g=>g.rows).find(x=>x.tab===tab&&x.row===+row);if(!r)return;const k=schKey(r);const v=schedPlan(parseSheet()).get(k)||{};const any=r.sched.some(Boolean);
@@ -38,7 +29,6 @@ async function schSet(k,patch,msg){const [tab,row]=k.split('|');const t=SH[tab],
   try{await sheetWrite(`${t.q}!${c0}${row}:${c1}${row}`,[vals]);schedProg={pct:70,txt:'Susun semula slot lain'};schedBusy=false;await autoSched(true);toast(msg||'Disimpan')}
   catch(e){old.forEach((x,i)=>a[t.sc+i]=x);toast('Tak dapat simpan ke Sheet')}finally{schedBusy=false;schedProg=null;render()}}
 A.schExc=el=>{const k=el.dataset.id;const on=el.getAttribute('aria-pressed')!=='true';schSet(k,on?{status:'Excluded',date:'',time:''}:{status:'',date:'',time:''},on?'Excluded: tak dikira kuota':'Masuk semula jadual')};
-A.schRun=()=>{autoSched(true);render()};
 A.schEdit=el=>{const k=el.dataset.id;const v=schedPlan(parseSheet()).get(k)||{};const times=[...new Set(schedSlots().map(s=>s.t))].sort();
   modal(`<h2>Ubah slot</h2><p class="meta">${esc(v.prod||'')}</p>
    <label class="f"><span>Tarikh</span><input class="inp" type="date" id="se-d" value="${esc(v.date||ymd(new Date()))}"></label>
@@ -60,7 +50,6 @@ function prodBox(){const P=prodPlanC();if(!P)return '';const rows=P.jobs.concat(
 A.prodTog=()=>{ui.prodOpen=!ui.prodOpen;render(true)};
 
 /* ---------- Peringkat 4: kad Home + Google Calendar ---------- */
-const schStockCol=n=>n>=5?'#7A4E2D':n>=2?'#D1A23A':'#C0392B';
 function schedHome(){if(!sheetRaw.PRODUCTS)return '';const groups=parseSheet();if(!groups)return '';const plan=schedPlan(groups);const W=schedWarn(plan,groups);const now=new Date(),today=ymd(now),nowT=pad(now.getHours())+':'+pad(now.getMinutes());
   const emp=W.days.slice(0,7).reduce((a,d)=>a+d.empty.length,0);const at={};groups.forEach(g=>g.rows.forEach(r=>{const v=plan.get(schKey(r));if(v&&v.date===today&&v.time)at[v.time+'|'+v.acc]={r,v}}));
   const slots=schedSlots();const accs=SCHED_ACC.map(a=>`<div class="hpacc"><b>@${esc(a)}</b><span>${slots.filter(s=>s.a===a).map(s=>{const o=at[s.t+'|'+a];const c=o?(o.v.status==='Posted'||tpDone(o.r)?'ok':'wait'):s.t<=nowT?'past':'em';return `<i class="${c}">${c==='ok'?'✓ ':''}${timeLbl(s.t)}</i>`}).join('')}</span></div>`).join('');
@@ -124,19 +113,20 @@ function tpTop(plan,groups,ready,nNew){const W=schedWarn(plan,groups);const wk=t
   chips.push(`<span class="tpchip">Stock ${W.fullUntil?'until <b>'+esc(tpDayLbl(W.fullUntil).replace(/^.*· /,''))+'</b>':'<b>under a day</b>'}</span>`);
   if(W.short.length)chips.push(`<button type="button" class="tpchip w" data-act="tpShort" data-x="${esc(W.short.map(s=>s.name).join(', '))}">⚠ <b>${W.short.length}</b> product${W.short.length>1?'s':''} short</button>`);
   if(nNew)chips.push(`<button type="button" class="tpchip" data-act="tpDay" data-id="new"><b>${nNew}</b> new</button>`);
+  const pn=ppOpen().length;if(pn)chips.push(`<button type="button" class="tpchip" data-act="ppJump"><b>${pn}</b> photo post${pn>1?'s':''}</button>`);
   const busy=schedBusy?ldr((schedProg&&schedProg.txt)||'Updating schedule',schedProg&&schedProg.pct):''   /* 25 Nov malam (Mira): butang Auto-arrange dibuang; jadual susun sendiri */;
   return `<div class="tph"><b class="tpn${n?'':' zero'}">${n}</b><h1>VIDEOS TO SCHEDULE</h1></div>
    <div class="tpcal glass"><div class="tpcalh"><span class="eyebrow">Next 7 days</span><span class="tpleg">${TP_PL.map(([l,,c])=>`<span><u class="on" style="--pc:var(--${c})"></u>${l}</span>`).join('')}</span></div><div class="tpgrid">${cal}</div></div>
    <div class="tpchips">${chips.join('')}<span style="margin-left:auto">${busy}</span></div>`}
 /* Jadual: rel masa di kiri, @miracikcit dan @miracikcitjuga sebelah-menyebelah. Slot kosong = kotak putus-putus. */
-function tpSched(plan,groups){const W=schedWarn(plan,groups);const wk=tpWeek(plan,groups);const slots=schedSlots();const today=ymd(new Date());
+function tpSched(plan,groups){const W=schedWarn(plan,groups);const wk=tpWeek(plan,groups);const slots=schedSlots();const today=ymd(new Date());const PH=ppPlanC();   /* 27 Nov: posting gambar di bawah Reels (photopost.js) */
   return wk.map(({date,rows},di)=>{const emp=(W.days[di]||{empty:[]}).empty;
-    const times=[...new Set(rows.map(o=>o.v.time).concat(emp.map(s=>s.t)))].filter(Boolean).sort();if(!times.length)return '';
-    return `<div class="tpday" id="tpd-${date}">${tpDayLbl(date)}</div><div class="tpslots">${times.map(t=>{const m=String(timeLbl(t)).match(/^(.*?)(am|pm)$/)||[0,timeLbl(t),''];
+    const times=[...new Set(rows.map(o=>o.v.time).concat(emp.map(s=>s.t)))].filter(Boolean).sort();const ph=PH.filter(o=>o.date===date);if(!times.length&&!ph.length)return '';
+    return `<div class="tpday" id="tpd-${date}">${tpDayLbl(date)}</div>${ph.length&&times.length?'<p class="pp-sec">Reels</p>':''}<div class="tpslots">${times.map(t=>{const m=String(timeLbl(t)).match(/^(.*?)(am|pm)$/)||[0,timeLbl(t),''];
       return `<div class="tpslot"><span class="tptm">${m[1]}<small>${m[2].toUpperCase()}</small></span>${SCHED_ACC.map(a=>{const o=rows.find(x=>x.v.time===t&&x.v.acc===a);
         if(!o)return emp.some(s=>s.t===t&&s.a===a)?`<div class="tpcell e">Empty</div>`:slots.some(s=>s.t===t&&s.a===a)?`<div class="tpcell x"></div>`:`<div></div>`;
         const r=o.r;const fin=tpFin(o);const late=!fin&&!r.sched.some(Boolean)&&dayDiff(today,date)<=3;
-        return `<div class="tpcell glass${fin?' all':''}${late?' late':''}">${tpWho(a)}${isSettled(r)?`<span class="tpok" aria-label="Settled">✓</span>`:`<button type="button" class="tpjump" data-act="tpJump" data-id="rv-${r.tab}-${r.row}" aria-label="Jump to posting card">↓</button>`}<span class="tpprod">${esc(o.g.name)}</span><span class="tphook">${r.vid?'VID '+esc(r.vid)+' · ':''}${esc(noEmoji(String(r.caption).split('\n')[0]))}</span>${tpMoved(r,o.v)}${tpTicks(r)}</div>`}).join('')}</div>`}).join('')}</div>`}).join('')}
+        return `<div class="tpcell glass${fin?' all':''}${late?' late':''}">${tpWho(a)}${isSettled(r)?`<span class="tpok" aria-label="Settled">✓</span>`:`<button type="button" class="tpjump" data-act="tpJump" data-id="rv-${r.tab}-${r.row}" aria-label="Jump to posting card">↓</button>`}<span class="tpprod">${esc(o.g.name)}</span><span class="tphook">${r.vid?'VID '+esc(r.vid)+' · ':''}${esc(noEmoji(String(r.caption).split('\n')[0]))}</span>${tpMoved(r,o.v)}${tpTicks(r)}</div>`}).join('')}</div>`}).join('')}</div>${ppDay(ph)}`}).join('')+ppWait(PH)}
 function tpFlash(c){if(!c)return;c.scrollIntoView({behavior:'smooth',block:'center'});c.animate&&c.animate([{boxShadow:'0 0 0 3px #E2B38F'},{boxShadow:'0 0 0 0 transparent'}],{duration:1600})}
 A.tpJump=el=>{const c=document.getElementById(el.dataset.id);if(c)tpFlash(c);else toast('Posting card not found')};
 A.tpDay=el=>{const c=document.getElementById(el.dataset.id==='new'?'tpnew':'tpd-'+el.dataset.id);if(c)c.scrollIntoView({behavior:'smooth',block:'start'});else toast('No video on this day')};
@@ -153,6 +143,6 @@ function homePub(){const sv=sheetView();const groups=parseSheet();if(!sv||!group
   return `<div class="card glass tp hpc"><button type="button" class="hphd" data-act="go" data-id="ready"><b class="tpn${n?'':' zero'}">${n}</b><span><strong>To Publish</strong><em>video${n===1?'':'s'} to schedule</em></span></button>
    <div class="tpgrid">${tpCal(wk,'tpGoDay')}</div>
    ${rows?`<p class="eyebrow" style="margin:10px 0 5px">Schedule these next</p>${rows}`:`<p class="meta" style="margin:10px 0 0">Nothing waiting. All videos scheduled.</p>`}
-   ${chips?`<div class="tpchips">${chips}</div>`:''}<button type="button" class="ccmore hpmore" data-act="go" data-id="ready">Open To Publish ${IC.next}</button></div>`}
+   ${ppHome()}${chips?`<div class="tpchips">${chips}</div>`:''}<button type="button" class="ccmore hpmore" data-act="go" data-id="ready">Open To Publish ${IC.next}</button></div>`}
 A.tpGo=el=>{const id=el.dataset.id;go('ready');setTimeout(()=>tpFlash(document.getElementById(id)),450)};
 A.tpGoDay=el=>{const id='tpd-'+el.dataset.id;go('ready');setTimeout(()=>{const c=document.getElementById(id);if(c)c.scrollIntoView({behavior:'smooth',block:'start'})},450)};

@@ -18,9 +18,15 @@ const fnoBadge=n=>`<div class="fno" style="--fc:${FCOL[n]||'#8C8179'}">${esc(n||
 
 /* Sesi EDIT NOW tanda Siap / final dalam tracker Editor: folder edit tu dah render, keluar dari tab Edit */
 /* Projek banyak video (tracker ada `videos` > 1): kekal dalam senarai sampai SEMUA video dah published dalam Sheet (2026-11-21, Mira) */
-const edMulti=e=>(+e.videos||0)>1;
+/* 26 Nov (Mira): GENTING ada 7 video tapi tracker tulis "Siap" lepas video pertama, storyboard Awana P1/P2 terlepas.
+   Sekarang setiap video projek didaftar dalam `parts` [{id,name,file,url,status,final}] oleh sesi Claude; worker isi `final`
+   setiap bahagian bila fail muncul dalam 00. TO POST FINAL. Projek dikira siap hanya bila SEMUA bahagian ada final. */
+const edParts=e=>(e&&Array.isArray(e.parts)?e.parts:[]).filter(p=>p&&typeof p==='object');
+const edTot=e=>Math.max(+e.videos||0,edParts(e).length);
+const edFinN=e=>edParts(e).length?edParts(e).filter(p=>p.final).length:(e.finals||[]).length;
+const edMulti=e=>edTot(e)>1;
 function edPub(e){const sv=sheetView();if(!sv)return 0;const n=nrm(e.name||'');if(n.length<3)return 0;let c=0;sv.groups.forEach(g=>{if(nrm(g.name).startsWith(n))g.rows.forEach(r=>{if(isSettled(r)||r.posted.some(Boolean))c++})});return c}
-function edDone(e){return edMulti(e)?edPub(e)>=+e.videos:!!(e.final||/siap/i.test(e.status||''))}
+function edDone(e){return edMulti(e)?(edParts(e).length||e.finals?edFinN(e)>=edTot(e):true)&&edPub(e)>=edTot(e):!!(e.final||/siap/i.test(e.status||''))}
 const multiKey=key=>S.editor.some(e=>e.folder===key&&edMulti(e)&&!edDone(e));
 function edFinal(key){return S.editor.some(e=>e.folder===key&&edDone(e))}
 /* Video yang baru masuk 00. TO POST FINAL (3 hari), untuk jalur "Baru siap render" */

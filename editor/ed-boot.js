@@ -136,6 +136,13 @@
     poll: async since => { const j = await studioCall('pull', { since: since - 1 }); return ((j.docs || []).find(x => x.p === 'edfoot/' + VID) || {}).d || null; },
     refresh: async since => { const j = await studioCall('pull', { since: (since || Date.now()) - 1 }); const d = ((j.docs || []).find(x => x.p === 'edpwa/' + VID) || {}).d; const man = d && d.files ? d : await manifest(); window.ED_MAN = man; await toSW(LOCAL ? await manifest() : man); }
   };
+  /* 26 Nov 2026: cutout (tukar latar + "Belakang saya"). Mac mini job ed_cut, status doc edcut/<id>; gambar latar dalam editor/bg/ */
+  window.ED_CUT = {
+    bg: new URL('../../bg/', location.href).href,
+    job: input => studioCall('job_add', { type: 'ed_cut', input }),
+    poll: async since => { const j = await studioCall('pull', { since: since - 1 }); return ((j.docs || []).find(x => x.p === 'edcut/' + VID) || {}).d || null; },
+    refresh: since => window.ED_FOOT.refresh(since)
+  };
   window.ED_FAIL = e => {
     const b = document.getElementById('boot');
     if (b) { b.hidden = false; b.innerHTML = 'Editor tak dapat dibuka: ' + String((e && e.message) || e) + '<br><a href="../../../#editor">Balik ke Studio</a>'; }
@@ -415,7 +422,7 @@
     $('ccBig').addEventListener('pointerdown', e => e.stopPropagation());
     $('ccBig').onclick = e => { e.stopPropagation(); e.preventDefault(); const on = H.classList.toggle('edbig'); $('ccBig').setAttribute('aria-pressed', on); window.dispatchEvent(new Event('resize')); };
     /* ===== Fasa 2 (24 Nov 2026, Mira lulus lakaran v2): tepi kanan (DONE, masa, simpan, besarkan, main), MORE, lompat ‹ ›, + footage ===== */
-    sc.insertAdjacentHTML('beforeend', `<div class="ccside" id="ccSide"><button type="button" class="ccdone" id="ccDone">DONE</button><span class="cctc2" id="ccTc2">0:00</span><span class="ccsv" id="ccSv" role="status"></span><span class="sp"></span></div>
+    sc.insertAdjacentHTML('beforeend', `<div class="ccside" id="ccSide"><div class="ccrow"><a class="ccback" href="${edApp ? '../../' : '../../../#editor'}" aria-label="${edApp ? 'Balik ke senarai projek' : 'Balik ke Studio'}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a><button type="button" class="ccdone" id="ccDone">DONE</button></div><span class="cctc2" id="ccTc2">0:00</span><span class="ccsv" id="ccSv" role="status"></span><span class="sp"></span></div>
       <button type="button" class="ccmore" id="ccMore" aria-haspopup="true" aria-expanded="false">MORE</button>`);
     $('ccSide').append($('ccBig'), $('ccPlay2'));
     const toSiap = () => { if (!goTab('Siap') && window.toast) toast('Butang render ada pada video terakhir projek ni'); };
