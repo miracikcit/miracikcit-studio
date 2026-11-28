@@ -15,6 +15,9 @@ const crImg=id=>studioFileUrl(id);
 const crSorted=()=>S.carousel.filter(c=>!c.gone).sort((a,b)=>(b.created||0)-(a.created||0));
 const crAutoSlides=n=>Math.max(3,Math.min(10,Math.round(n/1.5)||3));
 const crKits=()=>{const k=S.sync&&S.sync.kits&&S.sync.kits.kits;return Array.isArray(k)&&k.length?k:CR_KITS0};
+const crFavs=()=>((S.sync&&S.sync.kitfav&&S.sync.kitfav.ids)||[]).filter(id=>crKits().some(k=>k.id===id));
+A.crFav=el=>{const id=el.dataset.id;const f=crFavs();const k=f.indexOf(id);if(k>=0)f.splice(k,1);else f.push(id);
+  S.sync.kitfav={ids:f,at:Date.now()};saveDoc('sync/kitfav',S.sync.kitfav);render(true)};
 const crKitName=id=>id==='kolaj'?'Kolaj rawak':id==='rawak'?'Rawak':((crKits().find(k=>k.id===id)||{}).name||id||'Kolaj rawak');
 const crFmtName=o=>o&&o.mode==='enhance'||o&&o.format==='enhance'?'Warna':o&&o.format==='cover'?'Cover reel':o&&o.format==='single'?'Single':((o&&o.slides)||5)+' slide';
 
@@ -70,7 +73,7 @@ function crFormView(){const u=crUi(),f=u.form,o=f.opts,enh=o.format==='enhance',
     ${f.files.length?`<p class="meta" style="margin:0 0 6px">Tekan ☆ untuk gambar utama (slide pertama / cover). Kosong: Mac mini pilih sendiri.</p><div class="crthumbs">${thumbs}</div>`:''}
     <div class="f" style="margin-top:14px"><span>Format</span>${crSeg('format',CR_FMT,o.format)}</div>
     ${enh?`<p class="meta" style="margin:-4px 0 12px">Warna sahaja: semua gambar keluar saiz penuh dengan warna baru, tiada templat.</p>`:`
-    <div class="f"><span>2 · Templat</span><div class="crkits">${kits.map(([id,n])=>`<button class="crkit${o.kit===id?' on':''}" data-act="crOpt" data-k="kit" data-v="${esc(id)}">${crMini(id)}<span>${esc(n)}</span></button>`).join('')}</div></div>
+    <div class="f"><span>2 · Templat</span><div class="crkits">${kits.map(([id,n])=>{const real=crKits().some(k=>k.id===id),fav=crFavs().includes(id);return `<div class="crkitw"><button class="crkit${o.kit===id?' on':''}" data-act="crOpt" data-k="kit" data-v="${esc(id)}">${crMini(id)}<span>${esc(id==='rawak'&&crFavs().length?'Rawak dari ★':n)}</span></button>${real?`<button class="crfav${fav?' on':''}" data-act="crFav" data-id="${esc(id)}" aria-label="Kegemaran ${esc(n)}" aria-pressed="${fav}">${fav?'★':'☆'}</button>`:''}</div>`}).join('')}</div></div>
     ${car?`<div class="row2"><div class="f"><span>Jumlah slide</span><select class="inp" id="crSlides">${slides.map(v=>`<option ${o.slides==v?'selected':''}>${v}</option>`).join('')}</select></div>
       <div class="f"><span>Saiz</span>${crSeg('aspect',[['4:5','4:5'],['1:1','1:1']],o.aspect)}</div></div>`:o.format==='single'?`<div class="f"><span>Saiz</span>${crSeg('aspect',[['4:5','4:5'],['1:1','1:1']],o.aspect)}</div>`:
       `<p class="meta" style="margin:-4px 0 12px">Cover reel 9:16. Tajuk dan muka diletak dalam kawasan tengah 4:5 supaya cantik di grid profile.</p>`}
@@ -108,7 +111,7 @@ function crAvoid(cur){const seqs=[];const add=o=>{const r=o&&o.recipe;if(r&&r.sl
   crSorted().filter(c=>!cur||c.id!==cur.id).slice(0,8).forEach(c=>add(c.out));return seqs.slice(0,10)}
 function crOptsOut(o){o=Object.assign({},CR_DEF,o);const strength=(+o.strength||100)/100;
   if(o.format==='enhance'||o.mode==='enhance')return {mode:'enhance',enhance:o.enhance,strength};
-  let kit=o.kit;if(kit==='rawak'){const ks=crKits().map(k=>k.id);kit=ks[Math.floor(Math.random()*ks.length)]}
+  let kit=o.kit;if(kit==='rawak'){const ks=crFavs().length?crFavs():crKits().map(k=>k.id);kit=ks[Math.floor(Math.random()*ks.length)]}
   const texts=String(o.texts||'').split('\n').map(x=>x.trim());
   return {mode:'carousel',format:o.format||'carousel',kit:kit==='kolaj'?'':kit,title:o.title||'',subtitle:o.subtitle||'',texts:[''].concat(texts),
     slides:o.format==='carousel'?+o.slides||5:1,aspect:o.format==='cover'?'9:16':o.aspect,enhance:o.enhance,strength,vibe:o.vibe,cutout:o.cutout,decor:o.decor,order:o.order}}

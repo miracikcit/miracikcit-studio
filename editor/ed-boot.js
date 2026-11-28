@@ -642,17 +642,16 @@
 })();
 
 /* Kit Gaya (28 Nov 2026, Mira): preset Style Board yang sepadan dengan templat Design (Rujukan > Design > Editor).
-   Guna pilihan editor yang SEDIA ADA sahaja (font, palet, caption, animasi), jadi render_draft.py render sama tanpa ubah.
-   Cover reel ikut kit yang sama: Studio > Editor > Cover (job ed_cover). */
+   Senarai kit dari doc sync/kits (Mac mini terbitkan; kit baru dari "Minta jadi templat" masuk sendiri), dengan 3 kit asas sebagai sandaran.
+   Guna pilihan editor SEDIA ADA sahaja (disemak wujud), jadi render_draft.py render sama. Kalau font "kit<id>" dah dipasang dalam
+   enjin render (Rujukan > Templat > Pasang font kit), font tu dipakai. Cover reel ikut kit yang sama: Studio > Editor > Cover. */
 (function () {
-  const KITS = [
-    { id: 'kitdoodle', n: 'Kit Doodle', d: 'Sama dengan Design Doodle: tajuk marker putih, caption tulisan tangan, melekat macam sticker.',
-      s: { pal: 'brand', font: 'h3', capStyle: 'script', trans: 'cut', punch: true, titlePos: 'top', titleOutline: false, titleFx: 'drop', capFx: 'hop' } },
-    { id: 'kitcomel', n: 'Kit Comel', d: 'Sama dengan Design Comel: pink lembut, tulisan bulat, caption pil putih.',
-      s: { pal: 'pink', font: 'caveat', capStyle: 'pill', trans: 'paper', punch: false, titlePos: 'top', titleOutline: false, titleFx: 'hop', capFx: 'hop' } },
-    { id: 'kitmajalah', n: 'Kit Majalah', d: 'Sama dengan Design Majalah: serif + italik, krim dan latte, caption kotak gelap.',
-      s: { pal: 'tjean', font: 'luxe', capStyle: 'kotak', trans: 'dip', punch: false, titlePos: 'left', titleOutline: false, titleFx: 'land', capFx: 'fade' } }
-  ];
+  const BASE = {
+    doodle: { n: 'Doodle', s: { pal: 'brand', font: 'h3', capStyle: 'script', trans: 'cut', punch: true, titlePos: 'top', titleOutline: false, titleFx: 'drop', capFx: 'hop' } },
+    comel: { n: 'Comel', s: { pal: 'pink', font: 'caveat', capStyle: 'pill', trans: 'paper', punch: false, titlePos: 'top', titleOutline: false, titleFx: 'hop', capFx: 'hop' } },
+    majalah: { n: 'Majalah', s: { pal: 'tjean', font: 'luxe', capStyle: 'kotak', trans: 'dip', punch: false, titlePos: 'left', titleOutline: false, titleFx: 'land', capFx: 'fade' } }
+  };
+  const synced = () => { try { const c = JSON.parse(localStorage.getItem('mstudio:cache') || '{}'); const k = c['sync/kits']; return (k && Array.isArray(k.kits)) ? k.kits : []; } catch (e) { return []; } };
   let n = 0;
   const t = setInterval(() => {
     n++;
@@ -660,8 +659,17 @@
     try { L = LOOKS; } catch (e) { if (n > 150) clearInterval(t); return; }   // enjin belum dimuat
     clearInterval(t);
     try {
-      const ok = k => ['pal', 'font', 'capStyle', 'trans'].every(g => OPTS[g].some(o => o.id === k.s[g])) && FX[k.s.titleFx] && FX[k.s.capFx];
-      KITS.forEach(k => { if (ok(k) && !L.some(x => x.id === k.id)) L.push(k); });
+      const has = (g, id) => OPTS[g].some(o => o.id === id);
+      const ok = s => s && ['pal', 'font', 'capStyle', 'trans'].every(g => has(g, s[g])) && FX[s.titleFx] && FX[s.capFx];
+      const list = {};
+      Object.keys(BASE).forEach(id => { list[id] = { n: BASE[id].n, s: Object.assign({}, BASE[id].s) }; });
+      synced().forEach(k => { if (k && k.id && k.editor) list[k.id] = { n: String(k.name || k.id), s: Object.assign({}, k.editor) }; });
+      Object.keys(list).forEach(id => {
+        const k = list[id];
+        if (has('font', 'kit' + id)) k.s.font = 'kit' + id;      // font kit sebenar (bila dah dipasang dalam render)
+        if (!ok(k.s) || L.some(x => x.id === 'kit' + id)) return;
+        L.push({ id: 'kit' + id, n: 'Kit ' + k.n.replace(/^Kit\s+/i, ''), d: 'Sama dengan templat Design ' + k.n + '.', s: k.s });
+      });
     } catch (e) {}
   }, 200);
 })();

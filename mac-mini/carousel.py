@@ -12,7 +12,7 @@ Mac mini:
 
 Input job: {id, title, photos:[{id:"fid~i", name, star}], opts:{..}, seed, avoid:[[tpl..]..], lock:[i..], recipe}
 """
-import base64, json, os, shutil, subprocess, tempfile, time
+import base64, json, os, re, shutil, subprocess, tempfile, time
 
 HOME = os.path.dirname(os.path.abspath(__file__))
 CACHE = os.path.join(HOME, "carousel_cache")
@@ -196,7 +196,13 @@ ref_*.jpg (rujukan) dan REQUEST.md (nota Mira). Kerja dalam folder ni ({home}).
    dan tanpa tajuk). Buka setiap hasil dan semak sendiri: kemas, tiada muka atas garis potong, tulisan tak bertindih
    muka. Betulkan sampai cantik dan dekat dengan rujukan.
 4. Bila siap: python3 studio.py merge kitreq/{rid} '{{"status":"siap","kit":"<id baru>"}}'
-   dan kemas kini senarai kit: python3 studio.py put sync/kits '<JSON {{"kits":[{{"id","name","formats"}}...]}} semua kit>'.
+   dan kemas kini senarai kit: python3 studio.py put sync/kits '<JSON {{"kits":[{{"id","name","formats","editor"}}...]}} semua kit>'.
+   "editor" = preset Style Board Editor untuk kit ni, guna id editor SEDIA ADA sahaja (render_draft.py tak perlu ubah):
+   {{"pal":..,"font":..,"capStyle":..,"trans":..,"punch":true/false,"titlePos":"top"/"left","titleOutline":false,"titleFx":..,"capFx":..}}
+   pal: brand butter rose terra olive krim putih tanah sage pink lilac bathgarden aerocool kathwi tjean
+   font: campur paper luxe italic marker viral retro scriptt bigb pop caslon mont serif gothic h1 h2 h3 h4 caveat
+   capStyle: biasa bigbold script hl bigkey underline paper kotak pill karaoke   trans: cut dip flash push paper whip zoomin
+   titleFx/capFx: land fade rise slam heavy sling hop drop tumble roll type. Pilih yang paling dekat dengan rupa kit.
 5. Kalau ada clone repo miracikcit-studio dalam Mac ni, salin design_kits.py dan font baru ke mac-mini/ dan commit
    di branch baru (jangan push ke main). Beritahu Mira ringkas apa yang dibuat dalam Bahasa Melayu."""
 
@@ -277,3 +283,129 @@ def run_ed_cover(inp, sheet, cfg, W):
         raise
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+
+
+# ---------------------------------------------------------------- Rujukan: Claude label + Rasa Mira
+REF_PROMPT = """Kau pembantu design untuk Mira (@miracikcit, content creator Malaysia). Dia dump gambar rujukan design yang dia suka.
+Baca SEMUA fail ni dengan tool Read (serentak dalam satu langkah), jangan baca fail lain:
+{files}
+
+Untuk setiap fail tentukan:
+- kind: "carousel" (post berbilang slide / seamless), "single" (satu gambar), "cover" (cover reel), "reel" (screenshot video reel),
+  "ayat" (screenshot tulisan / caption), atau "lain"
+- group: label pendek Bahasa Melayu 2 hingga 5 perkataan untuk RUPA dia. Rujukan yang rupanya sama MESTI dapat label yang sama.
+  Guna semula label sedia ada kalau sesuai: {groups}
+- kit: id kit sedia ada yang paling dekat ({kits}), atau null kalau tiada yang dekat
+- elements: 3 hingga 6 ciri ringkas (font, susunan, warna, cutout, hiasan, tulisan)
+
+Kemudian kemas kini RASA MIRA (citarasa keseluruhan dari semua rujukan setakat ni). Rasa semasa:
+{rasa}
+
+Balas JSON sahaja:
+{{"items":[{{"file":"r1.jpg","kind":"..","group":"..","kit":null,"elements":[".."]}}],
+  "rasa":{{"summary":"2 hingga 3 ayat BM","elements":["5 hingga 8 ciri yang selalu ada"],"palette":["#hex 4 hingga 6 warna"],"fonts":["jenis font"]}}}}"""
+
+
+def _small(src, dst):
+    """Kecilkan gambar (sips dalam Mac) supaya token Claude sikit."""
+    try:
+        r = subprocess.run(["/usr/bin/sips", "-Z", "1024", src, "--out", dst], capture_output=True, timeout=60)
+        if r.returncode == 0 and os.path.exists(dst):
+            return dst
+    except Exception:
+        pass
+    shutil.copy(src, dst)
+    return dst
+
+
+def run_ref_tag(inp, sheet, cfg, W):
+    """Job ref_tag: Claude baca rujukan gambar baru, letak label (jenis, koleksi, kit dekat) dan kemas kini sync/rasa."""
+    import gaya
+    items = (inp.get("items") or [])[:12]
+    if not items:
+        return {"ok": True, "n": 0}
+    tmp = tempfile.mkdtemp(prefix="reftag-")
+    try:
+        files, by = [], {}
+        for k, it in enumerate(items, 1):
+            src = _fetch(sheet, it["asset"])
+            dst = _small(src, os.path.join(tmp, f"r{k}.jpg"))
+            files.append(dst)
+            by[os.path.basename(dst)] = it
+        rasa = sheet.call("dget", path="sync/rasa").get("doc") or {}
+        groups = ", ".join(inp.get("groups") or []) or "(belum ada)"
+        kits = ", ".join(inp.get("kits") or ["doodle", "comel", "majalah"])
+        prompt = REF_PROMPT.format(files="\n".join(files), groups=groups, kits=kits,
+                                   rasa=json.dumps({k: rasa.get(k) for k in ("summary", "elements", "palette", "fonts")}, ensure_ascii=False))
+        c2 = dict(cfg, gaya_model=cfg.get("ref_model", "sonnet"), gaya_effort="low")
+        out, usage = gaya._ask(c2, W, tmp, prompt, read=True)
+        n = 0
+        for r in out.get("items") or []:
+            it = by.get(os.path.basename(str(r.get("file") or "")))
+            if not it:
+                continue
+            path = "inspo/" + it["id"]
+            cur = sheet.call("dget", path=path).get("doc")
+            if cur is None:
+                continue
+            cur.update({"kind": str(r.get("kind") or "lain")[:20], "group": str(r.get("group") or "")[:60],
+                        "kit": r.get("kit") or "", "els": [str(x)[:60] for x in (r.get("elements") or [])][:6],
+                        "tagged": int(time.time() * 1000), "updated": int(time.time() * 1000)})
+            sheet.call("dset", path=path, data=cur)
+            n += 1
+        nr = out.get("rasa") or {}
+        if nr.get("summary"):
+            nr = {k: nr.get(k) for k in ("summary", "elements", "palette", "fonts")}
+            nr.update({"at": int(time.time() * 1000), "n": int(rasa.get("n") or 0) + n})
+            sheet.call("dset", path="sync/rasa", data=nr)
+        return {"ok": True, "n": n, "usage": usage}
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+# ---------------------------------------------------------------- Sticker PNG Mira (kit Comel)
+def run_stk_save(inp, sheet, cfg, W):
+    """Job stk_save: sticker PNG dari Studio disimpan dalam stickers/ (dipakai kit Comel). 0 token."""
+    d = os.path.join(HOME, "stickers")
+    os.makedirs(d, exist_ok=True)
+    n = 0
+    for fid in inp.get("files") or []:
+        f = sheet.call("file_get", id=str(fid).split("~")[0])
+        name = re.sub(r"[^A-Za-z0-9._-]+", "_", f.get("name") or (str(fid) + ".png"))
+        if not name.lower().endswith(".png"):
+            name += ".png"
+        with open(os.path.join(d, name), "wb") as fh:
+            fh.write(base64.b64decode(f["b64"]))
+        n += 1
+        try:
+            sheet.call("dtrash", id=str(fid).split("~")[0])   # salinan Drive tak perlu lagi
+        except Exception:
+            pass
+    total = len([x for x in os.listdir(d) if x.lower().endswith(".png")])
+    sheet.call("dset", path="sync/stickers", data={"n": total, "at": int(time.time() * 1000)})
+    return {"ok": True, "n": n, "total": total}
+
+
+# ---------------------------------------------------------------- Font kit dalam enjin render Editor
+FONT_PROMPT = """Mira nak tulisan dalam video Editor guna font Kit Gaya yang sama dengan Design (bukan anggaran).
+Font kit ada dalam {home}/fonts (Chewy, Caveat, Fredoka, Playfair Display, DM Sans) dan senarai kit dalam {home}/design_kits.py.
+
+1. Cari sumber enjin Editor dan render: ~/.claude/assets/reel-page-template (src editor + render_draft.py + build_editor.py).
+   Kalau tiada, berhenti dan beritahu Mira.
+2. Untuk setiap kit (doodle, comel, majalah dan kit lain dalam design_kits.KITS), tambah satu pilihan font baru dalam OPTS.font
+   editor DAN dalam render_draft.py dengan id "kit<id kit>" (contoh "kitdoodle"), padan dengan font tajuk / kata kunci / caption kit
+   dalam design_kits.py. Pastikan render_draft.py boleh jumpa fail font (salin ke tempat font render atau rujuk {home}/fonts) dan
+   pratonton editor muat font yang sama (Google Fonts css2 dalam editor).
+3. Bina semula editor PWA: python3 ~/.claude/assets/reel-page-template/build_editor.py --pwa
+4. Uji: render satu draf pendek dengan setiap font kit, buka hasil dan semak tulisan betul dan sama dengan pratonton.
+5. Kemas kini sync/kits: setiap kit dapat "editor": {{..."font": "kit<id>"...}} (python3 {home}/studio.py get sync/kits, ubah, put semula).
+   ed-boot.js dalam Studio akan guna font kit tu sendiri bila id wujud.
+6. Kalau ada clone repo miracikcit-studio dalam Mac ni: commit editor/editor.html yang baru di branch baru (jangan push ke main).
+Beritahu Mira ringkas dalam Bahasa Melayu apa yang berubah."""
+
+
+def run_kit_fonts(inp, sheet, cfg, W):
+    """Job kit_fonts: buka sesi Claude Code yang pasang font kit dalam enjin render Editor (render_draft.py)."""
+    W.open_claude_session(HOME, "Font kit dalam Editor", FONT_PROMPT.format(home=HOME), "kit-fonts", cfg)
+    sheet.call("dset", path="sync/kitfonts", data={"status": "dibuat", "at": int(time.time() * 1000)})
+    return {"ok": True}

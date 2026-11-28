@@ -1947,7 +1947,8 @@ def render(job):
 def kit_list():
     try:
         import design_kits
-        return [{"id": k, "name": v["name"], "formats": v["formats"]} for k, v in design_kits.KITS.items()]
+        return [{"id": k, "name": v["name"], "formats": v["formats"], **({"editor": v["editor"]} if v.get("editor") else {})}
+                for k, v in design_kits.KITS.items()]
     except Exception:
         return []
 

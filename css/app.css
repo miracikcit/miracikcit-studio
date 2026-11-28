@@ -634,3 +634,6 @@ button.tpchip{cursor:pointer}.tpchip.btnx{font-weight:500}
 .rjstack{display:flex;flex:none}.rjstack img{width:38px;height:48px;object-fit:cover;border-radius:7px;border:2px solid #fff;margin-right:-12px}
 .thth.ptx{position:relative}.ptrm{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:999px;border:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
 .ptrm svg{width:12px;height:12px;fill:none;stroke:#fff;stroke-width:2}
+.crkitw{position:relative}.crkitw .crkit{width:100%}
+.crfav{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:999px;border:0;background:rgba(0,0,0,.42);color:#fff;font-size:14px;line-height:1;cursor:pointer;padding:0}
+.crfav.on{background:var(--c)}

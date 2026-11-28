@@ -33,10 +33,16 @@ FONT_FILES = {
     "sans": ("DMSans[opsz,wght].ttf", "Medium"),
     "sans_b": ("DMSans[opsz,wght].ttf", "Bold"),
 }
-KITS = {
-    "doodle":  {"name": "Tajuk doodle", "formats": ["carousel", "single", "cover"]},
-    "comel":   {"name": "Sticker comel", "formats": ["carousel", "single", "cover"]},
-    "majalah": {"name": "Majalah seamless", "formats": ["carousel", "single", "cover"]},
+KITS = {   # "editor" = preset Style Board Editor (id editor sedia ada, supaya render_draft.py render sama)
+    "doodle":  {"name": "Tajuk doodle", "formats": ["carousel", "single", "cover"],
+                "editor": {"pal": "brand", "font": "h3", "capStyle": "script", "trans": "cut", "punch": True, "titlePos": "top",
+                           "titleOutline": False, "titleFx": "drop", "capFx": "hop"}},
+    "comel":   {"name": "Sticker comel", "formats": ["carousel", "single", "cover"],
+                "editor": {"pal": "pink", "font": "caveat", "capStyle": "pill", "trans": "paper", "punch": False, "titlePos": "top",
+                           "titleOutline": False, "titleFx": "hop", "capFx": "hop"}},
+    "majalah": {"name": "Majalah seamless", "formats": ["carousel", "single", "cover"],
+                "editor": {"pal": "tjean", "font": "luxe", "capStyle": "kotak", "trans": "dip", "punch": False, "titlePos": "left",
+                           "titleOutline": False, "titleFx": "land", "capFx": "fade"}},
 }
 MAG = {"beige": (233, 226, 214), "dark": (43, 39, 37), "cream": (241, 234, 224), "ink": (31, 28, 26),
        "taupe": (140, 126, 112), "mute": (91, 82, 75)}
@@ -358,6 +364,47 @@ def st_star(n, col=(246, 178, 196)):
 
 
 STICKERS = [st_bow, st_daisy, st_heart, st_cherry, st_star]
+STK_DIR = os.path.join(HERE, "stickers")
+_png = {}
+
+
+def png_stickers():
+    """Sticker PNG Mira (stickers/*.png, upload dari Studio > Rujukan). Dipakai dulu sebelum sticker lukisan code."""
+    if "list" not in _png:
+        L = []
+        if os.path.isdir(STK_DIR):
+            for f in sorted(os.listdir(STK_DIR)):
+                if f.lower().endswith(".png"):
+                    try:
+                        im = Image.open(os.path.join(STK_DIR, f)).convert("RGBA")
+                        bb = im.split()[-1].point(lambda v: 255 if v > 20 else 0).getbbox()
+                        if bb:
+                            L.append(im.crop(bb))
+                    except Exception:
+                        pass
+        _png["list"] = L
+    return _png["list"]
+
+
+def png_sticker(rng, size):
+    L = png_stickers()
+    if not L:
+        return None
+    im = rng.choice(L).copy()
+    im.thumbnail((size, size), Image.Resampling.LANCZOS)
+    pad = 14
+    base = Image.new("RGBA", (im.size[0] + 2 * pad, im.size[1] + 2 * pad), (0, 0, 0, 0))
+    base.paste(im, (pad, pad), im)
+    a = base.split()[-1]
+    out = Image.new("RGBA", base.size, (0, 0, 0, 0))
+    ol = ce.outline_layer(a, 8, WHITE)
+    sh = ol.split()[-1].filter(ImageFilter.GaussianBlur(8)).point(lambda v: int(v * 0.25))
+    s = Image.new("RGBA", base.size, (0, 0, 0, 0))
+    s.putalpha(sh)
+    out.alpha_composite(s, (0, 5))
+    out.alpha_composite(ol)
+    out.alpha_composite(base)
+    return out
 
 
 # ---------------------------------------------------------------- KANVAS
@@ -493,7 +540,8 @@ def slide_fullbleed(st, i, ph, kit, rng, title="", sub="", text="", safe=None):
             y = min(max(y, sy0 + sh * (0.3 if has_title else 0.08)), sy1 - 90)
             if fb and fb[0] - 80 < x < fb[2] + 80 and fb[1] - 80 < y < fb[3] + 80:
                 continue
-            stk = fns[k % len(fns)](int(rng.uniform(120, 170))).rotate(rng.uniform(-18, 18), resample=Image.Resampling.BICUBIC, expand=True)
+            sz = int(rng.uniform(120, 170))
+            stk = (png_sticker(rng, sz + 30) or fns[k % len(fns)](sz)).rotate(rng.uniform(-18, 18), resample=Image.Resampling.BICUBIC, expand=True)
             lay.alpha_composite(stk, (int(x - stk.size[0] / 2), int(y - stk.size[1] / 2)))
             k += 1
             if k >= 4:
