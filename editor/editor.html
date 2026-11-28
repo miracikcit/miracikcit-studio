@@ -1138,6 +1138,51 @@
 .ptl .ptc { position: absolute; left: 50cqw; top: 74.67cqw; width: calc(var(--r, 0) * 1cqw); height: calc(var(--r, 0) * 1cqw); translate: -50% -50%; border-radius: 50%; overflow: hidden; background: #000; box-shadow: 0 0 0 1cqw var(--pc, #fff), 0 0 0 2.4cqw color-mix(in srgb, var(--pc, #fff) 35%, transparent), 0 0 9cqw 3cqw rgba(0,0,0,.5); }
 .ptl .ptc > * { position: absolute; left: 50%; top: 50%; width: 100cqw; height: 177.78cqw; max-width: none; translate: -50cqw -74.67cqw; object-fit: cover; transform-origin: 50cqw 74.67cqw; scale: var(--ps, 1); }
 
+/* p36: gaya HUD Review (28 Nov 2026). 1cqw = 10.8 px pada 1080. Safe zone: x 11.1-88.9cqw, y 20.4-133.3cqw */
+.e-vfind { position: relative; width: 100cqw; height: 177.78cqw; pointer-events: none; }
+.e-vfind > i { position: absolute; width: 6.5cqw; height: 6.5cqw; border: 0 solid var(--c1, #fff); opacity: .85; filter: drop-shadow(0 0 .4cqw rgba(0,0,0,.45)); }
+.e-vfind .qa { left: 11.6cqw; top: 21cqw; border-left-width: .42cqw; border-top-width: .42cqw; }
+.e-vfind .qb { right: 11.6cqw; top: 21cqw; border-right-width: .42cqw; border-top-width: .42cqw; }
+.e-vfind .qc { left: 11.6cqw; top: 126.3cqw; border-left-width: .42cqw; border-bottom-width: .42cqw; }
+.e-vfind .qd { right: 11.6cqw; top: 126.3cqw; border-right-width: .42cqw; border-bottom-width: .42cqw; }
+.e-vfind .qrec { position: absolute; left: 14.2cqw; top: 29cqw; display: flex; align-items: center; gap: 1cqw; font: 400 1.9cqw/1 "Courier Prime", monospace; letter-spacing: .16em; color: var(--c2, #fff); opacity: .85; text-transform: uppercase; text-shadow: 0 .15cqw .5cqw rgba(0,0,0,.6); white-space: nowrap; }
+.e-vfind .qrec i { width: 1.5cqw; height: 1.5cqw; border-radius: 50%; background: #ff3b30; box-shadow: 0 0 .8cqw #ff3b30; }
+.e-chap { display: flex; align-items: center; white-space: nowrap; font: 700 2.5cqw/1 "Courier Prime", monospace; letter-spacing: .3em; color: var(--c1, #5fe3d0); text-transform: uppercase; text-shadow: 0 0 1.2cqw rgba(53,214,195,.45), 0 .2cqw .6cqw rgba(0,0,0,.65); }
+.e-chap .qty { display: inline-block; }
+.e-chap .qcur { display: inline-block; width: 1.3cqw; height: 2.7cqw; margin-left: .5cqw; background: currentColor; }
+.e-scram { display: flex; flex-direction: column; align-items: flex-start; gap: .5cqw; min-width: 34cqw; padding: 1.6cqw 3cqw 1.9cqw; border-radius: 2cqw; background: var(--c3, rgba(14,18,20,.66)); border: .22cqw solid rgba(95,227,208,.38); box-shadow: 0 1cqw 3cqw rgba(0,0,0,.35); }
+.e-scram small { font: 400 1.8cqw/1 "Courier Prime", monospace; letter-spacing: .22em; color: rgba(255,255,255,.72); }
+.e-scram .qsw { display: grid; font: 400 9.5cqw/1 "League Gothic", sans-serif; letter-spacing: .03em; color: var(--c1, #fff); text-transform: uppercase; white-space: nowrap; }
+.e-scram .qsw span { grid-area: 1 / 1; opacity: 0; }
+.e-scram .qsl { color: var(--c2, #5fe3d0); opacity: 0; }
+.e-scram em { font: 800 2.1cqw/1.1 "Plus Jakarta Sans", sans-serif; font-style: normal; letter-spacing: .07em; color: var(--c2, #5fe3d0); text-transform: uppercase; }
+.e-meter { display: flex; flex-direction: column; align-items: stretch; }
+.e-meter .qw { display: flex; align-items: flex-start; gap: 2.2cqw; white-space: nowrap; font: 400 13cqw/.95 "League Gothic", sans-serif; text-transform: uppercase; letter-spacing: .01em; }
+.e-meter .qw b { font-weight: 400; color: var(--c1, #fff); text-shadow: 0 .4cqw 1.6cqw rgba(0,0,0,.45); }
+.e-meter .qw .q2 { color: var(--c2, #ff5a36); text-shadow: 0 0 1.4cqw currentColor, 0 0 4.5cqw currentColor; }
+.e-meter .qsp { font: 400 3.4cqw/1 sans-serif; color: #fff; font-style: normal; margin-left: -1.4cqw; }
+.e-meter .qm { display: flex; flex-direction: column; gap: .7cqw; margin-top: 1.1cqw; }
+.e-meter .qm small { font: 400 1.6cqw/1 "Courier Prime", monospace; letter-spacing: .22em; color: rgba(255,255,255,.78); text-transform: uppercase; }
+.e-meter .qbar { position: relative; display: block; height: .75cqw; border-radius: 1cqw; background: linear-gradient(90deg, #3ddc84, #ffd447 55%, #ff5a36); box-shadow: 0 0 1cqw rgba(0,0,0,.35); }
+.e-meter .qmk { position: absolute; top: 50%; left: calc(var(--lv, 85) * 1%); width: 2cqw; height: 2cqw; border-radius: 50%; background: #fff; box-shadow: 0 0 1.2cqw #fff, 0 0 .3cqw rgba(0,0,0,.4); translate: -50% -50%; }
+.e-neon { position: relative; display: flex; align-items: center; justify-content: center; }
+.e-neon .qpill { position: absolute; left: 50%; top: 50%; translate: -50% -50%; white-space: nowrap; font: 800 2.5cqw/1 "Plus Jakarta Sans", sans-serif; letter-spacing: .05em; text-transform: uppercase; color: var(--c2, #fff); background: rgba(14,14,16,.8); padding: 1.1cqw 2.6cqw; border-radius: 99px; }
+.e-neon .qn { display: block; white-space: nowrap; font: 400 17cqw/.95 "League Gothic", sans-serif; text-transform: uppercase; letter-spacing: .01em; color: var(--c1, #ff5a36); -webkit-text-stroke: .12cqw rgba(255,220,200,.55); text-shadow: 0 0 1.4cqw currentColor, 0 0 4cqw currentColor, 0 0 9cqw currentColor; }
+.e-neon .qsp { position: absolute; right: -3.4cqw; top: -1cqw; font: 400 3.6cqw/1 sans-serif; color: #fff; font-style: normal; }
+.e-illus { position: relative; width: 100cqw; height: 177.78cqw; background-color: var(--c2, #f6f2e8); background-image: linear-gradient(rgba(60,50,40,.07) .12cqw, transparent .12cqw), linear-gradient(90deg, rgba(60,50,40,.07) .12cqw, transparent .12cqw); background-size: 4.6cqw 4.6cqw; }
+.e-illus .qin { position: absolute; left: 11.1cqw; right: 11.1cqw; top: 27cqw; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.e-illus small { font: 600 3.3cqw/1.25 "Plus Jakarta Sans", sans-serif; color: #4a4642; }
+.e-illus b { position: relative; margin-top: .8cqw; font: 400 10.5cqw/1 "Gloock", serif; color: var(--c1, #e8553f); letter-spacing: .01em; }
+.e-illus b i { position: absolute; right: -4.2cqw; top: -.6cqw; font: 400 4cqw/1 sans-serif; font-style: normal; }
+.e-illus .qvs { display: grid; grid-template-columns: 1fr 1fr; gap: 3cqw; width: 100%; margin-top: 4.5cqw; }
+.e-illus .qp { position: relative; display: flex; flex-direction: column; align-items: center; aspect-ratio: 3 / 4.2; padding: 1.4cqw; border: .35cqw solid #2e2b28; border-radius: 2.4cqw; background: #ebe8e3; overflow: hidden; }
+.e-illus .qp.q1 { background: #e2f5e9; }
+.e-illus .qp u { text-decoration: none; margin-bottom: 1cqw; padding: .5cqw 1.8cqw; border-radius: 99px; background: #6f6a64; color: #fff; font: 700 1.8cqw/1 "Courier Prime", monospace; letter-spacing: .18em; }
+.e-illus .qp.q1 u { background: #2fbf6d; }
+.e-illus .qp img { width: 100%; flex: 1; min-height: 0; object-fit: contain; }
+.e-illus .qone { width: 64cqw; margin-top: 4.5cqw; }
+.e-illus .qone img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; }
+
 /* Layout: desktop keeps video + panel on top, timeline below. On a phone: video and tabs stay stuck at the top, timeline comes right under the video, panel last. The Caption tab keeps its panel above the timeline. Look follows Cikcit Studio: warm light theme by the owner's choice. */
 :root {
   --bg: #faf7f4; --panel: #ffffff; --panel2: #f3eeea; --line: #ece5df;
@@ -1249,6 +1294,23 @@ button:focus-visible, [contenteditable]:focus-visible, input:focus-visible, text
 .t-cta { background: rgba(244,199,211,.85); color: #3a2a26; font: 400 3.4cqw/1.2 "League Gothic", sans-serif; letter-spacing: .15cqw; text-transform: uppercase; padding: .83cqw 2.4cqw; border-radius: 3.7cqw; box-shadow: 0 .55cqw 1.5cqw rgba(0,0,0,.25); white-space: nowrap; }
 .t-pill { background: rgba(20,18,26,.58); color: #fff; font: 600 3.6cqw/1.2 "Outfit", sans-serif; padding: 1.2cqw 3.2cqw; border-radius: 99px; white-space: nowrap; }
 .eu { animation: eu .32s cubic-bezier(.34,1.56,.64,1) both; animation-delay: var(--d, 0s); }
+/* p36: animasi HUD Review (editor sahaja) */
+.e-chap .qty { white-space: nowrap; animation: qty calc(var(--n, 6) * .07s) linear both; animation-delay: var(--d, 0s); }
+.e-chap .qcur, .e-vfind .qrec i { animation: qblink 1s steps(1) infinite; }
+@keyframes qblink { 50% { opacity: 0; } }
+.e-scram .qsl { animation: qscr .09s steps(1, end) forwards; animation-delay: var(--d, 0s); }
+@keyframes qscr { 0% { opacity: 1; } 100% { opacity: 0; } }
+.e-scram .qfin { animation: qfin .01s linear forwards; animation-delay: var(--d, 0s); }
+@keyframes qfin { to { opacity: 1; } }
+.e-meter .qmk { animation: qmk .8s cubic-bezier(.22,1,.36,1) both; animation-delay: var(--d, 0s); }
+@keyframes qmk { from { left: 0; } }
+.e-neon .qn { animation: qneon .35s ease-out both; animation-delay: var(--d, 0s); }
+@keyframes qneon { from { opacity: 0; filter: blur(2.6cqw); transform: scale(1.12); } }
+.e-neon .qpill { animation: eu .32s cubic-bezier(.34,1.56,.64,1) both, qout .18s ease-in forwards; animation-delay: var(--d, 0s), var(--d2, 9s); }
+@keyframes qout { to { opacity: 0; transform: scale(.85); } }
+.e-neon .qsp { animation: eu .32s cubic-bezier(.34,1.56,.64,1) both; animation-delay: var(--d, 0s); }
+.e-illus { animation: qfade .25s ease-out both; }
+@keyframes qfade { from { opacity: 0; } }
 .stk .e-usp .eu, .stk .e-hook .eu { animation-delay: calc(var(--d, 0s) - var(--p, 0s)); }
 .stk .e-usp .bgp { animation-delay: calc(0s - var(--p, 0s)); }
 .stage:not(.anim) .stk .e-usp .eu, .stage:not(.anim) .stk .e-hook .eu, .stage:not(.anim) .stk .e-usp .bgp { animation-play-state: paused; }
@@ -1877,7 +1939,7 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 .catbar.two .cr + .cr { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--gline); }
 .catbar .cat.sub { font-size: 12px; padding: 5px 11px; }
 </style>
-<link rel="stylesheet" href="../../ed-capcut.css?v=c09025c377">
+<link rel="stylesheet" href="../../ed-capcut.css?v=aec3c7832a">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-fback" viewBox="0 0 24 24"><path d="M15 6L7 12l8 6z" fill="currentColor"/><path d="M18 5v14"/></symbol>
@@ -1992,9 +2054,9 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 <audio id="vo" preload="metadata"></audio>
 <audio id="bgm" loop preload="none"></audio>
 
-<script src="../../../js/config.js?v=c09025c377"></script>
-<script src="../../../js/runtime.js?v=c09025c377"></script>
-<script src="../../ed-boot.js?v=c09025c377"></script>
+<script src="../../../js/config.js?v=aec3c7832a"></script>
+<script src="../../../js/runtime.js?v=aec3c7832a"></script>
+<script src="../../ed-boot.js?v=aec3c7832a"></script>
 <script>
 const T0 = performance.now(), DIAG = { id: Date.now().toString(36), ua: navigator.userAgent.slice(0, 120), w: innerWidth, marks: {}, long: [], taps: [] };
 const mark = n => { DIAG.marks[n] = Math.round(performance.now() - T0); };
@@ -2146,6 +2208,7 @@ const FX_KINDS = [
   ["Review", [["e-stars", "Bintang rating", "5 bintang terisi ikut skor, nombor besar, nota bawah.", { a: "4/5", text: "rating Mira", b: "datang lagi? YES" }], ["e-ring", "Cincin skor", "Cincin terisi ikut skor, nombor di tengah.", { a: "8/10", text: "rating" }], ["e-poll", "Poll TikTok", "Soalan dengan bar undi, macam sticker poll.", { text: "Worth it tak?", items: ["Worth it|82", "Tak|18"] }], ["e-save", "Butang SAVE", "Ikon bookmark + ajak save video.", { text: "SAVE untuk trip nanti" }], ["e-tag", "Tanda harga", "Tag harga tergantung dan berayun.", { a: "RM20", text: "tiket" }], ["e-stamp", "Cop review", "Cop besar dihentak, macam stamp.", { text: "WORTH IT", a: "rating 4/5" }]]],
   ["Trend", [["e-wheel", "Kaunter nombor", "Nombor bergolek macam mesin kira, label atas, pill jumlah bawah.", { a: "RM238", text: "bilik SkyWorlds", b: "jumlah RM238" }], ["e-receipt", "Resit jumlah", "Resit kertas: baris masuk satu-satu, TOTAL bergolek.", { a: "Bajet trip", items: ["Bilik|RM238", "Tiket|RM140"], b: "RM378" }], ["e-ticket", "Tiket koyak", "Tiket berwarna, stub terkoyak.", { a: "RM70", text: "beli 1 FREE 1", b: "TIKET" }], ["e-pin", "Pin lokasi", "Pin jatuh dengan riak, nama tempat.", { a: "Awana", text: "bukan di puncak" }], ["e-slam", "Tajuk slam", "Tajuk besar hentak masuk dan bergegar.", { a: "", text: "WORTH IT!" }]]],
   ["Text", [...TXT_KINDS, ["e-gtype", "Glass type", "Tulisan besar dalam panel kaca. Huruf BESAR jadi italic.", { a: "kenapa aku suka", text: "dua-dua KACA" }], ["e-arrow", "Arrow note", "Nota tangan dengan anak panah.", { text: "cuba yang ni" }], ["e-strike", "Crossed word", "Perkataan kena potong.", { text: "kos renovation" }]]],
+  ["HUD", [["e-vfind", "Bingkai kamera", "Sudut viewfinder + REC berkelip sepanjang video, macam rakaman kamera.", { a: "REVIEW // PRODUK", y: .5 }], ["e-chap", "Label bab", "Tulisan mono kecil ditaip atas tengah, tukar setiap bahagian cerita.", { text: "KORANG PERASAN TAK?", y: .135 }], ["e-scram", "Label HUD", "Kad gelap: nama produk bertukar huruf rawak sampai jadi nama.", { a: "PRODUK // MODEL", text: "JOYBOS", b: "MOP PERAH SENDIRI", y: .2 }], ["e-meter", "Tajuk + meter", "Dua perkataan (kedua bercahaya) dan bar tahap bergerak.", { a: "LANTAI", text: "BASAH", b: "TAHAP", lv: 85, y: .2 }], ["e-neon", "Neon merah", "Pill ayat setup, kemudian satu perkataan neon bercahaya.", { a: "LEPAS MOP PUN...", text: "BASAH", y: .2 }], ["e-illus", "Kad ilustrasi", "Kad kertas grid penuh skrin: tajuk, perkataan besar, ilustrasi atau sebelum / selepas.", { a: "mop biasa, tangan", text: "BASAH", var: "vs", items: ["SEBELUM", "SELEPAS"], ph: 2, y: .5 }]]],   /* p36 */
   ["Cutout", [["e-pcutout", "Paper cut out", "Kau jadi potongan kertas: garis putih, latar kertas, goyang stop-motion.", { text: "" }], ["e-fesc", "Frame escape", "Video masuk frame, kau terkeluar dari frame.", {}], ["e-orbit", "Orbit", "Perkataan atau gambar berpusing mengelilingi kau.", { items: ["lembut", "sejuk", "RM59"], y: .4 }]]],
   ["Photos", [["e-clipwall", "Dinding klip", "Kolaj gambar penuh di belakang kau, pop satu-satu.", { ph: 9, bh: 1, y: .5 }], ["e-wall", "Couch wall", "Tiga gambar di dinding belakang kau.", { ph: 3, bh: 1, y: .2 }], ["e-polg", "Frame kaca", "Satu gambar, frame lut sinar macam kaca.", { text: "", ph: 1 }], ["e-polt", "Frame nipis", "Satu gambar, frame putih nipis.", { text: "", ph: 1 }], ["e-fbreak", "Frame break", "Gambar terkeluar dari frame kaca.", { text: "", ph: 1 }], ["e-wipe", "Before / after", "Garis sapu dari sebelum ke selepas.", { a: "sebelum", b: "selepas", ph: 2 }], ["e-phone", "Phone mock-up", "Gambar dalam telefon.", { ph: 1 }], ["e-pola", "Polaroid", "Satu gambar senget.", { text: "sebelum", ph: 1 }], ["e-stack", "Stack of three", "Tiga gambar bertindan.", { ph: 3 }], ["e-fan", "Photo fan", "Tiga gambar macam kipas.", { ph: 3 }], ["e-cardrow", "Video cards", "Tiga kad video berbingkai.", { ph: 3 }]]],
   ["USP", [["e-uspa", "A Serif + skrip", "Serif italic besar, tulisan tangan atas bawah, atas close-up.", { a: "bau dia macam", text: "fruity, floral", b: "& SWEET", items: ["playful & chic ♡"], ph: 1 }], ["e-uspg", "G Panel kaca", "Panel kaca: skrip kecil, serif italic besar, tiga chip kaca.", { a: "kenapa best", text: "jag kaca", items: ["tak kuning", "tak melekat bau", "tahan panas"], ph: 1 }], ["e-usph", "H Dua frame kaca", "Tajuk serif, dua gambar dalam frame kaca.", { text: "dua jag", a: "jus & kering", items: ["jag jus", "jag kering"], ph: 3 }], ["e-uspm", "M Marker + senarai", "Perkataan marker besar, senarai tulisan tangan.", { a: "satu mesin je", text: "9 in 1", items: ["cincang", "parut", "perah"], ph: 1 }], ["e-uspb4", "B4 Empat gambar", "Empat gambar besar bersusun 2 x 2.", { text: "Reversible", a: "2 warna dalam 1 selimut", items: ["gelap · cerah", "hijau", "pink", "beige"], ph: 4 }]]],
@@ -2158,17 +2221,18 @@ const FX_KINDS = [
   /* no longer offered (user 2026-11-12: buang USP B, C, D; no text stickers), kept so older videos still open and render */
   ["Lama", [...TXT_OLD, ["e-uspb", "B Polaroid", "", { text: "Vanilla Rose", a: "bau dia macam…", items: ["fruity", "floral", "sweet"], ph: 3 }], ["e-uspc", "C Jubin nombor", "", { text: "top notes", items: ["starfruit", "quince", "mocktail"], a: "", ph: 1 }], ["e-uspd", "D Label + sticky", "", { a: "Vanilla Peony ✿", b: "soft & comforting", items: ["CREAMY", "FLORAL", "SWEET"], text: "← lembut, tenang", ph: 1 }], ["t-blob", "Die-cut krim", "", { text: "SEDAP!" }], ["t-cta", "Pill beg bawah", "", { text: "Tengok beg bawah" }], ["t-stick", "Word sticker", "", { text: "JIMAT!" }], ["t-note", "Tip note", "", { text: "Tip" }], ["t-pill", "Pill", "", { text: "Tahan lembap" }]]]
 ];
-const FX_CATS = ["Latar", "Cutout", "Text", "Photos", "USP", "End Card", "Labels", "Cards", "Paper Labels", "Big Text", "Zoom"];
+const FX_CATS = ["Latar", "HUD", "Cutout", "Text", "Photos", "USP", "End Card", "Labels", "Cards", "Paper Labels", "Big Text", "Zoom"];
 let fxCat = "Text", fxListOpen = false;
 /* p30 (26 Nov 2026, Mira): 6 kumpulan besar di baris atas, kategori lama di baris kedua; "Baru guna" dan "Templat saya" (simpanan dalam device ni). */
-const FX_GROUPS = [["Latar", ["Latar"]], ["Teks", ["Text", "Big Text", "Paper Labels"]], ["Kamera", ["Zoom"]], ["Cutout", ["Cutout"]], ["Kad", ["Cards", "Labels"]], ["Gambar", ["Photos", "USP", "End Card"]]];
+const FX_GROUPS = [["Latar", ["Latar"]], ["Teks", ["Text", "Big Text", "Paper Labels"]], ["Kamera", ["Zoom"]], ["Cutout", ["Cutout"]], ["Kad", ["Cards", "Labels"]], ["Gambar", ["Photos", "USP", "End Card"]], ["HUD", ["HUD"]]];
 const fxGrpOf = c => (FX_GROUPS.find(g => g[1].includes(c)) || [c])[0];
 const lsGet = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } }, lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
 const fxRecent = () => lsGet("fxRecent", []).filter(k => fxDef(k)), fxMine = () => lsGet("fxMine", []).filter(m => m && fxDef(m.k));
-const FX_KEEP = ["s", "x", "y", "d", "c1", "c2", "bo", "gap", "var", "c", "sk", "tn", "bh", "ow", "wob", "fy", "fm", "rx", "ry", "spd"];   /* medan gaya yang disimpan dalam templat sendiri (bukan teks / gambar) */
+const FX_KEEP = ["s", "x", "y", "d", "c1", "c2", "bo", "gap", "var", "c", "sk", "tn", "bh", "ow", "wob", "fy", "fm", "rx", "ry", "spd", "lv"];   /* medan gaya yang disimpan dalam templat sendiri (bukan teks / gambar) */
 document.addEventListener("toggle", e => { if (e.target && e.target.id === "fxList") { fxListOpen = e.target.open; const sm = e.target.querySelector("summary"); if (sm) sm.textContent = sm.textContent.replace(/tekan untuk (tutup|buka)/, "tekan untuk " + (fxListOpen ? "tutup" : "buka")); } }, true);
 /* field labels of the newer effects: text, a, b, items */
 const FXL = {
+  "e-vfind": { a: "Label bawah kiri" }, "e-chap": { text: "Label bab (ditaip)" }, "e-scram": { a: "Label kecil atas", b: "Sub-tajuk teal", text: "Nama (huruf rawak dulu)" }, "e-meter": { a: "Perkataan 1 (putih)", b: "Label meter", text: "Perkataan 2 (bercahaya)" }, "e-neon": { a: "Pill setup (boleh kosong)", text: "Perkataan neon" }, "e-illus": { a: "Tajuk kecil", text: "Perkataan besar", items: "Label panel Sebelum / Selepas" },   /* p36 */
   "e-cboard": { a: "Tajuk kecil atas", items: "Satu baris setiap langkah" }, "e-apptake": { a: "Nama app", b: "Label kuning (boleh kosong)", text: "Teks yang ditaip" }, "e-notewall": { items: "Satu baris setiap kad (maks 10)" },
   "e-pcutout": { text: "Label kertas (boleh kosong)" }, "e-orbit": { items: "Satu baris setiap perkataan (maks 5)" },
   "e-cpop": { a: "Tajuk (boleh kosong)", items: "Satu baris setiap item" }, "e-storm": { text: "Tajuk utama (paling besar)", items: "Baris lain, satu baris setiap satu (maks 4)" },
@@ -2187,17 +2251,20 @@ const FXL = {
 };
 /* p28 (26 Nov 2026, Mira): effect baru yang boleh dilaras. x.c1 warna teks, x.c2 warna aksen, x.bo legap latar (0-100), x.gap jarak masa antara baris (s),
    x.var gaya. Markup dan masa MESTI sama dengan fx5_html() / fx5_anim() dalam render_draft.py. */
-const FX5 = ["e-cpop", "e-storm", "e-chat", "e-wall", "e-pcutout", "e-fesc", "e-orbit", "e-cboard", "e-apptake", "e-notewall", "e-clipwall"], BODYFX = ["e-pcutout", "e-fesc"], FX5_GAP = { "e-cpop": .45, "e-storm": .14, "e-chat": .55, "e-wall": .18, "e-cboard": .9, "e-apptake": .14, "e-notewall": .22, "e-clipwall": .12 };
+const FX5 = ["e-cpop", "e-storm", "e-chat", "e-wall", "e-pcutout", "e-fesc", "e-orbit", "e-cboard", "e-apptake", "e-notewall", "e-clipwall", "e-vfind", "e-chap", "e-scram", "e-meter", "e-neon", "e-illus"], BODYFX = ["e-pcutout", "e-fesc"], FX5_GAP = { "e-cpop": .45, "e-storm": .14, "e-chat": .55, "e-wall": .18, "e-cboard": .9, "e-apptake": .14, "e-notewall": .22, "e-clipwall": .12, "e-meter": .5, "e-neon": .9, "e-illus": .5 };
+/* p36: gaya HUD Review. HUD_BG = latar penuh skrin yang tak dikira dalam semakan tindih / safe zone. hudScram() sama dengan hud_scram() dalam render_draft.py */
+const HUD_BG = ["e-vfind", "e-illus"], HUD_CH = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#%&";
+const hudScram = t => Array.from({ length: 6 }, (_, i) => [...t].map((c, j) => c === " " || j < Math.floor(t.length * i / 6) ? c : HUD_CH[(i * 31 + j * 17 + c.charCodeAt(0) * 7) % HUD_CH.length]).join(""));
 /* p31 (26 Nov 2026, Mira): gaya ikut video rujukan. Slot kad Dinding nota: [kiri cqw, atas cqw, pusing darjah, gaya]; sama dengan NOTE_SLOTS dalam render_draft.py */
 const NOTE_SLOTS = [[4, 2, -4, "p"], [36, 0, 2, "k"], [68, 4, 3, "p"], [8, 20, 2, "c"], [40, 17, -2, "p"], [70, 22, -3, "s"], [2, 39, -3, "k"], [34, 36, 3, "p"], [66, 41, 2, "c"], [20, 56, -2, "p"]];
 const orbPic = x => x.var === "gambar" || x.var === "phone";
 const FX5_R = { "e-pcutout": [["ow", "Tebal garis", 0, 100, 5, 50, "%"], ["wob", "Goyang", 0, 100, 5, 50, "%"]], "e-fesc": [["fy", "Tinggi frame", 15, 70, 1, 42, "%"], ["fm", "Tepi frame", 0, 25, 1, 8, "%"]],
   "e-cboard": [["w", "Lebar papan", 50, 96, 1, 78, ""], ["fs", "Saiz teks", 70, 150, 5, 100, "%"], ["rd", "Bucu", 0, 10, .5, 4.5, ""]], "e-apptake": [["ht", "Tinggi skrin", 70, 130, 2, 96, ""], ["fs", "Saiz teks", 70, 150, 5, 100, "%"]],
-  "e-notewall": [["nw", "Lebar kad", 20, 40, 1, 28, ""], ["fs", "Saiz teks", 70, 150, 5, 100, "%"]], "e-clipwall": [["gp", "Celah", 0, 30, 1, 5, ""], ["rd", "Bucu", 0, 6, .5, 0, ""]],   /* p32: empat ni dihantar sebagai --medan dalam fx5Vars (FX5_RV) */
+  "e-notewall": [["nw", "Lebar kad", 20, 40, 1, 28, ""], ["fs", "Saiz teks", 70, 150, 5, 100, "%"]], "e-meter": [["lv", "Tahap meter", 0, 100, 5, 85, "%"]],   /* p36 */ "e-clipwall": [["gp", "Celah", 0, 30, 1, 5, ""], ["rd", "Bucu", 0, 6, .5, 0, ""]],   /* p32: empat ni dihantar sebagai --medan dalam fx5Vars (FX5_RV) */
   "e-orbit": [["rx", "Lebar pusingan", 15, 48, 1, 34, ""], ["ry", "Condong", 0, 14, 1, 5, ""], ["spd", "Laju", 10, 80, 2, 32, ""]] };   /* slider tambahan: [medan, label, min, max, langkah, lalai, unit] */
-const FX5_RV = ["e-cboard", "e-apptake", "e-notewall", "e-clipwall"];
-const FX5_CL = { "e-cboard": ["Warna teks", "Warna aksen", "Warna papan"], "e-apptake": ["Warna teks", "Warna label", "Warna latar"], "e-notewall": ["Warna kertas", "Warna teks", "Warna kad gelap"], "e-clipwall": ["Warna celah", ""], "e-chat": ["Warna kiri", "Warna kanan"], "e-wall": ["Warna frame", ""], "e-pcutout": ["Warna kertas", "Warna garis", "Warna blok"], "e-fesc": ["Warna latar", "Warna frame"], "e-orbit": ["Warna pil", "Warna teks"] };
-const FX5_VAR = { "e-pcutout": [["", "Bintik"], ["polos", "Polos"], ["kolaj", "Kolaj"]], "e-fesc": [["", "Biasa"], ["reels", "Reels"]], "e-orbit": [["", "Pil"], ["teks", "Teks sahaja"], ["gambar", "Gambar"], ["phone", "Kad phone"]], "e-chat": [["", "Chat"], ["komen", "Komen"]], "e-wall": [["", "Frame putih"], ["pola", "Polaroid"], ["tiada", "Tanpa frame"]], "e-cpop": [["", "Gelap"], ["cerah", "Cerah"], ["tiada", "Tanpa kad"]], "e-storm": [["", "Bold"], ["serif", "Serif"], ["marker", "Marker"]] };
+const FX5_RV = ["e-cboard", "e-apptake", "e-notewall", "e-clipwall", "e-meter"];
+const FX5_CL = { "e-vfind": ["Warna bingkai", "Warna label"], "e-chap": ["Warna teks", ""], "e-scram": ["Warna nama", "Warna aksen", "Warna kad"], "e-meter": ["Warna perkataan 1", "Warna perkataan 2"], "e-neon": ["Warna neon", "Warna pill"], "e-illus": ["Warna perkataan", "Warna latar"], "e-cboard": ["Warna teks", "Warna aksen", "Warna papan"], "e-apptake": ["Warna teks", "Warna label", "Warna latar"], "e-notewall": ["Warna kertas", "Warna teks", "Warna kad gelap"], "e-clipwall": ["Warna celah", ""], "e-chat": ["Warna kiri", "Warna kanan"], "e-wall": ["Warna frame", ""], "e-pcutout": ["Warna kertas", "Warna garis", "Warna blok"], "e-fesc": ["Warna latar", "Warna frame"], "e-orbit": ["Warna pil", "Warna teks"] };
+const FX5_VAR = { "e-vfind": [["", "Penuh"], ["min", "Sudut sahaja"]], "e-illus": [["vs", "Sebelum / Selepas"], ["", "Satu gambar"]], "e-pcutout": [["", "Bintik"], ["polos", "Polos"], ["kolaj", "Kolaj"]], "e-fesc": [["", "Biasa"], ["reels", "Reels"]], "e-orbit": [["", "Pil"], ["teks", "Teks sahaja"], ["gambar", "Gambar"], ["phone", "Kad phone"]], "e-chat": [["", "Chat"], ["komen", "Komen"]], "e-wall": [["", "Frame putih"], ["pola", "Polaroid"], ["tiada", "Tanpa frame"]], "e-cpop": [["", "Gelap"], ["cerah", "Cerah"], ["tiada", "Tanpa kad"]], "e-storm": [["", "Bold"], ["serif", "Serif"], ["marker", "Marker"]] };
 const FX5_COL = ["#ffffff", "#14141a", "#ffd447", "#35d6c3", "#ff8fa3", "#b9a7ff", "#ffb86b", "#7ee08a"];
 const fx5Col = c => /^#[0-9a-f]{3,8}$/i.test(c || "") ? c : "";
 const fx5Vars = x => `${fx5Col(x.c1) ? `--c1:${x.c1};` : ""}${fx5Col(x.c2) ? `--c2:${x.c2};` : ""}${x.bo != null ? `--bo:${(Math.max(0, Math.min(100, +x.bo)) / 100).toFixed(2)};` : ""}${fx5Col(x.c3) ? `--c3:${x.c3};` : ""}${FX5_RV.includes(x.k) ? FX5_R[x.k].map(q => x[q[0]] != null && isFinite(+x[q[0]]) ? `--${q[0]}:${+x[q[0]]};` : "").join("") : ""}`;
@@ -2209,6 +2276,13 @@ function fx5(x, url) {
   if (k === "e-chat") return `<div class="e-chat${v}" style="${st}">${it.map((t, i) => { const r = /^\s*>/.test(t), m = t.replace(/^\s*>\s*/, ""); return `<div class="eu bb ${r ? "r" : "l"}" style="${d(i * gap)}">${x.var === "komen" ? `<b>${e(r ? (x.b || "miracikcit") : (x.a || "kawan"))}</b>` : ""}<span>${e(m)}</span></div>`; }).join("")}</div>`;
   const pu = i => url((x.photos || [])[i] || ((D.photos || [])[i] || {}).id);
   const pc = i => { const all = D.photos || [], id = (x.photos || [])[i] || (all[i] || all[0] || {}).id; return id ? url(id) : ""; };   /* p31: tak cukup gambar = ulang gambar pertama (sama dengan get() dalam render) */
+  /* p36: HUD Review */
+  if (k === "e-vfind") return `<div class="e-vfind${v}" style="${st}"><i class="qa"></i><i class="qb"></i><i class="qc"></i><i class="qd"></i>${x.var === "min" ? "" : `<span class="qrec"><i></i>${e(x.a || "REVIEW")}</span>`}</div>`;
+  if (k === "e-chap") { const t = x.text || ""; return `<div class="e-chap${v}" style="${st}"><span class="qty" style="${d(.05)};--n:${Math.max(1, t.length)}">${e(t)}</span><i class="qcur"></i></div>`; }
+  if (k === "e-scram") { const t = (x.text || "").toUpperCase(), L = hudScram(t); return `<div class="e-scram${v}" style="${st}"><small class="eu" style="${d(0)}">${e(x.a || "PRODUK // MODEL")}</small><b class="qsw">${L.map((q, i) => `<span class="qsl" style="${d(.25 + i * .09)}">${e(q)}</span>`).join("")}<span class="qfin" style="${d(.25 + L.length * .09)}">${e(t)}</span></b>${x.b ? `<em class="eu" style="${d(.4 + L.length * .09)}">${e(x.b)}</em>` : ""}</div>`; }
+  if (k === "e-meter") return `<div class="e-meter${v}" style="${st}"><div class="qw"><b class="eu" style="${d(0)}">${e(x.a || "")}</b><b class="eu q2" style="${d(gap)}">${e(x.text || "")}</b><i class="eu qsp" style="${d(gap + .1)}">✦</i></div><div class="qm eu" style="${d(gap + .15)}"><small>${e(x.b || "")}</small><span class="qbar"><i class="qmk" style="${d(gap + .3)}"></i></span></div></div>`;
+  if (k === "e-neon") { const g0 = x.a ? gap : 0; return `<div class="e-neon${v}" style="${st}">${x.a ? `<span class="eu qpill" style="${d(0)};--d2:${gap.toFixed(2)}s">${e(x.a)}</span>` : ""}<b class="qn" style="${d(g0)}">${e(x.text || "")}</b><i class="qsp" style="${d(g0 + .25)}">✦</i></div>`; }
+  if (k === "e-illus") { const lb = it.length ? it : ["SEBELUM", "SELEPAS"]; return `<div class="e-illus${v}" style="${st}"><div class="qin"><small class="eu" style="${d(.1)}">${e(x.a || "")}</small><b class="eu" style="${d(.25)}">${e(x.text || "")}<i>✦</i></b>${x.var === "vs" ? `<div class="qvs">${[0, 1].map(i => `<span class="eu qp q${i}" style="${d(.45 + i * gap)}"><u>${e(lb[i] || "")}</u><img src="${pc(i)}" alt=""></span>`).join("")}</div>` : `<span class="eu qone" style="${d(.45)}"><img src="${pc(0)}" alt=""></span>`}</div></div>`; }
   if (k === "e-cboard") { const N = it.length; return `<div class="e-cboard${v}" style="${st}"><div class="qhd"><span>${e(x.a || "")}</span><span class="qct"><b>0 / ${N}</b>${it.map((t, i) => `<b class="eu" style="${d(.4 + i * gap + gap * .45)}">${i + 1} / ${N}</b>`).join("")}</span></div><div class="qbar">${it.map((t, i) => `<i class="eu" style="${d(.4 + i * gap + gap * .45)}"></i>`).join("")}</div>${it.map((t, i) => `<div class="qrw"><i class="qck"><u class="eu" style="${d(.4 + i * gap + gap * .45)}">✓</u></i><span class="qph"></span><span class="eu qlb" style="${d(.4 + i * gap)}">${e(t)}</span></div>`).join("")}</div>`; }
   if (k === "e-apptake") { const n = 5, t1 = .5 + n * gap; return `<div class="e-apptake${v}" style="${st}"><h5 class="eu" style="${d(0)}">${e(x.a || "")}</h5><div class="qbx eu" style="${d(.15)}"><div class="qth">${Array.from({ length: n }, (_, i) => `<span class="eu qt" style="${d(.5 + i * gap)}"><img src="${pc(i)}" alt=""></span>`).join("")}${x.b ? `<b class="eu qpl" style="${d(t1 + .15)}">${e(x.b)}</b>` : ""}</div><div class="qin"><span class="qty" style="${d(t1 + .5)};--n:${Math.max(1, (x.text || "").length)}">${e(x.text || "")}</span><i class="qsd"></i></div></div></div>`; }
   if (k === "e-notewall") return `<div class="e-notewall${v}" style="${st}">${it.slice(0, 10).map((t, i) => { const q = NOTE_SLOTS[i]; return `<span class="eu qn q${q[3]}" style="${d(i * gap)};left:${q[0]}cqw;top:${q[1]}cqw;rotate:${q[2]}deg">${e(t)}</span>`; }).join("")}</div>`;
@@ -2817,7 +2891,7 @@ function planCaps() {
   const sig = JSON.stringify([S.stickers.map(x => [x.k, x.t, x.d, x.x, x.y, x.s, x.text, x.items, x.al, x.a, x.b]), GR.length, GR[0].start, GR[GR.length - 1].end, capK(), S.capMode, moreFonts, FONTS_OK, HLS.map(h => [h.t, h.d, h.x, h.y, h.text])]);
   if (sig === capSig && CAPPLAN) return; capSig = sig;
   const frac = r => ({ l: (r.left - st.left) / st.width, r: (r.right - st.left) / st.width, t: (r.top - st.top) / st.height, b: (r.bottom - st.top) / st.height });
-  const boxes = [...$("stlayer").children].map(el => { const x = S.stickers[+el.dataset.st]; if (!x) return null; return { t0: x.t, t1: x.t + x.d, f: x.k === "e-bigblur" ? { l: 0, r: 1, t: .3, b: .7 } : frac(FULLFX(x) ? drawnRect(el, st) : measured(el)) }; }).filter(Boolean).concat(HLS.map(h => ({ t0: h.t, t1: h.t + h.d, f: h.box })));
+  const boxes = [...$("stlayer").children].map(el => { const x = S.stickers[+el.dataset.st]; if (!x || HUD_BG.includes(x.k)) return null; return { t0: x.t, t1: x.t + x.d, f: x.k === "e-bigblur" ? { l: 0, r: 1, t: .3, b: .7 } : frac(FULLFX(x) ? drawnRect(el, st) : measured(el)) }; }).filter(Boolean).concat(HLS.map(h => ({ t0: h.t, t1: h.t + h.d, f: h.box })));
   const k = capK(); let prev = -1;
   CAPPLAN = GR.map(g => {
     const chars = g.words.map(showWord).join(" ").length, w = Math.min(.778, chars * k * .0214 + .03), rows = Math.max(1, Math.ceil(chars * k * .0214 / .778)), h = Math.min(.3, rows * .0263 * k + .012);
@@ -2904,7 +2978,7 @@ function drawHL() {
   CAPHL = {};
   HLS = D && hasCap() ? hlRuns() : [];
   const st = $("stage").getBoundingClientRect(), fr = r => ({ l: (r.left - st.left) / st.width, r: (r.right - st.left) / st.width, t: (r.top - st.top) / st.height, b: (r.bottom - st.top) / st.height });
-  const boxes = st.width ? [...$("stlayer").children].map(el => { const x = S.stickers[+el.dataset.st]; if (!x || x.k.startsWith("e-hook")) return null; return { t0: x.t, t1: x.t + x.d, f: x.k === "e-bigblur" ? { l: 0, r: 1, t: .3, b: .7 } : fr(FULLFX(x) ? drawnRect(el, st) : measured(el)) }; }).filter(Boolean) : [];
+  const boxes = st.width ? [...$("stlayer").children].map(el => { const x = S.stickers[+el.dataset.st]; if (!x || x.k.startsWith("e-hook") || HUD_BG.includes(x.k)) return null; return { t0: x.t, t1: x.t + x.d, f: x.k === "e-bigblur" ? { l: 0, r: 1, t: .3, b: .7 } : fr(FULLFX(x) ? drawnRect(el, st) : measured(el)) }; }).filter(Boolean) : [];
   HLS.forEach(h => {
     h.css = hlStyle(h);
     if (h.x == null || h.y == null) {   // free spot in the upper safe zone that no sticker or effect uses at that moment
@@ -3814,7 +3888,7 @@ function runChecks() {
     el.hidden = h; el.style.visibility = v;
     return l < 1e9 ? { left: l, top: t, right: r, bottom: b } : measured(el);
   };
-  const rects = [...$("stlayer").children].map(el => { const x = S.stickers[+el.dataset.st]; return { i: +el.dataset.st, f: frac(x && FULLFX(x) && x.k !== "e-bigblur" ? drawn(el) : measured(el)) }; });
+  const rects = [...$("stlayer").children].map(el => { const x = S.stickers[+el.dataset.st]; return { i: +el.dataset.st, f: frac(x && FULLFX(x) && x.k !== "e-bigblur" ? drawn(el) : measured(el)) }; }).filter(r => !HUD_BG.includes((S.stickers[r.i] || {}).k));   /* p36 */
   const nameOf = x => isFxS(x) ? fxDef(x.k)[1] : x.k.startsWith("t-") ? (x.text || "Sticker") : (libOf(x.k) || {}).n || "Sticker";
   let bad = 0;
   rects.forEach(({ i, f }) => { const x = S.stickers[i]; if (!x) return; if (!safe(f)) { bad++; add(false, `${nameOf(x)} pada ${fmt(x.t)} keluar safe zone`, x.t, { st: i }); } if (x.t >= endT()) { bad++; add(false, `${nameOf(x)} selepas video tamat`, endT() - .2, { st: i }); } if (S.hook.trim() && x.t < HOOK_END - .4 && f.t < hk.b && f.b > hk.t && f.l < hk.r && f.r > hk.l) { bad++; add(false, `${nameOf(x)} tertindih dengan tajuk`, x.t, { st: i }); } });
@@ -3842,6 +3916,7 @@ const FX_FAMILY = [
   ["Number", ["e-num", "e-tiles", "e-cal", "e-chart"]],
   ["Photo", ["e-polg", "e-polt", "e-pola", "e-fbreak", "e-wipe", "e-stack", "e-fan", "e-phone", "e-cardrow"]],
   ["B-roll", ["e-cut"]],   /* p33 */
+  ["HUD", ["e-vfind", "e-chap", "e-scram", "e-meter", "e-neon", "e-illus"]],   /* p36 */
   ["USP scene", ["e-uspa", "e-uspg", "e-usph", "e-uspm", "e-uspb4"]],
   ["End card", ["e-endc", "e-endc2", "e-endc3", "e-endc4"]]
 ];
