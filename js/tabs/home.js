@@ -191,7 +191,7 @@ function autoSheet(){if(mode!=='live'||!sheetRaw.PRODUCTS||Date.now()-autoSheetA
     if((it.shopee&&!g.shopee)||(it.tiktok&&!g.tt)){const k='lk'+g.start;if(!autoDone[k]){autoDone[k]=1;itemLinksToSheet(it,g).catch(()=>{})}}
     if(it.sample&&it.sample.price&&(!g.price||!g.kind)){const k='pr'+g.start;if(!autoDone[k]){autoDone[k]=1;sheetWrite(`PRODUCTS!R${g.start}:S${g.start}`,[[g.kind||'SAMPLE',g.price||it.sample.price]]).catch(()=>{})}}});
   /* 24 Nov: tanda doc edpwa yang dah published (sama syarat dengan tab Editor) supaya app Editor sendiri sorok dari senarai */
-  (S.edpwa||[]).forEach(e=>{const pub=edPublished({name:e.title,folder:String(e.dir||'').split('/CLAUDE EDITS/')[1]||''});if(!!e.pub!==pub)save('edpwa',Object.assign({},e,{pub}),true)});
+  (S.edpwa||[]).forEach(e=>{const pub=e.final==='siap'&&edPublished({name:e.title,folder:String(e.dir||'').split('/CLAUDE EDITS/')[1]||''});if(!!e.pub!==pub)save('edpwa',Object.assign({},e,{pub}),true)});
   autoSched().catch(()=>{});   /* 24 Nov: jadual posting */
   try{rawPlanSync()}catch(e){}   /* 25 Nov: pelan raw footage untuk Mac mini */
   if(moved){render();toast(moved+' item lama dipindah ke Published (video dah ada dalam Sheet)')}}

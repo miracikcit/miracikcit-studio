@@ -17,7 +17,7 @@ A.edSave=el=>{const n=$('#edN').value.trim();if(!n){toast('Isi nama video');retu
 A.edDel=el=>{const e=get('editor',el.dataset.id);confirmBox('Padam "'+(e.name||'projek')+'" dari senarai?',()=>del('editor',e.id))};
 
 /* Editor PWA (2026-11-22): video yang dah dihantar oleh edpwa.py, buka terus dalam editor Studio (layout CapCut) */
-function edPwaBox(){const l=(S.edpwa||[]).slice().sort((a,b)=>(b.updated||0)-(a.updated||0)).filter(e=>hit('ed',e.title,e.id)&&!edPublished({name:e.title,folder:String(e.dir||'').split('/CLAUDE EDITS/')[1]||''}));if(!l.length)return'';
+function edPwaBox(){const l=(S.edpwa||[]).slice().sort((a,b)=>(b.updated||0)-(a.updated||0)).filter(e=>hit('ed',e.title,e.id)&&!(e.final==='siap'&&edPublished({name:e.title,folder:String(e.dir||'').split('/CLAUDE EDITS/')[1]||''})));if(!l.length)return'';
   return `<div class="card glass" style="margin-bottom:14px"><p class="eyebrow" style="margin:0 0 8px">Dalam app Editor · kemas kini sendiri</p>${l.map(e=>`<div class="rowh" style="align-items:center;gap:8px;padding:4px 0"><div style="min-width:0"><h3 style="font-size:12.5px;letter-spacing:.06em;line-height:1.3">${esc(e.title||e.id)}</h3><div class="meta">${e.status==='proses'?'Mac mini sedang sediakan…':e.status==='error'?esc(e.msg||'Ralat'):`${e.n||0} fail · ${fmtD(e.updated)}`}</div></div>${edDraftPill(e)}</div>`).join('')}</div>`}
 /* Kad Home 'Edit sendiri' (2026-11-22): pilih folder footage, Mac mini sediakan editor tanpa Claude (job ed_new, 0 token). Design ikut kad Home rbox. */
 function edSelfHome(){
@@ -33,7 +33,7 @@ function edSelfHome(){
 function edDraftPill(e){const d=e.draft;if(!d)return'';return d.status==='proses'?'<span class="pill" style="--pc:var(--warn)">Render draf…</span>':d.status==='error'?'<span class="pill" style="--pc:var(--bad)">Draf gagal</span>':d.id?'<span class="pill" style="--pc:var(--ok)">Draf siap</span>':''}
 
 /* 2026-11-23 (Mira): projek yang semua videonya dah published (Sheet settled) tak keluar lagi dalam tab Editor */
-function edPublished(e){const nm=[e.name,String(e.folder||'').split('/')[1],String(e.folder||'').split('/').pop()].filter(x=>x&&nrm(x).length>=4);return nm.some(n=>isPublishedName(n))}
+function edPublished(e){if((e.parts||[]).some(p=>!/siap/i.test(p.status||'')))return false;const nm=[e.name,String(e.folder||'').split('/')[1],String(e.folder||'').split('/').pop()].filter(x=>x&&nrm(x).length>=4);return nm.some(n=>isPublishedName(n))}
 
 /* 24 Nov (Mira): butang editor sentiasa ke Editor PWA, bukan artifact. Padankan projek tracker dengan doc edpwa (folder / nama). */
 function edPwaFor(e){const L=(S.edpwa||[]).filter(x=>x.status!=='error');const f=String(e.folder||'').toLowerCase(),n=nrm(e.name||'');
