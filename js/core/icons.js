@@ -25,8 +25,8 @@ const IC={
 };
 const TABS_=[
  ['home','Home','#9A4F5D'],['ideas','Ideas','#C29A3C'],['links','Confirmed Projects','#5A8FB5'],['to-shoot','Shoot','#CF8A55'],['shot','Shot','#C2666A'],['to-edit','Edit','#8676BE'],
- ['ready','To Publish','#8A6A52'],['published','Published','#6B5548'],['caption','Caption','#B0704F'],['threads','Threads','#7A5C6E'],['jobs','Jobs','#A8763E'],
- ['editor','Editor','#9C6396'],['footage','Footage library','#9A8C7A'],['broll','B-Roll Picker','#B0704F'],['inspiration','Copy Style','#4E3A2E'],['transcribe','Transcribe','#8C6A4F'],['media-kit','Media Kit','#B0937B'],['carousel','Carousel','#B5677A'],['vo','VO','#B5546B'],['lagi','Lagi','#9A8C7A']
+ ['ready','To Publish','#8A6A52'],['published','Published','#6B5548'],['caption','Caption','#B0704F'],['threads','Posting Gambar','#7A5C6E'],['jobs','Jobs','#A8763E'],
+ ['editor','Editor','#9C6396'],['footage','Footage library','#9A8C7A'],['broll','B-Roll Picker','#B0704F'],['inspiration','Rujukan','#4E3A2E'],['transcribe','Transcribe','#8C6A4F'],['media-kit','Media Kit','#B0937B'],['carousel','Design','#B5677A'],['vo','VO','#B5546B'],['lagi','Lagi','#9A8C7A']
 ].map(([k,l,c])=>({k,l,c,ic:IC[k==='vo'?'mic':k.replace('-','')]||IC.plus}));
 const NAV=['home','links','to-shoot','vo','to-edit','editor','ready','published','lagi'];   /* 23 Nov: Ideas dalam Lagi, VO antara Shoot dan Edit */
 const navLabel=l=>l.replace('Ready to Publish','Ready').replace('Confirmed Projects','Projects');

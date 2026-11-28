@@ -1938,10 +1938,18 @@ def render(job):
     recipe = {"v": ENGINE_VERSION, "seed": seed, "vibe": vibe, "aspect": opts["aspect"],
               "slides": [{k2: v for k2, v in s.items() if k2 != "locked"} for s in slides]}
     r = {"slides": paths, "preview": str(pv), "thumb": str(th), "recipe": recipe, "warnings": warnings,
-         "log": c.log, "engine": ENGINE_VERSION}
+         "log": c.log, "engine": ENGINE_VERSION, "kits": kit_list()}
     json.dump(r, open(out / "result.json", "w"))
     prog(100, "Siap")
     return r
+
+
+def kit_list():
+    try:
+        import design_kits
+        return [{"id": k, "name": v["name"], "formats": v["formats"]} for k, v in design_kits.KITS.items()]
+    except Exception:
+        return []
 
 
 def save_outputs(img, n, W, H, out, seed, vibe="kit"):
@@ -1981,7 +1989,8 @@ def render_kit_out(opts, photos, seed, out, warnings):
     paths, pv, th = save_outputs(st.img, st.n, st.W, st.H, out, seed)
     recipe = {"v": ENGINE_VERSION, "seed": seed, "vibe": "kit:" + rec["kit"], "aspect": opts.get("aspect"),
               "kit": rec["kit"], "format": rec["format"], "slides": rec["slides"]}
-    r = {"slides": paths, "preview": pv, "thumb": th, "recipe": recipe, "warnings": warnings, "engine": ENGINE_VERSION}
+    r = {"slides": paths, "preview": pv, "thumb": th, "recipe": recipe, "warnings": warnings, "engine": ENGINE_VERSION,
+         "kits": kit_list()}
     json.dump(r, open(out / "result.json", "w"))
     prog(100, "Siap")
     return r

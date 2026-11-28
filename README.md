@@ -11,13 +11,14 @@ App Studio @miracikcit: skrin penuh di phone, sync semua device melalui Google S
 
 Tiada rahsia dalam repo ni. Kunci worker dan kod rahsia Studio disimpan dalam Script Properties.
 
-## Carousel (Lagi > Carousel)
+## Rujukan → Design → Posting Gambar (Lagi)
 
-Upload gambar, pilih setting, Mac mini jana carousel IG seamless (0 token, tanpa Claude). Setiap Generate / Shuffle
-guna seed baru dan elak resipi 8 carousel terakhir, jadi templat, cutout dan hiasan sentiasa berlainan.
+Satu hala: **Rujukan** (dump apa yang Mira suka) → **Design** (edit gambar ikut templat, 0 token) → **Posting Gambar** (tulis ayat untuk Threads, IG, FB, TikTok). Caption (video produk) kekal tab sendiri.
 
-- `js/tabs/carousel.js` : tab Studio (upload dikecilkan ke 2560 px dalam phone, pilih hero ★, setting, kunci slide, Shuffle, versi lama, Enhance sahaja).
-- `mac-mini/carousel.py` : job `carousel` (muat turun gambar, jalankan enjin, upload ke Drive `Miracikcit Studio Files/CAROUSEL/<tarikh> <tajuk>`, tulis doc `carousel/<id>`).
-- `mac-mini/carousel_engine.py` : enjin (13 templat, 4 gaya cutout, 4 vibe, 6 preset warna dengan pelindung warna kulit, perlindungan muka di garis potong). Boleh dijalankan sendiri: `python carousel_engine.py --job job.json`.
-- Pasang sekali di Mac mini: salin `carousel.py`, `carousel_engine.py`, `carousel_setup.sh` dan `worker.py` ke `~/MiracikcitTranscribe/`, jalankan `bash ~/MiracikcitTranscribe/carousel_setup.sh` (venv `carousel_env`, ~600 MB), kemudian mulakan semula worker.
+- `js/tabs/rujukan.js` : tab Rujukan (dulu Copy Style + Inspiration). Dump gambar (board) / video / link (Resipi reel, aliran `gaya.js`). Segmen Templat: pilih rujukan + nota > "Minta jadi templat" (job `tpl_req`, doc `kitreq/<id>`).
+- `js/tabs/carousel.js` : tab Design (format Carousel / Single / Cover reel / Warna, templat Kit Gaya atau Kolaj rawak, tulisan pilihan, kunci slide, Shuffle, versi lama, Hantar ke Posting Gambar). Senarai kit dari doc `sync/kits`.
+- `js/tabs/threads.js` : tab Posting Gambar (dulu Threads). Tiada edit gambar; terima gambar dari Design; pilih platform; belajar gaya ayat kekal.
+- `mac-mini/carousel.py` : job `carousel` (jana) dan `tpl_req` (muat turun rujukan ke `kit-requests/<id>/`, buka sesi Claude Code yang tambah kit baru).
+- `mac-mini/carousel_engine.py` + `mac-mini/design_kits.py` : enjin. Kit Gaya (`doodle`, `comel`, `majalah`) dalam `design_kits.py`; kolaj rawak lama dalam `carousel_engine.py`. Font dalam `mac-mini/fonts/` (OFL / Apache).
+- Pasang sekali di Mac mini: salin `carousel.py`, `carousel_engine.py`, `design_kits.py`, folder `fonts/`, `carousel_setup.sh` dan `worker.py` ke `~/MiracikcitTranscribe/`, jalankan `bash ~/MiracikcitTranscribe/carousel_setup.sh`, mulakan semula worker.
 - Apps Script tak berubah.

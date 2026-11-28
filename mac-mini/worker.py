@@ -1660,9 +1660,12 @@ def studio_jobs(sheet, cfg):
             elif j["type"] == "folder_peek":   # gambar grid footage folder edit (tab Edit, 0 token)
                 import peek
                 outp = peek.run(inp, sheet, sys.modules[__name__])
-            elif j["type"] == "carousel":   # Studio > Carousel: generator carousel + enhance warna (0 token)
+            elif j["type"] == "carousel":   # Studio > Design: carousel, single, cover reel, warna (0 token)
                 import carousel
                 outp = carousel.run(inp, sheet, cfg, sys.modules[__name__])
+            elif j["type"] == "tpl_req":    # Studio > Rujukan > Minta jadi templat (sesi Claude Code)
+                import carousel
+                outp = carousel.run_tpl_req(inp, sheet, cfg, sys.modules[__name__])
             elif j["type"] == "mkfolder":
                 outp = run_mkfolder(inp, sheet)
             elif j["type"] == "jobparse":

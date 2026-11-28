@@ -164,6 +164,13 @@ def run(inp, sheet, cfg, W):
                     except Exception:
                         pass
         doc.set(status="done", pct=100, msg="Siap", out=new, old=old[:KEEP_OLD], err="")
+        if res.get("kits"):   # Studio tunjuk templat yang ada dalam Mac mini
+            try:
+                cur_k = sheet.call("dget", path="sync/kits").get("doc") or {}
+                if cur_k.get("kits") != res["kits"]:
+                    sheet.call("dset", path="sync/kits", data={"kits": res["kits"], "at": int(time.time() * 1000)})
+            except Exception:
+                pass
         return {"ok": True, "n": len(ids)}
     except Exception as e:
         try:
@@ -173,3 +180,42 @@ def run(inp, sheet, cfg, W):
         raise
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+
+
+TPL_PROMPT = """Mira minta templat Design baru (Kit Gaya) dari rujukan yang dia suka. Semua fail dalam folder {req}:
+ref_*.jpg (rujukan) dan REQUEST.md (nota Mira). Kerja dalam folder ni ({home}).
+
+1. Tengok SEMUA rujukan. Tulis ringkas rupa yang sama antara mereka: font, susunan, warna, cutout, hiasan, tulisan.
+2. Tambah satu kit baru dalam design_kits.py ikut corak kit sedia ada ({kits}): masukkan dalam KITS (id pendek huruf kecil,
+   nama Bahasa Melayu), sokong format carousel, single dan cover (cover: tajuk dan muka dalam kawasan selamat 285..1635).
+   Guna font dalam fonts/ (boleh tambah font Google Fonts OFL ke fonts/ berserta fail lesen). Jangan guna gambar dari internet.
+   Jangan ubah rupa kit lain.
+3. Uji: pilih 3 hingga 5 gambar orang dalam carousel_cache/files, tulis job.json dan jalankan
+   carousel_env/bin/python carousel_engine.py --job job.json (opts.kit = id baru, cuba carousel, single dan cover, dengan
+   dan tanpa tajuk). Buka setiap hasil dan semak sendiri: kemas, tiada muka atas garis potong, tulisan tak bertindih
+   muka. Betulkan sampai cantik dan dekat dengan rujukan.
+4. Bila siap: python3 studio.py merge kitreq/{rid} '{{"status":"siap","kit":"<id baru>"}}'
+   dan kemas kini senarai kit: python3 studio.py put sync/kits '<JSON {{"kits":[{{"id","name","formats"}}...]}} semua kit>'.
+5. Kalau ada clone repo miracikcit-studio dalam Mac ni, salin design_kits.py dan font baru ke mac-mini/ dan commit
+   di branch baru (jangan push ke main). Beritahu Mira ringkas apa yang dibuat dalam Bahasa Melayu."""
+
+
+def run_tpl_req(inp, sheet, cfg, W):
+    """Job tpl_req (Rujukan > Minta jadi templat): muat turun rujukan, buka sesi Claude Code yang tambah Kit Gaya baru."""
+    rid = str(inp.get("id") or "").strip()
+    refs = inp.get("refs") or []
+    if not rid or not refs:
+        raise RuntimeError("Tiada rujukan")
+    req = os.path.join(HOME, "kit-requests", rid)
+    os.makedirs(req, exist_ok=True)
+    for i, fid in enumerate(refs[:8], 1):
+        src = _fetch(sheet, fid)
+        shutil.copy(src, os.path.join(req, f"ref_{i}" + os.path.splitext(src)[1]))
+    with open(os.path.join(req, "REQUEST.md"), "w", encoding="utf-8") as fh:
+        fh.write(f"# Permintaan templat {rid}\n\nNota Mira: {inp.get('note') or '(tiada)'}\n\nKit sedia ada: {', '.join(inp.get('kits') or [])}\n")
+    prompt = TPL_PROMPT.format(req=req, home=HOME, kits=", ".join(inp.get("kits") or ["doodle", "comel", "majalah"]), rid=rid)
+    W.open_claude_session(HOME, "Templat baru " + rid[-5:], prompt, "kit-" + rid, cfg)
+    cur = sheet.call("dget", path="kitreq/" + rid).get("doc") or {}
+    cur.update({"status": "dibuat", "updated": int(time.time() * 1000)})
+    sheet.call("dset", path="kitreq/" + rid, data=cur)
+    return {"ok": True, "folder": req}
