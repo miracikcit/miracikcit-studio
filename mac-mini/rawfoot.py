@@ -181,7 +181,131 @@ def scan(sheet, plan=None):
             state.pop(key)
     _save(state)
     _put(sheet, out, mounted)
+    try:
+        inventory(sheet, mounted, state)
+    except Exception:
+        log.exception("inventori footage gagal")
     return out
+
+
+# ---------- Inventori SEMUA footage (2026-11-28, Mira: "senang aku tengok kedudukan footage aku sekarang") ----------
+# Doc `sync/footinv` {rows:[{key, main, name, kind, n, size, disk, newest}], mounted, updated}. 0 token, hanya stat fail.
+# kind: edit (projek CLAUDE EDITS), final (00. TO POST FINAL), raw (WORK 2026/RAW), best (TO HARD DRIVE).
+# disk = bilangan video yang ada dalam PERTAMA dengan saiz sama (None = tiada tempat salinan dalam PERTAMA untuk jenis ni).
+WORK = os.path.expanduser("~/Desktop/WORK 2026")
+INV_CACHE = os.path.join(HOME, "footinv_cache.json")
+BEST_DEST = os.path.join(DISK, "MIRA/WORK ARCHIVE/WORK 2026", "KLIP TERBAIK")
+
+
+def _top_videos(root):
+    out = []
+    try:
+        for f in sorted(os.listdir(root)):
+            p = os.path.join(root, f)
+            if f.startswith(".") or not f.lower().endswith(VIDEO) or not os.path.isfile(p) or os.path.islink(p):
+                continue
+            st = os.stat(p)
+            out.append((f, st.st_size, st.st_mtime))
+    except OSError:
+        pass
+    return out
+
+
+def _subdirs(root):
+    try:
+        return sorted(d for d in os.listdir(root) if not d.startswith(".") and os.path.isdir(os.path.join(root, d)))
+    except OSError:
+        return []
+
+
+def _disk_count(base, files):
+    n = 0
+    for rel, size, _ in files:
+        try:
+            if os.path.getsize(os.path.join(base, rel)) == size:
+                n += 1
+        except OSError:
+            pass
+    return n
+
+
+def inventory(sheet, mounted=None, state=None):
+    mounted = os.path.ismount(DISK) if mounted is None else mounted
+    state = _load() if state is None else state
+    try:
+        cache = json.load(open(INV_CACHE, encoding="utf-8"))
+    except Exception:
+        cache = {}
+    rows = []
+
+    def add(key, main, name, kind, files, dest):
+        n, size = len(files), sum(f[1] for f in files)
+        if dest is None:
+            disk = None
+        elif mounted:
+            disk = _disk_count(dest, files)
+            cache[key] = disk
+        else:
+            disk = cache.get(key, 0) if n else 0
+        rows.append({"key": key, "main": main, "name": name, "kind": kind, "n": n, "size": size, "disk": disk,
+                     "newest": int(max([f[2] for f in files] or [0]) * 1000)})
+
+    for main in _subdirs(BASE):
+        if re.match(r"^R\d", main):                       # R1 product listing (gambar), R2 transfer
+            continue
+        mroot = os.path.join(BASE, main)
+        if main.startswith("00."):
+            add(main, main, "Video final", "final", _top_videos(mroot), None)
+            continue
+        loose = _top_videos(mroot)
+        if loose:
+            add(main + "/", main, "Fail terus dalam folder", "edit", loose, None)
+        for proj in _subdirs(mroot):
+            if SKIP_DIR.search(proj):
+                continue
+            key = main + "/" + proj
+            files = _files(os.path.join(mroot, proj))
+            if not files:
+                continue
+            add(key, main, proj, "edit", files, os.path.join(DEST, key))
+    # projek yang video Mac dah dibuang (salinan dalam PERTAMA sahaja)
+    seen = {r["key"] for r in rows}
+    for key, st in state.items():
+        if key in seen or not st.get("gone"):
+            continue
+        g = st["gone"]
+        rows.append({"key": key, "main": key.split("/")[0], "name": key.split("/", 1)[1], "kind": "edit", "n": 0,
+                     "size": 0, "disk": len(g), "diskSize": sum(x.get("size", 0) for x in g), "newest": 0})
+        seen.add(key)
+    if mounted:                                           # folder dalam PERTAMA › RAW FOOTAGE yang tiada di Mac langsung
+        for main in _subdirs(DEST):
+            for proj in _subdirs(os.path.join(DEST, main)):
+                key = main + "/" + proj
+                if key in seen:
+                    continue
+                files = _files(os.path.join(DEST, main, proj))
+                if files:
+                    rows.append({"key": key, "main": main, "name": proj, "kind": "edit", "n": 0, "size": 0,
+                                 "disk": len(files), "diskSize": sum(f[1] for f in files), "newest": 0})
+    raw = os.path.join(WORK, "RAW")
+    for proj in _subdirs(raw):
+        files = _files(os.path.join(raw, proj))
+        if files:
+            add("RAW/" + proj, "RAW", proj, "raw", files, None)
+    thd = os.path.join(WORK, "TO HARD DRIVE")
+    for proj in _subdirs(thd):
+        files = _top_videos(os.path.join(thd, proj))
+        if files:
+            add("THD/" + proj, "TO HARD DRIVE", proj, "best", files, os.path.join(BEST_DEST, proj))
+    try:
+        with open(INV_CACHE + ".tmp", "w", encoding="utf-8") as fh:
+            json.dump(cache, fh)
+        os.replace(INV_CACHE + ".tmp", INV_CACHE)
+    except OSError:
+        pass
+    doc = {"rows": rows, "mounted": mounted, "updated": int(time.time() * 1000)}
+    sheet.call("dset", path="sync/footinv", data=doc)
+    return doc
 
 
 def quick(sheet, force=False):
