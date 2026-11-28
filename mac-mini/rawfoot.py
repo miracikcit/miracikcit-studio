@@ -277,6 +277,18 @@ def inventory(sheet, mounted=None, state=None):
         rows.append({"key": key, "main": key.split("/")[0], "name": key.split("/", 1)[1], "kind": "edit", "n": 0,
                      "size": 0, "disk": len(g), "diskSize": sum(x.get("size", 0) for x in g), "newest": 0})
         seen.add(key)
+    # WORK 2026/RAW: disalin dengan tangan (bila Mira minta) ke PERTAMA › RAW FOOTAGE › RAW › <folder>, susunan sama
+    raw = os.path.join(WORK, "RAW")
+    for proj in _subdirs(raw):
+        files = _files(os.path.join(raw, proj))
+        if files:
+            add("RAW/" + proj, "RAW", proj, "raw", files, os.path.join(DEST, "RAW", proj))
+            seen.add("RAW/" + proj)
+    thd = os.path.join(WORK, "TO HARD DRIVE")
+    for proj in _subdirs(thd):
+        files = _top_videos(os.path.join(thd, proj))
+        if files:
+            add("THD/" + proj, "TO HARD DRIVE", proj, "best", files, os.path.join(BEST_DEST, proj))
     if mounted:                                           # folder dalam PERTAMA › RAW FOOTAGE yang tiada di Mac langsung
         for main in _subdirs(DEST):
             for proj in _subdirs(os.path.join(DEST, main)):
@@ -285,18 +297,8 @@ def inventory(sheet, mounted=None, state=None):
                     continue
                 files = _files(os.path.join(DEST, main, proj))
                 if files:
-                    rows.append({"key": key, "main": main, "name": proj, "kind": "edit", "n": 0, "size": 0,
-                                 "disk": len(files), "diskSize": sum(f[1] for f in files), "newest": 0})
-    raw = os.path.join(WORK, "RAW")
-    for proj in _subdirs(raw):
-        files = _files(os.path.join(raw, proj))
-        if files:
-            add("RAW/" + proj, "RAW", proj, "raw", files, None)
-    thd = os.path.join(WORK, "TO HARD DRIVE")
-    for proj in _subdirs(thd):
-        files = _top_videos(os.path.join(thd, proj))
-        if files:
-            add("THD/" + proj, "TO HARD DRIVE", proj, "best", files, os.path.join(BEST_DEST, proj))
+                    rows.append({"key": key, "main": main, "name": proj, "kind": "raw" if main == "RAW" else "edit", "n": 0,
+                                 "size": 0, "disk": len(files), "diskSize": sum(f[1] for f in files), "newest": 0})
     try:
         with open(INV_CACHE + ".tmp", "w", encoding="utf-8") as fh:
             json.dump(cache, fh)

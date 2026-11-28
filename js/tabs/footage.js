@@ -22,7 +22,7 @@ function ftAllRows(){const I=S.sync.footinv||{},F=((S.sync.rawfoot||{}).folders)
   const out=(I.rows||[]).map(r=>{const raw=F[r.key];const where=r.n===0?'hd':r.disk==null?'mac':r.disk>=r.n?'both':r.disk>0?'part':'mac';
     let stat='',col='#999';
     if(r.kind==='final'){stat='Video siap (final)';col='var(--ok)'}
-    else if(r.kind==='raw'){stat='Folder RAW · tiada salinan auto';col='var(--warn)'}
+    else if(r.kind==='raw'){stat=where==='mac'||where==='part'?'Folder RAW · tiada salinan auto':'Folder RAW';col=where==='mac'||where==='part'?'var(--warn)':'#B0937B'}
     else if(r.kind==='best'){stat='Klip terbaik';col='var(--ok)'}
     else if(raw&&raw.state==='hdonly'||where==='hd'){stat='Dah dibuang dari Mac';col='#999'}
     else if(raw&&raw.state==='wait'){stat='Published · menunggu salin';col='var(--warn)'}
