@@ -586,3 +586,29 @@ button.tpchip{cursor:pointer}.tpchip.btnx{font-weight:500}
 .tp{--sv-p:#FFB36B;--sv-t:#7A3300}
 .tpbr{flex-basis:100%;height:0}   /* 25 Nov malam (Mira): baris 1 tarikh, baris 2 akaun + Excluded */
 .tpvb{width:44px;height:44px;font-size:21px;margin-right:14px}.tpvb.off{font-size:16px}   /* 25 Nov malam (Mira): bulat video lebih besar, jauh sikit dari tepi kanan */
+/* ---------- Carousel (28 Nov 2026) ---------- */
+.crlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.crcard{display:flex;flex-direction:column;border-radius:20px;padding:8px;gap:8px;cursor:pointer;text-align:left;color:var(--ink);font:inherit;min-width:0}
+.crcard img,.crph{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:14px;display:block;background:rgba(255,255,255,.5)}
+.crph{display:flex;align-items:center;justify-content:center}.crph svg{width:40px;height:40px;fill:none;stroke:var(--c);stroke-width:1.3}
+.crct{display:flex;flex-direction:column;gap:3px;padding:0 4px 4px;min-width:0}.crct b{font-weight:500;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.crct .pill{align-self:flex-start}
+.crthumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px}
+.crth{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:3/4;border:2px solid transparent}.crth.star{border-color:var(--c)}
+.crth img{width:100%;height:100%;object-fit:cover;display:block}
+.crth button{position:absolute;border:0;background:rgba(0,0,0,.45);color:#fff;border-radius:999px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.crstar{top:4px;left:4px;width:26px;height:26px;font-size:15px}.crth.star .crstar{background:var(--c)}
+.crx{top:4px;right:4px;width:24px;height:24px}.crx svg{width:13px;height:13px;fill:none;stroke:#fff;stroke-width:2}
+.crmv{position:absolute;bottom:4px;left:0;right:0;display:flex;justify-content:space-between;padding:0 4px}.crmv button{position:static;width:24px;height:24px;font-size:16px}
+.crseg{max-width:100%;overflow-x:auto}.crseg button{white-space:nowrap}
+.crswipe{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:6px}
+.crslide{position:relative;flex:0 0 86%;max-width:420px;scroll-snap-align:center;border-radius:16px;overflow:hidden;box-shadow:0 8px 22px rgba(110,90,78,.18)}
+.crslide img{width:100%;display:block}
+.crno{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.5);color:#fff;font-size:11px;border-radius:999px;padding:2px 9px}
+.crlock{position:absolute;bottom:10px;left:10px;border:1px solid rgba(255,255,255,.8);background:rgba(0,0,0,.45);color:#fff;border-radius:999px;padding:6px 12px;font:500 11px var(--font);letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.crlock.on{background:var(--c);border-color:var(--c)}
+.crsave{position:absolute;bottom:10px;right:10px;width:36px;height:36px;border-radius:999px;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;color:#fff}
+.crsave svg{width:18px;height:18px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.crstrip{width:100%;border-radius:12px;display:block}
+.crgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:8px}.crgrid img{width:100%;border-radius:12px;display:block}
+.crold{display:flex;gap:8px;overflow-x:auto}.crold button{border:0;padding:0;background:none;cursor:pointer;flex:0 0 72px}.crold img{width:72px;aspect-ratio:4/5;object-fit:cover;border-radius:10px;display:block}
+.crwarn{margin:8px 0;padding-left:18px}

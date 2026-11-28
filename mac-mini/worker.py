@@ -1660,6 +1660,9 @@ def studio_jobs(sheet, cfg):
             elif j["type"] == "folder_peek":   # gambar grid footage folder edit (tab Edit, 0 token)
                 import peek
                 outp = peek.run(inp, sheet, sys.modules[__name__])
+            elif j["type"] == "carousel":   # Studio > Carousel: generator carousel + enhance warna (0 token)
+                import carousel
+                outp = carousel.run(inp, sheet, cfg, sys.modules[__name__])
             elif j["type"] == "mkfolder":
                 outp = run_mkfolder(inp, sheet)
             elif j["type"] == "jobparse":

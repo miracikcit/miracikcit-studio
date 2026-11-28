@@ -14,6 +14,7 @@ const IC={
  footage:P('<ellipse cx="12" cy="6.5" rx="7.5" ry="3"/><path d="M4.5 6.5v11c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-11"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/>'),
  inspiration:P('<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>'),
  transcribe:P('<path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/>'),
+ carousel:P('<rect x="7" y="5" width="10" height="14" rx="2"/><path d="M4 7.5v9M20 7.5v9"/><path d="M9.5 15l2-2.5 1.5 1.8 1-1.2 1.5 1.9"/>'),
  mediakit:P('<path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10A.5.5 0 0 1 7 20V3.5z"/><path d="M14 3.5v4h4"/><path d="M10 12h5M10 15.5h5"/>'),
  plus:P('<path d="M12 5v14M5 12h14"/>'),trash:P('<path d="M5 7h14"/><path d="M9 7V5h6v2"/><path d="M7 7l1 13h8l1-13"/>'),copy:P('<rect x="8" y="8" width="11" height="12" rx="2.5"/><path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15"/>'),
  check:P('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),chev:P('<path d="M6 9l6 6 6-6"/>'),mic:P('<rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><path d="M12 18v2.5"/>'),
@@ -25,7 +26,7 @@ const IC={
 const TABS_=[
  ['home','Home','#9A4F5D'],['ideas','Ideas','#C29A3C'],['links','Confirmed Projects','#5A8FB5'],['to-shoot','Shoot','#CF8A55'],['shot','Shot','#C2666A'],['to-edit','Edit','#8676BE'],
  ['ready','To Publish','#8A6A52'],['published','Published','#6B5548'],['caption','Caption','#B0704F'],['threads','Threads','#7A5C6E'],['jobs','Jobs','#A8763E'],
- ['editor','Editor','#9C6396'],['footage','Footage library','#9A8C7A'],['broll','B-Roll Picker','#B0704F'],['inspiration','Copy Style','#4E3A2E'],['transcribe','Transcribe','#8C6A4F'],['media-kit','Media Kit','#B0937B'],['vo','VO','#B5546B'],['lagi','Lagi','#9A8C7A']
+ ['editor','Editor','#9C6396'],['footage','Footage library','#9A8C7A'],['broll','B-Roll Picker','#B0704F'],['inspiration','Copy Style','#4E3A2E'],['transcribe','Transcribe','#8C6A4F'],['media-kit','Media Kit','#B0937B'],['carousel','Carousel','#B5677A'],['vo','VO','#B5546B'],['lagi','Lagi','#9A8C7A']
 ].map(([k,l,c])=>({k,l,c,ic:IC[k==='vo'?'mic':k.replace('-','')]||IC.plus}));
 const NAV=['home','links','to-shoot','vo','to-edit','editor','ready','published','lagi'];   /* 23 Nov: Ideas dalam Lagi, VO antara Shoot dan Edit */
 const navLabel=l=>l.replace('Ready to Publish','Ready').replace('Confirmed Projects','Projects');

@@ -1,0 +1,175 @@
+#!/usr/bin/env python3
+"""Job `carousel` (Studio > Lagi > Carousel). 0 token.
+
+Mira upload gambar dalam Studio (fail masuk Drive "Miracikcit Studio Files"), pilih setting, tekan Generate.
+Mac mini:
+  1. muat turun gambar (file_get), simpan dalam carousel_cache/files supaya Shuffle tak muat turun semula
+  2. jalankan carousel_engine.py dalam venv sendiri (carousel_env, pasang dengan carousel_setup.sh)
+  3. upload slide + preview ke Drive "Miracikcit Studio Files/CAROUSEL/<tarikh> <tajuk>" (folder dikongsi
+     dengan link, supaya gambar boleh dipapar dalam Studio)
+  4. tulis hasil ke doc `carousel/<id>`: status run -> done / error, pct, msg, out {slides, preview, thumb,
+     folder, recipe, warnings}, old [versi sebelum ni, maks 3]
+
+Input job: {id, title, photos:[{id:"fid~i", name, star}], opts:{..}, seed, avoid:[[tpl..]..], lock:[i..], recipe}
+"""
+import base64, json, os, shutil, subprocess, tempfile, time
+
+HOME = os.path.dirname(os.path.abspath(__file__))
+CACHE = os.path.join(HOME, "carousel_cache")
+ENGINE = os.path.join(HOME, "carousel_engine.py")
+KEEP_OLD = 3
+
+
+def _python(cfg):
+    for c in (cfg.get("carousel_python"), os.path.join(HOME, "carousel_env", "bin", "python")):
+        if c and os.path.isfile(c):
+            return c
+    raise RuntimeError("Carousel belum dipasang di Mac mini. Jalankan: bash ~/MiracikcitTranscribe/carousel_setup.sh")
+
+
+class Doc:
+    """Kemas kini doc carousel/<id> (gabung dengan apa yang phone dah tulis)."""
+
+    def __init__(self, sheet, cid):
+        self.sheet, self.path, self.last, self.seen = sheet, "carousel/" + cid, 0, False
+
+    def set(self, force=True, **fields):
+        now = time.time()
+        if not force and now - self.last < 6:
+            return
+        self.last = now
+        try:
+            cur = self.sheet.call("dget", path=self.path).get("doc")
+        except Exception:
+            cur = {}
+        if cur is None and self.seen:   # Mira padam carousel semasa Mac mini bekerja
+            raise RuntimeError("Carousel dah dipadam")
+        cur = cur or {}
+        self.seen = True
+        cur.update(fields)
+        cur["updated"] = int(now * 1000)
+        self.sheet.call("dset", path=self.path, data=cur)
+        return cur
+
+
+def _purge_cache():
+    d = os.path.join(CACHE, "files")
+    if not os.path.isdir(d):
+        return
+    cut = time.time() - 30 * 86400
+    for f in os.listdir(d):
+        p = os.path.join(d, f)
+        try:
+            if os.path.getatime(p) < cut:
+                os.remove(p)
+        except OSError:
+            pass
+
+
+def _fetch(sheet, fid):
+    """Gambar dari Drive (cache ikut id fail)."""
+    raw = str(fid).split("~")[0]
+    d = os.path.join(CACHE, "files")
+    os.makedirs(d, exist_ok=True)
+    for ext in (".jpg", ".png", ".webp", ".heic", ".jpeg"):
+        p = os.path.join(d, raw + ext)
+        if os.path.exists(p):
+            os.utime(p)
+            return p
+    f = sheet.call("file_get", id=raw)
+    ext = os.path.splitext(f.get("name") or "")[1].lower() or ".jpg"
+    p = os.path.join(d, raw + ext)
+    with open(p, "wb") as fh:
+        fh.write(base64.b64decode(f["b64"]))
+    return p
+
+
+def run(inp, sheet, cfg, W):
+    cid = str(inp.get("id") or "").strip()
+    if not cid:
+        raise RuntimeError("id carousel tiada")
+    doc = Doc(sheet, cid)
+    doc.set(status="run", pct=2, msg="Mac mini mula", err="")
+    tmp = tempfile.mkdtemp(prefix="carousel-")
+    try:
+        py = _python(cfg)
+        _purge_cache()
+        photos = inp.get("photos") or []
+        if not photos:
+            raise RuntimeError("Tiada gambar")
+        plist = []
+        for i, p in enumerate(photos):
+            doc.set(force=False, pct=2 + int(10 * i / len(photos)), msg=f"Ambil gambar {i + 1}/{len(photos)}")
+            plist.append({"path": _fetch(sheet, p["id"]), "name": p.get("name") or p["id"], "star": bool(p.get("star"))})
+        out = os.path.join(tmp, "out")
+        job = {"photos": plist, "out": out, "cache": os.path.join(CACHE, "analysis"), "opts": inp.get("opts") or {},
+               "seed": inp.get("seed"), "avoid": inp.get("avoid") or [], "lock": inp.get("lock") or [],
+               "recipe": inp.get("recipe") or {}}
+        jp = os.path.join(tmp, "job.json")
+        with open(jp, "w") as fh:
+            json.dump(job, fh)
+        proc = subprocess.Popen([py, ENGINE, "--job", jp], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                text=True, cwd=tmp)
+        t0 = time.time()
+        for line in proc.stdout:
+            if line.startswith("PROG "):
+                parts = line.strip().split(" ", 2)
+                try:
+                    pct = 12 + int(int(parts[1]) * 0.7)
+                except ValueError:
+                    continue
+                doc.set(force=False, pct=pct, msg=parts[2] if len(parts) > 2 else "")
+            if time.time() - t0 > 1500:
+                proc.kill()
+                raise RuntimeError("Enjin carousel terlalu lama (25 minit)")
+        err = proc.stderr.read()
+        proc.wait()
+        rp = os.path.join(out, "result.json")
+        if proc.returncode != 0 or not os.path.exists(rp):
+            tail = [l for l in err.strip().splitlines() if l.strip()][-3:]
+            raise RuntimeError("Enjin gagal: " + " | ".join(tail)[-300:])
+        res = json.load(open(rp))
+        title = (inp.get("title") or cid).strip()[:60]
+        safe = "".join(ch if ch.isalnum() or ch in " -_" else " " for ch in title).strip() or cid
+        folder = sheet.call("dpath", base="studio", path=["CAROUSEL", time.strftime("%Y-%m-%d ") + safe], share=True)["id"]
+        stamp = time.strftime("%H%M%S")
+
+        def up(path, name):
+            return W.drive_upload(sheet, path, folder, name) + "~i"
+
+        if (inp.get("opts") or {}).get("mode") == "enhance":
+            files = res.get("photos") or []
+            ids = []
+            for i, pth in enumerate(files):
+                doc.set(force=False, pct=84 + int(15 * i / max(1, len(files))), msg=f"Upload {i + 1}/{len(files)}")
+                base = os.path.splitext(photos[i].get("name") or f"gambar_{i + 1}")[0]
+                ids.append(up(pth, f"{base}_enhance_{stamp}.jpg"))
+            new = {"photos": ids, "folder": folder, "warnings": res.get("warnings") or [], "at": int(time.time() * 1000)}
+        else:
+            files = res.get("slides") or []
+            ids = []
+            for i, pth in enumerate(files):
+                doc.set(force=False, pct=84 + int(13 * i / max(1, len(files))), msg=f"Upload slide {i + 1}/{len(files)}")
+                ids.append(up(pth, f"slide_{i + 1:02d}_{stamp}.jpg"))
+            new = {"slides": ids, "preview": up(res["preview"], f"preview_{stamp}.jpg"),
+                   "thumb": up(res["thumb"], f"thumb_{stamp}.jpg"), "folder": folder, "recipe": res.get("recipe"),
+                   "warnings": res.get("warnings") or [], "at": int(time.time() * 1000)}
+        cur = sheet.call("dget", path=doc.path).get("doc") or {}
+        old = ([cur["out"]] if cur.get("out") else []) + (cur.get("old") or [])
+        for o in old[KEEP_OLD:]:   # buang versi lama dari Drive (simpan 3 terakhir sahaja)
+            for fid in (o.get("slides") or []) + (o.get("photos") or []) + [o.get("preview"), o.get("thumb")]:
+                if fid:
+                    try:
+                        sheet.call("dtrash", id=str(fid).split("~")[0])
+                    except Exception:
+                        pass
+        doc.set(status="done", pct=100, msg="Siap", out=new, old=old[:KEEP_OLD], err="")
+        return {"ok": True, "n": len(ids)}
+    except Exception as e:
+        try:
+            doc.set(status="error", msg="", err=str(e)[:300])
+        except Exception:
+            pass
+        raise
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)

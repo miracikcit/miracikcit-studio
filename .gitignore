@@ -2,3 +2,5 @@ __pycache__/
 carousel/_carousel_tools/
 carousel/photos/
 carousel/output/
+mac-mini/carousel_env/
+mac-mini/carousel_cache/
