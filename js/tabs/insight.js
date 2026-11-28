@@ -66,11 +66,11 @@ function insBest(d){const B=d.best||{};const ks=Object.keys(B);if(!ks.length)ret
 A.insBk=el=>{ui.insBest=el.dataset.id;render(true)};
 
 /* Kemaskini data: perlu dua profil Chrome Mira, jadi Claude yang buat. Modal ni beri arahan dan cara jimat token. */
-A.insUpd=()=>{const msg='Kemaskini Insight: tarik data 11 akaun sosmed (dua profil Chrome) guna skrip insight, tulis ke Studio.';
+A.insUpd=()=>{const msg='Kemaskini Insight: tarik data 11 akaun sosmed dari dua profil Chrome dan tulis ke Studio. Guna cara paling jimat token.';
   modal(`<h2>Kemaskini data</h2><p class="meta">Data perlu ditarik dari Chrome kau (dua profil), jadi Claude yang buat. Sebulan sekali cukup.</p>
    <ol class="insol"><li>Pastikan dua-dua Chrome terbuka dan dah log masuk.</li><li>Buka Claude di Mac mini dan hantar mesej ni:</li></ol>
    <div class="inscopy"><span id="insMsg">${esc(msg)}</span><button class="btn sm" data-act="insCopy">Copy</button></div>
-   <p class="meta" style="margin-top:12px">Claude akan guna skrip yang sama setiap bulan dan hanya baca angka ringkas, jadi jauh lebih jimat token dari kali pertama.</p>
+   <p class="meta" style="margin-top:12px">Claude baca peta akaun dalam memori, jadi tak perlu cari akaun dari awal.</p>
    <div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Tutup</button></div>`,TAB.insight.c)};
 A.insCopy=async()=>{const t=($('#insMsg')||{}).textContent||'';try{await navigator.clipboard.writeText(t);toast('Dicopy')}catch(e){const r=document.createRange();r.selectNodeContents($('#insMsg'));const s=getSelection();s.removeAllRanges();s.addRange(r);toast('Tekan Copy pada menu')}};
 
