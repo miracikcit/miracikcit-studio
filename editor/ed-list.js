@@ -22,7 +22,7 @@
   /* ---- data ---- */
   const trackOf = pw => { const n = nrm(pw.title || ''); const d = String(pw.dir || '').toLowerCase(); return T.tracker.find(e => (e.folder && d.includes(String(e.folder).toLowerCase())) || (n.length >= 4 && nrm(e.name || '').length >= 4 && (n.includes(nrm(e.name)) || nrm(e.name).includes(n)))) || null; };
   function items() {
-    const out = T.edpwa.filter(e => !e.pub && !e.hidden && (e.status !== 'error' || Date.now() - (e.updated || 0) < 2 * 864e5)).map(pw => ({ k: 'p:' + pw.id, pw, e: trackOf(pw), name: pw.title || pw.id, own: pw.src === 'sendiri', at: pw.updated || 0 }));
+    const out = T.edpwa.filter(e => !(e.pub && e.final === 'siap') && !e.hidden && (e.status !== 'error' || Date.now() - (e.updated || 0) < 2 * 864e5)).map(pw => ({ k: 'p:' + pw.id, pw, e: trackOf(pw), name: pw.title || pw.id, own: pw.src === 'sendiri', at: pw.updated || 0 }));
     T.wait.filter(w => Date.now() - w.at < 15 * 6e4 && !T.edpwa.some(x => x.src === 'sendiri' && (x.created || 0) > w.at - 6e4 && nrm(x.title || '') === nrm(w.name)))
       .forEach(w => out.push({ k: 'w:' + w.at, pw: { status: 'proses', pct: 1, step: 'Menunggu Mac mini' }, e: null, name: w.name, own: true, at: w.at }));
     const q = T.q.trim().toLowerCase();

@@ -23,7 +23,7 @@ function edPwaBox(){const l=(S.edpwa||[]).slice().sort((a,b)=>(b.updated||0)-(a.
 function edSelfHome(){
   /* 26 Nov (Mira): dulu kad "Edit sendiri". Sekarang senarai SEMUA video dalam app Editor (belum final / published), pautan terus ke
      app Editor (editor/?app=1), bukan tab Editor Studio. */
-  const L=(S.edpwa||[]).filter(e=>!e.pub&&e.final!=='siap'&&(e.status!=='error'||Date.now()-(e.updated||0)<2*864e5)).sort((a,b)=>(b.updated||0)-(a.updated||0));
+  const L=(S.edpwa||[]).filter(e=>e.final!=='siap'&&(e.status!=='error'||Date.now()-(e.updated||0)<2*864e5)).sort((a,b)=>(b.updated||0)-(a.updated||0));
   const row=e=>{const d=e.draft||{};const [pill,col]=e.status==='proses'?['Disediakan '+Math.round(e.pct||0)+'%','var(--warn)']:e.status==='error'?['Ralat','var(--bad)']:d.status==='proses'?['Render draf','var(--warn)']:d.id?['Draf sedia','var(--ok)']:['Sedia edit','var(--c)'];
     const ok=e.status!=='proses'&&e.status!=='error';
     return hpRow(agoFmt(e.updated||e.created||Date.now()),e.title||e.id,e.status==='error'?String(e.msg||'').slice(0,60):e.src==='sendiri'?'Edit sendiri':'Dari Claude',hpPill(pill,col),ok?{href:EDAPP+'&v='+encodeURIComponent(e.id),'data-act':'edGo','data-u':EDAPP+'&v='+encodeURIComponent(e.id)}:null)};
