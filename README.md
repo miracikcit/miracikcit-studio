@@ -21,4 +21,5 @@ Satu hala: **Rujukan** (dump apa yang Mira suka) → **Design** (edit gambar iku
 - `mac-mini/carousel.py` : job `carousel` (jana) dan `tpl_req` (muat turun rujukan ke `kit-requests/<id>/`, buka sesi Claude Code yang tambah kit baru).
 - `mac-mini/carousel_engine.py` + `mac-mini/design_kits.py` : enjin. Kit Gaya (`doodle`, `comel`, `majalah`) dalam `design_kits.py`; kolaj rawak lama dalam `carousel_engine.py`. Font dalam `mac-mini/fonts/` (OFL / Apache).
 - Pasang sekali di Mac mini: salin `carousel.py`, `carousel_engine.py`, `design_kits.py`, folder `fonts/`, `carousel_setup.sh` dan `worker.py` ke `~/MiracikcitTranscribe/`, jalankan `bash ~/MiracikcitTranscribe/carousel_setup.sh`, mulakan semula worker.
+- **Editor:** Style Board ada preset **Kit Doodle / Kit Comel / Kit Majalah** (`editor/ed-boot.js`, guna pilihan editor sedia ada sahaja supaya `render_draft.py` render sama). Butang **Cover** dalam tab Editor: job `ed_cover` ambil 10 frame dari video projek, pilih muka paling jelas, jana cover reel 9:16 ikut kit (hasil dalam Design).
 - Apps Script tak berubah.

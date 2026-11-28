@@ -19,7 +19,7 @@ A.edDel=el=>{const e=get('editor',el.dataset.id);confirmBox('Padam "'+(e.name||'
 
 /* Editor PWA (2026-11-22): video yang dah dihantar oleh edpwa.py, buka terus dalam editor Studio (layout CapCut) */
 function edPwaBox(){const l=(S.edpwa||[]).slice().sort((a,b)=>(b.updated||0)-(a.updated||0)).filter(e=>hit('ed',e.title,e.id)&&!edPublished({name:e.title,folder:String(e.dir||'').split('/CLAUDE EDITS/')[1]||''}));if(!l.length)return'';
-  return `<div class="card glass" style="margin-bottom:14px"><p class="eyebrow" style="margin:0 0 8px">Dalam app Editor · kemas kini sendiri</p>${l.map(e=>`<div class="rowh" style="align-items:center;gap:8px;padding:6px 0"><div><h3 style="font-size:16px">${esc(e.title||e.id)}</h3><div class="meta">${e.status==='proses'?'Mac mini sedang sediakan…':e.status==='error'?esc(e.msg||'Ralat'):`${e.n||0} fail · ${fmtD(e.updated)}`}</div></div>${edDraftPill(e)}</div>`).join('')}</div>`}
+  return `<div class="card glass" style="margin-bottom:14px"><p class="eyebrow" style="margin:0 0 8px">Dalam app Editor · kemas kini sendiri</p>${l.map(e=>`<div class="rowh" style="align-items:center;gap:8px;padding:6px 0"><div><h3 style="font-size:16px">${esc(e.title||e.id)}</h3><div class="meta">${e.status==='proses'?'Mac mini sedang sediakan…':e.status==='error'?esc(e.msg||'Ralat'):`${e.n||0} fail · ${fmtD(e.updated)}`}</div></div>${edDraftPill(e)}${e.status==='proses'||e.status==='error'?'':`<button class="btn sm" data-act="edCover" data-id="${esc(e.id)}">Cover</button>`}</div>`).join('')}</div>`}
 /* Kad Home 'Edit sendiri' (2026-11-22): pilih folder footage, Mac mini sediakan editor tanpa Claude (job ed_new, 0 token). Design ikut kad Home rbox. */
 function edSelfHome(){
   const mine=(S.edpwa||[]).filter(e=>e.src==='sendiri').sort((a,b)=>(b.updated||0)-(a.updated||0));
@@ -47,3 +47,20 @@ function edPublished(e){const nm=[e.name,String(e.folder||'').split('/')[1],Stri
 /* 24 Nov (Mira): butang editor sentiasa ke Editor PWA, bukan artifact. Padankan projek tracker dengan doc edpwa (folder / nama). */
 function edPwaFor(e){const L=(S.edpwa||[]).filter(x=>x.status!=='error');const f=String(e.folder||'').toLowerCase(),n=nrm(e.name||'');
   return L.filter(x=>(f&&String(x.dir||'').toLowerCase().includes(f))||(n.length>=4&&(nrm(x.title||'').includes(n)||n.includes(nrm(x.title||'')))&&nrm(x.title||'').length>=4)).sort((a,b)=>(b.updated||0)-(a.updated||0))[0]||null}
+
+/* Cover reel ikut Kit Gaya (28 Nov 2026): Mac mini pilih frame terbaik dari video projek ni (muka paling jelas),
+   kemudian jana cover 9:16 dengan templat Design (job ed_cover). Hasil masuk tab Design. */
+A.edCover=el=>{const e=(S.edpwa||[]).find(x=>x.id===el.dataset.id);if(!e)return;ui.edCv={id:e.id,kit:(ui.edCv&&ui.edCv.kit)||'majalah',title:e.title||'',sub:''};edCoverModal()};
+function edCoverModal(){const c=ui.edCv;
+  modal(`<h2>Cover reel</h2><p class="meta" style="margin-top:-6px">Mac mini ambil frame terbaik dari video, kemudian buat cover 9:16 ikut templat. Tajuk dan muka dalam kawasan tengah 4:5 supaya cantik di grid. ${tok(0)}</p>
+   <div class="crkits" style="margin:10px 0 14px">${crKits().map(k=>`<button class="crkit${c.kit===k.id?' on':''}" data-act="edCvKit" data-id="${esc(k.id)}">${crMini(k.id)}<span>${esc(k.name)}</span></button>`).join('')}</div>
+   <label class="f"><span>Tajuk</span><input class="inp" id="edCvT" value="${esc(c.title)}" placeholder="Kosong = tiada tulisan"></label>
+   <label class="f"><span>Subtajuk</span><input class="inp" id="edCvS" value="${esc(c.sub)}" placeholder="Contoh: part 1"></label>
+   <div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Batal</button><button class="btn solid tab" data-act="edCvGo"${c.busy?' disabled':''}>${c.busy?'<i class="spin"></i>Hantar':'Buat cover'}</button></div>`,TAB.carousel.c)}
+A.edCvKit=el=>{const c=ui.edCv;c.title=($('#edCvT')||{}).value??c.title;c.sub=($('#edCvS')||{}).value??c.sub;c.kit=el.dataset.id;edCoverModal()};
+A.edCvGo=async()=>{const c=ui.edCv;c.title=($('#edCvT')||{}).value||'';c.sub=($('#edCvS')||{}).value||'';c.busy=true;edCoverModal();
+  const opts={format:'cover',kit:c.kit,title:c.title,subtitle:c.sub,texts:'',slides:1,aspect:'9:16',enhance:'natural',strength:100};
+  try{const d=save('carousel',{title:'Cover: '+(String(c.title).replace(/\*/g,'')||'reel'),photos:[],opts,seed:Math.floor(Math.random()*1e9),lock:[],status:'queued',pct:0,msg:'Mac mini cari frame terbaik',err:'',asked:Date.now(),ed:c.id},true);
+    await studioCall('job_add',{type:'ed_cover',input:{id:d.id,ed:c.id,title:d.title,opts:crOptsOut(opts),seed:d.seed}});
+    closeModal();crUi().open=d.id;crUi().form=null;go('carousel');toast('Dihantar. Cover akan siap dalam tab Design')}
+  catch(e){toast('Tak dapat hantar ke Mac mini. Cuba lagi')}finally{c.busy=false}};

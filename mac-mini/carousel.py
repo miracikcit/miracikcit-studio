@@ -100,7 +100,8 @@ def run(inp, sheet, cfg, W):
         plist = []
         for i, p in enumerate(photos):
             doc.set(force=False, pct=2 + int(10 * i / len(photos)), msg=f"Ambil gambar {i + 1}/{len(photos)}")
-            plist.append({"path": _fetch(sheet, p["id"]), "name": p.get("name") or p["id"], "star": bool(p.get("star"))})
+            path = p.get("path") if p.get("path") and os.path.exists(p.get("path")) else _fetch(sheet, p["id"])
+            plist.append({"path": path, "name": p.get("name") or p.get("id") or os.path.basename(path), "star": bool(p.get("star"))})
         out = os.path.join(tmp, "out")
         job = {"photos": plist, "out": out, "cache": os.path.join(CACHE, "analysis"), "opts": inp.get("opts") or {},
                "seed": inp.get("seed"), "avoid": inp.get("avoid") or [], "lock": inp.get("lock") or [],
@@ -219,3 +220,60 @@ def run_tpl_req(inp, sheet, cfg, W):
     cur.update({"status": "dibuat", "updated": int(time.time() * 1000)})
     sheet.call("dset", path="kitreq/" + rid, data=cur)
     return {"ok": True, "folder": req}
+
+
+def run_ed_cover(inp, sheet, cfg, W):
+    """Job ed_cover (Studio > Editor > Cover): ambil 10 frame dari video projek Editor, enjin pilih frame dengan
+    muka paling jelas, jana cover reel 9:16 ikut Kit Gaya. Hasil dalam doc carousel/<id> (tab Design)."""
+    ed = str(inp.get("ed") or "").strip()
+    cid = str(inp.get("id") or "").strip()
+    doc = Doc(sheet, cid)
+    doc.set(status="run", pct=2, msg="Cari video projek", err="")
+    tmp = tempfile.mkdtemp(prefix="edcover-")
+    try:
+        e = sheet.call("dget", path="edpwa/" + ed).get("doc") or {}
+        vid = None
+        d = e.get("dir") or ""
+        for name in ("proxy.mp4", "final.mp4", "draft.mp4"):
+            if d and os.path.exists(os.path.join(d, name)):
+                vid = os.path.join(d, name)
+                break
+        if not vid and d and os.path.isdir(d):
+            mp4 = sorted(f for f in os.listdir(d) if f.lower().endswith((".mp4", ".mov")))
+            vid = os.path.join(d, mp4[0]) if mp4 else None
+        if not vid:
+            fid = (e.get("files") or {}).get("proxy.mp4")
+            if not fid:
+                raise RuntimeError("Video projek tak dijumpai")
+            f = sheet.call("file_get", id=fid)
+            vid = os.path.join(tmp, "proxy.mp4")
+            with open(vid, "wb") as fh:
+                fh.write(base64.b64decode(f["b64"]))
+        ff = W.find_tool("ffmpeg") or "ffmpeg"
+        fp = W.find_tool("ffprobe") or "ffprobe"
+        try:
+            dur = float(subprocess.run([fp, "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", vid],
+                                       capture_output=True, text=True, timeout=60).stdout.strip() or 0)
+        except Exception:
+            dur = 0
+        doc.set(pct=6, msg="Ambil frame dari video")
+        frames = []
+        for k in range(10):
+            t = max(0.3, dur * (0.06 + 0.88 * k / 9)) if dur else 0.5 + k
+            o = os.path.join(tmp, f"frame_{k:02d}.jpg")
+            subprocess.run([ff, "-v", "error", "-y", "-ss", f"{t:.2f}", "-i", vid, "-frames:v", "1", "-q:v", "2", o], timeout=120)
+            if os.path.exists(o):
+                frames.append({"path": o, "name": f"frame_{k:02d}.jpg"})
+        if not frames:
+            raise RuntimeError("Tak dapat ambil frame dari video")
+        job = {"id": cid, "title": inp.get("title") or e.get("title") or "Cover", "photos": frames,
+               "opts": dict(inp.get("opts") or {}, format="cover", slides=1), "seed": inp.get("seed")}
+        return run(job, sheet, cfg, W)
+    except Exception as ex:
+        try:
+            doc.set(status="error", msg="", err=str(ex)[:300])
+        except Exception:
+            pass
+        raise
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)

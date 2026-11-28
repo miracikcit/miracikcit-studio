@@ -113,6 +113,7 @@ function crOptsOut(o){o=Object.assign({},CR_DEF,o);const strength=(+o.strength||
   return {mode:'carousel',format:o.format||'carousel',kit:kit==='kolaj'?'':kit,title:o.title||'',subtitle:o.subtitle||'',texts:[''].concat(texts),
     slides:o.format==='carousel'?+o.slides||5:1,aspect:o.format==='cover'?'9:16':o.aspect,enhance:o.enhance,strength,vibe:o.vibe,cutout:o.cutout,decor:o.decor,order:o.order}}
 async function crSend(c,extra){
+  if(c.ed){await studioCall('job_add',{type:'ed_cover',input:{id:c.id,ed:c.ed,title:c.title,opts:crOptsOut(c.opts),seed:c.seed}});return}
   const input=Object.assign({id:c.id,title:c.title,photos:c.photos,opts:crOptsOut(c.opts),seed:c.seed,avoid:crAvoid(c)},extra||{});
   await studioCall('job_add',{type:'carousel',input})}
 
@@ -170,6 +171,7 @@ A.crShuffle=async()=>{const c=get('carousel',crUi().open);if(!c)return;
   catch(e){save('carousel',Object.assign({},n,{status:'error',err:'Tak dapat hantar ke Mac mini. Semak internet'}));}};
 A.crRetry=A.crShuffle;
 A.crEdit=()=>{const c=get('carousel',crUi().open);if(!c)return;
+  if(c.ed){ui.edCv={id:c.ed,kit:(c.opts||{}).kit||'majalah',title:(c.opts||{}).title||'',sub:(c.opts||{}).subtitle||''};edCoverModal();return}
   crUi().form={id:c.id,title:c.title||'',files:(c.photos||[]).map(p=>Object.assign({},p)),opts:Object.assign({},CR_DEF,c.opts||{}),touched:true};render(true)};
 A.crUseOld=el=>{const c=get('carousel',crUi().open);if(!c)return;const i=+el.dataset.i;const old=(c.old||[]).slice();const pick=old.splice(i,1)[0];if(!pick)return;
   if(c.out)old.unshift(c.out);save('carousel',Object.assign({},c,{out:pick,old,lock:[]}));toast('Versi lama digunakan')};

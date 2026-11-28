@@ -640,3 +640,28 @@
     };
   }, 300);
 })();
+
+/* Kit Gaya (28 Nov 2026, Mira): preset Style Board yang sepadan dengan templat Design (Rujukan > Design > Editor).
+   Guna pilihan editor yang SEDIA ADA sahaja (font, palet, caption, animasi), jadi render_draft.py render sama tanpa ubah.
+   Cover reel ikut kit yang sama: Studio > Editor > Cover (job ed_cover). */
+(function () {
+  const KITS = [
+    { id: 'kitdoodle', n: 'Kit Doodle', d: 'Sama dengan Design Doodle: tajuk marker putih, caption tulisan tangan, melekat macam sticker.',
+      s: { pal: 'brand', font: 'h3', capStyle: 'script', trans: 'cut', punch: true, titlePos: 'top', titleOutline: false, titleFx: 'drop', capFx: 'hop' } },
+    { id: 'kitcomel', n: 'Kit Comel', d: 'Sama dengan Design Comel: pink lembut, tulisan bulat, caption pil putih.',
+      s: { pal: 'pink', font: 'caveat', capStyle: 'pill', trans: 'paper', punch: false, titlePos: 'top', titleOutline: false, titleFx: 'hop', capFx: 'hop' } },
+    { id: 'kitmajalah', n: 'Kit Majalah', d: 'Sama dengan Design Majalah: serif + italik, krim dan latte, caption kotak gelap.',
+      s: { pal: 'tjean', font: 'luxe', capStyle: 'kotak', trans: 'dip', punch: false, titlePos: 'left', titleOutline: false, titleFx: 'land', capFx: 'fade' } }
+  ];
+  let n = 0;
+  const t = setInterval(() => {
+    n++;
+    let L = null;
+    try { L = LOOKS; } catch (e) { if (n > 150) clearInterval(t); return; }   // enjin belum dimuat
+    clearInterval(t);
+    try {
+      const ok = k => ['pal', 'font', 'capStyle', 'trans'].every(g => OPTS[g].some(o => o.id === k.s[g])) && FX[k.s.titleFx] && FX[k.s.capFx];
+      KITS.forEach(k => { if (ok(k) && !L.some(x => x.id === k.id)) L.push(k); });
+    } catch (e) {}
+  }, 200);
+})();

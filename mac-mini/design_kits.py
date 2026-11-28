@@ -582,6 +582,9 @@ def render_majalah(st, phs, rng, title, sub, texts, safe=None):
     people = [p for p in phs if p.cut_ok]
     used_cut = set()
     later = []
+    if N == 1:   # cover / single: tajuk, polaroid besar, orang keluar dari tepi polaroid
+        render_majalah_one(st, phs[0], rng, title, sub, sy0, sy1)
+        return
     for i in range(N):
         bg, ink, boxf, boxi = tones[i % 2]
         ox = i * W
@@ -647,6 +650,34 @@ def render_majalah(st, phs, rng, title, sub, texts, safe=None):
         st.paste(img, x, sy1 - img.size[1] - 10, pr)
     for b, x, y in later:   # kotak teks paling atas
         st.paste(b, x, y)
+
+
+def render_majalah_one(st, ph, rng, title, sub, sy0, sy1):
+    W, H = st.W, st.H
+    sh = sy1 - sy0
+    if H > W * 1.5:   # cover reel: jalur gelap atas & bawah luar kawasan grid, beige di tengah
+        st.paste(ce.paper_texture(W, int(sy0 + 40), MAG["dark"], seed=5, fiber=3).convert("RGBA"), 0, 0)
+        st.paste(ce.paper_texture(W, int(H - sy1 + 40), MAG["dark"], seed=6, fiber=3).convert("RGBA"), 0, sy1 - 40)
+        st.paste(rbox(W - 60, int(sh + 20), MAG["beige"], r=36), 30, sy0 - 10)
+    y = sy0 + sh * 0.06
+    if title:
+        L, size = fit_rich(title, ("serif", "serif_i"), W * 0.84, sh * 0.26, 150, 70, 0.95, max_lines=3)
+        bx = draw_rich(st.img, L, size, W * 0.08, y, W * 0.84, align="left", fill=MAG["ink"], lead=0.95)
+        y = bx[3] + size * 0.28
+    if sub:
+        L2, s2 = fit_rich("*" + sub + "*", ("serif", "serif_i"), W * 0.7, 110, 48, 30)
+        bx = draw_rich(st.img, L2, s2, W * 0.09, y, W * 0.7, align="left", fill=MAG["mute"], lead=1.1)
+        y = bx[3]
+    top = max(y + 30, sy0 + sh * 0.3)
+    avail = sy1 - top - 30
+    cw = int(min(W * 0.74, avail / 1.32))
+    card, pr = photo_card(ph, cw, int(cw * 1.2), polaroid=True, rot=rng.uniform(-4, -2))
+    cx = W * 0.07
+    st.paste(card, cx, top, pr)
+    if ph.cut_ok:   # orang yang sama, lebih besar, keluar di kanan bawah
+        img, prc = mag_cutout(ph, int(min(avail * 0.92, sh * 0.62)))
+        x = min(W - img.size[0] * 0.78, cx + card.size[0] * 0.55)
+        st.paste(img, x, sy1 - img.size[1] - 6, prc)
 
 
 # ---------------------------------------------------------------- MASUK
