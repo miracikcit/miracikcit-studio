@@ -6,6 +6,8 @@
 const INS_PL={th:'Threads',tt:'TikTok',ig:'IG',fb:'FB',yt:'YouTube'};
 const INS_PC={th:'#6250d6',tt:'#2a78d6',ig:'#eb6834',fb:'#d4588a',yt:'#e34948',ttj:'#1baf7a',igj:'#c98a00',off:'#a8a09a'};
 const insDoc=()=>S.insight.find(x=>x.id==='latest');
+const INS_GUIDE='https://claude.ai/artifact/25TyvUjYqHxxRqv1JTiUfL';
+const insAge=d=>d&&d.date?Math.floor((Date.now()-new Date(d.date+'T00:00:00'))/DAY):0;   /* hari sejak data terakhir; >=28 = masa kemaskini */
 const insItems=()=>S.items.filter(x=>x.ins);
 const insPl=p=>`<span class="pill" style="--pc:${INS_PC[p]||'#999'}">${esc(INS_PL[p]||p)}</span>`;
 const insPrio=I=>I&&I.rank?`<span class="insp ${esc(I.prio||'p2')}">${I.prio==='p3'?'Uji':I.prio==='p1'?'Shoot dulu':'Seterusnya'} · ${I.rank}</span>`:'';
@@ -66,11 +68,11 @@ function insBest(d){const B=d.best||{};const ks=Object.keys(B);if(!ks.length)ret
 A.insBk=el=>{ui.insBest=el.dataset.id;render(true)};
 
 /* Kemaskini data: perlu dua profil Chrome Mira, jadi Claude yang buat. Modal ni beri arahan dan cara jimat token. */
-A.insUpd=()=>{const msg='Kemaskini Insight: tarik data 11 akaun sosmed dari dua profil Chrome dan tulis ke Studio. Guna cara paling jimat token.';
-  modal(`<h2>Kemaskini data</h2><p class="meta">Data perlu ditarik dari Chrome kau (dua profil), jadi Claude yang buat. Sebulan sekali cukup.</p>
-   <ol class="insol"><li>Pastikan dua-dua Chrome terbuka dan dah log masuk.</li><li>Buka Claude di Mac mini dan hantar mesej ni:</li></ol>
+A.insUpd=()=>{const msg='Kemaskini Insight. Fail export dah ada dalam INSIGHT INBOX.';
+  modal(`<h2>Kemaskini data</h2><p class="meta">Sebulan sekali (peringatan 28hb dalam Calendar). Buat di Mac mini.</p>
+   <ol class="insol"><li>Download fail export TikTok, Facebook dan IG juga ke folder <b>WORK 2026 › INSIGHT INBOX</b>. <a href="${INS_GUIDE}" target="_blank" rel="noopener">Buka panduan</a></li><li>Pastikan dua-dua Chrome terbuka, kemudian hantar mesej ni kepada Claude:</li></ol>
    <div class="inscopy"><span id="insMsg">${esc(msg)}</span><button class="btn sm" data-act="insCopy">Copy</button></div>
-   <p class="meta" style="margin-top:12px">Claude baca peta akaun dalam memori, jadi tak perlu cari akaun dari awal.</p>
+   <p class="meta" style="margin-top:12px">Claude guna skrip tetap dan cuma baca soalan dari post baru, jadi jauh lebih jimat token.</p>
    <div class="btns" style="justify-content:flex-end"><button class="btn" data-act="closeModal">Tutup</button></div>`,TAB.insight.c)};
 A.insCopy=async()=>{const t=($('#insMsg')||{}).textContent||'';try{await navigator.clipboard.writeText(t);toast('Dicopy')}catch(e){const r=document.createRange();r.selectNodeContents($('#insMsg'));const s=getSelection();s.removeAllRanges();s.addRange(r);toast('Tekan Copy pada menu')}};
 
@@ -79,4 +81,5 @@ function insHome(){const d=insDoc();const c=insProg();if(!d&&!c.N)return '';
   const L=insItems().filter(it=>it.stage==='ideas'||it.stage==='toshoot').sort((a,b)=>(a.stage==='toshoot'?0:1)-(b.stage==='toshoot'?0:1)||(a.ins.rank||99)-(b.ins.rank||99)).slice(0,3);
   const row=it=>hpRow(it.ins.rank?String(it.ins.rank):'·',it.title,[it.media==='gambar'?'Gambar':'Video',it.stage==='toshoot'?'Nak shoot':'Idea'].join(' · '),hpPill(it.ins.prio==='p1'?'Shoot dulu':it.ins.prio==='p3'?'Uji':'Seterusnya',it.ins.prio==='p1'?'var(--bad)':it.ins.prio==='p3'?'#999':'var(--warn)'),{'data-act':'insGoCre'});
   const top=d&&d.headline?`<div class="inshl">${d.headline.map(h=>`<span><b>${esc(h.v)}</b><small>${esc(h.l)}</small></span>`).join('')}</div>`:'';
-  return hpCard('insight',c.N-c.siap,'Insight',(d?'data '+dmy(d.date)+' · ':'')+c.siap+' / '+c.N+' siap',top+(c.N?insBar(c):'')+L.map(row).join(''),'Buka Insight')}
+  const age=insAge(d),due=age>=28?`<button type="button" class="hprow hpx insdue" data-act="insUpd"><span class="tm">!</span><span class="nm"><b>Masa kemaskini data</b><i>Data dah ${age} hari. Download export, kemudian beritahu Claude.</i></span>${hpPill('Kemaskini','var(--bad)')}</button>`:'';
+  return hpCard('insight',c.N-c.siap,'Insight',(d?'data '+dmy(d.date)+' · ':'')+c.siap+' / '+c.N+' siap',due+top+(c.N?insBar(c):'')+L.map(row).join(''),'Buka Insight')}

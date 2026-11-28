@@ -855,3 +855,4 @@ textarea.inp.pe-tx{margin-top:6px;min-height:40px;resize:none;overflow:auto;padd
 .insol{margin:10px 0;padding-left:18px;font-size:14px}.insol li{margin:4px 0}
 .inscopy{display:flex;gap:8px;align-items:center;background:rgba(255,255,255,.7);border:1px solid var(--line);border-radius:12px;padding:9px 10px;font-size:13px}.inscopy span{flex:1;min-width:0}
 .crow.insr{flex-wrap:wrap}.crow.insr .crt{flex:1 1 100%}.crow.insr .crb{width:100%;display:flex;justify-content:flex-end;gap:6px}
+.insdue{background:color-mix(in srgb,var(--bad) 10%,rgba(255,255,255,.7))}.insdue .tm{color:var(--bad);font-weight:600}
