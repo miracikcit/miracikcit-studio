@@ -115,7 +115,8 @@ V.home=()=>{
   ${busyHome()}
   ${brHome()}
   ${calHTML()}
-  ${storeHome()}`};
+  ${storeHome()}
+  ${insHome()}`};
 /* Kad B-roll (bawah Footage perlu semak), design sama macam kad Home lain: swipe terus dari sini. */
 function brHome(){
   /* 23 Nov: satu kad sahaja untuk B-roll (dulu ada kad 🔔 Footage perlu semak yang sama). Swipe / edit / Final dalam Picker. */

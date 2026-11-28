@@ -207,7 +207,8 @@ A.peSend=async()=>{const t=thUi(),rows=peRows();if(!rows.length||t.sending)retur
     const units=[{rows:rows.filter(r=>r.p!=='th'||r.k===0).map(mk)}];rows.filter(r=>r.p==='th'&&r.k>0).forEach(r=>units.push({rows:[mk(r)]}));
     rows.forEach(r=>peKeepRow(r.k,no));
     const th=t.imgs[0]&&t.imgs[0].el.naturalWidth?thCompose(t.imgs[0],160).toDataURL('image/jpeg',.6):'';
-    save('photos',{id:'ph'+uid(),no,title:String(thDecoText(t.imgs[0])||t.points).split('\n')[0].trim().slice(0,60),prod:t.prod||'',created:Date.now(),th,imgs,units:units.filter(u=>u.rows.length).map(u=>Object.assign({date:'',time:'',acc:'',fixed:false},u))},true);
+    save('photos',{id:'ph'+uid(),no,title:String(thDecoText(t.imgs[0])||t.points).split('\n')[0].trim().slice(0,60),prod:t.prod||'',item:t.itemId||'',created:Date.now(),th,imgs,units:units.filter(u=>u.rows.length).map(u=>Object.assign({date:'',time:'',acc:'',fixed:false},u))},true);
+    if(t.itemId){const it=get('items',t.itemId);if(it)save('items',Object.assign({},it,{stage:'photo',photoNo:no,stageAt:Object.assign({},it.stageAt,{photo:Date.now()})}),true)} /* 28 Nov: kad Idea gambar (Insight) selesai bila set masuk To Publish */
     if(typeof ppC!=='undefined')ppC=null;t.done=true;clearTimeout(t._sv);
     if(t.did){const id=t.did;t.did=null;peTx('readwrite',s=>s.delete(id)).catch(()=>{});ui.peDr=(ui.peDr||[]).filter(x=>x.id!==id)}
     thAutoStudy();peClear();toast(dir+' masuk To Publish');go('ready')}
@@ -260,7 +261,7 @@ const peTx=async(m,f)=>{const d=await peDb();return new Promise((r,j)=>{const q=
 const peEmpty=t=>!t.imgs.length&&!t.points.trim()&&!t.res;
 function peSaveSoon(){const t=ui.th;if(!t||t.done)return;clearTimeout(t._sv);t._sv=setTimeout(peSave,900)}
 async function peSave(){const t=ui.th;if(!t||t.done||peEmpty(t))return;clearTimeout(t._sv);if(!t.did)t.did=uid();
-  try{await tdFonts();const im0=t.imgs[0];const d={id:t.did,updated:Date.now(),prod:t.prod||'',points:t.points,tone:t.tone,thread:t.thread,plats:t.plats.slice(),rp:t.rp,dtxt:t.dtxt,dtxtMine:!!t.dtxtMine,res:t.res,edit:Object.assign({},t.edit),postIds:Object.assign({},t.postIds),step:t.step,sel:t.sel,
+  try{await tdFonts();const im0=t.imgs[0];const d={id:t.did,updated:Date.now(),prod:t.prod||'',itemId:t.itemId||'',points:t.points,tone:t.tone,thread:t.thread,plats:t.plats.slice(),rp:t.rp,dtxt:t.dtxt,dtxtMine:!!t.dtxtMine,res:t.res,edit:Object.assign({},t.edit),postIds:Object.assign({},t.postIds),step:t.step,sel:t.sel,
       th:im0&&im0.el.naturalWidth?thCompose(im0,160).toDataURL('image/jpeg',.6):'',
       imgs:t.imgs.map(x=>({id:x.id,name:x.name,file:x.file,ratio:x.ratio,pre:x.pre,e:Object.assign({},x.e),deco:JSON.parse(JSON.stringify(x.deco)),mkB:x.mkB||'',mkU:!!x.mkU}))};
     await peTx('readwrite',s=>s.put(d));const L=ui.peDr||(ui.peDr=[]);const i=L.findIndex(x=>x.id===d.id);if(i<0)L.unshift(d);else L[i]=d;
@@ -273,7 +274,7 @@ function peDrList(){const L=ui.peDr||[];
 const peClear=()=>{const o=ui.th;if(o){clearTimeout(o._sv);o.imgs.forEach(x=>URL.revokeObjectURL(x.url))}ui.th=null;return thUi()};
 A.peNew=async()=>{await peSave();peClear();render(true);window.scrollTo(0,0)};
 A.peOpen=async el=>{await peSave();const d=(ui.peDr||[]).find(x=>x.id===el.dataset.id);if(!d)return;const t=peClear();
-  Object.assign(t,{did:d.id,prod:d.prod||'',points:d.points||'',tone:d.tone||'Auto',thread:!!d.thread,plats:d.plats||['th','fb'],rp:d.rp||'th',dtxt:d.dtxt==null?null:d.dtxt,dtxtMine:!!d.dtxtMine,res:d.res||null,edit:d.edit||{},postIds:d.postIds||{},step:d.step||1,sel:d.sel||0});
+  Object.assign(t,{did:d.id,prod:d.prod||'',itemId:d.itemId||'',points:d.points||'',tone:d.tone||'Auto',thread:!!d.thread,plats:d.plats||['th','fb'],rp:d.rp||'th',dtxt:d.dtxt==null?null:d.dtxt,dtxtMine:!!d.dtxtMine,res:d.res||null,edit:d.edit||{},postIds:d.postIds||{},step:d.step||1,sel:d.sel||0});
   t.imgs=(d.imgs||[]).filter(x=>x.file).map(x=>{const url=URL.createObjectURL(x.file),im={id:x.id,name:x.name,file:x.file,url,el:new Image(),ratio:x.ratio||'asal',pre:x.pre||'',e:x.e,deco:x.deco,F:{},mkB:x.mkB||'',mkU:!!x.mkU};if(im.deco.txt===false&&im.deco.t==null)im.deco.t='';im.deco.txt=true;
     im.el.onload=()=>render(true);im.el.src=url;
     if(x.mkB){const m=new Image();m.onload=()=>{im.mk=m;im.mkS='ok';render(true)};m.src='data:image/png;base64,'+x.mkB}return im});

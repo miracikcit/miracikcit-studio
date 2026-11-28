@@ -22,12 +22,13 @@ const IC={
  threads:P('<rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="8.8" cy="10" r="1.6"/><path d="M4 17l4.8-4.2 3.4 3 3-2.6 4.8 4"/>'),
  edit:P('<path d="M4 20l1-4L16.5 4.5l3 3L8 19l-4 1z"/>'),caption:P('<path d="M5 6h14M5 10h14M5 14h8"/><path d="M14.5 17.5l2 2 4-4"/>'),dl:P('<path d="M12 4v11"/><path d="M7.5 10.5L12 15l4.5-4.5"/><path d="M5 19.5h14"/>'),ext:P('<path d="M10 5H6a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4"/><path d="M14 4h6v6"/><path d="M20 4l-8.5 8.5"/>'),x:P('<path d="M6 6l12 12M18 6L6 18"/>')
 };
+IC.insight=P('<path d="M4 20h16"/><rect x="5.5" y="12" width="3" height="6" rx="1"/><rect x="10.5" y="8" width="3" height="10" rx="1"/><rect x="15.5" y="4.5" width="3" height="13.5" rx="1"/>');
 const TABS_=[
  ['home','Home','#9A4F5D'],['ideas','Ideas','#C29A3C'],['links','Confirmed Projects','#5A8FB5'],['to-shoot','Shoot','#CF8A55'],['shot','Shot','#C2666A'],['to-edit','Edit','#8676BE'],
  ['ready','To Publish','#8A6A52'],['published','Published','#6B5548'],['caption','Caption','#B0704F'],['threads','Photo Editor','#7A5C6E'],['jobs','Jobs','#A8763E'],
- ['editor','Editor','#9C6396'],['footage','Footage library','#9A8C7A'],['broll','B-Roll Picker','#B0704F'],['inspiration','Copy Style','#4E3A2E'],['transcribe','Transcribe','#8C6A4F'],['media-kit','Media Kit','#B0937B'],['vo','VO','#B5546B'],['lagi','Lagi','#9A8C7A']
+ ['editor','Editor','#9C6396'],['footage','Footage library','#9A8C7A'],['broll','B-Roll Picker','#B0704F'],['inspiration','Copy Style','#4E3A2E'],['transcribe','Transcribe','#8C6A4F'],['media-kit','Media Kit','#B0937B'],['vo','VO','#B5546B'],['insight','Insight','#6E6A9E'],['lagi','Lagi','#9A8C7A']
 ].map(([k,l,c])=>({k,l,c,ic:IC[k==='vo'?'mic':k.replace('-','')]||IC.plus}));
-const NAV=['home','links','to-shoot','vo','to-edit','editor','ready','published','lagi'];   /* 23 Nov: Ideas dalam Lagi, VO antara Shoot dan Edit */
+const NAV=['home','links','to-shoot','vo','to-edit','editor','ready','published','insight','lagi'];   /* 28 Nov: Insight (data sosmed) dalam menu bawah */   /* 23 Nov: Ideas dalam Lagi, VO antara Shoot dan Edit */
 const navLabel=l=>l.replace('Ready to Publish','Ready').replace('Confirmed Projects','Projects');
 const TAB=Object.fromEntries(TABS_.map(t=>[t.k,t]));
 const STAGE_TAB={ideas:'ideas',toshoot:'to-shoot',shot:'shot',toedit:'to-edit',ready:'ready',published:'published'};

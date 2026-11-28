@@ -23,14 +23,19 @@ A.tsDateSave=el=>{const it=get('items',el.dataset.id);save('items',Object.assign
    semua butang di baris bawah. Idea kekal senarai ringkas. */
 function creCard(it){const left=it.shootDate?Math.ceil((new Date(it.shootDate+'T00:00:00')-Date.now())/DAY):null;const col=left===null?'#999':left>7?'var(--ok)':left>=0?'var(--warn)':'var(--bad)';
   const meta=[it.nota?'ada nota':'',noEmoji(it.details||((it.src&&it.src.text)||'')).slice(0,140)].filter(Boolean).join(' · ');
-  return `<div class="card glass tsc crc"><div class="crp"><span class="pill" style="--pc:#9A4F5D">Creative</span><button class="pill crd" style="--pc:${col}" data-act="tsDate" data-id="${it.id}">${it.shootDate?'Shoot '+dmy(it.shootDate)+(left>0?' · '+left+' hari lagi':left===0?' · hari ni':' · lewat '+(-left)+' hari'):'Set tarikh shoot'}</button>${accSel(`id="ac-${it.id}" data-col="items" data-id="${it.id}" data-f="account"`,it.account||'','Akaun')}${sbtAddBtn(it)}${tsMic(it)}</div>
-    <h3>${esc(it.title||'Tanpa tajuk')}</h3>${meta?`<div class="meta">${esc(meta)}</div>`:''}${sbtOn(it)?sbtBox(it):fuStatus(it)}
-    <div class="crm">${footBtn(it)}${notaBtn(it,'nota')}<button class="btn icon sm" data-act="tsEdit" data-id="${it.id}" aria-label="Edit">${IC.edit}</button><button class="btn icon sm bad" data-act="delItem" data-id="${it.id}" aria-label="Padam">${IC.trash}</button></div></div>`}
+  const gb=it.media==='gambar';
+  return `<div class="card glass tsc crc${it.ins?' insc':''}"><div class="crp">${it.ins?insPrio(it.ins):''}<span class="pill" style="--pc:#9A4F5D">Creative</span>${it.media?insMedia(it):''}<button class="pill crd" style="--pc:${col}" data-act="tsDate" data-id="${it.id}">${it.shootDate?'Shoot '+dmy(it.shootDate)+(left>0?' · '+left+' hari lagi':left===0?' · hari ni':' · lewat '+(-left)+' hari'):'Set tarikh shoot'}</button>${accSel(`id="ac-${it.id}" data-col="items" data-id="${it.id}" data-f="account"`,it.account||'','Akaun')}${sbtAddBtn(it)}${tsMic(it)}</div>
+    <h3>${esc(it.title||'Tanpa tajuk')}</h3>${it.ins?insFacts(it)+insWhy(it):meta?`<div class="meta">${esc(meta)}</div>`:''}${gb?'':sbtOn(it)?sbtBox(it):fuStatus(it)}
+    <div class="crm">${gb?`<button class="btn sm solid tab" data-act="insPhoto" data-id="${it.id}">${IC.threads}Photo Editor</button>`:footBtn(it)}${notaBtn(it,'nota')}<button class="btn icon sm" data-act="tsEdit" data-id="${it.id}" aria-label="Edit">${IC.edit}</button><button class="btn icon sm bad" data-act="delItem" data-id="${it.id}" aria-label="Padam">${IC.trash}</button></div></div>`}
 function creList(cre,ideas){
-  const row=it=>{const meta=['Idea',it.account,noEmoji(it.details||((it.src&&it.src.text)||'')).slice(0,90)].filter(Boolean).join(' · ');
+  /* 28 Nov (Mira): kad Insight masuk sebagai Idea, disusun ikut keutamaan, dengan sebab + platform. Nak shoot = pindah ke Nak shoot (video dan gambar). */
+  const rk=it=>it.ins?(it.ins.rank||98):999;ideas=ideas.filter(creFOk).sort((a,b)=>rk(a)-rk(b));cre=cre.filter(creFOk);
+  const row=it=>{if(it.ins)return `<div class="crow glass insr"><div class="crt"><span class="insrh">${insPrio(it.ins)}${insMedia(it)}</span><b>${esc(it.title||'Tanpa tajuk')}</b>${insFacts(it)}${insWhy(it)}</div><div class="crb"><button class="btn sm" data-act="tsPlan" data-id="${it.id}">Nak shoot</button>
+      <button class="btn sm" data-act="tsEdit" data-id="${it.id}" aria-label="Edit">${IC.edit}</button><button class="btn icon sm bad" data-act="delItem" data-id="${it.id}" aria-label="Padam">${IC.trash}</button></div></div>`;
+    const meta=['Idea',it.account,noEmoji(it.details||((it.src&&it.src.text)||'')).slice(0,90)].filter(Boolean).join(' · ');
     return `<div class="crow glass"><div class="crt"><b>${esc(it.title||'Tanpa tajuk')}</b><small>${esc(meta)}</small></div><div class="crb"><button class="btn sm" data-act="tsPlan" data-id="${it.id}">Nak shoot</button>
       <button class="btn sm" data-act="tsEdit" data-id="${it.id}" aria-label="Edit">${IC.edit}</button><button class="btn icon sm bad" data-act="delItem" data-id="${it.id}" aria-label="Padam">${IC.trash}</button></div></div>`};
-  return `<p class="eyebrow">Nak shoot · ${cre.length}</p><div class="list alt">${cre.map(creCard).join('')||'<div class="empty">Tiada video creative menunggu.</div>'}</div>
+  return `${insPlanBox()}<p class="eyebrow">Nak shoot · ${cre.length}</p><div class="list alt">${cre.map(creCard).join('')||'<div class="empty">Tiada video creative menunggu.</div>'}</div>
     <p class="eyebrow" style="margin-top:18px">Idea · ${ideas.length} <a href="#ideas" class="meta" style="margin-left:6px">+ idea baru</a></p><div class="clist">${ideas.map(row).join('')||'<div class="empty">Belum ada idea.</div>'}</div>`;
 }
 A.tsPlan=el=>{const it=get('items',el.dataset.id);moveItem(it,'toshoot',{kind:'creative'})};
